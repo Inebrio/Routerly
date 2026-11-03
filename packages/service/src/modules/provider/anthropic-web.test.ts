@@ -263,7 +263,8 @@ describe('AnthropicWebAdapter system prompt with non-string content', () => {
       ],
     }
     await adapter.chatCompletion(request, makeModel())
-    expect(typeof capturedBody?.system_prompt).toBe('string')
+    expect(capturedBody).not.toHaveProperty('system_prompt')
+    expect(capturedBody?.prompt).toBe('system\n\nHuman: hi')
   });
 });
 
@@ -558,9 +559,8 @@ describe('AnthropicWebAdapter buildPrompt branches', () => {
       ],
     };
     await adapter.chatCompletion(request, makeModel());
-    expect(capturedBody?.system_prompt).toBe('You are helpful');
-    // The prompt should only have the user message (system is filtered out for prompt building)
-    expect(capturedBody?.prompt).toBe('Human: hi');
+    expect(capturedBody).not.toHaveProperty('system_prompt');
+    expect(capturedBody?.prompt).toBe('You are helpful\n\nHuman: hi');
   });
 });
 
@@ -742,11 +742,9 @@ function makeConnection(overrides: Partial<ProviderConnection> = {}): ProviderCo
 }
 
 describe('resolveAnthropicWebCredential', () => {
-  it('refuses to run when the provider-web module is disabled', async () => {
+  it('ignores a stored disabled provider-web record (all modules always active)', async () => {
     mockReadConfig.mockResolvedValueOnce([{ id: 'provider-web', enabled: false }] as any);
-    await expect(resolveAnthropicWebCredential(makeConnection())).rejects.toThrow(
-      "'provider-web' module is disabled",
-    );
+    expect(await resolveAnthropicWebCredential(makeConnection())).toBe('sk-ant-sid01-live-session');
   });
 
   it('decrypts the stored session cookie when the module is enabled', async () => {
@@ -766,5 +764,61 @@ describe('resolveAnthropicWebCredential', () => {
     await expect(
       resolveAnthropicWebCredential(makeConnection({ credentials: {} })),
     ).rejects.toThrow('connection missing encrypted session cookie');
+  });
+});
+
+describe('AnthropicWebAdapter conversation per request (ROUT-288)', () => {
+  function mkFetch() {
+    let n = 0;
+    return vi.fn((url: string, init?: { method?: string }) => {
+      const u = url as string;
+      if (init?.method === 'DELETE') return Promise.resolve({ ok: true });
+      if (u.endsWith('/api/organizations')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([{ uuid: `org-${n}` }]) });
+      }
+      if (u.endsWith('/chat_conversations')) {
+        n++;
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ uuid: `conv-${n}` }) });
+      }
+      return Promise.resolve({ ok: true, body: makeSSEStream([completionEvent('pong')]) });
+    });
+  }
+
+  it('creates and deletes a fresh conversation for every request, stream and non-stream', async () => {
+    const fetchMock = mkFetch();
+    vi.stubGlobal('fetch', fetchMock);
+    const adapter = new AnthropicWebAdapter();
+
+    await adapter.chatCompletion(makeRequest('a'), makeModel());
+    for await (const _ of adapter.streamCompletion(makeRequest('b'), makeModel())) { /* drain */ }
+    await adapter.chatCompletion(makeRequest('c'), makeModel());
+
+    const urls = fetchMock.mock.calls.map(c => `${(c[1] as { method?: string } | undefined)?.method ?? 'GET'} ${c[0] as string}`);
+    const completions = urls.filter(u => u.endsWith('/completion'));
+    expect(completions.map(u => u.match(/conv-\d/)![0])).toEqual(['conv-1', 'conv-2', 'conv-3']);
+    expect(urls.filter(u => u.startsWith('DELETE'))).toHaveLength(3);
+  });
+
+  it('deletes the conversation when the completion fails', async () => {
+    const fetchMock = vi.fn((url: string, init?: { method?: string }) => {
+      const u = url as string;
+      if (init?.method === 'DELETE') return Promise.resolve({ ok: true });
+      if (u.endsWith('/api/organizations')) return Promise.resolve({ ok: true, json: () => Promise.resolve(ORGS_RESPONSE) });
+      if (u.endsWith('/chat_conversations')) return Promise.resolve({ ok: true, json: () => Promise.resolve(CONV_RESPONSE) });
+      return Promise.resolve({ ok: false, status: 429, statusText: 'Too Many Requests', headers: { get: () => null }, text: async () => '' });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(new AnthropicWebAdapter().chatCompletion(makeRequest(), makeModel())).rejects.toThrow('HTTP 429');
+    expect(fetchMock.mock.calls.some(c => (c[1] as { method?: string } | undefined)?.method === 'DELETE')).toBe(true);
+  });
+
+  it('does not share the organization between different session cookies', async () => {
+    const fetchMock = mkFetch();
+    vi.stubGlobal('fetch', fetchMock);
+    const adapter = new AnthropicWebAdapter();
+    await adapter.chatCompletion(makeRequest(), makeModel({ apiKey: 'sk-ant-sid01-one' }));
+    await adapter.chatCompletion(makeRequest(), makeModel({ apiKey: 'sk-ant-sid01-two' }));
+    const orgCalls = fetchMock.mock.calls.filter(c => (c[0] as string).endsWith('/api/organizations'));
+    expect(orgCalls).toHaveLength(2);
   });
 });

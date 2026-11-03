@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 
 const { mockCreate } = vi.hoisted(() => ({ mockCreate: vi.fn() }))
 vi.mock('openai', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   default: vi.fn().mockImplementation(function (this: any) {
     this.chat = { completions: { create: mockCreate } }
   }),

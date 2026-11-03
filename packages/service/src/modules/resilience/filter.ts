@@ -86,7 +86,7 @@ export function filterAvailable(candidates: CandidateModel[], store: ResilienceS
       if (ua !== ub) return ua - ub;
       return a.modelId.localeCompare(b.modelId);
     })[0]!;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     available.push(excludedCandidates.get(fallback.modelId)!);
   }
 

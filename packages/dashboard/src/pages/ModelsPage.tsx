@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw, ShieldOff } from 'lucide-react';
 import { getModels, deleteModel, testModel, getProviderHealth, resetResilience, getConnections, type Model, type ProviderHealth, type ResilienceState, type Connection } from '../api';
 import { useAuth } from '../AuthContext';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -17,6 +17,9 @@ const PAGE_SIZE = 20;
 const HEALTH_REFRESH_MS = 30_000;
 
 function numOrInfinity(v: number | null | undefined) { return v ?? Infinity; }
+
+// 0 is a valid (free) price; only a missing value gets the dash.
+function price(v: number | null | undefined) { return v != null ? `$${v}` : <span className="text-muted">—</span>; }
 
 function SortIcon({ col, sortKey, sortDir }: { col: string; sortKey: string; sortDir: SortDir }) {
   if (col !== sortKey) return <ChevronsUpDown size={13} style={{ opacity: 0.35, marginLeft: 4, flexShrink: 0 }} />;
@@ -130,6 +133,9 @@ export function ModelsPage() {
   const { t } = useTranslation();
   const { can } = useAuth();
   const canManage = can('resilience:manage');
+  const canRead = can('model:read');
+  const canReadHealth = can('report:read');
+  const canReadConnections = can('connections:read');
   const canWriteModels = can('model:write');
   const now = useNow();
   const navigate = useNavigate();
@@ -144,13 +150,14 @@ export function ModelsPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [healthMap, setHealthMap] = useState<Map<string, ProviderHealth>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [healthUpdatedAt, setHealthUpdatedAt] = useState<Date | null>(null);
+  const [_healthUpdatedAt, setHealthUpdatedAt] = useState<Date | null>(null);
   const [search, setSearch] = useState('');
   const [providerFilter, setProviderFilter] = useState(() => searchParams.get('provider') ?? '');
   const [connectionFilter, setConnectionFilter] = useState(() => searchParams.get('connection') ?? '');
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
+  const [deleteError, setDeleteError] = useState('');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [testResults, setTestResults] = useState<Record<string, 'loading' | { ok: boolean; latencyMs: number; error?: string }>>({});
   const healthActive = useRef(true);
@@ -166,7 +173,7 @@ export function ModelsPage() {
   const [resetError, setResetError] = useState('');
 
   // Load models once
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (canRead) load(); else setLoading(false); }, []);
 
   async function load() {
     setLoading(true);
@@ -174,7 +181,7 @@ export function ModelsPage() {
   }
 
   // Connections power the connection filter; best-effort like health.
-  useEffect(() => { getConnections().then(setConnections).catch(() => {}); }, []);
+  useEffect(() => { if (canRead && canReadConnections) getConnections().then(setConnections).catch(() => {}); }, []);
 
   function updateProviderFilter(v: string) {
     setProviderFilter(v);
@@ -208,6 +215,7 @@ export function ModelsPage() {
   // Load health + poll every 30s
   useEffect(() => {
     healthActive.current = true;
+    if (!canRead || !canReadHealth) return;
     fetchHealth();
     const id = setInterval(fetchHealth, HEALTH_REFRESH_MS);
     return () => { healthActive.current = false; clearInterval(id); };
@@ -223,7 +231,7 @@ export function ModelsPage() {
       // provider-open circuit or connection cooldown still blocking the row.
       await Promise.all([
         resetResilience({ level: 'provider', id: m.provider }),
-        resetResilience({ level: 'connection', id: m.provider }),
+        resetResilience({ level: 'connection', id: m.connectionId ?? m.provider }),
         resetResilience({ level: 'model', id: m.id }),
       ]);
       await fetchHealth();
@@ -272,8 +280,13 @@ export function ModelsPage() {
       message: t('models.page.deleteConfirm', { id }),
       onConfirm: async () => {
         setConfirmState(null);
-        await deleteModel(id);
-        setModels(m => m.filter(x => x.id !== id));
+        try {
+          await deleteModel(id);
+          setModels(m => m.filter(x => x.id !== id));
+          setDeleteError('');
+        } catch (e) {
+          setDeleteError(e instanceof Error ? e.message : String(e));
+        }
       },
     });
   }
@@ -297,7 +310,7 @@ export function ModelsPage() {
       if (providerFilter && m.provider !== providerFilter) return false;
       if (connectionFilter && m.connectionId !== connectionFilter) return false;
       if (!q) return true;
-      return m.id.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q) || m.endpoint.toLowerCase().includes(q);
+      return m.id.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q) || (m.endpoint ?? '').toLowerCase().includes(q);
     });
   }, [models, search, providerFilter, connectionFilter]);
 
@@ -307,9 +320,9 @@ export function ModelsPage() {
       switch (sortKey) {
         case 'id':       cmp = a.id.localeCompare(b.id); break;
         case 'provider': cmp = a.provider.localeCompare(b.provider); break;
-        case 'endpoint': cmp = a.endpoint.localeCompare(b.endpoint); break;
-        case 'input':    cmp = a.cost.inputPerMillion - b.cost.inputPerMillion; break;
-        case 'output':   cmp = a.cost.outputPerMillion - b.cost.outputPerMillion; break;
+        case 'endpoint': cmp = (a.endpoint ?? '').localeCompare(b.endpoint ?? ''); break;
+        case 'input':    cmp = numOrInfinity(a.cost.inputPerMillion) - numOrInfinity(b.cost.inputPerMillion); break;
+        case 'output':   cmp = numOrInfinity(a.cost.outputPerMillion) - numOrInfinity(b.cost.outputPerMillion); break;
         case 'cache':    cmp = numOrInfinity(a.cost.cachePerMillion) - numOrInfinity(b.cost.cachePerMillion); break;
         case 'context':  cmp = numOrInfinity(a.contextWindow) - numOrInfinity(b.contextWindow); break;
       }
@@ -363,7 +376,7 @@ export function ModelsPage() {
     else { setHSortKey(key); setHSortDir('asc'); }
   }
   const hTh = (label: string, key: HealthSortKey, align?: 'right') => (
-    <th style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', textAlign: align }} onClick={() => handleHSort(key)}>
+    <th style={{ cursor: 'pointer', userSelect: 'none', textAlign: align }} onClick={() => handleHSort(key)}>
       <span style={{ display: 'inline-flex', alignItems: 'center' }}>
         {label}<SortIcon col={key} sortKey={hSortKey} sortDir={hSortDir} />
       </span>
@@ -386,6 +399,20 @@ export function ModelsPage() {
     marginBottom: -1,
   });
 
+  if (!canRead) {
+    return (
+      <>
+        <div className="page-header">
+          <h1>{t('models.page.title')}</h1>
+          <p>{t('models.page.subtitle')}</p>
+        </div>
+        <div className="page-body">
+          <div className="empty-state"><ShieldOff size={40} /><p>{t('models.page.noPermission')}</p></div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="page-header" style={{ paddingBottom: 0 }}>
@@ -397,6 +424,7 @@ export function ModelsPage() {
         </div>
       </div>
       <div className="page-body" style={{ paddingTop: 24 }}>
+        {deleteError && <div className="form-error" style={{ marginBottom: 20 }}>{deleteError}</div>}
         {tab === 'models' && (
           <>
             <div className="toolbar">
@@ -483,10 +511,10 @@ export function ModelsPage() {
                             <td><span className="mono">{m.id}</span></td>
                             <td><span className={`badge badge-${m.provider}`}>{providerLabel(m.provider)}</span></td>
                             <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{m.endpoint}</span></td>
-                            <td>${m.cost.inputPerMillion}</td>
-                            <td>${m.cost.outputPerMillion}</td>
-                            <td>{m.cost.cachePerMillion != null ? `$${m.cost.cachePerMillion}` : <span className="text-muted">—</span>}</td>
-                            <td>{m.contextWindow != null ? `${(m.contextWindow / 1000).toFixed(0)}k` : <span className="text-muted">—</span>}</td>
+                            <td>{price(m.cost.inputPerMillion)}</td>
+                            <td>{price(m.cost.outputPerMillion)}</td>
+                            <td>{price(m.cost.cachePerMillion)}</td>
+                            <td>{m.contextWindow ? `${(m.contextWindow / 1000).toFixed(0)}k` : <span className="text-muted">—</span>}</td>
                             <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
                               {(() => {
                                 const tr = testResults[m.id];
@@ -583,7 +611,7 @@ export function ModelsPage() {
               ) : (
                 <>
                   <div className="table-wrap">
-                    <table>
+                    <table className="table-compact">
                       <thead>
                         <tr>
                           {hTh(t('models.page.health.columns.model'), 'id')}

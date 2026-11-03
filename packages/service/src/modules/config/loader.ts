@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
 import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord, ProviderConnection, ModelInstance, Profile, ExperimentConfig } from '@routerly/shared';
 import { CONFIG_PATHS } from '../../lib/paths.js';
+import { notifyWrite } from './write-hooks.js';
 import { readUsageNdjson, writeUsageNdjson, appendUsageRecordsNdjson } from './usageNdjson.js';
 import { SECRET_KEYS } from './permission-guard.js';
 
@@ -42,10 +43,8 @@ const DEFAULTS: Record<string, unknown> = {
   routers: [] as RouterConfig[],
   users: [] as UserConfig[],
   roles: [] as RoleConfig[],
-  // 'provider-web' defaults DISABLED (unofficial, ToS-risk web-cookie adapters) —
-  // 'provider-oauth' has no record here and defaults enabled via isModuleEnabled's
-  // "no record = enabled" fallback.
-  modules: [{ id: 'provider-web', enabled: false } satisfies ModuleRecord] as ModuleRecord[],
+  // All modules are always active; the file is only kept for compatibility.
+  modules: [] as ModuleRecord[],
   profiles: [] as Profile[],
   experiments: [] as ExperimentConfig[],
   connections: [] as ProviderConnection[],
@@ -153,7 +152,7 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
   data: StoredTypeMap[K],
 ): Promise<void> {
   // Usage history: same NDJSON delegation as readConfig above. Still a full
-  // atomic rewrite (used by pruneOrphanUsage and the retention sweep — both
+  // atomic rewrite (used by the retention sweep — both
   // occasional, off the per-request hot path), just via the NDJSON writer.
   if (key === 'usage') {
     await writeUsageNdjson(data as UsageRecord[]);
@@ -185,7 +184,7 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
     // write; kept modest so a real deadlock still surfaces. Usage records no
     // longer go through this path per-write (RTR-06: append-only NDJSON,
     // usageNdjson.ts) — this write path is now only the occasional full
-    // rewrite (settings/projects/etc., plus usage's pruneOrphanUsage/retention
+    // rewrite (settings/projects/etc., plus usage's retention
     // sweep via writeUsageNdjson's own identical lock).
     release = await lockfile.lock(filePath, {
       retries: { retries: 10, minTimeout: 50, maxTimeout: 500 },
@@ -219,6 +218,7 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
   } finally {
     if (release) await release();
   }
+  await notifyWrite(key);
 }
 
 /**
@@ -272,6 +272,7 @@ export async function updateConfig<K extends keyof StoredTypeMap>(
 
   const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
   let release: (() => Promise<void>) | undefined;
+  let written = false;
   try {
     release = await lockfile.lock(filePath, {
       retries: { retries: 20, minTimeout: 50, maxTimeout: 1000 },
@@ -296,12 +297,14 @@ export async function updateConfig<K extends keyof StoredTypeMap>(
     if (mode !== undefined) writeOptions.mode = mode;
     await writeFile(tmpPath, JSON.stringify(next, null, 2), writeOptions);
     await rename(tmpPath, filePath);
+    written = true;
     return next;
   } catch (err) {
     await unlink(tmpPath).catch(() => {});
     throw err;
   } finally {
     if (release) await release();
+    if (written) await notifyWrite(key);
   }
 }
 
@@ -320,26 +323,6 @@ export async function appendUsageRecords(records: UsageRecord[]): Promise<void> 
   if (process.env['ROUTERLY_SKIP_TRACKING']) return; // ponytail: env guard, skips write in e2e/test runs
   if (records.length === 0) return;
   await appendUsageRecordsNdjson(records);
-}
-
-/**
- * One-shot cleanup of orphan usage records (#77, BUG-5).
- *
- * Drops usage rows whose routerId matches no existing router — residue from
- * the pre-fix guardrail path which wrote records under a fictitious
- * routerId 'guardrail'. Real routers' records are kept. Only rewrites the
- * file when something was actually removed. Returns the number removed.
- */
-export async function pruneOrphanUsage(): Promise<number> {
-  const [usage, routers] = await Promise.all([
-    readConfig('usage'),
-    readConfig('routers'),
-  ]);
-  const validIds = new Set(routers.map((r) => r.id));
-  const kept = usage.filter((r) => validIds.has(r.routerId));
-  const removed = usage.length - kept.length;
-  if (removed > 0) await writeConfig('usage', kept);
-  return removed;
 }
 
 /**
@@ -364,4 +347,14 @@ export async function getOrCreateSecret(): Promise<string> {
 
 function isNodeError(err: unknown): err is NodeJS.ErrnoException {
   return err instanceof Error && 'code' in err;
+}
+
+/**
+ * Listening port: ROUTERLY_PORT overrides `port` from settings.json (documented
+ * in docs/reference/environment-variables.md). An invalid value is ignored.
+ * Never persisted: the override applies at runtime only.
+ */
+export function effectivePort(settings: { port: number }): number {
+  const n = Number(process.env['ROUTERLY_PORT']);
+  return Number.isInteger(n) && n >= 1 && n <= 65535 ? n : settings.port;
 }

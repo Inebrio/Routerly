@@ -11,6 +11,9 @@ vi.mock('../api', () => ({
   getModels: vi.fn(),
 }));
 
+let mockCan = true;
+vi.mock('../AuthContext', () => ({ useAuth: () => ({ can: () => mockCan }) }));
+
 // Mock DateRangePicker and MultiSelect to avoid complex UI
 vi.mock('../components/DateRangePicker', () => ({
   DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
@@ -72,8 +75,21 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  mockCan = true;
   vi.mocked(getRouters).mockResolvedValue([]);
   vi.mocked(getModels).mockResolvedValue([]);
+});
+
+describe('UsagePage — without permissions (ROUT-384)', () => {
+  it('calls neither getUsage nor getModels and shows the permission message', async () => {
+    mockCan = false;
+    vi.mocked(getUsage).mockClear();
+    vi.mocked(getModels).mockClear();
+    renderPage();
+    await waitFor(() => expect(screen.queryByText(/No permission to view usage data/)).not.toBeNull());
+    expect(getUsage).not.toHaveBeenCalled();
+    expect(getModels).not.toHaveBeenCalled();
+  });
 });
 
 describe('UsagePage — no leaderboard tab', () => {
@@ -201,6 +217,21 @@ describe('UsagePage — Guardrail filter button', () => {
     const btn = await screen.findByRole('button', { name: /^Judge \d/ });
     await userEvent.click(btn);
     expect(btn.className).toContain('btn-primary');
+  });
+});
+
+describe('UsagePage — session, end-user and tag filters (ROUT-280)', () => {
+  it('sends the typed values to getUsage', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    fireEvent.change(await screen.findByLabelText('Session ID'), { target: { value: 's-1' } });
+    fireEvent.change(screen.getByLabelText('End user'), { target: { value: 'u-1' } });
+    fireEvent.change(screen.getByLabelText('Tag'), { target: { value: 'team=a' } });
+    await waitFor(() => {
+      const opts = vi.mocked(getUsage).mock.calls.slice(-1)[0]![6];
+      expect(opts).toMatchObject({ sessionId: 's-1', endUserId: 'u-1', tag: 'team=a' });
+    });
+    expect(screen.getByRole('button', { name: 'Reset filters' })).toBeTruthy();
   });
 });
 

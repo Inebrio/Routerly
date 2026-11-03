@@ -38,13 +38,18 @@ function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+/** Trimmed, lower-cased labels; entries without a label (corrupt connections.json) are skipped. */
+function normalizeLabels(labels: readonly (string | undefined)[]): string[] {
+  return labels.filter((l): l is string => typeof l === 'string').map(l => l.trim().toLowerCase());
+}
+
 export function suggestConnectionLabel(
   providerId: string,
   providerName: string | undefined,
-  taken: readonly string[],
+  taken: readonly (string | undefined)[],
 ): string {
   const base = slugify(providerName ?? '') || slugify(providerId) || 'connection';
-  const used = new Set(taken.map(l => l.trim().toLowerCase()));
+  const used = new Set(normalizeLabels(taken));
   if (!used.has(base)) return base;
   // Bounded by the number of existing names: one of the first `taken.length + 1` is free.
   for (let n = 2; ; n++) {
@@ -54,9 +59,8 @@ export function suggestConnectionLabel(
 }
 
 /** True when `label` is already worn by one of `taken`, ignoring case and surrounding space. */
-export function isConnectionLabelTaken(label: string, taken: readonly string[]): boolean {
-  const wanted = label.trim().toLowerCase();
-  return taken.some(l => l.trim().toLowerCase() === wanted);
+export function isConnectionLabelTaken(label: string, taken: readonly (string | undefined)[]): boolean {
+  return normalizeLabels(taken).includes(label.trim().toLowerCase());
 }
 
 /**
@@ -81,6 +85,8 @@ export interface ModelInstance {
   upstreamModelId: string;
   cost: TokenCost;
   contextWindow: number;
+  /** Upstream call timeout in ms (default 60000) */
+  timeout?: number;
   limits?: Limit[];
   capabilities?: ModelCapabilities;
   /** Fields manually overridden by user; these won't auto-sync from catalog */
@@ -306,6 +312,7 @@ export interface RoutingPolicy {
   /** Whether this policy should be checked when routing */
   enabled: boolean;
   /** Optional policy-specific settings */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy-specific settings, shape depends on policy type
   config?: any;
 }
 
@@ -818,31 +825,18 @@ export interface ProviderRepo {
 // ─── Update channels ─────────────────────────────────────────────────────────
 
 /** Update channels an instance can follow, by their current names. */
-export const UPDATE_CHANNELS = ['latest', 'current', 'next'] as const;
+export const UPDATE_CHANNELS = ['latest', 'current', 'next', 'stable', 'develop'] as const;
 export type UpdateChannel = (typeof UPDATE_CHANNELS)[number];
 
-/**
- * Channel names renamed in 0.4.0, kept working for one release cycle.
- * Removal is a separate, later change.
- */
-export const DEPRECATED_UPDATE_CHANNELS = {
-  stable:  'current',
-  develop: 'next',
-} as const satisfies Record<string, UpdateChannel>;
-export type DeprecatedUpdateChannel = keyof typeof DEPRECATED_UPDATE_CHANNELS;
-
-/** What may legally sit in `Settings.channel`: a channel name, a deprecated alias, or a version tag. */
-export type UpdateChannelSetting = UpdateChannel | DeprecatedUpdateChannel | (string & {});
+/** What may legally sit in `Settings.channel`: a channel name, or a version tag. */
+export type UpdateChannelSetting = UpdateChannel | (string & {});
 
 export interface NormalizedUpdateChannel {
-  /** Canonical value to resolve and to persist. Aliases mapped; every other input verbatim. */
+  /** Canonical value to resolve and to persist. Every input passes through verbatim. */
   channel: string;
-  /** Present only when the input was a deprecated alias. The alias exactly as it came in. */
-  deprecatedAlias?: DeprecatedUpdateChannel;
 }
 
 /**
- * Maps a deprecated alias to its canonical name and reports which alias it saw.
  * `undefined`/`''` resolve to `'latest'`. Every other value passes through verbatim,
  * with no case folding and no trimming. Pure: no I/O, no logging, no throwing.
  */
@@ -850,37 +844,29 @@ export function normalizeUpdateChannel(value: string | undefined): NormalizedUpd
   if (value === undefined || value === '') {
     return { channel: 'latest' };
   }
-  if (value in DEPRECATED_UPDATE_CHANNELS) {
-    const alias = value as DeprecatedUpdateChannel;
-    return { channel: DEPRECATED_UPDATE_CHANNELS[alias], deprecatedAlias: alias };
-  }
   return { channel: value };
-}
-
-/** One-line, human-readable deprecation notice. The only wording that ships. */
-export function updateChannelDeprecationWarning(alias: DeprecatedUpdateChannel): string {
-  const canonical = DEPRECATED_UPDATE_CHANNELS[alias];
-  return `Update channel "${alias}" was renamed to "${canonical}". "${alias}" still works but is deprecated and will be removed in a future release; switch to "${canonical}".`;
 }
 
 const VERSION_TAG_PATTERN = /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?$/;
 
-/** True for a channel name, a deprecated alias, or a version tag. */
+/** True for a channel name or a version tag. */
 export function isValidUpdateChannel(value: string): boolean {
   return (UPDATE_CHANNELS as readonly string[]).includes(value)
-    || value in DEPRECATED_UPDATE_CHANNELS
     || VERSION_TAG_PATTERN.test(value);
 }
 
 /** The rejection message, so service and CLI cannot drift. */
-export const UPDATE_CHANNEL_ERROR = 'Invalid channel. Accepted values: latest, current, next, or a version tag such as v0.4.0.';
+export const UPDATE_CHANNEL_ERROR = 'Invalid channel. Accepted values: latest, current, next, stable, develop, or a version tag such as v0.4.0.';
+
+export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'] as const;
+export type LogLevel = (typeof LOG_LEVELS)[number];
 
 export interface Settings {
   port: number;
   host: string;
   /** Whether to serve the dashboard at /dashboard */
   dashboardEnabled: boolean;
-  logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
+  logLevel: LogLevel;
   /**
    * Public base URL of the service (e.g. https://routerly.example.com).
    * Used in the dashboard "How to connect" section when the dashboard is served
@@ -890,7 +876,7 @@ export interface Settings {
   publicUrl?: string;
   /** Optional notification channels configuration */
   notifications?: NotificationsConfig;
-  /** Distribution channel for updates: 'latest' | 'current' | 'next' | vX.Y.Z tag ('stable' and 'develop' are deprecated aliases) */
+  /** Distribution channel for updates: 'latest' | 'current' | 'next' | 'stable' | 'develop' | vX.Y.Z tag */
   channel?: UpdateChannelSetting;
   /** Whether to expose the Prometheus-compatible /metrics endpoint (default true) */
   metricsEnabled?: boolean;
@@ -922,8 +908,10 @@ export interface UsageRetentionConfig {
 
 /** Available channels and version tags from GitHub Releases. */
 export interface AvailableReleases {
-  /** Named channels (e.g. 'latest', 'stable', 'develop') */
+  /** Named channels (e.g. 'latest', 'current', 'next', 'stable', 'develop') */
   channels: string[];
+  /** Version each named channel points to right now (e.g. { stable: '0.6.0' }); a channel that cannot be resolved is omitted */
+  channelVersions?: Record<string, string>;
   /** Semver version tags (e.g. 'v0.2.0', 'v0.1.5') */
   versions: string[];
 }
@@ -936,12 +924,20 @@ export interface UpdateInfo {
   currentVersion: string;
   /** Latest version found in the resolved channel (e.g. '0.2.0') */
   latestVersion: string;
-  /** Channel or tag that was checked (e.g. 'latest', 'stable', 'v0.2.0') */
+  /** Channel or tag that was checked (e.g. 'latest', 'current', 'v0.2.0') */
   channel: string;
   /** URL to the GitHub release page */
   releaseUrl?: string;
   /** ISO-8601 timestamp of the last check */
   checkedAt: string;
+  /**
+   * Outcome of the check: `ok` (compared against the channel), `disabled`
+   * (checking is switched off on this instance, no request was made) or
+   * `error` (the request failed; `latestVersion` is empty and `available` false).
+   */
+  status: 'ok' | 'disabled' | 'error';
+  /** Failure reason, present only when `status` is `error` */
+  error?: string;
 }
 
 // ─── Notification config types ────────────────────────────────────────────────
@@ -1084,6 +1080,13 @@ export const CHANNEL_SECRET_FIELDS: Record<ChannelProvider, string[]> = {
   dashboard:  [],
 };
 
+/** Secret fields a channel works without; PATCH `null` (CLI `--clear-<field>`) removes them. */
+export const OPTIONAL_CHANNEL_SECRET_FIELDS: Partial<Record<ChannelProvider, string[]>> = {
+  smtp:    ['password'],
+  ses:     ['secretAccessKey'],
+  webhook: ['secret'],
+};
+
 /** Top-level notifications configuration */
 export interface NotificationsConfig {
   channels?: NotificationChannel[];
@@ -1116,6 +1119,7 @@ export const NOTIFICATION_EVENTS = [
   'system.startup',
   'system.shutdown',
   'system.update_available',
+  'system.permissions_unsafe',
 ] as const;
 
 /** One of the canonical {@link NOTIFICATION_EVENTS} names. */
@@ -1210,6 +1214,15 @@ export type CallType = (typeof CALL_TYPES)[number];
  */
 export function isCompletionCall(callType?: CallType): boolean {
   return callType !== 'routing' && callType !== 'guardrail' && callType !== 'judge';
+}
+
+/**
+ * True when a rule makes the proxy hold the whole response before releasing it:
+ * an enabled rule that blocks and judges the response. Single source for the
+ * service buffering, the Security page warning and the Playground stream toggle.
+ */
+export function blocksResponseStreaming(rules: readonly Pick<GuardrailRule, 'enabled' | 'block' | 'target'>[] | undefined): boolean {
+  return rules?.some(r => r.enabled !== false && r.block === true && (r.target === 'response' || r.target === 'both')) ?? false;
 }
 
 export interface UsageRecord {

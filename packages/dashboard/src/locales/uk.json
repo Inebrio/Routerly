@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Тема: {{theme}}"
     },
+    "language": {
+      "label": "Мова",
+      "saveError": "Не вдалося зберегти вашу мову. Повернено до попередньої."
+    },
     "sidebar": {
       "expand": "Розгорнути панель",
       "collapse": "Згорнути панель"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Деякі файли конфігурації мають дозвільний доступ ({{files}}). Запуск і запити все ще працюють. Виправте це в розділі Налаштування → Безпека, або в файловій системі хоста, коли це зручно.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Закрити",
       "updateAvailable": "Routerly v{{latest}} доступна. Ви використовуєте v{{current}}.",
       "updateLink": "Оновити в Налаштуваннях",
@@ -40,9 +45,6 @@
       "telemetryLink": "Що надсилається?",
       "telemetryYes": "Так, допомогти",
       "telemetryNo": "Ні, дякую"
-    },
-    "language": {
-      "label": "Мова"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "Токен сеансу",
       "awsSessionTokenOptionalHint": "(опціонально, для тимчасових облікових даних)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "ID маршрутизатора GCP",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Місцезнаходження",
       "gcpLocationDefaultHint": "(за замовчуванням: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "Маркер доступу",
         "sessionTokenLabel": "Токен сеансу",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Вставте значення cookies sessionKey (sk-ant-sid01-…)",
-        "openaiInstructions": "Перебуваючи в системі ChatGPT, відкрийте <code>https://chatgpt.com/api/auth/session</code> у новій вкладці. Скопіюйте значення поля <code>accessToken</code> (починається з <code>eyJ</code>). Токен закінчується кожні 24 години. Для надійного доступу також заповніть поле <strong>cf_clearance</strong> нижче.",
-        "anthropicInstructions": "<strong>Як отримати ключ сеансу:</strong> Перебуваючи в системі Claude, відкрийте DevTools (F12) → Application → Cookies → <code>claude.ai</code> → скопіюйте значення cookies <code>sessionKey</code> (починається з <code>sk-ant-sid01-</code>). Ключ залишається дійсним, поки ви не вийдете."
+        "sessionTokenPlaceholder": "Вставте значення cookie sessionKey (sk-ant-sid…)",
+        "openaiInstructions": "Перебуваючи в системі ChatGPT, відкрийте <code>https://chatgpt.com/api/auth/session</code> у новій вкладці. Скопіюйте значення поля <code>accessToken</code> (починається з <code>eyJ</code>). Токен дійсний приблизно 10 днів; вставте новий, коли тест почне завершуватися помилкою 401. Для надійного доступу також заповніть поле <strong>cf_clearance</strong> нижче.",
+        "anthropicInstructions": "<strong>Як отримати ключ сесії:</strong> Увійшовши на <code>https://claude.ai</code>, натисніть F12, щоб відкрити DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Скопіюйте <strong>Value</strong> cookie <code>sessionKey</code> (починається з <code>sk-ant-sid</code>, наприклад <code>sk-ant-sid02-</code>). Це cookie HttpOnly, тому вона не видна в консолі сторінки. Вона залишається дійсною, доки ви не вийдете або термін її дії не мине; вставте нову, якщо тест почне завершуватися помилкою."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Токен OAuth передплати",
@@ -417,7 +419,8 @@
       "status": "статус",
       "encoding": "кодування",
       "frames": "кадри",
-      "bytes": "байти"
+      "bytes": "байти",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "Мова",
       "description": "Виберіть мову, на якій буде відображатися інформаційна панель.",
       "languageLabel": "Мова",
-      "saved": "Переважу мови збережено."
+      "saved": "Переважу мови збережено.",
+      "saveError": "Не вдалося зберегти ваші переваги мови. Повернено до попередніх."
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "Збереження…",
         "enable": "Увімкнути",
         "disable": "Відключити"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "Бюджет скидання",
         "systemStartup": "Система запуск",
         "systemShutdown": "Система вимикання",
-        "systemUpdateAvailable": "Система оновлення доступно"
+        "systemUpdateAvailable": "Система оновлення доступно",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Видалити канал",
       "removeChannelConfirm": "Видалити канал?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} дозволів",
         "userCount": "{{count}} користувач",
         "userCount_other": "{{count}} користувачів",
-        "everyone": "Кожен"
+        "everyone": "Кожен",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Не вдалося завантажити"
@@ -831,6 +838,9 @@
         },
         "optional": "(опціонально)",
         "keepCurrentPlaceholder": "Залиште порожнім, щоб зберегти поточне",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "Залиште порожнім, щоб отримувати подієї від всіх маршрутизаторів.",
           "cooldownHeading": "Період охолодження",
           "cooldownSuffix": "секунди (0 без період охолодження)",
-          "cooldownHint": "Мінімальний інтервал перед тим, як цей канал зможе знову спрацювати для тієї ж подієї."
+          "cooldownHint": "Мінімальний інтервал перед тим, як цей канал зможе знову спрацювати для тієї ж подієї.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Одержувачі / Цілі",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "Пошук каналів…",
         "noResults": "Немає результатів",
         "emptyTitle": "Жоден канал сповіщення не налаштований.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Жоден канал не відповідає активним фільтрам.",
         "nameInlinePlaceholder": "Ярлик (опціонально)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "Видалити інтеграцію",
       "saving": "Збереження…",
       "save": "Зберегти",
-      "addButton": "Додати інтеграцію"
+      "addButton": "Додати інтеграцію",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "Остання перевірка"
       },
       "noCheckPerformed": "Жоден чек оновлення не проводився.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Перевірити оновлення",
       "checking": "Перевірка…",
       "updateTo": "Оновити до v{{version}}",
@@ -1121,7 +1137,8 @@
         "checkFailed": "Перевірка не вдалася",
         "updateFailed": "Оновлення не вдалося"
       },
-      "channel": "Канал"
+      "channel": "Канал",
+      "channelNote": "current слідує за кожним новим стабільним релізом; stable зсувається лише під час просування релізу, тож вони можуть відрізнятися."
     },
     "security": {
       "authentication": "Автентифікація",
@@ -1156,6 +1173,8 @@
       "count": "1 маршрутизатор",
       "count_other": "{{count}} маршрутизаторів",
       "newRouter": "Новий маршрутизатор",
+      "newOrchestrator": "Новий оркестратор",
+      "newPassthrough": "Новий passthrough",
       "empty": "Маршрутизаторів немає.",
       "emptyFiltered": "Маршрутизаторів цього типу не знайдено.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "Видалити цей маршрутизатор?",
       "errors": {
         "deleteFailed": "Помилка видалення маршрутизатора"
-      },
-      "newOrchestrator": "Новий оркестратор",
-      "newPassthrough": "Новий passthrough"
+      }
     },
     "layout": {
       "notFound": "Маршрутизатор не знайдено",
@@ -1191,10 +1208,10 @@
       "backToRouters": "Назад до маршрутизаторів",
       "backToRoutersTitle": "Назад до маршрутизаторів",
       "newRouter": "Новий маршрутизатор",
+      "newKind": "Новий {{kind}}",
       "loading": "Завантаження...",
       "routerId": "ID маршрутизатора:",
-      "saveFirstHint": "Спочатку збережіть маршрутизатор, щоб розблокувати цю вкладку",
-      "newKind": "Новий {{kind}}"
+      "saveFirstHint": "Спочатку збережіть маршрутизатор, щоб розблокувати цю вкладку"
     },
     "dashboard": {
       "period": "Період",
@@ -1212,7 +1229,9 @@
         "ttft": "Час до першого токена",
         "notMeasured": "не вимірюється на цих викликах",
         "reliability": "Надійність",
-        "errorsAndBlocked": "{{errors}} помилки · {{blocked}} заблоковано"
+        "errorsAndBlocked": "{{errors}} помилки · {{blocked}} заблоковано",
+        "errorsAndBlocked_one": "{{errors}} помилка · {{blocked}} заблоковано",
+        "errorsAndBlocked_other": "{{errors}} помилки · {{blocked}} заблоковано"
       },
       "tokens": {
         "input": "Вхідні токени:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Базова URL <code>{{baseUrl}}</code>, без <code>/v1</code>: SDK додає це.",
         "curl": "curl",
-        "curlHint": "Перевірте дроти без встановлення чого-небудь, потім шукайте виклик в <usageLink>Usage</usageLink>."
+        "curlHint": "Перевірте дроти без встановлення чого-небудь, потім шукайте виклик в <usageLink>Usage</usageLink>.",
+        "passthrough": {
+          "heading": "Як підключитися",
+          "intro": "Passthrough передає кожен запит без змін — використовуйте <strong>ваш власний</strong> ключ постачальника як ключ API, ніколи токен Routerly. Routerly не зберігає та не видає облікові дані для цього маршрутизатора; що б клієнт не надіслав, йде прямо до постачальника.",
+          "noLimits": "Бюджети та обмеження не застосовуються до цього маршрутизатора: вартість Passthrough трафіку невідома, тому ніколи не перевіряється та не враховується для будь-яких обмежень витрат.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — без суфіксу <code>/v1</code>, SDK все ще додає свій власний шлях точно так, як це було б проти справжнього OpenAI API.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK все ще додає <code>/v1/messages</code> сам, точно так, як це було б проти справжнього Anthropic API."
+        }
       },
       "form": {
         "kind": "Тип",
         "kindFixedHint": "Закріплено, коли маршрутизатор створено.",
         "routerName": "Назва маршрутизатора",
         "routerNamePlaceholder": "Моя програма",
+        "passthroughPath": "Шлях",
+        "passthroughPathHint": "Стає частиною URL, яку викликають клієнти: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Передові параметри",
         "ttftTimeout": "Тайм-аут TTFT (мс)",
         "ttftTimeoutHint": "Якщо модель не надсилає перший байт відповіді протягом цього часу, Routerly перериває це та пробує наступного кандидата. Не обмежує загальну тривалість відповіді. Встановіть це на 0, щоб чекати, скільки постачальник приймає.",
         "traceContent": "Вміст трасування",
         "traceContentHint": "Трасування завжди записує метадані (моделі, оцінки, токени, вартість, затримка). Вмикайте це, щоб також записати надіслані підказки та отримані відповіді. Вони зберігаються з записом використання та видимі для всіх, хто може читати звіти.",
         "capturePromptsAndAnswers": "Захопіть підказки та відповіді",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Зберегти зміни",
         "createRouter": "Створити маршрутизатор",
-        "passthroughPath": "Шлях",
-        "passthroughPathHint": "Стає частиною URL, яку викликають клієнти: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Створити оркестратор",
         "createPassthrough": "Створити passthrough"
       }
@@ -1384,6 +1414,7 @@
       "saving": "Збереження...",
       "saved": "Збережено",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Попередній перегляд заощадження токенів",
         "description": "Запустіть поточний (незбережений) конвеєр над підказкою, щоб побачити, що кожен крок видаляє та що це коштує. Виберіть один з вибірних розмов або введіть власну підказку.",
         "promptLabel": "Підказка",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "Запит ще не надіслано.",
       "turnTraceLog": "Обернути #{{turn}} журнал трасування · {{count}} подія",
       "turnTraceLog_other": "Обернути #{{turn}} журнал трасування · {{count}} подій"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "Моделі",
       "subtitle": "Постачальники LLM, зареєстровані з Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Моделі",
         "health": "Здоров'я"
@@ -2242,7 +2284,8 @@
       "next": "Наступна",
       "page": "Сторінка {{page}} з {{totalPages}}",
       "total": "({{count}} всього)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "Усе",
         "success": "Успішна",
         "blocked": "Заблоковано",
-        "error": "Помилка"
+        "error": "Помилка",
+        "sessionId": "ID сесії",
+        "endUser": "Кінцевий користувач",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Будь-яка сесія",
+        "endUserPlaceholder": "Будь-який кінцевий користувач",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Усе",
@@ -2383,7 +2432,10 @@
         "timestamp": "Часова мітка",
         "guardrailTriggered": "Охоронна система активована",
         "blockedBy": "Заблокована",
-        "piiRedacted": "ПІД редаговано"
+        "piiRedacted": "ПІД редаговано",
+        "sessionId": "ID сесії",
+        "endUser": "Кінцевий користувач",
+        "tags": "Tags"
       },
       "errorMessage": "Повідомлення про помилку",
       "eventCount": "{{count}} подія",
@@ -2457,7 +2509,8 @@
       "show": "Показати налагодження",
       "empty": "Жоден дані налагодження ще.",
       "emptyHint": "Надішліть повідомлення, щоб побачити деталі маршрутизації.",
-      "turnTraceLog": "Обернути #{{turn}} журнал трасування"
+      "turnTraceLog": "Обернути #{{turn}} журнал трасування",
+      "resize": "Змінити розмір панелі налагодження"
     },
     "compare": {
       "modelLabel": "Модель {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "Не вдалось оновити роль",
       "createFailed": "Не вдалось створити роль",
       "deleteFailed": "Не вдалось видалити роль"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "Назад до підключення",
     "title": "Підключити",
     "docs": "Документи",
-    "notEnabledPrefix": "Конфігуратор клієнта не ввімкнений. Попросіть адміністратора ввімкнути його за допомогою",
     "noClientPrefix": "Немає клієнта на ім'я",
     "errors": {
       "loadFailed": "Не вдалось завантажити клієнтів: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "маршрутизує цей трафік моделі клієнта через Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "завантажує Routerly як сервер інструменту всередину нього.",
-    "notEnabledPrefix": "Конфігуратор клієнта не ввімкнений. Попросіть адміністратора ввімкнути його за допомогою",
     "errors": {
       "loadFailed": "Не вдалось завантажити клієнтів: {{error}}"
     },

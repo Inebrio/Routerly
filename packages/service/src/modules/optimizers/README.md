@@ -55,11 +55,18 @@ optimizer registry.
 until the request fits inside the context window of the model the client asked
 for, minus a reserved completion headroom (default 1024 tokens, via the step's
 `threshold`). It never re-summarizes dropped content, that is `ccr`'s job.
+An agent session is a single turn (one user prompt, many tool rounds): when the
+newest turn alone is over budget, its oldest tool rounds (an assistant message
+with its tool results) are dropped too, keeping the opening message and the
+latest round.
 
 The window is resolved from `ctx.request.model` against the effective model
 list, held in a 30-second cache because `supports()` is synchronous and
 `listEffectiveModels()` is not. The first request after boot (or after a
-`resetContextWindowCache()`) sees a cold cache and skips the step once.
+`resetContextWindowCache()`) sees a cold cache and skips the step once. The cache
+is warmed at module registration and refreshed (awaited by the writer) on every
+write of `connections` or `instances`, so a model created through the API is
+honoured from the very next request.
 
 It used to read `ctx.attempt?.model?.contextWindow` instead. `optimizer.apply`
 runs in `request.preprocess`; `ctx.attempt` is assigned two phases later,

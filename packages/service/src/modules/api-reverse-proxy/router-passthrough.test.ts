@@ -31,6 +31,37 @@ async function buildApp(routers: RouterConfig[]) {
 }
 
 describe('routerPassthroughRoutes', () => {
+  it('returns the provider error body on upstream 401 (not empty)', async () => {
+    const errBody = JSON.stringify({ error: { message: 'bad key' } });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response(errBody, { status: 401, headers: { 'content-type': 'application/json' } }),
+    ));
+    const app = await buildApp([plainRouter]);
+    const res = await app.inject({
+      method: 'POST', url: '/passthrough/my-openai/v1/chat/completions',
+      headers: { authorization: 'Bearer bad', 'content-type': 'application/json' },
+      payload: '{"model":"gpt-4o","messages":[]}',
+    });
+    await app.close();
+    expect(res.statusCode).toBe(401);
+    expect(res.body).toBe(errBody);
+  });
+
+  it('streams the provider SSE body when stream:true', async () => {
+    const sse = 'data: {"x":1}\n\ndata: [DONE]\n\n';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response(sse, { status: 200, headers: { 'content-type': 'text/event-stream' } }),
+    ));
+    const app = await buildApp([plainRouter]);
+    const res = await app.inject({
+      method: 'POST', url: '/passthrough/my-openai/v1/chat/completions',
+      headers: { authorization: 'Bearer k', 'content-type': 'application/json' },
+      payload: '{"model":"gpt-4o","stream":true,"messages":[]}',
+    });
+    await app.close();
+    expect(res.body).toBe(sse);
+  });
+
   it('404s when no passthrough router matches the slug', async () => {
     const app = await buildApp([]);
     const res = await app.inject({ method: 'POST', url: '/passthrough/unknown/v1/chat/completions' });
@@ -68,6 +99,7 @@ describe('routerPassthroughRoutes', () => {
     await app.close();
 
     expect(res.statusCode).toBe(200);
+    expect(res.body).toBe(JSON.stringify({ id: 'chatcmpl-1', object: 'chat.completion', choices: [] }));
     expect(mockFetch).toHaveBeenCalledOnce();
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
     expect(url).toBe('https://api.openai.com/v1/chat/completions');

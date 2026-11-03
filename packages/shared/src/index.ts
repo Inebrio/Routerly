@@ -60,7 +60,6 @@ export type {
   UsageRetentionConfig,
   ProviderRepo,
   UpdateChannel,
-  DeprecatedUpdateChannel,
   UpdateChannelSetting,
   NormalizedUpdateChannel,
   NotificationsConfig,
@@ -190,16 +189,16 @@ export { AUTO_MODEL, CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './cl
 
 // Notification event taxonomy (runtime value + derived type)
 export {
-  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, isCompletionCall,
+  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, isCompletionCall, blocksResponseStreaming,
   suggestConnectionLabel, isConnectionLabelTaken, suggestRouterSlug,
 } from './types/config.js';
 export type { NotificationEvent } from './types/config.js';
 export type { PermissionCheckStatus } from './types/config.js';
 
-// Update channel vocabulary: 'latest' | 'current' | 'next', 'stable'/'develop' deprecated aliases (RC-3)
+// Update channel vocabulary: 'latest' | 'current' | 'next' | 'stable' | 'develop'
 export {
-  UPDATE_CHANNELS, DEPRECATED_UPDATE_CHANNELS, normalizeUpdateChannel,
-  updateChannelDeprecationWarning, isValidUpdateChannel, UPDATE_CHANNEL_ERROR,
+  UPDATE_CHANNELS, normalizeUpdateChannel,
+  isValidUpdateChannel, UPDATE_CHANNEL_ERROR, LOG_LEVELS,
 } from './types/config.js';
 
 // Readable catalog for those events: title, category, cause line (T51)

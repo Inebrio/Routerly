@@ -3,6 +3,11 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
+let mockCanAudit = true;
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: (p: string) => (p === 'audit:read' ? mockCanAudit : true) }),
+}));
+
 vi.mock('../api', () => ({
   getAuditLog: vi.fn(),
 }));
@@ -54,6 +59,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  mockCanAudit = true;
   localStorage.clear();
   mockGetAuditLog.mockResolvedValue({
     entries: [],
@@ -366,5 +372,14 @@ describe('AuditPage — pagination', () => {
     await waitFor(() =>
       expect(mockGetAuditLog).toHaveBeenCalledWith(expect.objectContaining({ page: 1, result: 'error' }))
     );
+  });
+});
+
+describe('AuditPage — without audit:read', () => {
+  it('shows the permission message and does not call the audit API', () => {
+    mockCanAudit = false;
+    renderPage();
+    expect(screen.getByText("You don't have permission to view the audit log.")).toBeTruthy();
+    expect(mockGetAuditLog).not.toHaveBeenCalled();
   });
 });

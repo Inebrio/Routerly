@@ -89,6 +89,7 @@ export const semanticIntentPolicy: PolicyFn = async ({
   // The dashboard saves embedding_provider/embedding_model but not apiKey/endpoint.
   // Look them up from models.json so classifyIntent doesn't get a 401.
   let resolvedCfg: SemanticIntentConfig = cfg;
+  let registeredInputCost = 0;
   {
     // routing-adjacent: embedding model must be on an enabled connection
     const allModels = await listEffectiveModels();
@@ -97,8 +98,16 @@ export const semanticIntentPolicy: PolicyFn = async ({
       log?.warn({ embeddingModel: cfg.embedding_model }, 'semantic-intent policy: embedding model not in registry, passing all candidates through');
       return { routing: candidates.map(c => ({ model: c.model.id, point: 1.0 })) };
     }
+    // The registry id is namespaced (`openai/text-embedding-3-small`); the provider wants the upstream name.
+    // upstreamModelId defaults to the registry id when unset, so strip the prefix in that case too.
+    const rawUpstream = modelEntry.upstreamModelId ?? modelEntry.id;
+    const upstreamModel = rawUpstream === modelEntry.id && rawUpstream.includes('/')
+      ? rawUpstream.split('/').slice(1).join('/')
+      : rawUpstream;
+    registeredInputCost = modelEntry.cost?.inputPerMillion ?? 0;
     resolvedCfg = {
       ...cfg,
+      embedding_model: upstreamModel,
       ...(modelEntry.apiKey ? { embedding_api_key: modelEntry.apiKey } : {}),
       ...(modelEntry.endpoint ? { embedding_endpoint: modelEntry.endpoint } : {}),
     };
@@ -115,12 +124,15 @@ export const semanticIntentPolicy: PolicyFn = async ({
     // in the dashboard alongside llm-policy routing calls.
     // The embedding model is not in models.json, so we build a synthetic ModelConfig.
     if (routerId) {
-      const inputPerMillion = await getEmbeddingInputCost(cfg.embedding_provider, cfg.embedding_model);
+      // Registered price first; catalog lookup uses the upstream name (the catalog is not keyed by registry id).
+      const inputPerMillion = registeredInputCost
+        || await getEmbeddingInputCost(cfg.embedding_provider, resolvedCfg.embedding_model);
       await trackUsage({
         routerId,
         model: {
           id: cfg.embedding_model,
           name: cfg.embedding_model,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
           provider: cfg.embedding_provider as any,
           endpoint: resolvedCfg.embedding_endpoint ?? '',
           cost: { inputPerMillion, outputPerMillion: 0 },

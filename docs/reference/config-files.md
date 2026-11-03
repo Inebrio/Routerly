@@ -105,9 +105,9 @@ Global service configuration.
 | `port` | `number` | `3000` | TCP port the service listens on |
 | `host` | `string` | `"0.0.0.0"` | Bind address. Use `127.0.0.1` behind a reverse proxy |
 | `dashboardEnabled` | `boolean` | `true` | Enable or disable the web dashboard |
-| `logLevel` | `string` | `"info"` | Log verbosity: `"error"`, `"warn"`, `"info"`, `"debug"` |
+| `logLevel` | `string` | `"info"` | Log verbosity: `"fatal"`, `"error"`, `"warn"`, `"info"`, `"debug"`, `"trace"` |
 | `publicUrl` | `string` | `"http://localhost:3000"` | Externally reachable URL, used for notification links |
-| `channel` | `string` | `"current"` | Update channel: `"latest"`, `"current"`, `"next"`, or a version tag such as `"v0.2.0"`. `"stable"`/`"develop"` are accepted as deprecated aliases for `"current"`/`"next"`. Controls which GitHub Release the update checker compares against |
+| `channel` | `string` | `"current"` | Update channel: `"latest"`, `"current"`, `"next"`, `"stable"`, `"develop"`, or a version tag such as `"v0.2.0"`. `"stable"` is a permanent channel with its own release pointer; a persisted value is never rewritten. Controls which GitHub Release the update checker compares against |
 | `notifications.channels` | `array` | `[]` | Notification channel objects. Each has `provider`, optional `name`, `id`, `events` (event patterns), `targets` (`{ roles, permissions, users }`), plus provider-specific fields. See [Notifications](../concepts/notifications.md) |
 | `notifications.notificationRules` | `array` | `[]` | Route event patterns to specific channel IDs: `{ events, channels }` |
 | `notifications.cooldowns` | `object` | `{}` | Minimum interval between repeated dispatches per event type (e.g. `"provider.degraded": "15m"`) |
@@ -141,7 +141,7 @@ Array of registered LLM model configurations.
 | `apiKey` | `string` | API key — stored AES-256 encrypted with the value from `secret` |
 | `inputPrice` | `number` | Cost per 1,000 input tokens in USD |
 | `outputPrice` | `number` | Cost per 1,000 output tokens in USD |
-| `cachePrice` | `number` | Cost per 1,000 cached/read tokens in USD (optional) |
+| `cachePrice` | `number` | Cost per 1,000 cached/read tokens in USD (optional). If omitted, cache reads are billed at `inputPrice` (the service logs a one-time warning) |
 | `contextWindow` | `number` | Maximum context window in tokens |
 | `capabilities` | `string[]` | Supported capabilities: `"chat"`, `"vision"`, `"tools"`, `"json_mode"` |
 | `pricingTiers` | `array` | Volume-based pricing tiers (optional) |
@@ -187,7 +187,7 @@ Array of Router configurations: routers, Orchestrators, and Passthrough Routers 
 | `id` | `string` | Internal Router ID (UUID) |
 | `name` | `string` | Human-readable Router name |
 | `kind` | `string` | `"router"` \| `"orchestrator"` \| `"passthrough"`. Absent means `"router"` (every Router stored before this field existed) |
-| `timeoutMs` | `number` | Time-to-first-token timeout per model attempt, in milliseconds. Default `2000`; `0` disables it |
+| `timeoutMs` | `number` | Time-to-first-token timeout per model attempt, streaming requests only, in milliseconds. Default `2000`; `0` disables it. Non-streaming calls are capped by the model `timeout` (default `60000`) |
 | `policies` | `RoutingPolicy[]` | Routing policies in priority order (each `{ type, ...params }`); see [Concepts: Routing](../concepts/routing.md) |
 | `models` | `array` | Target models: `{ modelId, prompt? }` |
 | `candidates` | `array` | Only on `kind: "orchestrator"`: `{ routerId, limits? }` — other Routers this one forwards to, in priority order (index 0 = highest); no `weight` field |
@@ -289,7 +289,7 @@ Records the last `system.update_available` alert the update checker raised, so t
 {
   "announcedVersion": "0.5.0",
   "currentVersion": "0.4.0",
-  "channel": "stable",
+  "channel": "current",
   "announcedAt": "2026-08-04T10:00:00.000Z"
 }
 ```

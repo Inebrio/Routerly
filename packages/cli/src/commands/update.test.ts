@@ -98,6 +98,30 @@ describe('routerly update check', () => {
     expect(lines.some(l => l.includes('up to date'))).toBe(true);
   });
 
+  it.each([
+    [{ ...upToDateInfo, status: 'disabled', latestVersion: '' }, 'disabled'],
+    [{ ...upToDateInfo, status: 'error', error: 'GitHub API returned 403', latestVersion: '' }, 'GitHub API returned 403'],
+  ])('exits 1 with the reason on stderr when status is not ok (%#)', async (info, text) => {
+    mockApi.mockResolvedValue(info);
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('check')).rejects.toThrow('exit');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errSpy.mock.calls.map(c => c.join(' ')).join('\n')).toContain(text);
+    exitSpy.mockRestore();
+    errSpy.mockRestore();
+  });
+
+  it('--json passes the status through', async () => {
+    mockApi.mockResolvedValue({ ...upToDateInfo, status: 'disabled' });
+    const { lines, spy } = captureConsole();
+    await run('check', '--json');
+    spy.mockRestore();
+    expect(JSON.parse(lines.join('\n')).status).toBe('disabled');
+  });
+
   it('prints update available message when newer version exists', async () => {
     mockApi.mockResolvedValue(updateAvailableInfo);
     const { lines, spy } = captureConsole();
@@ -146,17 +170,19 @@ describe('routerly update check', () => {
 // ── update channel ─────────────────────────────────────────────────────────
 
 describe('routerly update channel', () => {
-  it('help text lists only latest, current, next and version tags — not stable/develop as primary', () => {
+  it('help text lists the five real channels and version tags', () => {
     const cmd = makeUpdateCommand();
     const channelCmd = cmd.commands.find(c => c.name() === 'channel')!;
     const helpText = channelCmd.helpInformation();
 
-    expect(helpText).toContain('latest | current | next | vX.Y.Z');
-    expect(helpText).not.toMatch(/latest \| stable \| develop/);
+    expect(helpText.replace(/\s+/g, ' ')).toContain('latest | current | next | stable | develop | vX.Y.Z');
   });
 
-  it('shows the canonical channel name and warns on stderr when the stored value is a deprecated alias', async () => {
-    mockApi.mockResolvedValue({ channel: 'stable' });
+  it('shows a stored stable channel as selected, with the version each channel points to', async () => {
+    mockApi.mockImplementation(async (_m: string, path: string) =>
+      path === '/api/system/releases'
+        ? { channelVersions: { current: '0.6.1', stable: '0.6.0', develop: '0.7.0-dev.1' } }
+        : { channel: 'stable' });
     const { lines, spy } = captureConsole();
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -164,12 +190,10 @@ describe('routerly update channel', () => {
 
     spy.mockRestore();
     expect(mockApi).toHaveBeenCalledWith('GET', '/api/settings');
-    expect(lines.some(l => l.includes('current'))).toBe(true);
-    expect(lines.some(l => l.includes('"stable"'))).toBe(false);
-    expect(errorSpy).toHaveBeenCalledTimes(1);
-    expect(errorSpy.mock.calls[0]![0]).toBe(
-      'Update channel "stable" was renamed to "current". "stable" still works but is deprecated and will be removed in a future release; switch to "current".'
-    );
+    expect(lines.some(l => /stable\s+v0\.6\.0.*selected/.test(l))).toBe(true);
+    expect(lines.some(l => /current\s+v0\.6\.1/.test(l))).toBe(true);
+    expect(lines.some(l => /next\s+.*unavailable/.test(l))).toBe(true);
+    expect(errorSpy).not.toHaveBeenCalled();
     errorSpy.mockRestore();
   });
 
@@ -200,8 +224,8 @@ describe('routerly update channel', () => {
     errorSpy.mockRestore();
   });
 
-  it('setting a deprecated alias writes exactly one deprecation line to stderr before the PUT, still exits 0, and updates the channel', async () => {
-    mockApi.mockResolvedValue({ channel: 'current' });
+  it('sets "develop" as its own real channel with no deprecation warning (RMT-2 AC3)', async () => {
+    mockApi.mockResolvedValue({ channel: 'develop' });
     const { lines, spy } = captureConsole();
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -209,12 +233,31 @@ describe('routerly update channel', () => {
 
     spy.mockRestore();
     expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', { channel: 'develop' });
-    expect(errorSpy).toHaveBeenCalledTimes(1);
-    expect(errorSpy.mock.calls[0]![0]).toBe(
-      'Update channel "develop" was renamed to "next". "develop" still works but is deprecated and will be removed in a future release; switch to "next".'
-    );
-    expect(lines.some(l => l.includes('current'))).toBe(true);
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(lines.some(l => l.includes('develop'))).toBe(true);
     errorSpy.mockRestore();
+  });
+
+  it('sets "stable" as its own channel', async () => {
+    mockApi.mockResolvedValue({ channel: 'stable' });
+    const { spy } = captureConsole();
+    await run('channel', 'stable');
+    spy.mockRestore();
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', { channel: 'stable' });
+  });
+
+  it('surfaces the service\'s ApiError for an invalid channel on stderr with exit 1', async () => {
+    mockApi.mockRejectedValueOnce(new ApiError(400, 'Invalid channel. Accepted values: latest, current, next, stable, develop, or a version tag such as v0.4.0.'));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('channel', 'bogus')).rejects.toThrow('exit');
+
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', { channel: 'bogus' });
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errorSpy.mock.calls.some(c => String(c[0]).includes('Invalid channel'))).toBe(true);
+    errorSpy.mockRestore();
+    exitSpy.mockRestore();
   });
 
   it('accepts a specific version tag as channel name with empty stderr', async () => {

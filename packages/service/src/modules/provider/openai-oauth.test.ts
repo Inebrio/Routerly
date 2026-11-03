@@ -10,7 +10,13 @@ import type { ChatCompletionRequest, ModelConfig, ProviderConnection } from '@ro
 import { readConfig, writeConfig, getOrCreateSecret } from '../config/loader.js';
 import { loadCredentialKey, encryptCredential, decryptCredential } from '../../lib/crypto-cred.js';
 
-const create = vi.hoisted(() => vi.fn());
+const create = vi.hoisted(() => {
+  // The adapter calls create(...).withResponse(); mirror the SDK's APIPromise.
+  const f = vi.fn();
+  f.mockResolvedValue = ((v: unknown) =>
+    f.mockReturnValue(Object.assign(Promise.resolve(v), { withResponse: async () => ({ data: v, response: { headers: new Headers() } }) }))) as typeof f.mockResolvedValue;
+  return f;
+});
 
 vi.mock('openai', () => {
   class OpenAIMock {
@@ -266,17 +272,6 @@ describe('resolveOpenAIOAuthCredential', () => {
     expect(token).toBe('static-legacy-token');
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mockWriteConfig).not.toHaveBeenCalled();
-  });
-
-  it('refuses to run when the provider-oauth module is disabled', async () => {
-    mockReadConfig.mockImplementation(async (type: string) => {
-      if (type === 'modules') return [{ id: 'provider-oauth', enabled: false }];
-      return [];
-    });
-    const connection = makeConnection();
-    await expect(resolveOpenAIOAuthCredential(connection)).rejects.toThrow(
-      "'provider-oauth' module is disabled",
-    );
   });
 });
 

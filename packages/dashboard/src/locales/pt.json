@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Idioma",
+      "saveError": "Não foi possível guardar o seu idioma. Revertido para o anterior."
+    },
     "sidebar": {
       "expand": "Expandir barra lateral",
       "collapse": "Recolher barra lateral"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Alguns ficheiros de configuração têm acesso permissivo ({{files}}). O arranque e os pedidos continuam a funcionar. Corrija isto em Definições → Segurança, ou a partir do sistema de ficheiros do anfitrião quando for conveniente.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Descartar",
       "updateAvailable": "Routerly v{{latest}} está disponível. Tem v{{current}}.",
       "updateLink": "Atualizar em Definições",
@@ -40,9 +45,6 @@
       "telemetryLink": "O que é enviado?",
       "telemetryYes": "Sim, ajudar",
       "telemetryNo": "Não, obrigado"
-    },
-    "language": {
-      "label": "Idioma"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "Token de Sessão",
       "awsSessionTokenOptionalHint": "(opcional, para credenciais temporárias)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "ID do Router GCP",
-      "gcpRouterIdPlaceholder": "meu-router-gcp",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Localização",
       "gcpLocationDefaultHint": "(padrão: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "Token de Acesso",
         "sessionTokenLabel": "Token de Sessão",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Cole o valor do cookie sessionKey (sk-ant-sid01-…)",
-        "openaiInstructions": "Enquanto autenticado em ChatGPT, abra <code>https://chatgpt.com/api/auth/session</code> num novo separador. Copie o valor do campo <code>accessToken</code> (começa com <code>eyJ</code>). O token expira cada ~24 horas. Para acesso confiável, também preencha o campo <strong>cf_clearance</strong> abaixo.",
-        "anthropicInstructions": "<strong>Como obter sua chave de sessão:</strong> Enquanto autenticado em Claude, abra DevTools (F12) → Aplicação → Cookies → <code>claude.ai</code> → copie o valor do cookie <code>sessionKey</code> (começa com <code>sk-ant-sid01-</code>). A chave permanece válida até fazer logout."
+        "sessionTokenPlaceholder": "Cole o valor do cookie sessionKey (sk-ant-sid…)",
+        "openaiInstructions": "Enquanto autenticado em ChatGPT, abra <code>https://chatgpt.com/api/auth/session</code> num novo separador. Copie o valor do campo <code>accessToken</code> (começa com <code>eyJ</code>). O token é válido durante cerca de 10 dias; cole um novo quando o teste começar a falhar com 401. Para acesso confiável, também preencha o campo <strong>cf_clearance</strong> abaixo.",
+        "anthropicInstructions": "<strong>Como obter a sua chave de sessão:</strong> Com a sessão iniciada em <code>https://claude.ai</code>, prima F12 para abrir o DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Copie o <strong>Value</strong> do cookie <code>sessionKey</code> (começa por <code>sk-ant-sid</code>, por exemplo <code>sk-ant-sid02-</code>). É um cookie HttpOnly, pelo que não é visível na consola da página. Mantém-se válida até terminar a sessão ou expirar; cole uma nova se o teste começar a falhar."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Token OAuth de Subscrição",
@@ -417,7 +419,8 @@
       "status": "estado",
       "encoding": "codificação",
       "frames": "quadros",
-      "bytes": "bytes"
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "Idioma",
       "description": "Escolha o idioma em que o painel está apresentado.",
       "languageLabel": "Idioma",
-      "saved": "Preferência de idioma guardada."
+      "saved": "Preferência de idioma guardada.",
+      "saveError": "Não foi possível guardar a sua preferência de idioma. Revertido para a anterior."
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "A guardar…",
         "enable": "Ativar",
         "disable": "Desativar"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "Orçamento – Reiniciar",
         "systemStartup": "Sistema – Início",
         "systemShutdown": "Sistema – Encerramento",
-        "systemUpdateAvailable": "Sistema – Atualização Disponível"
+        "systemUpdateAvailable": "Sistema – Atualização Disponível",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Remover canal",
       "removeChannelConfirm": "Remover canal?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} utilizador",
         "userCount_other": "{{count}} utilizadores",
-        "everyone": "Todos"
+        "everyone": "Todos",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Falha ao carregar"
@@ -831,6 +838,9 @@
         },
         "optional": "(opcional)",
         "keepCurrentPlaceholder": "Deixar em branco para manter atual",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "Deixe vazio para receber eventos de todos os routers.",
           "cooldownHeading": "Arrefecimento",
           "cooldownSuffix": "segundos (0 = sem arrefecimento)",
-          "cooldownHint": "Intervalo mínimo antes deste canal poder disparar novamente para o mesmo evento."
+          "cooldownHint": "Intervalo mínimo antes deste canal poder disparar novamente para o mesmo evento.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Destinatários / Destinos",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "Pesquisar canais…",
         "noResults": "Sem resultados",
         "emptyTitle": "Nenhum canal de notificação configurado ainda.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Nenhum canal corresponde aos filtros ativos.",
         "nameInlinePlaceholder": "Rótulo (opcional)",
         "columns": {
@@ -968,7 +981,7 @@
         },
         "otel": {
           "label": "OpenTelemetry",
-          "description": "push — OTLP HTTP"
+          "description": "envio — OTLP HTTP"
         },
         "datadog": {
           "label": "Datadog",
@@ -976,7 +989,7 @@
         },
         "grafana": {
           "label": "Grafana Cloud",
-          "description": "push — remote_write"
+          "description": "envio — remote_write"
         },
         "influxdb": {
           "label": "InfluxDB",
@@ -984,7 +997,7 @@
         },
         "webhook": {
           "label": "Webhook",
-          "description": "push — HTTP POST JSON"
+          "description": "envio — HTTP POST JSON"
         }
       },
       "traces": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "Remover integração",
       "saving": "A guardar…",
       "save": "Guardar",
-      "addButton": "Adicionar Integração"
+      "addButton": "Adicionar Integração",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "Última verificação"
       },
       "noCheckPerformed": "Nenhuma verificação de atualização realizada ainda.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Verificar atualizações",
       "checking": "A verificar…",
       "updateTo": "Atualizar para v{{version}}",
@@ -1121,7 +1137,8 @@
         "checkFailed": "Verificação falhou",
         "updateFailed": "Atualização falhou"
       },
-      "channel": "Canal"
+      "channel": "Canal",
+      "channelNote": "current acompanha cada nova versão estável; stable só muda quando uma versão é promovida, pelo que os dois podem divergir."
     },
     "security": {
       "authentication": "Autenticação",
@@ -1156,6 +1173,8 @@
       "count": "1 router",
       "count_other": "{{count}} routers",
       "newRouter": "Novo Router",
+      "newOrchestrator": "Novo Orquestrador",
+      "newPassthrough": "Novo Passthrough",
       "empty": "Nenhum router ainda.",
       "emptyFiltered": "Nenhum roteador deste tipo.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "Eliminar este router?",
       "errors": {
         "deleteFailed": "Erro ao eliminar router"
-      },
-      "newOrchestrator": "Novo Orquestrador",
-      "newPassthrough": "Novo Passthrough"
+      }
     },
     "layout": {
       "notFound": "Router não encontrado",
@@ -1191,10 +1208,10 @@
       "backToRouters": "Voltar aos Routers",
       "backToRoutersTitle": "Voltar aos routers",
       "newRouter": "Novo Router",
+      "newKind": "Novo {{kind}}",
       "loading": "A carregar...",
       "routerId": "ID do Router:",
-      "saveFirstHint": "Guarde o router primeiro para desbloquear este separador",
-      "newKind": "Novo {{kind}}"
+      "saveFirstHint": "Guarde o router primeiro para desbloquear este separador"
     },
     "dashboard": {
       "period": "Período",
@@ -1212,7 +1229,9 @@
         "ttft": "Tempo até primeiro token",
         "notMeasured": "não medido nessas chamadas",
         "reliability": "Confiabilidade",
-        "errorsAndBlocked": "{{errors}} erros · {{blocked}} bloqueados"
+        "errorsAndBlocked": "{{errors}} erros · {{blocked}} bloqueados",
+        "errorsAndBlocked_one": "{{errors}} erro · {{blocked}} bloqueados",
+        "errorsAndBlocked_other": "{{errors}} erros · {{blocked}} bloqueados"
       },
       "tokens": {
         "input": "Tokens de entrada:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "SDK Anthropic",
         "anthropicBaseUrlHint": "URL base <code>{{baseUrl}}</code>, sem o <code>/v1</code>: o SDK adiciona-o.",
         "curl": "curl",
-        "curlHint": "Verifique a fiação sem instalar nada, depois procure a chamada em <usageLink>Utilização</usageLink>."
+        "curlHint": "Verifique a fiação sem instalar nada, depois procure a chamada em <usageLink>Utilização</usageLink>.",
+        "passthrough": {
+          "heading": "Como ligar",
+          "intro": "Passthrough encaminha cada pedido sem modificações — use <strong>a sua própria</strong> chave do fornecedor upstream como a chave da API, nunca um token Routerly. Routerly não armazena nem emite uma credencial para este roteador; tudo o que o cliente envia vai direto para o fornecedor.",
+          "noLimits": "Orçamentos e limites não se aplicam a este roteador: o custo do tráfego Passthrough é desconhecido, portanto nunca é verificado nem contado para nenhum limite de despesa.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "URL base <code>{{url}}</code> — sem sufixo <code>/v1</code>, o SDK ainda acrescenta o seu próprio caminho exatamente como faria com a API OpenAI real.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "URL base <code>{{url}}</code> — o SDK ainda acrescenta <code>/v1/messages</code> em si, exatamente como faria com a API Anthropic real."
+        }
       },
       "form": {
         "kind": "Tipo",
         "kindFixedHint": "Fixo uma vez o router é criado.",
         "routerName": "Nome do Router",
         "routerNamePlaceholder": "Minha Aplicação",
+        "passthroughPath": "Caminho",
+        "passthroughPathHint": "Torna-se parte da URL chamada pelos clientes: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Definições avançadas",
         "ttftTimeout": "Tempo limite TTFT (ms)",
         "ttftTimeoutHint": "Se um modelo não enviar o primeiro byte de resposta dentro deste tempo, Routerly aborta-o e tenta o próximo candidato. Não limita a duração total da resposta. Defina para 0 para esperar o tempo que o fornecedor levar.",
         "traceContent": "Conteúdo do rastreamento",
         "traceContentHint": "Os rastreamentos sempre registam metadados (modelos, pontuações, tokens, custo, latência). Ative isto também para registar os prompts enviados e as respostas recebidas. Armazenam-se com o registo de utilização e são visíveis para qualquer um que possa ler relatórios.",
         "capturePromptsAndAnswers": "Capturar prompts e respostas",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Guardar Alterações",
         "createRouter": "Criar Router",
-        "passthroughPath": "Caminho",
-        "passthroughPathHint": "Torna-se parte da URL chamada pelos clientes: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Criar Orquestrador",
         "createPassthrough": "Criar Passthrough"
       }
@@ -1384,6 +1414,7 @@
       "saving": "A guardar...",
       "saved": "Guardado",
       "preview": {
+        "pipeline": "Pipeline executado: {{name}}",
         "title": "Pré-visualizar economias de token",
         "description": "Execute o oleoduto atual (não guardado) sobre um prompt para ver o que cada passo remove e o que custa. Escolha uma das conversas de amostra, ou escreva o seu próprio prompt.",
         "promptLabel": "Prompt",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "Nenhum pedido enviado ainda.",
       "turnTraceLog": "Registo de rastreamento turno #{{turn}} · {{count}} evento",
       "turnTraceLog_other": "Registo de rastreamento turno #{{turn}} · {{count}} eventos"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "Modelos",
       "subtitle": "Fornecedores de LLM registados em Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modelos",
         "health": "Saúde"
@@ -2242,7 +2284,8 @@
       "next": "Seguinte",
       "page": "Página {{page}} de {{totalPages}}",
       "total": "({{count}} total)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "Todos",
         "success": "Sucesso",
         "blocked": "Bloqueado",
-        "error": "Erro"
+        "error": "Erro",
+        "sessionId": "ID da sessão",
+        "endUser": "Utilizador final",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Qualquer sessão",
+        "endUserPlaceholder": "Qualquer utilizador final",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Todos",
@@ -2383,7 +2432,10 @@
         "timestamp": "Carimbo de Data/Hora",
         "guardrailTriggered": "Proteção Acionada",
         "blockedBy": "Bloqueado Por",
-        "piiRedacted": "PII Editada"
+        "piiRedacted": "PII Editada",
+        "sessionId": "ID da sessão",
+        "endUser": "Utilizador final",
+        "tags": "Tags"
       },
       "errorMessage": "Mensagem de Erro",
       "eventCount": "{{count}} evento",
@@ -2457,7 +2509,8 @@
       "show": "Mostrar depuração",
       "empty": "Nenhum dado de depuração ainda.",
       "emptyHint": "Envie uma mensagem para ver detalhes de encaminhamento.",
-      "turnTraceLog": "Registo de rastreamento turno #{{turn}}"
+      "turnTraceLog": "Registo de rastreamento turno #{{turn}}",
+      "resize": "Redimensionar o painel de depuração"
     },
     "compare": {
       "modelLabel": "Modelo {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "Falha ao atualizar função",
       "createFailed": "Falha ao criar função",
       "deleteFailed": "Falha ao eliminar função"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2665,7 +2719,7 @@
       "newProfileTitle": "Novo Perfil {{kind}}",
       "editProfileTitle": "Editar {{label}}",
       "builtinHint": "Os perfis pré-integrados não podem ser editados. Clone um para personalizá-lo.",
-      "assignHint": "Um perfil {{kind}} pode ser atribuído a qualquer número de routers.",
+      "assignHint": "Um perfil {{article}} {{kind}} pode ser atribuído a qualquer número de roteadores.",
       "noPermission": "Não tem permissão para ver perfis.",
       "label": "Rótulo",
       "optimizers": "Otimizadores",
@@ -2690,7 +2744,6 @@
     "backToConnect": "Voltar a Conectar",
     "title": "Conectar",
     "docs": "Docs",
-    "notEnabledPrefix": "O configurador de cliente não está ativado. Peça a um admin para ativá-lo com",
     "noClientPrefix": "Nenhum cliente nomeado",
     "errors": {
       "loadFailed": "Falha ao carregar clientes: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "encaminha o tráfego do modelo desse cliente através de Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "carrega Routerly como servidor de ferramenta dentro dele.",
-    "notEnabledPrefix": "O configurador de cliente não está ativado. Peça a um admin para ativá-lo com",
     "errors": {
       "loadFailed": "Falha ao carregar clientes: {{error}}"
     },

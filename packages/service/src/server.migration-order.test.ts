@@ -8,7 +8,7 @@ import { CONFIG_PATHS } from './lib/paths.js'
 //
 // server.test.ts mocks './modules/config/loader.js' and './modules/config/
 // migrate.js' entirely, so it never exercises the actual race between
-// pruneOrphanUsage()'s incidental readConfig('routers') and
+// the startup's incidental readConfig('routers') and
 // migrateRouterStorage()'s "does routers.json already exist?" idempotency
 // check. This file deliberately does NOT mock either module: it seeds a real
 // legacy config/projects.json (17 entities, matching the validator's
@@ -31,7 +31,7 @@ vi.mock('./modules/api/api.js', () => ({ apiRoutes: vi.fn(async () => {}) }))
 vi.mock('./modules/telemetry/telemetry.js', () => ({ pingTelemetry: vi.fn().mockResolvedValue(true) }))
 vi.mock('./modules/notifications/emitter.js', () => ({ emitEvent: vi.fn(async () => {}) }))
 vi.mock('./modules/update-checker/update-checker.js', () => ({
-  updateChecker: { start: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
+  updateChecker: { start: vi.fn(), configure: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
 
 import { startServer } from './server.js'

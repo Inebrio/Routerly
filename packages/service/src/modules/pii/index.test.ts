@@ -107,4 +107,24 @@ describe('pii module', () => {
     expect(emit).toHaveBeenCalledTimes(1)
     expect(emit.mock.calls[0]![0]).toMatchObject({ message: 'pii:evaluated', details: { redacted: [], counts: {} } })
   })
+  it('scrubs Anthropic Messages JSON text blocks', async () => {
+    const emit = vi.fn()
+    const proc = await processor('pii.output')
+    const body = { type: 'message', content: [{ type: 'text', text: 'reply to a@b.com' }, { type: 'tool_use', input: { x: 'c@d.com' } }] }
+    const ctx = ctxOf({ protocol: 'anthropic', result: { kind: 'json', body } } as unknown as Partial<ProxyContext>, emit)
+    await proc.run(ctx)
+    expect(body.content[0]).toEqual({ type: 'text', text: 'reply to [EMAIL]' })
+    expect(emit.mock.calls[1]![0]).toMatchObject({ message: 'pii:scrubbed', details: { entities: ['EMAIL'] } })
+  })
+
+  it('wraps the Anthropic-lane stream so split entities are scrubbed', async () => {
+    const proc = await processor('pii.output')
+    const chunk = (content: string, finish_reason: string | null = null) => ({ choices: [{ index: 0, delta: { content }, finish_reason }] })
+    async function* src() { yield chunk('mail a@'); yield chunk('b.com now', 'stop') }
+    const ctx = ctxOf({ protocol: 'anthropic', result: { kind: 'stream', body: src() } } as unknown as Partial<ProxyContext>, vi.fn())
+    await proc.run(ctx)
+    let out = ''
+    for await (const c of ctx.result!.body as AsyncIterable<any>) out += c.choices[0].delta.content ?? ''
+    expect(out).toBe('mail [EMAIL] now')
+  })
 })

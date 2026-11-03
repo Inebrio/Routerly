@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Bahasa",
+      "saveError": "Tidak dapat menyimpan bahasa Anda. Dikembalikan ke yang sebelumnya."
+    },
     "sidebar": {
       "expand": "Perluas bilah samping",
       "collapse": "Ciutkan bilah samping"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Beberapa file konfigurasi memiliki akses permissif ({{files}}). Startup dan permintaan masih berfungsi. Perbaiki dari Pengaturan → Keamanan, atau dari filesystem host saat diperlukan.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Tutup",
       "updateAvailable": "Routerly v{{latest}} tersedia. Anda menggunakan v{{current}}.",
       "updateLink": "Perbarui di Pengaturan",
@@ -40,9 +45,6 @@
       "telemetryLink": "Apa yang dikirim?",
       "telemetryYes": "Ya, bantu kami",
       "telemetryNo": "Tidak, terima kasih"
-    },
-    "language": {
-      "label": "Bahasa"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "Token Sesi",
       "awsSessionTokenOptionalHint": "(opsional, untuk kredensial sementara)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "ID Router GCP",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Lokasi",
       "gcpLocationDefaultHint": "(default: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "Token Akses",
         "sessionTokenLabel": "Token Sesi",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Tempel nilai cookie sessionKey (sk-ant-sid01-…)",
-        "openaiInstructions": "Saat login ke ChatGPT, buka <code>https://chatgpt.com/api/auth/session</code> di tab baru. Salin nilai bidang <code>accessToken</code> (dimulai dengan <code>eyJ</code>). Token berakhir setiap ~24 jam. Untuk akses yang andal, isi juga bidang <strong>cf_clearance</strong> di bawah.",
-        "anthropicInstructions": "<strong>Cara mendapatkan kunci sesi Anda:</strong> Saat login ke Claude, buka DevTools (F12) → Application → Cookies → <code>claude.ai</code> → salin nilai cookie <code>sessionKey</code> (dimulai dengan <code>sk-ant-sid01-</code>). Kunci tetap valid sampai Anda logout."
+        "sessionTokenPlaceholder": "Tempel nilai cookie sessionKey (sk-ant-sid…)",
+        "openaiInstructions": "Saat login ke ChatGPT, buka <code>https://chatgpt.com/api/auth/session</code> di tab baru. Salin nilai bidang <code>accessToken</code> (dimulai dengan <code>eyJ</code>). Token berlaku sekitar 10 hari; tempel yang baru saat Test mulai gagal dengan 401. Untuk akses yang andal, isi juga bidang <strong>cf_clearance</strong> di bawah.",
+        "anthropicInstructions": "<strong>Cara mendapatkan session key Anda:</strong> Saat masuk ke <code>https://claude.ai</code>, tekan F12 untuk membuka DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Salin <strong>Value</strong> dari cookie <code>sessionKey</code> (diawali <code>sk-ant-sid</code>, misalnya <code>sk-ant-sid02-</code>). Ini adalah cookie HttpOnly, sehingga tidak terlihat dari konsol halaman. Key tetap valid hingga Anda keluar atau kedaluwarsa; tempel yang baru jika Tes mulai gagal."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Token OAuth Langganan",
@@ -417,7 +419,8 @@
       "status": "status",
       "encoding": "encoding",
       "frames": "frame",
-      "bytes": "byte"
+      "bytes": "byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "Bahasa",
       "description": "Pilih bahasa yang ditampilkan dashboard.",
       "languageLabel": "Bahasa",
-      "saved": "Preferensi bahasa disimpan."
+      "saved": "Preferensi bahasa disimpan.",
+      "saveError": "Tidak dapat menyimpan preferensi bahasa Anda. Dikembalikan ke yang sebelumnya."
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "Menyimpan…",
         "enable": "Aktifkan",
         "disable": "Nonaktifkan"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "Anggaran – Reset",
         "systemStartup": "Sistem – Startup",
         "systemShutdown": "Sistem – Shutdown",
-        "systemUpdateAvailable": "Sistem – Pembaruan Tersedia"
+        "systemUpdateAvailable": "Sistem – Pembaruan Tersedia",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Hapus saluran",
       "removeChannelConfirm": "Hapus saluran?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} izin",
         "userCount": "{{count}} pengguna",
         "userCount_other": "{{count}} pengguna",
-        "everyone": "Semua orang"
+        "everyone": "Semua orang",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Gagal memuat"
@@ -831,6 +838,9 @@
         },
         "optional": "(opsional)",
         "keepCurrentPlaceholder": "Biarkan kosong untuk menyimpan yang ada",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "Biarkan kosong untuk menerima acara dari semua router.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "detik (0 = tidak ada cooldown)",
-          "cooldownHint": "Interval minimum sebelum saluran ini dapat diaktifkan lagi untuk acara yang sama."
+          "cooldownHint": "Interval minimum sebelum saluran ini dapat diaktifkan lagi untuk acara yang sama.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Penerima / Target",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "Cari saluran…",
         "noResults": "Tidak ada hasil",
         "emptyTitle": "Belum ada saluran notifikasi yang dikonfigurasi.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Tidak ada saluran yang cocok dengan filter aktif.",
         "nameInlinePlaceholder": "Label (opsional)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "Hapus integrasi",
       "saving": "Menyimpan…",
       "save": "Simpan",
-      "addButton": "Tambah Integrasi"
+      "addButton": "Tambah Integrasi",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "Terakhir diperiksa"
       },
       "noCheckPerformed": "Belum ada pemeriksaan pembaruan yang dilakukan.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Periksa pembaruan",
       "checking": "Memeriksa…",
       "updateTo": "Perbarui ke v{{version}}",
@@ -1121,7 +1137,8 @@
         "checkFailed": "Pemeriksaan gagal",
         "updateFailed": "Pembaruan gagal"
       },
-      "channel": "Saluran"
+      "channel": "Saluran",
+      "channelNote": "current mengikuti setiap rilis stabil baru; stable hanya berpindah saat sebuah rilis dipromosikan, sehingga keduanya bisa berbeda."
     },
     "security": {
       "authentication": "Autentikasi",
@@ -1145,7 +1162,7 @@
       "catalog": "Katalog Penyedia",
       "users": "Pengguna",
       "roles": "Peran",
-      "audit": "Audit Log",
+      "audit": "Log Audit",
       "about": "Tentang"
     }
   },
@@ -1156,6 +1173,8 @@
       "count": "1 router",
       "count_other": "{{count}} router",
       "newRouter": "Router Baru",
+      "newOrchestrator": "Orchestrator Baru",
+      "newPassthrough": "Passthrough Baru",
       "empty": "Belum ada router.",
       "emptyFiltered": "Tidak ada router jenis ini.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "Hapus router ini?",
       "errors": {
         "deleteFailed": "Kesalahan menghapus router"
-      },
-      "newOrchestrator": "Orchestrator Baru",
-      "newPassthrough": "Passthrough Baru"
+      }
     },
     "layout": {
       "notFound": "Router tidak ditemukan",
@@ -1191,10 +1208,10 @@
       "backToRouters": "Kembali ke Router",
       "backToRoutersTitle": "Kembali ke router",
       "newRouter": "Router Baru",
+      "newKind": "{{kind}} Baru",
       "loading": "Memuat...",
       "routerId": "ID Router:",
-      "saveFirstHint": "Simpan router terlebih dahulu untuk membuka kunci tab ini",
-      "newKind": "{{kind}} Baru"
+      "saveFirstHint": "Simpan router terlebih dahulu untuk membuka kunci tab ini"
     },
     "dashboard": {
       "period": "Periode",
@@ -1212,7 +1229,9 @@
         "ttft": "Waktu ke token pertama",
         "notMeasured": "tidak diukur pada panggilan ini",
         "reliability": "Keandalan",
-        "errorsAndBlocked": "{{errors}} kesalahan · {{blocked}} diblokir"
+        "errorsAndBlocked": "{{errors}} kesalahan · {{blocked}} diblokir",
+        "errorsAndBlocked_one": "{{errors}} kesalahan · {{blocked}} diblokir",
+        "errorsAndBlocked_other": "{{errors}} kesalahan · {{blocked}} diblokir"
       },
       "tokens": {
         "input": "Token input:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "SDK Anthropic",
         "anthropicBaseUrlHint": "URL dasar <code>{{baseUrl}}</code>, tanpa <code>/v1</code>: SDK menambahkannya.",
         "curl": "curl",
-        "curlHint": "Periksa pengawatan tanpa memasang apa pun, lalu cari panggilan di <usageLink>Penggunaan</usageLink>."
+        "curlHint": "Periksa pengawatan tanpa memasang apa pun, lalu cari panggilan di <usageLink>Penggunaan</usageLink>.",
+        "passthrough": {
+          "heading": "Cara menghubungkan",
+          "intro": "Passthrough meneruskan setiap permintaan tanpa diubah — gunakan <strong>kunci penyedia hulu Anda sendiri</strong> sebagai kunci API, jangan pernah token Routerly. Routerly tidak menyimpan atau mengeluarkan kredensial untuk router ini; apa pun yang dikirim klien langsung ke penyedia.",
+          "noLimits": "Anggaran dan batas tidak berlaku untuk router ini: biaya lalu lintas Passthrough tidak diketahui, sehingga tidak pernah diperiksa atau diperhitungkan terhadap batas pengeluaran apa pun.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "URL dasar <code>{{url}}</code> — tidak ada akhiran <code>/v1</code>, SDK masih menambahkan jalurnya sendiri persis seperti yang dilakukan terhadap API OpenAI asli.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "URL dasar <code>{{url}}</code> — SDK masih menambahkan <code>/v1/messages</code> itu sendiri, persis seperti yang dilakukan terhadap API Anthropic asli."
+        }
       },
       "form": {
         "kind": "Jenis",
         "kindFixedHint": "Tetap setelah router dibuat.",
         "routerName": "Nama Router",
         "routerNamePlaceholder": "Aplikasi Saya",
+        "passthroughPath": "Jalur",
+        "passthroughPathHint": "Menjadi bagian dari URL yang dipanggil klien: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Pengaturan lanjutan",
         "ttftTimeout": "TTFT Timeout (ms)",
         "ttftTimeoutHint": "Jika model tidak mengirim byte respons pertama dalam waktu ini, Routerly membatalkannya dan mencoba kandidat berikutnya. Tidak membatasi durasi respons total. Tetapkan ke 0 untuk menunggu penyedia selama yang diperlukan.",
         "traceContent": "Jejak konten",
         "traceContentHint": "Jejak selalu merekam metadata (model, skor, token, biaya, latensi). Aktifkan ini untuk juga merekam prompt yang dikirim dan jawaban yang diterima. Mereka disimpan dengan catatan penggunaan dan terlihat oleh siapa pun yang dapat membaca laporan.",
         "capturePromptsAndAnswers": "Ambil prompt dan jawaban",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Simpan Perubahan",
         "createRouter": "Buat Router",
-        "passthroughPath": "Jalur",
-        "passthroughPathHint": "Menjadi bagian dari URL yang dipanggil klien: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Buat Orchestrator",
         "createPassthrough": "Buat Passthrough"
       }
@@ -1384,6 +1414,7 @@
       "saving": "Menyimpan...",
       "saved": "Disimpan",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Pratinjau penghematan token",
         "description": "Jalankan pipeline saat ini (belum disimpan) di prompt untuk melihat apa yang setiap langkah hapus dan biayanya. Pilih salah satu percakapan sampel, atau ketik prompt Anda sendiri.",
         "promptLabel": "Prompt",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "Belum ada permintaan yang dikirim.",
       "turnTraceLog": "Putar #{{turn}} log jejak · {{count}} acara",
       "turnTraceLog_other": "Putar #{{turn}} log jejak · {{count}} acara"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "Model",
       "subtitle": "Penyedia LLM terdaftar dengan Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Model",
         "health": "Kesehatan"
@@ -2242,7 +2284,8 @@
       "next": "Berikutnya",
       "page": "Halaman {{page}} dari {{totalPages}}",
       "total": "({{count}} total)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "Semua",
         "success": "Sukses",
         "blocked": "Diblokir",
-        "error": "Kesalahan"
+        "error": "Kesalahan",
+        "sessionId": "ID sesi",
+        "endUser": "Pengguna akhir",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Sesi apa pun",
+        "endUserPlaceholder": "Pengguna akhir mana pun",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Semua",
@@ -2383,7 +2432,10 @@
         "timestamp": "Timestamp",
         "guardrailTriggered": "Penjaga Dipicu",
         "blockedBy": "Diblokir Oleh",
-        "piiRedacted": "PII Diredaksi"
+        "piiRedacted": "PII Diredaksi",
+        "sessionId": "ID sesi",
+        "endUser": "Pengguna akhir",
+        "tags": "Tags"
       },
       "errorMessage": "Pesan Kesalahan",
       "eventCount": "{{count}} acara",
@@ -2457,7 +2509,8 @@
       "show": "Tampilkan debug",
       "empty": "Belum ada data debug.",
       "emptyHint": "Kirim pesan untuk melihat detail routing.",
-      "turnTraceLog": "Putar #{{turn}} log jejak"
+      "turnTraceLog": "Putar #{{turn}} log jejak",
+      "resize": "Ubah ukuran panel debug"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "Gagal memperbarui peran",
       "createFailed": "Gagal membuat peran",
       "deleteFailed": "Gagal menghapus peran"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "Kembali ke Hubungkan",
     "title": "Hubungkan",
     "docs": "Dokumentasi",
-    "notEnabledPrefix": "Pengkonfigurasi klien tidak diaktifkan. Minta admin untuk mengaktifkannya dengan",
     "noClientPrefix": "Tidak ada klien bernama",
     "errors": {
       "loadFailed": "Gagal memuat klien: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "mengarahkan traffic model klien itu melalui Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "memuat Routerly sebagai server alat di dalamnya.",
-    "notEnabledPrefix": "Pengkonfigurasi klien tidak diaktifkan. Minta admin untuk mengaktifkannya dengan",
     "errors": {
       "loadFailed": "Gagal memuat klien: {{error}}"
     },

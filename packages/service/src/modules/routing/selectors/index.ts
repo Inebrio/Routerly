@@ -1,7 +1,7 @@
 import type { RoutingCandidate } from '@routerly/shared';
 import type { SelectorType } from '@routerly/shared';
 import { nextCursor } from '../routingMemoryStore.js';
-import type { ScoredCandidate, SelectorContext, SelectorFn } from './types.js';
+import type { ScoredCandidate, SelectorFn } from './types.js';
 
 const TIED_TOLERANCE = 0.0001;
 

@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Some configuration files have permissive access ({{files}}). Startup and requests still work. Fix it from Settings → Security, or on the host filesystem when convenient.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Dismiss",
       "updateAvailable": "Routerly v{{latest}} is available. You are on v{{current}}.",
       "updateLink": "Update in Settings",
@@ -170,6 +171,7 @@
       "title": "Routing Policies",
       "subtitle": "Policies determine how requests are routed. They are executed in order from top to bottom.",
       "removePolicy": "Remove policy",
+      "disabledBadge": "Disabled",
       "removeIntent": "Remove intent",
       "removeExample": "Remove example",
       "routingModels": "Routing Models",
@@ -242,7 +244,7 @@
       "onTopicThresholdLabel": "Block if on-topic score below:",
       "harmThresholdLabel": "Block if harm score above:",
       "customInstructionsLabel": "Custom instructions",
-      "customInstructionsPlaceholder": "You are a content safety classifier. Evaluate the following text for harmful content.\nCategories: hate speech, violence, sexual content, self-harm.\nRespond ONLY with a JSON object: {\"score\": <number between 0 and 1>}",
+      "customInstructionsPlaceholder": "Write the policy in plain words, e.g. Do not talk about English cinema. The judge rates how strongly the text violates it; injected, the serving model is told to follow it.",
       "customInstructionsRequired": "Custom instructions are required.",
       "enabledLabel": "Enabled",
       "contentGuardrailsHint": "Inspect requests and responses against configured rules. Active when at least one rule is configured.",
@@ -276,8 +278,8 @@
       "awsSessionTokenLabel": "Session Token",
       "awsSessionTokenOptionalHint": "(optional, for temporary credentials)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "GCP Router ID",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Location",
       "gcpLocationDefaultHint": "(default: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -291,9 +293,9 @@
         "accessTokenLabel": "Access Token",
         "sessionTokenLabel": "Session Token",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Paste sessionKey cookie value (sk-ant-sid01-…)",
-        "openaiInstructions": "While logged in to ChatGPT, open <code>https://chatgpt.com/api/auth/session</code> in a new tab. Copy the value of the <code>accessToken</code> field (starts with <code>eyJ</code>). The token expires every ~24 hours. For reliable access, also fill in the <strong>cf_clearance</strong> field below.",
-        "anthropicInstructions": "<strong>How to get your session key:</strong> While logged in to Claude, open DevTools (F12) → Application → Cookies → <code>claude.ai</code> → copy the value of the <code>sessionKey</code> cookie (starts with <code>sk-ant-sid01-</code>). The key stays valid until you log out."
+        "sessionTokenPlaceholder": "Paste sessionKey cookie value (sk-ant-sid…)",
+        "openaiInstructions": "While logged in to ChatGPT, open <code>https://chatgpt.com/api/auth/session</code> in a new tab. Copy the value of the <code>accessToken</code> field (starts with <code>eyJ</code>). The token is valid for about 10 days; paste a new one when the Test starts failing with 401. For reliable access, also fill in the <strong>cf_clearance</strong> field below.",
+        "anthropicInstructions": "<strong>How to get your session key:</strong> While logged in to <code>https://claude.ai</code>, press F12 to open DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Copy the <strong>Value</strong> of the <code>sessionKey</code> cookie (starts with <code>sk-ant-sid</code>, for example <code>sk-ant-sid02-</code>). It is an HttpOnly cookie, so it is not visible from the page console. It stays valid until you log out or it expires; paste a new one if the Test starts failing."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Subscription OAuth Token",
@@ -418,7 +420,8 @@
       "status": "status",
       "encoding": "encoding",
       "frames": "frames",
-      "bytes": "bytes"
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +681,8 @@
         "saving": "Saving…",
         "enable": "Enable",
         "disable": "Disable"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +749,8 @@
         "budgetReset": "Budget – Reset",
         "systemStartup": "System – Startup",
         "systemShutdown": "System – Shutdown",
-        "systemUpdateAvailable": "System – Update Available"
+        "systemUpdateAvailable": "System – Update Available",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Remove channel",
       "removeChannelConfirm": "Remove channel?",
@@ -794,7 +799,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} user",
         "userCount_other": "{{count}} users",
-        "everyone": "Everyone"
+        "everyone": "Everyone",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Failed to load"
@@ -833,6 +839,9 @@
         },
         "optional": "(optional)",
         "keepCurrentPlaceholder": "Leave blank to keep current",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +867,9 @@
           "routersHint": "Leave empty to receive events from all routers.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "seconds (0 = no cooldown)",
-          "cooldownHint": "Minimum interval before this channel can fire again for the same event."
+          "cooldownHint": "Minimum interval before this channel can fire again for the same event.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Recipients / Targets",
@@ -897,6 +908,7 @@
         "addSearchPlaceholder": "Search channels…",
         "noResults": "No results",
         "emptyTitle": "No notification channels configured yet.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "No channels match the active filters.",
         "nameInlinePlaceholder": "Label (optional)",
         "columns": {
@@ -1055,7 +1067,8 @@
       "removeTooltip": "Remove integration",
       "saving": "Saving…",
       "save": "Save",
-      "addButton": "Add Integration"
+      "addButton": "Add Integration",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1123,8 @@
         "lastChecked": "Last checked"
       },
       "noCheckPerformed": "No update check performed yet.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Check for updates",
       "checking": "Checking…",
       "updateTo": "Update to v{{version}}",
@@ -1123,7 +1138,8 @@
         "checkFailed": "Check failed",
         "updateFailed": "Update failed"
       },
-      "channel": "Channel"
+      "channel": "Channel",
+      "channelNote": "current follows every new stable release; stable moves only when a release is promoted, so the two can differ."
     },
     "security": {
       "authentication": "Authentication",
@@ -1188,7 +1204,8 @@
         "security": "Security",
         "token": "Token",
         "users": "Users",
-        "logs": "Logs"
+        "logs": "Logs",
+        "test": "Test"
       },
       "backToRouters": "Back to Routers",
       "backToRoutersTitle": "Back to routers",
@@ -1214,7 +1231,9 @@
         "ttft": "Time to first token",
         "notMeasured": "not measured on these calls",
         "reliability": "Reliability",
-        "errorsAndBlocked": "{{errors}} errors · {{blocked}} blocked"
+        "errorsAndBlocked": "{{errors}} errors · {{blocked}} blocked",
+        "errorsAndBlocked_one": "{{errors}} error · {{blocked}} blocked",
+        "errorsAndBlocked_other": "{{errors}} errors · {{blocked}} blocked"
       },
       "tokens": {
         "input": "Input tokens:",
@@ -1313,6 +1332,8 @@
         "traceContent": "Trace content",
         "traceContentHint": "Traces always record metadata (models, scores, tokens, cost, latency). Turn this on to also record the prompts sent and the answers received. They are stored with the usage record and visible to anyone who can read reports.",
         "capturePromptsAndAnswers": "Capture prompts and answers",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Save Changes",
         "createRouter": "Create Router",
         "createOrchestrator": "Create Orchestrator",
@@ -1324,7 +1345,7 @@
       "candidateRouters": "Candidate Routers",
       "candidateRoutersHint": "The routers this Orchestrator forwards requests to. Weight influences how often each candidate is picked; only its name, id, weight and optional per-candidate limits are shown here.",
       "routingPolicies": "Routing Policies",
-      "routingPoliciesHint": "An Orchestrator scores each candidate Router as a whole, so only health, rate limit and fairness policies apply here. The other policy types pick among a router's own models, which an Orchestrator has none of.",
+      "routingPoliciesHint": "An Orchestrator scores each candidate Router as a whole, so only health, rate limit, fairness, performance and budget remaining policies apply here. The other policy types pick among a router's own models, which an Orchestrator has none of.",
       "router": "Router",
       "selectRouter": "Select router",
       "weight": "Weight",
@@ -1356,7 +1377,7 @@
         "customMode": "Custom",
         "routingProfile": "Routing Profile",
         "builtinSuffix": "(built-in)",
-        "profileHint": "Policies come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
+        "profileHint": "Policies come from the profile and follow its changes. Edit them on the Profiles page, or use “Copy into custom” in the Custom view to start from a copy of them.",
         "saved": "Saved!",
         "saveRoutingConfiguration": "Save Routing Configuration"
       },
@@ -1386,7 +1407,7 @@
       "profileSelect": {
         "ariaLabel": "Optimizer Profile",
         "builtinLabel": "{{label}} (built-in)",
-        "hint": "Steps come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
+        "hint": "Steps come from the profile and follow its changes. Edit them on the Profiles page, or use “Copy into custom” in the Custom view to start from a copy of them.",
         "disabledSuffix": "(disabled)",
         "thresholdSuffix": ", threshold {{threshold}}"
       },
@@ -1395,6 +1416,7 @@
       "saving": "Saving...",
       "saved": "Saved",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Preview token savings",
         "description": "Run the current (unsaved) pipeline over a prompt to see what each step removes and what it costs. Pick one of the sample conversations, or type your own prompt.",
         "promptLabel": "Prompt",
@@ -1631,7 +1653,7 @@
       "profileSelect": {
         "ariaLabel": "Security Profile",
         "builtinLabel": "{{label}} (built-in)",
-        "hint": "Guardrails and PII policies come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
+        "hint": "Guardrails and PII policies come from the profile and follow its changes. Edit them on the Profiles page, or use “Copy into custom” in the Custom view to start from a copy of them.",
         "blockingSuffix": ", blocking",
         "disabledSuffix": ", disabled",
         "piiRedaction": "PII redaction ({{target}})"
@@ -1672,6 +1694,16 @@
       "noRequestSent": "No request sent yet.",
       "turnTraceLog": "Turn #{{turn}} trace log · {{count}} event",
       "turnTraceLog_other": "Turn #{{turn}} trace log · {{count}} events"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1885,7 +1917,9 @@
         "cacheWritePerMillion": "Cache write $/1M",
         "optional": "(opt.)",
         "contextWindow": "Context Window",
-        "contextWindowHint": "(tokens, optional)"
+        "contextWindowHint": "(tokens, optional)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Advanced — Pricing tiers",
@@ -1915,6 +1949,7 @@
     "page": {
       "title": "Models",
       "subtitle": "LLM providers registered with Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Models",
         "health": "Health"
@@ -2253,7 +2288,8 @@
       "next": "Next",
       "page": "Page {{page}} of {{totalPages}}",
       "total": "({{count}} total)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2291,7 +2327,13 @@
         "all": "All",
         "success": "Success",
         "blocked": "Blocked",
-        "error": "Error"
+        "error": "Error",
+        "sessionId": "Session ID",
+        "endUser": "End user",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Any session",
+        "endUserPlaceholder": "Any end user",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "All",
@@ -2394,7 +2436,10 @@
         "timestamp": "Timestamp",
         "guardrailTriggered": "Guardrail Triggered",
         "blockedBy": "Blocked By",
-        "piiRedacted": "PII Redacted"
+        "piiRedacted": "PII Redacted",
+        "sessionId": "Session ID",
+        "endUser": "End user",
+        "tags": "Tags"
       },
       "errorMessage": "Error Message",
       "eventCount": "{{count}} event",
@@ -2468,7 +2513,8 @@
       "show": "Show debug",
       "empty": "No debug data yet.",
       "emptyHint": "Send a message to see routing details.",
-      "turnTraceLog": "Turn #{{turn}} trace log"
+      "turnTraceLog": "Turn #{{turn}} trace log",
+      "resize": "Resize debug panel"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2639,7 +2685,8 @@
       "updateFailed": "Failed to update role",
       "createFailed": "Failed to create role",
       "deleteFailed": "Failed to delete role"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2701,7 +2748,6 @@
     "backToConnect": "Back to Connect",
     "title": "Connect",
     "docs": "Docs",
-    "notEnabledPrefix": "Client configurator is not enabled. Ask an admin to enable it with",
     "noClientPrefix": "No client named",
     "errors": {
       "loadFailed": "Failed to load clients: {{error}}"
@@ -2746,7 +2792,6 @@
     "llmDescription": "routes that client model traffic through Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "loads Routerly as a tool server inside it.",
-    "notEnabledPrefix": "Client configurator is not enabled. Ask an admin to enable it with",
     "errors": {
       "loadFailed": "Failed to load clients: {{error}}"
     },

@@ -4,6 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { NotificationChannelCreatePage } from './NotificationChannelCreatePage';
 
+const authState = vi.hoisted(() => ({ allowed: true }));
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: () => authState.allowed }),
+}));
+
 vi.mock('../api', () => ({
   createNotificationChannel: vi.fn(),
   getRoles: vi.fn(),
@@ -282,5 +287,17 @@ describe('NotificationChannelCreatePage — provider-specific defaults', () => {
     await waitFor(() => screen.getByText('Slack'));
     await userEvent.click(screen.getByText('Slack'));
     await waitFor(() => expect(screen.getByRole('button', { name: /Create Channel/ })).toBeTruthy());
+  });
+});
+
+describe('NotificationChannelCreatePage — without notification:write', () => {
+  afterEach(() => { authState.allowed = true; });
+
+  it('shows only the permission message, no provider picker, no fetch', () => {
+    authState.allowed = false;
+    render(<MemoryRouter><NotificationChannelCreatePage /></MemoryRouter>);
+    expect(screen.getByText(/permission to view notification channels/i)).toBeInTheDocument();
+    expect(screen.queryByText('SMTP')).toBeNull();
+    expect(mockGetRoles).not.toHaveBeenCalled();
   });
 });

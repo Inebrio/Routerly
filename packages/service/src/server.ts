@@ -9,15 +9,17 @@ import { loadSecret } from './modules/auth/jwt.js';
 import { loadCredentialKey } from './lib/crypto-cred.js';
 import { openaiRoutes } from './modules/api-reverse-proxy/openai.js';
 import { anthropicRoutes } from './modules/api-reverse-proxy/anthropic.js';
+import { passthroughHandler } from './modules/api-reverse-proxy/passthrough.js';
 import { routerPassthroughRoutes } from './modules/api-reverse-proxy/router-passthrough.js';
 import { mcpHttpRoutes } from './modules/mcp/http.js';
 import { apiRoutes } from './modules/api/api.js';
 import { metricsRoutes } from './modules/observability/metrics.js';
-import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
-import { migrateRouterStorage, migrateUsageToNdjson } from './modules/config/migrate.js';
+import { initConfigDirs, readConfig, writeConfig, effectivePort } from './modules/config/loader.js';
+import { migrateRouterStorage, migrateUsageToNdjson, reenableModules } from './modules/config/migrate.js';
 import { enforceStartupGuard } from './modules/config/permission-guard.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
+import { protocolError, protocolForUrl } from './lib/protocol-errors.js';
 import { bootstrap } from './bootstrap/index.js';
 import type { Kernel } from './core/index.js';
 
@@ -34,13 +36,20 @@ declare module 'fastify' {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
 
+// `routerly mcp serve` runs the service as a stdio MCP server: stdout is the
+// JSON-RPC channel, so nothing else may write to it and no port may be bound
+// (the regular service is usually already listening on the same host).
+const isMcpStdio = () => process.env['ROUTERLY_MCP_STDIO'] === '1';
+
 export async function buildServer() {
   const settings = await readConfig('settings');
 
   const fastify = Fastify({
     logger: {
       level: settings.logLevel,
-      ...(process.env['NODE_ENV'] !== 'production'
+      ...(isMcpStdio()
+        ? { stream: process.stderr }
+        : process.env['NODE_ENV'] !== 'production'
         ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
         : {}),
     },
@@ -64,6 +73,15 @@ export async function buildServer() {
 
   // ─── Plugins ─────────────────────────────────────────────────────────────────
   await fastify.register(cors, { origin: true });
+  // Non-browser SDK calls on the proxy lanes (no Origin header) get the provider's
+  // headers back unaltered: drop the `Vary: Origin` the CORS plugin would add.
+  fastify.addHook('onSend', async (req, reply) => {
+    const proxied = (req.method === 'POST' && req.url.startsWith('/v1/')) || req.url.startsWith('/passthrough/');
+    if (proxied && !req.headers.origin
+        && String(reply.getHeader('vary')).toLowerCase() === 'origin') {
+      reply.removeHeader('vary');
+    }
+  });
 
   // ─── Dashboard static files (served before auth plugin) ───────────────────
   if (settings.dashboardEnabled) {
@@ -93,8 +111,22 @@ export async function buildServer() {
   // ─── Dashboard REST API (auth handled inside the plugin) ─────────────────
   await fastify.register(apiRoutes);
 
+  // /v1/* errors that never reach a route (malformed JSON, oversized body, ...) get the
+  // provider-shaped body instead of Fastify's default; everything else keeps default handling.
+  fastify.setErrorHandler(async (err, req, reply) => {
+    const status = (err as { statusCode?: number }).statusCode;
+    if (!req.url.startsWith('/v1/') || !status || status < 400 || status >= 500) throw err;
+    return reply.status(status).send(protocolError(protocolForUrl(req.url), status, (err as Error).message));
+  });
+
   // ─── LLM Proxy auth (only for /v1/* routes) ───────────────────────────────
   await fastify.register(authPlugin);
+
+  // ─── Catch-all: unmatched paths are forwarded to the router's provider ───
+  // Raw bytes in so non-JSON bodies (files, audio) reach the upstream verbatim.
+  // Encapsulated plugins (passthrough routers, dashboard) keep their own parsers/404 handlers.
+  fastify.addContentTypeParser('*', { parseAs: 'buffer' }, (_req, body, done) => done(null, body));
+  fastify.setNotFoundHandler(passthroughHandler);
 
   // ─── LLM Proxy routes ────────────────────────────────────────────────────
   await fastify.register(openaiRoutes);
@@ -125,6 +157,7 @@ export async function buildServer() {
 }
 
 export async function startServer() {
+  if (isMcpStdio()) console.log = console.error;
   await initConfigDirs();
 
   // Permission guard runs first, before anything else reads or writes a
@@ -144,7 +177,7 @@ export async function startServer() {
   // iteration 2, finding B2.
   const storageMigrated = await migrateRouterStorage();
   if (storageMigrated !== undefined) {
-    // eslint-disable-next-line no-console
+     
     console.log(`[startup] migrated ${storageMigrated} router(s) from projects.json to routers.json`);
   }
 
@@ -155,8 +188,13 @@ export async function startServer() {
   // .claude/specs/0.4.1/03-validation/RTR-06.md, finding B1.
   const migratedUsage = await migrateUsageToNdjson();
   if (migratedUsage > 0) {
-    // eslint-disable-next-line no-console
+     
     console.log(`[startup] migrated ${migratedUsage} usage record(s) from usage.json to usage.ndjson`);
+  }
+
+  const reenabled = await reenableModules();
+  if (reenabled.length > 0) {
+    process.stdout.write(`[startup] re-enabled ${reenabled.length} module(s): ${reenabled.join(', ')} (all modules are always active)\n`);
   }
 
   await loadSecret();
@@ -181,26 +219,12 @@ export async function startServer() {
     }
   }
 
-  // migrateRouterStorage() already ran above, before anything could touch
-  // CONFIG_PATHS.routers. pruneOrphanUsage() (called below) reads
-  // 'routers' too, and readConfig auto-creates an empty routers.json on
-  // first touch — if that ran before migrateRouterStorage(), the migration's
-  // own idempotency check ("does routers.json already exist?") would see
-  // that accidental empty file and skip the real migration, silently
-  // dropping every pre-existing router (and every not-yet-renamed usage
-  // record, which pruneOrphanUsage would then read as an orphan and
-  // delete). Keeping pruneOrphanUsage() after buildServer() (and therefore
-  // after the migration above) preserves that ordering.
   const server = await buildServer();
 
-  const orphansRemoved = await pruneOrphanUsage();
-  if (orphansRemoved > 0) {
-    // eslint-disable-next-line no-console
-    console.log(`[startup] pruned ${orphansRemoved} orphan usage record(s) (no matching router)`);
-  }
+  if (isMcpStdio()) return;
 
   try {
-    await server.listen({ port: settings.port, host: settings.host });
+    await server.listen({ port: effectivePort(settings), host: settings.host });
     // The 60s integration push is started by the observability module (kernel start).
     // Skipped outside production by default: a dev checkout's package.json version
     // is never bumped by semantic-release on develop/main (see docs/contributing/
@@ -208,6 +232,7 @@ export async function startServer() {
     // cut — comparing it would flag the instance actively building that release as
     // "outdated". ROUTERLY_FORCE_UPDATE_CHECK opts back in for testing the checker itself.
     const updateCheckWanted = process.env['NODE_ENV'] === 'production' || process.env['ROUTERLY_FORCE_UPDATE_CHECK'] === 'true';
+    updateChecker.configure(pkgVersion, settings.channel ?? 'latest');
     if (updateCheckWanted && process.env['ROUTERLY_DISABLE_UPDATE_CHECK'] !== 'true') {
       updateChecker.start(pkgVersion, settings.channel ?? 'latest');
     }

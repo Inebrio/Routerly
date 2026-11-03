@@ -33,7 +33,7 @@ function applyDirection(code: string) {
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, can } = useAuth();
   const [language, setLanguageState] = useState<string>(() => savedLanguage(user?.language) ?? detectBrowserLanguage() ?? 'en');
   const [saving, setSaving] = useState(false);
 
@@ -50,7 +50,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         if (saved) setLanguageState(saved);
       })
       .catch(/* v8 ignore next */ () => { /* not logged in / unreachable — fall back stays */ });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   // Fallback tier: no personal pick and the browser locale isn't one we ship a
@@ -59,7 +59,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (savedLanguage(user?.language) || detectBrowserLanguage()) return;
     const token = localStorage.getItem('lr_token');
-    if (!token) return;
+    if (!token || !can('settings:read')) return;
     getSettings()
       .then(settings => {
         const code = settings.defaultLanguage;
@@ -68,8 +68,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(/* v8 ignore next */ () => { /* no settings:read or unreachable — 'en' stays */ });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+     
+  }, [user?.id]);
 
   useEffect(() => {
     const saved = savedLanguage(user?.language);

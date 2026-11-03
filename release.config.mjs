@@ -1,8 +1,14 @@
 export default {
-  branches: ['main', { name: 'develop', channel: 'next' }],
+  branches: ['main', { name: 'next', channel: 'next' }, { name: 'develop', channel: 'develop' }],
   tagFormat: 'v${version}',
   plugins: [
-    ['@semantic-release/commit-analyzer', { preset: 'conventionalcommits' }],
+    ['@semantic-release/commit-analyzer', {
+      preset: 'conventionalcommits',
+      // While the major is 0 a BREAKING CHANGE bumps minor (0.5.x -> 0.6.0),
+      // not major: 1.0.0 is a deliberate decision. Remove this rule when
+      // the project goes 1.0.
+      releaseRules: [{ breaking: true, release: 'minor' }],
+    }],
     ['@semantic-release/release-notes-generator', {
       preset: 'conventionalcommits',
       presetConfig: {

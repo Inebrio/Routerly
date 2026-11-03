@@ -584,7 +584,7 @@ describe('BedrockAdapter streamCompletion — uncovered branches', () => {
         ],
       } as any,
       baseModel,
-    )) {}
+    )) { /* drain */ }
 
     expect(capturedBody['system']).toBeDefined();
   });
@@ -603,7 +603,7 @@ describe('BedrockAdapter streamCompletion — uncovered branches', () => {
       // no system_prompt field → system is undefined/falsy
       { messages: [{ role: 'user', content: 'Hi' }] } as any,
       baseModel,
-    )) {}
+    )) { /* drain */ }
 
     expect(capturedBody['system']).toBeUndefined();
   });
@@ -621,7 +621,7 @@ describe('BedrockAdapter streamCompletion — uncovered branches', () => {
     for await (const _ of adapter.streamCompletion(
       { messages: [{ role: 'user', content: 'Hi' }], max_completion_tokens: 0, max_tokens: 0 } as any,
       baseModel,
-    )) {}
+    )) { /* drain */ }
 
     expect(capturedBody['inferenceConfig']).toBeUndefined();
   });
@@ -634,7 +634,7 @@ describe('BedrockAdapter streamCompletion — uncovered branches', () => {
       for await (const _ of adapter.streamCompletion(
         { messages: [{ role: 'user', content: 'Hi' }] } as any,
         baseModel,
-      )) {}
+      )) { /* drain */ }
     }).rejects.toThrow('Bedrock stream: response body is null');
   });
 

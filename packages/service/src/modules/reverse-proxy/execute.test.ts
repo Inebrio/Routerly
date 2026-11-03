@@ -115,6 +115,15 @@ describe('llmChat', () => {
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ errorMessage: 'budget_exceeded' }))
   })
 
+  it('tracks outcome timeout when the SDK request timeout fires', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const timeoutErr = Object.assign(new Error('Request timed out.'), { name: 'APIConnectionTimeoutError' })
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(timeoutErr) } as any)
+
+    await expect(llmChat({ messages: [] } as any, makeModel(), makeCtx())).rejects.toThrow('Request timed out.')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'timeout' }))
+  })
+
   it('throws and tracks error when chatCompletion fails', async () => {
     mockIsAllowed.mockResolvedValue(true)
     const mockAdapter = { chatCompletion: vi.fn().mockRejectedValue(new Error('provider down')) }
@@ -287,6 +296,27 @@ async function* makeStream(...chunks: any[]) {
 }
 
 describe('llmStream', () => {
+  it('injectUsage:false forwards the body untouched and estimates usage', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const sc = vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'hello world!' } }] }))
+    mockGetProvider.mockReturnValue({ streamCompletion: sc } as any)
+    const req = { messages: [{ role: 'user', content: 'hi' }] } as any
+    const result = await llmStream(req, makeModel(), makeCtx(), { injectUsage: false })
+    for await (const _ of result.chunks) { /* consume */ }
+    expect(sc.mock.calls[0]![0]).toBe(req)
+    expect(sc.mock.calls[0]![0]).not.toHaveProperty('stream_options')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'success', inputTokens: expect.any(Number), outputTokens: 3 }))
+    expect(mockTrackUsage.mock.calls.at(-1)![0].inputTokens).toBeGreaterThan(0)
+  })
+
+  it('injects stream_options by default', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const sc = vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'x' } }] }))
+    mockGetProvider.mockReturnValue({ streamCompletion: sc } as any)
+    await llmStream({ messages: [] } as any, makeModel(), makeCtx())
+    expect(sc.mock.calls[0]![0].stream_options).toEqual({ include_usage: true })
+  })
+
   it('returns ttftMs and yields chunks', async () => {
     mockIsAllowed.mockResolvedValue(true)
     const chunk = { choices: [{ delta: { content: 'hi' } }] }
@@ -343,6 +373,15 @@ describe('llmStream', () => {
     const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
     for await (const _ of result.chunks) { /* consume */ }
     expect(emitted.some(e => e.message === 'model:thinking')).toBe(true)
+  })
+
+  it('records optimizerStats on the stream usage record', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'x' } }] })) } as any)
+    const optimizerStats = [{ id: 'headroom', tokensBefore: 20485, tokensAfter: 6835 }]
+    const result = await llmStream({ messages: [] } as any, makeModel(), makeCtx({ optimizerStats } as any))
+    for await (const _ of result.chunks) { /* consume */ }
+    expect(mockTrackUsage.mock.calls.at(-1)![0].optimizerStats).toEqual(optimizerStats)
   })
 
   it('captures usage from stream chunk', async () => {
@@ -425,6 +464,22 @@ describe('llmStream', () => {
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'timeout' }))
 
     resolveNever!()
+  })
+
+  it('web providers get a TTFT floor above the router timeout (ROUT-466)', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({
+      streamCompletion: vi.fn().mockReturnValue({
+        [Symbol.asyncIterator]: () => ({
+          next: () => new Promise(r => setTimeout(() => r({ value: { id: 'x', choices: [] }, done: false }), 150)),
+          return: vi.fn().mockResolvedValue({ value: undefined as any, done: true }),
+        }),
+      }),
+    } as any)
+
+    const ctxWithTimeout = makeCtx({ router: { ...makeRouter(), timeoutMs: 50 } })
+    const result = await llmStream({ messages: [] } as any, { ...makeModel(), provider: 'openai-web' } as any, ctxWithTimeout)
+    expect(typeof result.ttftMs).toBe('number')
   })
 })
 
@@ -832,7 +887,7 @@ describe('llmStream — additional branches', () => {
       tags: { source: 'api' },
     })
     const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
-    for await (const _ of result.chunks) {}
+    for await (const _ of result.chunks) { /* drain */ }
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({
       endUserId: 'user-stream',
       sessionId: 'session-stream',
@@ -878,7 +933,7 @@ describe('llmStream — additional branches', () => {
     }
     mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(rateLimit()) } as any)
     const result = await llmStream({ messages: [] } as any, makeModel(), makeCtx())
-    await expect(async () => { for await (const _ of result.chunks) {} }).rejects.toThrow('rate limit exceeded')
+    await expect(async () => { for await (const _ of result.chunks) { /* drain */ } }).rejects.toThrow('rate limit exceeded')
     expect(mockEmitEvent).toHaveBeenCalledWith('provider.rate_limited', expect.any(String), expect.any(Object), expect.any(Object))
   })
 
@@ -893,7 +948,7 @@ describe('llmStream — additional branches', () => {
     const emitted: any[] = []
     const ctx = makeCtx({ emit: (e: any) => emitted.push(e) })
     const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
-    for await (const _ of result.chunks) {}
+    for await (const _ of result.chunks) { /* drain */ }
     const successEntry = emitted.find(e => e.message === 'model:success')
     expect(successEntry?.details?.cachedInputTokens).toBe(3)
   })
@@ -1205,7 +1260,7 @@ describe('llmStream — .catch(() => {}) coverage for emitEvent rejections', () 
     }
     mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(failMid()) } as any)
     const result = await llmStream({ messages: [] } as any, model, makeCtx())
-    await expect(async () => { for await (const _ of result.chunks) {} }).rejects.toThrow('mid fail')
+    await expect(async () => { for await (const _ of result.chunks) { /* drain */ } }).rejects.toThrow('mid fail')
     mockEmitEvent.mockResolvedValue(undefined)
   })
 
@@ -1215,7 +1270,7 @@ describe('llmStream — .catch(() => {}) coverage for emitEvent rejections', () 
     mockIsAllowed.mockResolvedValue(true)
     mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'ok' } }] })) } as any)
     const result = await llmStream({ messages: [] } as any, model, makeCtx())
-    for await (const _ of result.chunks) {}
+    for await (const _ of result.chunks) { /* drain */ }
     // No throw — .catch(() => {}) swallowed it
   })
 })
@@ -1566,7 +1621,7 @@ describe('loadEffectiveModel', () => {
     expect((result as any)?.apiKey).toBe('live-anthropic-token')
   })
 
-  it('resolves a live token for openai-oauth connections via resolveOpenAIOAuthCredential', async () => {
+  it('leaves openai-oauth credential resolution to the lane (no apiKey injected)', async () => {
     const instance = {
       id: 'inst-o', connectionId: 'conn-o', upstreamModelId: 'gpt-4o',
       cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000,
@@ -1579,12 +1634,12 @@ describe('loadEffectiveModel', () => {
     mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
     mockReadConfig.mockImplementationOnce(async () => [connection] as any) // 'connections'
     mockGetProviderDescriptor.mockReturnValueOnce({ supportLevel: 'oauth' } as any)
-    mockResolveOpenAIOAuth.mockResolvedValueOnce('live-openai-token')
 
     const result = await loadEffectiveModel('inst-o')
-    expect(mockResolveOpenAIOAuth).toHaveBeenCalledWith(connection)
+    expect(mockResolveOpenAIOAuth).not.toHaveBeenCalled()
     expect(mockResolveAnthropicOAuth).not.toHaveBeenCalled()
-    expect((result as any)?.apiKey).toBe('live-openai-token')
+    expect((result as any)?.apiKey).toBeUndefined()
+    expect((result as any)?.connectionId).toBe('conn-o')
   })
 
   it('resolves a live session cookie for anthropic-web connections via resolveAnthropicWebCredential', async () => {
@@ -1796,7 +1851,7 @@ describe('handleProviderResult — resilience store integration (Task 7)', () =>
     }
     mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(failMid()) } as any)
     const result = await llmStream({ messages: [] } as any, model, makeCtx())
-    await expect(async () => { for await (const _ of result.chunks) {} }).rejects.toThrow('mid fail')
+    await expect(async () => { for await (const _ of result.chunks) { /* drain */ } }).rejects.toThrow('mid fail')
     expect(store.records).toHaveLength(1)
     expect(store.records[0]!.key).toEqual({ level: 'provider', id: 'openai' })
   })
@@ -1820,5 +1875,28 @@ describe('handleProviderResult — resilience store integration (Task 7)', () =>
     mockGetProvider.mockReturnValue({ messages: vi.fn().mockResolvedValue(makeMessagesResponse()) } as any)
     await llmMessages({ messages: [] } as any, model, makeCtx())
     expect(store.recordSuccessCalls).toContainEqual({ level: 'provider', id: 'openai' })
+  })
+})
+
+describe('upstreamResponseFromError', () => {
+  it('reads the HTTP status of AWS SDK errors from $metadata', async () => {
+    const { upstreamResponseFromError } = await import('./execute.js')
+    const err = Object.assign(new Error('The security token included in the request is invalid.'), { $metadata: { httpStatusCode: 403 } })
+    expect(upstreamResponseFromError(err)).toEqual({ status: 403, body: { error: { message: 'The security token included in the request is invalid.' } } })
+  })
+
+  it('recovers status and JSON body from web adapter errors', async () => {
+    const { upstreamResponseFromError } = await import('./execute.js')
+    const err = new Error('openai-web: HTTP 401 Unauthorized — {"error":{"message":"Could not parse your authentication token."}}')
+    expect(upstreamResponseFromError(err)).toEqual({ status: 401, body: { error: { message: 'Could not parse your authentication token.' } } })
+    expect(upstreamResponseFromError(new Error('anthropic-web: failed to fetch organizations — HTTP 403 Forbidden. Check your sessionKey.'))).toMatchObject({ status: 403 })
+    expect(upstreamResponseFromError(new Error('connect ECONNREFUSED'))).toBeUndefined()
+  })
+
+  it('recovers status and body from Bedrock and Vertex plain Errors', async () => {
+    const { upstreamResponseFromError } = await import('./execute.js')
+    expect(upstreamResponseFromError(new Error('Bedrock error 403: {"message":"The security token included in the request is invalid."}')))
+      .toEqual({ status: 403, body: { message: 'The security token included in the request is invalid.' } })
+    expect(upstreamResponseFromError(new Error('Vertex token exchange failed 401: invalid_grant'))).toMatchObject({ status: 401 })
   })
 })

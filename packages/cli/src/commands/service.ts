@@ -3,12 +3,28 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import { getCurrentAccount, requireAccount } from '../store.js';
+import { formatUptime } from './status.js';
 import type { Settings, UsageRetentionConfig } from '@routerly/shared';
+import { LOG_LEVELS } from '@routerly/shared';
 
 interface SystemInfo {
   version: string;
-  uptime: number;
+  uptimeSeconds: number;
   nodeVersion: string;
+}
+
+function parseRetentionInt(flag: string, value: string): number {
+  if (!/^\d+$/.test(value) || parseInt(value, 10) < 1) {
+    throw new Error(`${flag} must be a positive integer (got "${value}")`);
+  }
+  return parseInt(value, 10);
+}
+
+function parseBool(flag: string, value: string): boolean {
+  if (value !== 'true' && value !== 'false') {
+    throw new Error(`${flag} must be true or false (got "${value}")`);
+  }
+  return value === 'true';
 }
 
 export function makeServiceCommand(): Command {
@@ -40,7 +56,7 @@ Examples:
         console.log(`  ${chalk.cyan('Server:')}        ${account.serverUrl}`);
         if (info) {
           console.log(`  ${chalk.cyan('Version:')}       ${info.version}`);
-          console.log(`  ${chalk.cyan('Uptime:')}        ${Math.floor(info.uptime / 60)}m ${info.uptime % 60}s`);
+          console.log(`  ${chalk.cyan('Uptime:')}        ${formatUptime(info.uptimeSeconds)}`);
         }
         console.log(`  ${chalk.cyan('Port:')}          ${settings.port}`);
         console.log(`  ${chalk.cyan('Host:')}          ${settings.host}`);
@@ -108,7 +124,7 @@ Examples:
     .option('--port <port>', 'HTTP port to listen on')
     .option('--host <host>', 'Host to bind to')
     .option('--dashboard <bool>', 'Enable/disable dashboard (true|false)')
-    .option('--log-level <level>', 'Log level: trace|debug|info|warn|error')
+    .option('--log-level <level>', 'Log level: fatal|error|warn|info|debug|trace')
     .option('--metrics <bool>', 'Enable/disable Prometheus /metrics endpoint (true|false)')
     .option('--metrics-token <token>', 'Optional Bearer token to protect /metrics (empty string removes it)')
     .option('--public-url <url>', 'External URL clients use to reach the service')
@@ -124,14 +140,29 @@ Examples:
       defaultLanguage?: string;
     }) => {
       const patch: Partial<Settings> = {};
+      try {
+        // Validate before any request so a bad value never reaches the service.
+        for (const [flag, v] of [['--usage-retention-days', opts.usageRetentionDays], ['--usage-retention-max-mb', opts.usageRetentionMaxMb]] as const) {
+          if (v) parseRetentionInt(flag, v);
+        }
+        if (opts.logLevel !== undefined && !(LOG_LEVELS as readonly string[]).includes(opts.logLevel)) {
+          throw new Error(`--log-level must be one of: ${LOG_LEVELS.join(', ')}`);
+        }
+        for (const [flag, v] of [['--dashboard', opts.dashboard], ['--metrics', opts.metrics], ['--require-mfa', opts.requireMfa]] as const) {
+          if (v !== undefined) parseBool(flag, v);
+        }
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
       if (opts.port) patch.port = parseInt(opts.port, 10);
       if (opts.host) patch.host = opts.host;
-      if (opts.dashboard !== undefined) patch.dashboardEnabled = opts.dashboard === 'true';
-      if (opts.logLevel) patch.logLevel = opts.logLevel as Settings['logLevel'];
-      if (opts.metrics !== undefined) patch.metricsEnabled = opts.metrics === 'true';
-      if (opts.metricsToken !== undefined) patch.prometheusAuthToken = opts.metricsToken || undefined;
+      if (opts.dashboard !== undefined) patch.dashboardEnabled = parseBool('--dashboard', opts.dashboard);
+      if (opts.logLevel !== undefined) patch.logLevel = opts.logLevel as Settings['logLevel'];
+      if (opts.metrics !== undefined) patch.metricsEnabled = parseBool('--metrics', opts.metrics);
+      if (opts.metricsToken !== undefined) patch.prometheusAuthToken = opts.metricsToken; // '' removes it server-side
       if (opts.publicUrl !== undefined) patch.publicUrl = opts.publicUrl;
-      if (opts.requireMfa !== undefined) patch.requireMfa = opts.requireMfa === 'true';
+      if (opts.requireMfa !== undefined) patch.requireMfa = parseBool('--require-mfa', opts.requireMfa);
       if (opts.defaultLanguage !== undefined) patch.defaultLanguage = opts.defaultLanguage;
 
       try {
@@ -142,11 +173,11 @@ Examples:
           const usageRetention: UsageRetentionConfig = { ...(current.usageRetention ?? {}) };
           if (opts.usageRetentionDays !== undefined) {
             if (opts.usageRetentionDays === '') delete usageRetention.maxAgeDays;
-            else usageRetention.maxAgeDays = parseInt(opts.usageRetentionDays, 10);
+            else usageRetention.maxAgeDays = parseRetentionInt('--usage-retention-days', opts.usageRetentionDays);
           }
           if (opts.usageRetentionMaxMb !== undefined) {
             if (opts.usageRetentionMaxMb === '') delete usageRetention.maxSizeMb;
-            else usageRetention.maxSizeMb = parseInt(opts.usageRetentionMaxMb, 10);
+            else usageRetention.maxSizeMb = parseRetentionInt('--usage-retention-max-mb', opts.usageRetentionMaxMb);
           }
           patch.usageRetention = usageRetention;
         }
@@ -158,6 +189,9 @@ Examples:
 
         await api<void>('PUT', '/api/settings', patch);
         console.log(chalk.green('✓ Settings updated.'));
+        if (patch.port !== undefined || patch.host !== undefined) {
+          console.log(chalk.yellow('Restart the service for --port/--host to take effect.'));
+        }
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           console.error(chalk.red('Admin privileges required.'));
@@ -223,12 +257,13 @@ Examples:
   cmd.command('metrics')
     .description('Show Prometheus metrics summary')
     .option('--raw', 'Print raw Prometheus text output')
-    .action(async (opts: { raw?: boolean }) => {
+    .option('--token <token>', 'Prometheus Bearer token (default: $ROUTERLY_METRICS_TOKEN, else the account token)')
+    .action(async (opts: { raw?: boolean; token?: string }) => {
       try {
         const account = await requireAccount();
         const url = `${account.serverUrl.replace(/\/$/, '')}/metrics`;
         const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${account.token}` },
+          headers: { Authorization: `Bearer ${opts.token ?? process.env['ROUTERLY_METRICS_TOKEN'] ?? account.token}` },
         });
         if (!res.ok) {
           console.error(chalk.red(`Error: ${res.statusText}`));

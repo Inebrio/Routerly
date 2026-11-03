@@ -38,8 +38,8 @@ import * as fs from 'node:fs/promises';
 import lockfile from 'proper-lockfile';
 
 const mockReadFile = vi.mocked(fs.readFile);
-const mockWriteFile = vi.mocked(fs.writeFile);
-const mockRename = vi.mocked(fs.rename);
+const _mockWriteFile = vi.mocked(fs.writeFile);
+const _mockRename = vi.mocked(fs.rename);
 const mockLock = vi.mocked(lockfile.lock);
 
 describe('loader.connections', () => {

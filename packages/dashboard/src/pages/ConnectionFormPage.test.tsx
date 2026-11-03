@@ -113,6 +113,21 @@ describe('ConnectionFormPage — create mode', () => {
     expect(screen.getByRole('button', { name: 'Ollama' }).getAttribute('aria-pressed')).toBe('false');
   });
 
+  it('does not submit a web-session connection without its token', async () => {
+    const user = userEvent.setup();
+    mockGetDescriptors.mockResolvedValue([
+      makeDescriptor(),
+      makeDescriptor({ id: 'openai-web', label: 'OpenAI (Web)', supportLevel: 'web' }),
+    ]);
+    renderNew();
+    await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
+
+    await user.click(screen.getByRole('button', { name: 'OpenAI (Web)' }));
+    await user.click(screen.getByRole('button', { name: /^create$/i }));
+
+    expect(mockCreateConnection).not.toHaveBeenCalled();
+  });
+
   it('carries the Enabled toggle in the page header', async () => {
     const user = userEvent.setup();
     renderNew();

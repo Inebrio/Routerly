@@ -3,6 +3,9 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { RouterDashboardTab } from './RouterDashboardTab';
 
+const mockCan = vi.hoisted(() => vi.fn((_p: string) => true));
+vi.mock('../../AuthContext', () => ({ useAuth: () => ({ can: mockCan }) }));
+
 vi.mock('../../api', () => ({
   getUsage: vi.fn(),
 }));
@@ -131,6 +134,16 @@ describe('RouterDashboardTab', () => {
     expect(screen.getByText(/\$0\.0009 saved/)).toBeInTheDocument();
   });
 
+  it('renders unpriced (null) costs as a dash instead of crashing', async () => {
+    const base = makeStats();
+    vi.mocked(getUsage).mockResolvedValue({
+      ...base,
+      savings: { ...base.savings, cache: { inputTokens: 400, cost: null } },
+    } as never);
+    renderTab();
+    expect(await screen.findByText(/\(— saved\)/)).toBeInTheDocument();
+  });
+
   it('lists one counterfactual row per target, priced and never timed', async () => {
     renderTab();
     await screen.findByText('780 ms');
@@ -172,6 +185,25 @@ describe('RouterDashboardTab', () => {
     expect(mockGetUsage.mock.calls[1]![2]).toBe('2024-06-01T09:00:00Z');
   });
 
+  it('puts the sign before the dollar sign on a negative saving and pluralises errors', async () => {
+    const base = makeStats();
+    vi.mocked(getUsage).mockResolvedValue({
+      ...base,
+      summary: { ...base.summary, errorCalls: 2 },
+      savings: { ...base.savings, baselines: [
+        { modelId: 'cheap', cost: 0.0002, costDelta: -0.00002695, costDeltaPercent: -12.2, latencySamples: 0 },
+      ] },
+    } as never);
+    renderTab();
+    expect(await screen.findByText(/-\$0\.00002695 \(-12\.2%\)/)).toBeInTheDocument();
+    expect(screen.getByText(/2 errors ·/)).toBeInTheDocument();
+  });
+
+  it('uses the singular for one error', async () => {
+    renderTab();
+    expect(await screen.findByText(/1 error ·/)).toBeInTheDocument();
+  });
+
   it('surfaces a failed fetch', async () => {
     mockGetUsage.mockRejectedValue(new Error('forbidden'));
     renderTab();
@@ -210,5 +242,16 @@ describe('RouterDashboardTab — what the optimizers removed', () => {
     expect(screen.getByText('4,200')).toBeInTheDocument();
     expect(screen.getByText('Caveman')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
+  });
+});
+
+describe('RouterDashboardTab — without report:read', () => {
+  it('does not call getUsage and shows the no-permission message', async () => {
+    mockCan.mockImplementation((p: string) => p !== 'report:read');
+    mockGetUsage.mockClear();
+    renderTab();
+    await waitFor(() => expect(screen.queryByText(/permission/i)).not.toBeNull());
+    expect(mockGetUsage).not.toHaveBeenCalled();
+    mockCan.mockImplementation(() => true);
   });
 });

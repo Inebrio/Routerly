@@ -268,6 +268,23 @@ describe('anthropic transport lane', () => {
     expect(headers['x-routerly-trace-id']).toBeUndefined()
   })
 
+  it('egress keeps provider headers verbatim: json as Buffer, stream without Cache-Control/Connection', async () => {
+    const sent: unknown[] = []
+    const set: Record<string, string> = {}
+    const reply: any = {
+      send: (b: unknown) => sent.push(b), headers: (h: Record<string, string>) => Object.assign(set, h), status: () => reply,
+      raw: { setHeader: (k: string, v: string) => { set[k] = v }, flushHeaders: () => {}, write: () => {}, end: () => {} },
+    }
+    const h = { 'content-type': 'application/json', 'request-id': 'req_1' }
+    await anthropicEgress.run({ protocol: 'anthropic', reply, traceId: 't1', result: { kind: 'json', body: { type: 'message' }, headers: h } } as unknown as ProxyContext)
+    expect(set).toEqual(h)
+    expect(Buffer.isBuffer(sent[0])).toBe(true)
+    for (const k of Object.keys(set)) delete set[k]
+    async function* body() { /* no chunks */ }
+    const sh = { 'content-type': 'text/event-stream; charset=utf-8', 'request-id': 'req_2' }
+    await anthropicEgress.run({ protocol: 'anthropic', reply, traceId: 't1', original: { model: 'claude', messages: [] }, result: { kind: 'stream', body: body(), headers: sh } } as unknown as ProxyContext)
+    expect(set).toEqual(sh)
+  })
   it('egress streaming sets raw SSE headers and never hijacks (asymmetry vs OpenAI)', async () => {
     const rawHeaders: Record<string, string> = {}
     const written: string[] = []
@@ -355,11 +372,11 @@ describe('anthropic transport lane', () => {
     expect(text).toContain('"output_tokens":7')
   })
 
-  it('egress streaming catches a mid-stream translation error and still ends the response', async () => {
+  it('egress streaming catches a mid-stream translation error and closes the connection abnormally', async () => {
     let ended = false
     const reply: any = {
       hijack: () => {},
-      raw: { setHeader: () => {}, flushHeaders: () => {}, write: () => {}, end: () => { ended = true } },
+      raw: { setHeader: () => {}, flushHeaders: () => {}, write: () => {}, end: () => {}, destroy: () => { ended = true } },
     }
     async function* body(): AsyncGenerator<unknown> {
       yield { model: 'claude', choices: [{ delta: { content: 'hi' }, finish_reason: null }] }
@@ -450,7 +467,8 @@ describe('anthropic:upstream', () => {
     expect(ctx.result).toEqual({ kind: 'passthrough' })
   })
 
-  it.each(['anthropic', 'anthropic-web'] as const)('%s passes through verbatim via the API-key path', async (provider) => {
+  it('anthropic passes through verbatim via the API-key path', async () => {
+    const provider = 'anthropic'
     const reply: any = { header: vi.fn() }
     const ctx = {
       protocol: 'anthropic', reply, traceId: 't1',
@@ -531,7 +549,7 @@ describe('anthropic:upstream', () => {
     it('advances to the next candidate when the first chunk fails', async () => {
       vi.mocked(streamOpenAIOAuthChunks).mockReturnValue((async function* () {
         throw new Error('openai-oauth upstream HTTP 401')
-        // eslint-disable-next-line no-unreachable
+         
         yield undefined as never
       })())
 
@@ -540,6 +558,7 @@ describe('anthropic:upstream', () => {
 
       expect(ctx.result).toBeUndefined()
       expect(ctx.attemptError).toBeInstanceOf(Error)
+      expect(ctx.attemptResponse?.status).toBe(401)
     })
   })
 
@@ -573,6 +592,23 @@ describe('anthropic:upstream', () => {
     } as unknown as ProxyContext
     await anthropicUpstream.run(ctx)
     expect(mockLlmChat).toHaveBeenCalledOnce()
+  })
+
+  it('anthropic-web is converted through the adapter, never forwarded to claude.ai (ROUT-478)', async () => {
+    mockForwardApiKey.mockClear()
+    mockLlmChat.mockResolvedValueOnce({
+      id: 'c1', object: 'chat.completion', created: 0, model: 'm',
+      choices: [{ index: 0, message: { role: 'assistant', content: 'pong' }, finish_reason: 'stop' }],
+    } as any)
+    const ctx = {
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
+      attempt: { model: { ...model, provider: 'anthropic-web' }, candidate },
+      original: { model: 'm', max_tokens: 10, messages: [{ role: 'user', content: 'hi' }] },
+    } as unknown as ProxyContext
+    await anthropicUpstream.run(ctx)
+    expect(mockForwardApiKey).not.toHaveBeenCalled()
+    expect(ctx.passthrough).toBeUndefined()
+    expect((ctx.result as any).body.content[0].text).toBe('pong')
   })
 
   it('chatToMessages falls back to defaults when id/model/usage/finish_reason are absent or non-terminal', async () => {

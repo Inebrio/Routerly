@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 
 const { mockCreate } = vi.hoisted(() => ({ mockCreate: vi.fn() }))
 vi.mock('openai', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   default: vi.fn().mockImplementation(function (this: any) {
     this.chat = { completions: { create: mockCreate } }
   }),
@@ -50,7 +50,7 @@ describe('CustomAdapter.chatCompletion', () => {
     expect(url).toBe('https://api.deepseek.com/v1/chat/completions')
     const body = JSON.parse(opts.body as string)
     expect(body.model).toBe('deepseek-chat')
-    expect(body.stream).toBe(false)
+    expect(body).not.toHaveProperty('stream')
 
     vi.unstubAllGlobals()
   })
@@ -65,7 +65,7 @@ describe('CustomAdapter.chatCompletion', () => {
 
     await adapter.chatCompletion({ model: 'auto', messages: [], stream: true } as any, makeModel())
     const body = JSON.parse(mockFetch.mock.calls[0]![1].body as string)
-    expect(body.stream).toBe(false)
+    expect(body).not.toHaveProperty('stream')
 
     vi.unstubAllGlobals()
   })
@@ -109,7 +109,7 @@ describe('CustomAdapter.chatCompletion', () => {
   })
 
   it('throws on non-2xx response', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 401, text: async () => 'Unauthorized' })
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 401, headers: new Headers(), text: async () => 'Unauthorized' })
     vi.stubGlobal('fetch', mockFetch)
 
     await expect(adapter.chatCompletion({ model: 'auto', messages: [] }, makeModel())).rejects.toThrow('401')
@@ -193,7 +193,7 @@ describe('CustomAdapter.streamCompletion', () => {
   })
 
   it('throws on non-2xx response', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 400, text: async () => 'Bad' })
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 400, headers: new Headers(), text: async () => 'Bad' })
     vi.stubGlobal('fetch', mockFetch)
 
     await expect(async () => {
@@ -476,6 +476,61 @@ describe('CustomAdapter — model ID handling', () => {
     const body = JSON.parse(mockFetch.mock.calls[0]![1].body as string)
     expect(body.model).toBe('custom-reasoner')
 
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('CustomAdapter upstream errors', () => {
+  it('exposes status, headers and body so 429 retry-after and 404 are classified', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ error: { code: 'model_not_found' } }),
+      { status: 404, headers: { 'retry-after': '20' } },
+    )))
+    const err = await adapter.chatCompletion({ model: 'auto', messages: [] }, makeModel()).catch(e => e)
+    expect(err.message).toContain('Custom provider returned 404')
+    expect(err.status).toBe(404)
+    expect(err.headers['retry-after']).toBe('20')
+    expect(err.error).toEqual({ error: { code: 'model_not_found' } })
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('CustomAdapter.chatCompletion timeout', () => {
+  it('aborts a silent upstream after model.timeout', async () => {
+    const http = await import('node:http')
+    const srv = http.createServer(() => { /* never answers */ })
+    await new Promise<void>((r) => srv.listen(0, '127.0.0.1', r))
+    const { port } = srv.address() as { port: number }
+    try {
+      const model = { id: 'm', provider: 'custom', endpoint: `http://127.0.0.1:${port}/v1`, timeout: 200 } as unknown as ModelConfig
+      await expect(new CustomAdapter().chatCompletion({ messages: [] } as never, model)).rejects.toMatchObject({ name: 'TimeoutError' })
+    } finally {
+      srv.closeAllConnections()
+      srv.close()
+    }
+  })
+})
+
+describe('CustomAdapter developer role', () => {
+  const messages = [{ role: 'developer', content: 'rules' }, { role: 'user', content: 'hi' }] as any
+  const expected = [{ role: 'system', content: 'rules' }, { role: 'user', content: 'hi' }]
+
+  it('sends developer as system on chatCompletion', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ choices: [] }) })
+    vi.stubGlobal('fetch', mockFetch)
+    await adapter.chatCompletion({ model: 'auto', messages }, makeModel())
+    expect(JSON.parse(mockFetch.mock.calls[0]![1].body).messages).toEqual(expected)
+    vi.unstubAllGlobals()
+  })
+
+  it('sends developer as system on streamCompletion', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      body: (async function* () { yield new TextEncoder().encode('data: [DONE]\n') })() as unknown as ReadableStream,
+    })
+    vi.stubGlobal('fetch', mockFetch)
+    for await (const _ of adapter.streamCompletion({ model: 'auto', messages }, makeModel())) { /* drain */ }
+    expect(JSON.parse(mockFetch.mock.calls[0]![1].body).messages).toEqual(expected)
     vi.unstubAllGlobals()
   })
 })

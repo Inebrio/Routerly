@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Temă: {{theme}}"
     },
+    "language": {
+      "label": "Limbă",
+      "saveError": "Nu s-a putut salva limba dvs. S-a revenit la cea anterioară."
+    },
     "sidebar": {
       "expand": "Extinde bara laterală",
       "collapse": "Restrânge bara laterală"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Unele fișiere de configurare au acces permisiv ({{files}}). Pornirea și cererile continuă să funcționeze. Remediați din Setări → Securitate, sau din sistemul de fișiere al gazdei când este convenabil.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Respinge",
       "updateAvailable": "Routerly v{{latest}} este disponibil. Ești pe v{{current}}.",
       "updateLink": "Actualizează în Setări",
@@ -40,9 +45,6 @@
       "telemetryLink": "Ce se trimite?",
       "telemetryYes": "Da, ajută",
       "telemetryNo": "Nu, mulțumesc"
-    },
-    "language": {
-      "label": "Limbă"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "Token de sesiune",
       "awsSessionTokenOptionalHint": "(opțional, pentru acreditări temporare)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "ID Router GCP",
-      "gcpRouterIdPlaceholder": "router-gcp-meu",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Locație",
       "gcpLocationDefaultHint": "(implicit: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "Token de acces",
         "sessionTokenLabel": "Token de sesiune",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Lipește valoarea cookie sessionKey (sk-ant-sid01-…)",
-        "openaiInstructions": "Mientras estés conectado a ChatGPT, abre <code>https://chatgpt.com/api/auth/session</code> în fila nouă. Copiați valoarea din câmpul <code>accessToken</code> (începe cu <code>eyJ</code>). Tokenul expiră la fiecare ~24 de ore. Pentru acces fiabil, completați și câmpul <strong>cf_clearance</strong> de mai jos.",
-        "anthropicInstructions": "<strong>Cum să obțineți cheia de sesiune:</strong> Mentre estés conectado a Claude, abre DevTools (F12) → Application → Cookies → <code>claude.ai</code> → copiază valoarea din cookie-ul <code>sessionKey</code> (comienza con <code>sk-ant-sid01-</code>). Cheia rămâne valabilă până când te deconectezi."
+        "sessionTokenPlaceholder": "Lipește valoarea cookie-ului sessionKey (sk-ant-sid…)",
+        "openaiInstructions": "Mientras estés conectado a ChatGPT, abre <code>https://chatgpt.com/api/auth/session</code> în fila nouă. Copiați valoarea din câmpul <code>accessToken</code> (începe cu <code>eyJ</code>). Tokenul este valabil aproximativ 10 zile; lipiți unul nou când testul începe să eșueze cu 401. Pentru acces fiabil, completați și câmpul <strong>cf_clearance</strong> de mai jos.",
+        "anthropicInstructions": "<strong>Cum obții cheia de sesiune:</strong> După ce te-ai autentificat pe <code>https://claude.ai</code>, apasă F12 pentru a deschide DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Copiază <strong>Value</strong> al cookie-ului <code>sessionKey</code> (începe cu <code>sk-ant-sid</code>, de exemplu <code>sk-ant-sid02-</code>). Este un cookie HttpOnly, deci nu este vizibil din consola paginii. Rămâne valabilă până te deconectezi sau expiră; lipește una nouă dacă Testul începe să eșueze."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Token OAuth abonament",
@@ -417,7 +419,8 @@
       "status": "stare",
       "encoding": "codificare",
       "frames": "cadre",
-      "bytes": "octeți"
+      "bytes": "octeți",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "Limbă",
       "description": "Alege limba în care este afișat panoul de bord.",
       "languageLabel": "Limbă",
-      "saved": "Preferință de limbă salvată."
+      "saved": "Preferință de limbă salvată.",
+      "saveError": "Nu s-a putut salva preferința dvs. de limbă. S-a revenit la cea anterioară."
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "Se salvează…",
         "enable": "Activează",
         "disable": "Dezactivează"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "Buget – Resetat",
         "systemStartup": "Sistem – Pornire",
         "systemShutdown": "Sistem – Oprire",
-        "systemUpdateAvailable": "Sistem – Actualizare disponibilă"
+        "systemUpdateAvailable": "Sistem – Actualizare disponibilă",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Elimină canal",
       "removeChannelConfirm": "Elimini canalul?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} utilizator",
         "userCount_other": "{{count}} utilizatori",
-        "everyone": "Toți"
+        "everyone": "Toți",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Nu s-a putut încărca"
@@ -831,12 +838,15 @@
         },
         "optional": "(opțional)",
         "keepCurrentPlaceholder": "Lăsați gol pentru a păstra actual",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
         "smtpTlsLabel": "Utilizează TLS / SSL",
         "smtpTlsOnHint": "(port 465 — SSL direct)",
-        "smtpTlsOffHint": "(port 587 — STARTTLS)",
+        "smtpTlsOffHint": "(portul 587 — STARTTLS)",
         "sesRegionPlaceholder": "us-east-1",
         "sesIamHint": "Lăsați credențialele goale pentru a utiliza rolul instanței IAM.",
         "sendgridApiKeyPlaceholder": "SG.…",
@@ -856,7 +866,9 @@
           "routersHint": "Lăsați gol pentru a primi evenimente din toți ruterii.",
           "cooldownHeading": "Tiempo de espera",
           "cooldownSuffix": "secunde (0 = fără timp de espera)",
-          "cooldownHint": "Interval minim înainte ca acest canal să poată declanșa din nou pentru același eveniment."
+          "cooldownHint": "Interval minim înainte ca acest canal să poată declanșa din nou pentru același eveniment.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Destinatari / Ținte",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "Caută canale…",
         "noResults": "Niciun rezultat",
         "emptyTitle": "Niciun canal de notificare configurat încă.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Niciun canal nu se potrivește cu filtrele active.",
         "nameInlinePlaceholder": "Etichetă (opțional)",
         "columns": {
@@ -968,7 +981,7 @@
         },
         "otel": {
           "label": "OpenTelemetry",
-          "description": "push — OTLP HTTP"
+          "description": "trimitere — OTLP HTTP"
         },
         "datadog": {
           "label": "Datadog",
@@ -976,7 +989,7 @@
         },
         "grafana": {
           "label": "Grafana Cloud",
-          "description": "push — remote_write"
+          "description": "trimitere — remote_write"
         },
         "influxdb": {
           "label": "InfluxDB",
@@ -984,7 +997,7 @@
         },
         "webhook": {
           "label": "Webhook",
-          "description": "push — HTTP POST JSON"
+          "description": "trimitere — HTTP POST JSON"
         }
       },
       "traces": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "Elimină integrare",
       "saving": "Se salvează…",
       "save": "Salvează",
-      "addButton": "Adaugă integrare"
+      "addButton": "Adaugă integrare",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "Ultima verificare"
       },
       "noCheckPerformed": "Nicio verificare de actualizare efectuată încă.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Caută actualizări",
       "checking": "Se verifică…",
       "updateTo": "Actualizează la v{{version}}",
@@ -1121,7 +1137,8 @@
         "checkFailed": "Verificarea a eșuat",
         "updateFailed": "Actualizarea a eșuat"
       },
-      "channel": "Canal"
+      "channel": "Canal",
+      "channelNote": "current urmează fiecare versiune stabilă nouă; stable se mută doar când o versiune este promovată, deci cele două pot diferi."
     },
     "security": {
       "authentication": "Autentificare",
@@ -1156,6 +1173,8 @@
       "count": "1 router",
       "count_other": "{{count}} rutere",
       "newRouter": "Router nou",
+      "newOrchestrator": "Noul Orchestrator",
+      "newPassthrough": "Noul Passthrough",
       "empty": "Niciun router încă.",
       "emptyFiltered": "Nu sunt rutere de acest tip.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "Ștergi acest router?",
       "errors": {
         "deleteFailed": "Eroare la ștergerea router-ului"
-      },
-      "newOrchestrator": "Noul Orchestrator",
-      "newPassthrough": "Noul Passthrough"
+      }
     },
     "layout": {
       "notFound": "Router nu găsit",
@@ -1191,10 +1208,10 @@
       "backToRouters": "Înapoi la rutere",
       "backToRoutersTitle": "Înapoi la rutere",
       "newRouter": "Router nou",
+      "newKind": "Noul {{kind}}",
       "loading": "Se încarcă...",
       "routerId": "ID router:",
-      "saveFirstHint": "Salvează mai întâi routerul pentru a debloca această filă",
-      "newKind": "Noul {{kind}}"
+      "saveFirstHint": "Salvează mai întâi routerul pentru a debloca această filă"
     },
     "dashboard": {
       "period": "Perioadă",
@@ -1212,7 +1229,9 @@
         "ttft": "Timp până la primul jetons",
         "notMeasured": "nu s-a măsurat pe aceste apeluri",
         "reliability": "Fiabilitate",
-        "errorsAndBlocked": "{{errors}} erori · {{blocked}} blocate"
+        "errorsAndBlocked": "{{errors}} erori · {{blocked}} blocate",
+        "errorsAndBlocked_one": "{{errors}} eroare · {{blocked}} blocate",
+        "errorsAndBlocked_other": "{{errors}} erori · {{blocked}} blocate"
       },
       "tokens": {
         "input": "Jetoane de intrare:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "SDK Anthropic",
         "anthropicBaseUrlHint": "URL de bază <code>{{baseUrl}}</code>, fără <code>/v1</code>: SDK-ul adaugă-l.",
         "curl": "curl",
-        "curlHint": "Verifică cablajul fără a instala nimic, apoi caută apelul în <usageLink>Utilizare</usageLink>."
+        "curlHint": "Verifică cablajul fără a instala nimic, apoi caută apelul în <usageLink>Utilizare</usageLink>.",
+        "passthrough": {
+          "heading": "Cum să vă conectați",
+          "intro": "Passthrough redirecționează fiecare cerere nemodificată — utilizați <strong>cheia propriului</strong> furnizor upstream ca cheie API, niciodată un token Routerly. Routerly nu stochează și nu emite o acreditare pentru acest router; tot ceea ce trimite clientul merge direct la furnizor.",
+          "noLimits": "Bugetele și limitele nu se aplică acestui router: costul traficului Passthrough este necunoscut, deci nu este niciodată verificat sau numărat în raport cu nicio limită de cheltuieli.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "URL de bază <code>{{url}}</code> — fără sufix <code>/v1</code>, SDK-ul adaugă în continuare propria cale exact cum ar face-o împotriva API OpenAI real.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "URL de bază <code>{{url}}</code> — SDK-ul adaugă în continuare <code>/v1/messages</code> el însuși, exact cum ar face-o împotriva API Anthropic real."
+        }
       },
       "form": {
         "kind": "Tip",
         "kindFixedHint": "Fix o dată ce routerul este creat.",
         "routerName": "Nume router",
         "routerNamePlaceholder": "Aplicația mea",
+        "passthroughPath": "Cale",
+        "passthroughPathHint": "Devine parte din URL-ul pe care îl apelează clienții: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Setări avansate",
         "ttftTimeout": "Timeout TTFT (ms)",
         "ttftTimeoutHint": "Dacă un model nu trimite octetul de răspuns din prima în această durată, Routerly o anulează și încearcă următorul candidat. Nu limitează durata răspunsului total. Setează la 0 pentru a aștepta cât ia furnizorul.",
         "traceContent": "Trasare conținut",
         "traceContentHint": "Trasatele înregistrează întotdeauna metadate (modele, scoruri, jetoane, cost, latență). Activează asta pentru a înregistra și instrucțiunile trimise și răspunsurile primite. Sunt stocate cu înregistrarea de utilizare și vizibile oricui poate citi rapoarte.",
         "capturePromptsAndAnswers": "Captură instrucțiuni și răspunsuri",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Salvează modificări",
         "createRouter": "Creează router",
-        "passthroughPath": "Cale",
-        "passthroughPathHint": "Devine parte din URL-ul pe care îl apelează clienții: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Creează Orchestrator",
         "createPassthrough": "Creează Passthrough"
       }
@@ -1384,6 +1414,7 @@
       "saving": "Se salvează...",
       "saved": "Salvat",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Previzualizare economii jetoane",
         "description": "Rulează conducta actuală (nesalvată) pe o instrucțiune pentru a vedea ce elimină fiecare pas și cât costă. Alege din conversații exemplu, sau tastează propria instrucțiune.",
         "promptLabel": "Instrucțiune",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "Nicio cerere trimisă încă.",
       "turnTraceLog": "Jurnal trasă rând #{{turn}} · {{count}} eveniment",
       "turnTraceLog_other": "Jurnal trasă rând #{{turn}} · {{count}} evenimente"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "Modele",
       "subtitle": "Furnizori LLM înregistrați cu Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modele",
         "health": "Sănătate"
@@ -2242,7 +2284,8 @@
       "next": "Următor",
       "page": "Pagina {{page}} din {{totalPages}}",
       "total": "({{count}} total)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "Toate",
         "success": "Succes",
         "blocked": "Blocat",
-        "error": "Eroare"
+        "error": "Eroare",
+        "sessionId": "ID sesiune",
+        "endUser": "Utilizator final",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Orice sesiune",
+        "endUserPlaceholder": "Orice utilizator final",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Toate",
@@ -2383,7 +2432,10 @@
         "timestamp": "Marcă de timp",
         "guardrailTriggered": "Protecție declanșată",
         "blockedBy": "Blocat de",
-        "piiRedacted": "PII redactat"
+        "piiRedacted": "PII redactat",
+        "sessionId": "ID sesiune",
+        "endUser": "Utilizator final",
+        "tags": "Tags"
       },
       "errorMessage": "Mesaj eroare",
       "eventCount": "{{count}} eveniment",
@@ -2457,7 +2509,8 @@
       "show": "Arată depanare",
       "empty": "Niciun date de depanare încă.",
       "emptyHint": "Trimite un mesaj pentru a vedea detalii rutare.",
-      "turnTraceLog": "Jurnal trasă rând #{{turn}}"
+      "turnTraceLog": "Jurnal trasă rând #{{turn}}",
+      "resize": "Redimensionează panoul de depanare"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "Nu s-a putut actualiza rol",
       "createFailed": "Nu s-a putut crea rol",
       "deleteFailed": "Nu s-a putut șterge rol"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "Înapoi la conectare",
     "title": "Conectare",
     "docs": "Documente",
-    "notEnabledPrefix": "Configuratorul client nu este activat. Cere unui admin să-l activeze cu",
     "noClientPrefix": "Niciun client numit",
     "errors": {
       "loadFailed": "Nu s-a putut încărca clienți: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "rutează trafic model al clientului prin Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "încarcă Routerly ca server unealtă în el.",
-    "notEnabledPrefix": "Configuratorul client nu este activat. Cere unui admin să-l activeze cu",
     "errors": {
       "loadFailed": "Nu s-a putut încărca clienți: {{error}}"
     },

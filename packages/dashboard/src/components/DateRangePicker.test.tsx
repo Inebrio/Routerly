@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from './DateRangePicker';
 
@@ -17,7 +17,7 @@ function renderPicker(value = mkRange(), onChange = vi.fn()) {
 }
 
 // Open the picker by clicking the trigger button
-async function openPicker() {
+async function _openPicker() {
   const btn = screen.getByRole('button', { name: /Select period|All time|Today|Yesterday|Last |This |From now/i });
   await userEvent.click(btn);
 }
@@ -52,7 +52,7 @@ describe('DateRangePicker — trigger button', () => {
   it('shows X clear icon when value has from/to set', () => {
     renderPicker(mkRange('2024-01-01', '2024-01-31', 'Gennaio'));
     // X button is rendered inside the trigger
-    const allBtns = screen.getAllByRole('button');
+    const _allBtns = screen.getAllByRole('button');
     // The X <X> element is an svg inside a span with onClick
     // Verify the label shows
     expect(screen.getByText('Gennaio')).toBeTruthy();
@@ -246,7 +246,7 @@ describe('DateRangePicker — month navigation (lines 190-197)', () => {
       b.querySelector('svg')
     );
     // First chevron-left is the prev button (after trigger, From now, presets)
-    const prevBtn = navBtns.find(b => b.querySelector('[data-lucide="chevron-left"]') || b.innerHTML.includes('ChevronLeft') || (b.style && b.innerHTML.includes('M15')));
+    const _prevBtn = navBtns.find(b => b.querySelector('[data-lucide="chevron-left"]') || b.innerHTML.includes('ChevronLeft') || (b.style && b.innerHTML.includes('M15')));
 
     // Simpler: just click the first non-preset navigation button (ChevronLeft)
     // The calendar header has prev/next as the only two icon-only buttons after the preset list

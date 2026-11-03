@@ -8,10 +8,27 @@ import type {
   MessagesResponse,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { forwardableResponseHeaders, developerAsSystem, type CallOptions } from './passthrough.js';
 import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages-compat.js';
 
 /**
+ * Error carrying the SDK-style `status`/`headers`/`error` shape so the resilience
+ * classifier sees the real HTTP status and retry-after instead of a generic fault.
+ */
+async function upstreamError(response: Response): Promise<Error> {
+  const text = await response.text().catch(() => '');
+  let body: unknown;
+  try { body = JSON.parse(text); } catch { /* non-JSON body */ }
+  return Object.assign(new Error(`Custom provider returned ${response.status}: ${text}`), {
+    status: response.status,
+    headers: Object.fromEntries(response.headers),
+    ...(body !== undefined ? { error: body } : {}),
+  });
+}
+
+/**
  * Generic adapter for any provider that exposes an OpenAI-compatible API.
+ * `developer` messages are sent as `system`: DeepSeek and most compatible servers reject the role.
  * Requires a custom endpoint in ModelConfig.
  *
  * chatCompletion and streamCompletion use raw fetch to guarantee 100%
@@ -34,6 +51,7 @@ export class CustomAdapter implements ProviderAdapter {
   async chatCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
+    opts?: CallOptions,
   ): Promise<ChatCompletionResponse> {
     if (!model.endpoint) {
       throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
@@ -43,14 +61,17 @@ export class CustomAdapter implements ProviderAdapter {
     const response = await fetch(`${model.endpoint}/chat/completions`, {
       method: 'POST',
       headers: {
+        ...opts?.headers,
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
-      body: JSON.stringify({ ...rest, model: upstreamModel, stream: false }),
+      // `stream` stays exactly as the client sent it.
+      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), ...(request.stream === false ? { stream: false } : {}), model: upstreamModel }),
+      signal: AbortSignal.timeout(model.timeout ?? 60000),
     });
+    opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
     if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`Custom provider returned ${response.status}: ${text}`);
+      throw await upstreamError(response);
     }
     return response.json() as Promise<ChatCompletionResponse>;
   }
@@ -58,23 +79,29 @@ export class CustomAdapter implements ProviderAdapter {
   async *streamCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
+    opts?: CallOptions,
   ): AsyncIterable<StreamChunk> {
     if (!model.endpoint) {
       throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
     }
     const upstreamModel = this.getUpstreamModelId(model);
     const { stream: _stream, ...rest } = request;
+    // Timeout covers the wait for the response headers only; an established stream may run longer.
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(new DOMException('Request timed out.', 'TimeoutError')), model.timeout ?? 60000);
     const response = await fetch(`${model.endpoint}/chat/completions`, {
       method: 'POST',
       headers: {
+        ...opts?.headers,
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
-      body: JSON.stringify({ ...rest, model: upstreamModel, stream: true }),
-    });
+      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), model: upstreamModel, stream: true }),
+      signal: ctl.signal,
+    }).finally(() => clearTimeout(timer));
+    opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
     if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`Custom provider returned ${response.status}: ${text}`);
+      throw await upstreamError(response);
     }
     if (!response.body) {
       throw new Error('Custom provider returned no response body for streaming.');
@@ -113,12 +140,13 @@ export class CustomAdapter implements ProviderAdapter {
     if (!model.endpoint) {
       throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
     }
-    const client = new OpenAI({ apiKey: model.apiKey ?? 'custom', baseURL: model.endpoint });
+    const client = new OpenAI({ apiKey: model.apiKey ?? 'custom', baseURL: model.endpoint, timeout: model.timeout ?? 60000, maxRetries: 0 });
     const upstreamModel = this.getUpstreamModelId(model);
     const { messages, system } = anthropicToOpenAIMessages(request);
     const openAIMessages = system
       ? [{ role: 'system' as const, content: system }, ...messages]
       : messages;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const { stream: _stream, ...rest } = request as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response: any = await client.chat.completions.create({
@@ -126,6 +154,7 @@ export class CustomAdapter implements ProviderAdapter {
       messages: openAIMessages,
       model: upstreamModel,
       stream: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     } as any);
     return openAIToAnthropicResponse(response, upstreamModel);
   }

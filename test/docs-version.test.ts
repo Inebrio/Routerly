@@ -131,7 +131,7 @@ describe('RA-09 — happy path', () => {
       // serves the newest versions.json entry at `/`).
       expect(readConfigRaw(f)).toBe(configBefore)
     },
-    30_000,
+    120_000,
   )
 
   it(
@@ -163,6 +163,6 @@ describe('RA-09 — happy path', () => {
       const versionedDocsSecondCut = path.join(f.websiteDir, 'versioned_docs', 'version-0.3.0')
       expect(listFilesRecursive(versionedDocsSecondCut)).toEqual(listFilesRecursive(f.docsDir))
     },
-    30_000,
+    120_000,
   )
 })

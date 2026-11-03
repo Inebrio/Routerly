@@ -120,6 +120,7 @@ function parseRoutingResponse(
   try {
     const parsed = JSON.parse(cleaned);
     if (Array.isArray(parsed?.routing)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       return parsed.routing.map((r: any) => ({
         model: r.model,
         point: typeof r.point === 'number' && !isNaN(r.point) ? r.point : 0,
@@ -199,6 +200,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
   log?.info(
     {
       messageCount: request.messages?.length ?? 0,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       roles: request.messages?.map((m: any) => m.role) ?? [],
       candidates: candidates.map(c => ({ id: c.model.id, provider: c.model.provider })),
       config,
@@ -217,7 +219,8 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
   const router = allRouters.find((p: RouterConfig) => p.id === routerId)
     ?? { id: routerId ?? '', models: [], name: '', tokens: [], members: [] };
 
-  const fallbackModelIds: string[] = config?.fallbackModelIds ?? [];
+  // policy-level list wins; router-level `fallbackRoutingModelIds` is the default
+  const fallbackModelIds: string[] = config?.fallbackModelIds ?? router.fallbackRoutingModelIds ?? [];
   const candidateModelIds = [routingModelId, ...fallbackModelIds];
 
   // Calcola gli snapshot dei consumi correnti per i candidati che hanno limiti configurati
@@ -273,11 +276,13 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
     'llm policy: prompts',
   );
 
+  const skipped: { modelId: string; reason: string }[] = [];
   for (const modelId of candidateModelIds) {
     const model = allModels.find(m => m.id === modelId);
     if (!model) {
       log?.info({ modelId, reason: 'model not found' }, 'llm policy: skipping model');
       emit?.({ panel: 'router-response', message: 'llm-policy:skip', details: { modelId, reason: 'model not found in config' } });
+      skipped.push({ modelId, reason: 'model not found in config' });
       continue;
     }
 
@@ -332,9 +337,14 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       if (!routing) {
         log?.error({ modelId, reason: 'repair failed', raw: text }, 'llm policy: all parse attempts failed, skipping model');
         emit?.({ panel: 'router-response', message: 'llm-policy:skip', details: { modelId, reason: 'parse + repair failed' } });
+        skipped.push({ modelId, reason: 'parse + repair failed' });
         continue;
       }
 
+      if (skipped.length > 0) {
+        log?.warn({ primary: routingModelId, used: modelId, skipped }, 'llm policy: fallback routing model served the scoring');
+        emit?.({ panel: 'router-response', message: 'llm-policy:fallback', details: { primary: routingModelId, used: modelId, skipped } });
+      }
       log?.info({ modelId, routing }, 'llm policy: output');
       emit?.({
         panel: 'router-response',
@@ -352,11 +362,13 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
     } catch (err: unknown) {
       if (err instanceof BudgetExceededError) {
         log?.info({ modelId, reason: 'budget_exhausted' }, 'llm policy: skipping model');
+        skipped.push({ modelId, reason: 'budget_exhausted' });
         continue;
       }
       const errMsg = err instanceof Error ? err.message : String(err);
       log?.warn({ modelId, err: errMsg, reason: 'call failed' }, 'llm policy: skipping model');
       emit?.({ panel: 'router-response', message: 'llm-policy:error', details: { modelId, error: errMsg } });
+      skipped.push({ modelId, reason: errMsg });
     }
   }
 

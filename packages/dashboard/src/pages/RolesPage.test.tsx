@@ -3,6 +3,13 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
+let mockCan = true;
+let mockCanRead = true;
+let mockOnly: string | null = null;
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: (perm: string) => (perm === 'user:read' ? mockCanRead : mockOnly ? perm === mockOnly : mockCan) }),
+}));
+
 vi.mock('../api', () => ({
   getRoles: vi.fn(),
   createRole: vi.fn(),
@@ -46,6 +53,9 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  mockCan = true;
+  mockCanRead = true;
+  mockOnly = null;
   mockGetRoles.mockResolvedValue([]);
   mockCreateRole.mockResolvedValue(makeRole({ id: 'r-new', name: 'New Role' }));
   mockUpdateRole.mockResolvedValue(makeRole({ name: 'Updated' }));
@@ -91,7 +101,42 @@ describe('RolesPage — empty state', () => {
 
 // ── Loaded roles ───────────────────────────────────────────────────────────────
 
+describe('RolesPage — without user:read', () => {
+  it('shows the permission message and does not call the roles API', () => {
+    mockCanRead = false;
+    renderPage();
+    expect(screen.getByText("You don't have permission to view roles.")).toBeTruthy();
+    expect(mockGetRoles).not.toHaveBeenCalled();
+  });
+});
+
 describe('RolesPage — loaded roles', () => {
+  it('hides New Role, Edit and Delete without user:write', async () => {
+    mockCan = false;
+    mockGetRoles.mockResolvedValue([makeRole()]);
+    renderPage();
+    await waitFor(() => screen.getByText('Operator'));
+    expect(screen.queryByRole('button', { name: /New Role/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Edit/ })).toBeNull();
+  });
+
+  it.each(['role:write', 'user:write'])('shows New Role and Edit with only %s', async (perm) => {
+    mockOnly = perm;
+    mockGetRoles.mockResolvedValue([makeRole()]);
+    renderPage();
+    await waitFor(() => screen.getByText('Operator'));
+    expect(screen.queryByRole('button', { name: /New Role/ })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: /Edit/ })).not.toBeNull();
+  });
+
+  it('hides New Role with only router:write', async () => {
+    mockOnly = 'router:write';
+    mockGetRoles.mockResolvedValue([makeRole()]);
+    renderPage();
+    await waitFor(() => screen.getByText('Operator'));
+    expect(screen.queryByRole('button', { name: /New Role/ })).toBeNull();
+  });
+
   it('renders role name and id', async () => {
     mockGetRoles.mockResolvedValue([makeRole({ id: 'op', name: 'Operator' })]);
     renderPage();
@@ -323,7 +368,7 @@ describe('RolesPage — delete role', () => {
     // Delete button is the Trash2 button (no text, last button in row)
     await waitFor(() => screen.getAllByRole('button'));
     const buttons = screen.getAllByRole('button');
-    const trashBtn = buttons.find(b => b.querySelector('svg'));
+    const _trashBtn = buttons.find(b => b.querySelector('svg'));
     // Find the danger-class button
     const dangerBtns = Array.from(document.querySelectorAll('button.btn-danger'));
     expect(dangerBtns.length).toBeGreaterThan(0);

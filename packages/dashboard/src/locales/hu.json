@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Téma: {{theme}}"
     },
+    "language": {
+      "label": "Nyelv",
+      "saveError": "Nem sikerült menteni a nyelvet. Visszaállítva az előző verzióra."
+    },
     "sidebar": {
       "expand": "Oldalsáv bővítése",
       "collapse": "Oldalsáv összezárása"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Néhány konfigurációs fájlnak megengedő hozzáférése van ({{files}}). Az indítás és a kérések még mindig működnek. Javítsa ki a Beállítások → Biztonság menüből, vagy amikor kényelmes, a gazda fájlrendszeréből.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Elutasítás",
       "updateAvailable": "Routerly v{{latest}} elérhető. Az Ön verziója: v{{current}}.",
       "updateLink": "Frissítés a beállításokból",
@@ -40,9 +45,6 @@
       "telemetryLink": "Mit küldenek?",
       "telemetryYes": "Igen, segítek",
       "telemetryNo": "Nem, köszönöm"
-    },
-    "language": {
-      "label": "Nyelv"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "Munkamenet Token",
       "awsSessionTokenOptionalHint": "(nem kötelező, ideiglenes hitelesítő adatokhoz)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "GCP Útválasztó Azonosítója",
-      "gcpRouterIdPlaceholder": "saját-gcp-útválasztó",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Hely",
       "gcpLocationDefaultHint": "(alapértelmezett: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "Hozzáférési Token",
         "sessionTokenLabel": "Munkamenet Token",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Illessze be a sessionKey cookie értékét (sk-ant-sid01-…)",
-        "openaiInstructions": "Miközben bejelentkezve van a ChatGPT-be, nyissa meg a <code>https://chatgpt.com/api/auth/session</code> weboldalt egy új lapon. Másolja az <code>accessToken</code> mező értékét (az <code>eyJ</code>-vel kezdődik). A token ~24 órán belül lejár. Megbízható hozzáféréshez kitöltse az alábbi <strong>cf_clearance</strong> mezőt is.",
-        "anthropicInstructions": "<strong>A munkamenet-kulcs beszerzése:</strong> Miközben bejelentkezve van a Claudeba, nyissa meg a DevTools-ot (F12) → Alkalmazás → Sütik → <code>claude.ai</code> → másolja a <code>sessionKey</code> sütit (az <code>sk-ant-sid01-</code>-vel kezdődik). A kulcs mindaddig érvényes, amíg nem jelentkezik ki."
+        "sessionTokenPlaceholder": "Illeszd be a sessionKey süti értékét (sk-ant-sid…)",
+        "openaiInstructions": "Miközben bejelentkezve van a ChatGPT-be, nyissa meg a <code>https://chatgpt.com/api/auth/session</code> weboldalt egy új lapon. Másolja az <code>accessToken</code> mező értékét (az <code>eyJ</code>-vel kezdődik). A token körülbelül 10 napig érvényes; illesszen be egy újat, amikor a teszt 401-es hibával kezd el elbukni. Megbízható hozzáféréshez kitöltse az alábbi <strong>cf_clearance</strong> mezőt is.",
+        "anthropicInstructions": "<strong>Így szerezheted meg a munkamenetkulcsot:</strong> Miután bejelentkeztél a <code>https://claude.ai</code> oldalra, nyomd meg az F12 billentyűt a DevTools megnyitásához. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Másold ki a(z) <code>sessionKey</code> süti <strong>Value</strong> értékét (<code>sk-ant-sid</code> előtaggal kezdődik, például <code>sk-ant-sid02-</code>). Ez egy HttpOnly süti, ezért az oldal konzoljából nem látható. Érvényes marad, amíg ki nem jelentkezel, vagy le nem jár; ha a Teszt hibázni kezd, illessz be egy újat."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Előfizetés OAuth Token",
@@ -417,7 +419,8 @@
       "status": "állapot",
       "encoding": "kódolás",
       "frames": "keretek",
-      "bytes": "bájt"
+      "bytes": "bájt",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "Nyelv",
       "description": "Válassza meg, milyen nyelven jelenjen meg az irányítópult.",
       "languageLabel": "Nyelv",
-      "saved": "Nyelvpreferencia mentve."
+      "saved": "Nyelvpreferencia mentve.",
+      "saveError": "Nem sikerült menteni a nyelvbeállításokat. Visszaállítva az előző verzióra."
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "Mentés…",
         "enable": "Engedélyezés",
         "disable": "Letiltás"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "Költségvetés – Visszaállítva",
         "systemStartup": "Rendszer – Indítás",
         "systemShutdown": "Rendszer – Leállítás",
-        "systemUpdateAvailable": "Rendszer – Frissítés Elérhető"
+        "systemUpdateAvailable": "Rendszer – Frissítés Elérhető",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Csatorna eltávolítása",
       "removeChannelConfirm": "Csatorna eltávolítása?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} engedély",
         "userCount": "{{count}} felhasználó",
         "userCount_other": "{{count}} felhasználó",
-        "everyone": "Mindenki"
+        "everyone": "Mindenki",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Betöltés sikertelen"
@@ -831,6 +838,9 @@
         },
         "optional": "(nem kötelező)",
         "keepCurrentPlaceholder": "Hagyja üresen a meglévő megtartásához",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "Hagyja üresen az összes útválasztóból érkező események fogadásásához.",
           "cooldownHeading": "Lehűlési Idő",
           "cooldownSuffix": "másodperc (0 = nincs lehűlési idő)",
-          "cooldownHint": "Az ebben a csatornában minimális intervallum, mielőtt ismét aktiválódhat ugyanazzal az eseménnyel."
+          "cooldownHint": "Az ebben a csatornában minimális intervallum, mielőtt ismét aktiválódhat ugyanazzal az eseménnyel.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Címzettek / Célok",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "Csatornák keresése…",
         "noResults": "Nincs találat",
         "emptyTitle": "Nincsenek konfigurált értesítési csatornák.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Nincsenek csatornák az aktív szűrőkhöz.",
         "nameInlinePlaceholder": "Címke (nem kötelező)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "Integráció eltávolítása",
       "saving": "Mentés…",
       "save": "Mentés",
-      "addButton": "Integráció Hozzáadása"
+      "addButton": "Integráció Hozzáadása",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "Utolsó Ellenőrzés"
       },
       "noCheckPerformed": "Még nem végeztek frissítés ellenőrzést.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Frissítések keresése",
       "checking": "Ellenőrzés…",
       "updateTo": "Frissítés v{{version}}-ra",
@@ -1121,7 +1137,8 @@
         "checkFailed": "Az ellenőrzés sikertelen",
         "updateFailed": "A frissítés sikertelen"
       },
-      "channel": "Csatorna"
+      "channel": "Csatorna",
+      "channelNote": "A current minden új stabil kiadást követ; a stable csak kiadás előléptetésekor mozdul, ezért a kettő eltérhet."
     },
     "security": {
       "authentication": "Hitelesítés",
@@ -1156,6 +1173,8 @@
       "count": "1 útválasztó",
       "count_other": "{{count}} útválasztó",
       "newRouter": "Új Útválasztó",
+      "newOrchestrator": "Új Orchestrator",
+      "newPassthrough": "Új Passthrough",
       "empty": "Nincsenek útválasztók.",
       "emptyFiltered": "Nincs ilyen típusú útválasztó.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "Törli ezt az útválasztót?",
       "errors": {
         "deleteFailed": "Hiba az útválasztó törlésénél"
-      },
-      "newOrchestrator": "Új Orchestrator",
-      "newPassthrough": "Új Passthrough"
+      }
     },
     "layout": {
       "notFound": "Az útválasztó nem található",
@@ -1191,10 +1208,10 @@
       "backToRouters": "Vissza az Útválasztókhoz",
       "backToRoutersTitle": "Vissza az útválasztókhoz",
       "newRouter": "Új Útválasztó",
+      "newKind": "Új {{kind}}",
       "loading": "Betöltés...",
       "routerId": "Útválasztó azonosítója:",
-      "saveFirstHint": "Mentse az útválasztót először az ezen fül feloldásásához",
-      "newKind": "Új {{kind}}"
+      "saveFirstHint": "Mentse az útválasztót először az ezen fül feloldásásához"
     },
     "dashboard": {
       "period": "Időszak",
@@ -1212,7 +1229,9 @@
         "ttft": "Idő az első tokenig",
         "notMeasured": "nem mért ezeken a hívásokon",
         "reliability": "Megbízhatóság",
-        "errorsAndBlocked": "{{errors}} hibák · {{blocked}} letiltott"
+        "errorsAndBlocked": "{{errors}} hibák · {{blocked}} letiltott",
+        "errorsAndBlocked_one": "{{errors}} hiba · {{blocked}} letiltott",
+        "errorsAndBlocked_other": "{{errors}} hibák · {{blocked}} letiltott"
       },
       "tokens": {
         "input": "Bemeneti tokenek:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Alapvető URL <code>{{baseUrl}}</code>, az <code>/v1</code> nélkül: az SDK hozzáadja azt.",
         "curl": "curl",
-        "curlHint": "Ellenőrizze a vezetékeket telepítés nélkül, majd keresse meg a hívásat az <usageLink>Használat</usageLink> oldalon."
+        "curlHint": "Ellenőrizze a vezetékeket telepítés nélkül, majd keresse meg a hívásat az <usageLink>Használat</usageLink> oldalon.",
+        "passthrough": {
+          "heading": "Csatlakozás módja",
+          "intro": "A Passthrough minden kérést módosítás nélkül továbbít — használja <strong>saját</strong> upstream szolgáltatói kulcsát az API kulcsként, soha ne Routerly tokent. A Routerly nem tárol vagy ad ki hitelesítési adatot erre az útválasztóra; bármi, amit az ügyfél küld, közvetlenül a szolgáltatóhoz megy.",
+          "noLimits": "A költségvetés és korlátok nem vonatkoznak erre az útválasztóra: a Passthrough forgalom költsége ismeretlen, ezért soha nem kerül ellenőrzésre vagy nem számít fel a költségkeretre.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Alap URL <code>{{url}}</code> — nincs <code>/v1</code> utótag, az SDK még mindig hozzáadja a saját útvonalát, pontosan úgy, ahogy a valódi OpenAI API-val tenné.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Alap URL <code>{{url}}</code> — az SDK még mindig hozzáadja a <code>/v1/messages</code> értéket, pontosan úgy, ahogy a valódi Anthropic API-val tenné."
+        }
       },
       "form": {
         "kind": "Típus",
         "kindFixedHint": "Az útválasztó létrehozása után rögzítve.",
         "routerName": "Útválasztó Neve",
         "routerNamePlaceholder": "Saját Alkalmazás",
+        "passthroughPath": "Elérési út",
+        "passthroughPathHint": "Az ügyfelek által meghívott URL része lesz: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Speciális beállítások",
         "ttftTimeout": "TTFT Időkorlát (ms)",
         "ttftTimeoutHint": "Ha egy modell nem küldi az első válaszhelyét ezen időn belül, a Routerly leállítja és próbálja meg a következő jelöltet. Nem korlátozza az összes válasz időtartamát. Állítsa 0-ra, hogy egy olyan hosszú ideig várakozzon, ahogy a szolgáltató végez.",
         "traceContent": "Nyom tartalma",
         "traceContentHint": "A nyomok mindig rögzítik a metaadatokat (modellek, pontszámok, tokenek, költség, latentu). Kapcsolja be ezt is a küldött kérések és az kapott válaszok rögzítéséhez. Az használat rekordjaival tárolódnak, és bárki láthatja, aki jelentéseket olvashat.",
         "capturePromptsAndAnswers": "Rögzítse az kéréseket és válaszokat",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Módosítások Mentése",
         "createRouter": "Útválasztó Létrehozása",
-        "passthroughPath": "Elérési út",
-        "passthroughPathHint": "Az ügyfelek által meghívott URL része lesz: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Orchestrator létrehozása",
         "createPassthrough": "Passthrough létrehozása"
       }
@@ -1384,6 +1414,7 @@
       "saving": "Mentés...",
       "saved": "Mentve",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Kérés megtakarítások előnézete",
         "description": "Futtassa az aktuális (mentetlen) csővezetéket az kérésen keresztül, hogy megtudja, mit távolít el minden lépés, és mennyibe kerül. Válasszon az egyik mintakonverzáció közül, vagy írjon be az saját kérést.",
         "promptLabel": "Kérés",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "Még nem küldött kérés.",
       "turnTraceLog": "#{{turn}} fordulat nyom naplójában · {{count}} esemény",
       "turnTraceLog_other": "#{{turn}} fordulat nyom naplójában · {{count}} esemény"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "Modellek",
       "subtitle": "Az Routerly-vel regisztrált LLM szolgáltatók",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modellek",
         "health": "Egészség"
@@ -2242,7 +2284,8 @@
       "next": "Következő",
       "page": "{{page}}. oldal / {{totalPages}}",
       "total": "({{count}} összes)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "Összes",
         "success": "Siker",
         "blocked": "Letiltva",
-        "error": "Hiba"
+        "error": "Hiba",
+        "sessionId": "Munkamenet-azonosító",
+        "endUser": "Végfelhasználó",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Bármely munkamenet",
+        "endUserPlaceholder": "Bármely végfelhasználó",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Összes",
@@ -2383,7 +2432,10 @@
         "timestamp": "Időbélyeg",
         "guardrailTriggered": "Örtorny Aktiválódott",
         "blockedBy": "Letiltva",
-        "piiRedacted": "PII Kitakarítva"
+        "piiRedacted": "PII Kitakarítva",
+        "sessionId": "Munkamenet-azonosító",
+        "endUser": "Végfelhasználó",
+        "tags": "Tags"
       },
       "errorMessage": "Hibaüzenet",
       "eventCount": "{{count}} esemény",
@@ -2457,7 +2509,8 @@
       "show": "Hibakereső Megjelenítése",
       "empty": "Még nincs hibakereső adat.",
       "emptyHint": "Küldjön egy üzenetet az útválasztási részletek megtekintéséhez.",
-      "turnTraceLog": "#{{turn}} fordulat nyom naplójában"
+      "turnTraceLog": "#{{turn}} fordulat nyom naplójában",
+      "resize": "A hibakeresési panel átméretezése"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "Az szerepkör frissítése sikertelen",
       "createFailed": "Az szerepkör létrehozása sikertelen",
       "deleteFailed": "Az szerepkör törlése sikertelen"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "Vissza az Csatlakozáshoz",
     "title": "Csatlakozás",
     "docs": "Dokumentáció",
-    "notEnabledPrefix": "Az kliens konfigurálót nincs engedélyezve. Kérje meg az adminisztrátort, hogy engedélyezze ezt",
     "noClientPrefix": "Nincs kliens nevű",
     "errors": {
       "loadFailed": "Az kliensz betöltése sikertelen: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "az kliens modell forgalmat irányít az Routerly-n keresztül.",
     "mcpLabel": "MCP",
     "mcpDescription": "az Routerly betölt egy eszköz szerver az belsejében.",
-    "notEnabledPrefix": "Az kliens konfigurálót nincs engedélyezve. Kérje meg az adminisztrátort, hogy engedélyezze ezt",
     "errors": {
       "loadFailed": "Az kliensz betöltése sikertelen: {{error}}"
     },

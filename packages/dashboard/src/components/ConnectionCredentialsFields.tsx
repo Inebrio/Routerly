@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { writeToClipboard } from '../utils/clipboard';
 import { EyeOff, Eye, Copy, Check, FlaskConical } from 'lucide-react';
 
 // ── Provider metadata (shared by the model form and the connection form) ─────────
@@ -55,10 +56,10 @@ export function CopyCode({ text }: { text: string }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   function handleCopy() {
-    navigator.clipboard.writeText(text).then(() => {
+    writeToClipboard(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    }).catch(() => {});
   }
   return (
     <span style={{
@@ -147,7 +148,7 @@ export interface CredentialValues {
   cfClearance: string;
   azureResourceName: string; azureDeploymentId: string; azureApiVersion: string;
   awsRegion: string; awsAccessKeyId: string; awsSecretAccessKey: string; awsSessionToken: string;
-  VERTEXROUTERIDPLACEHOLDER: string; vertexLocation: string; vertexServiceAccountKey: string;
+  vertexProjectId: string; vertexLocation: string; vertexServiceAccountKey: string;
 }
 
 export function emptyCredentialValues(): CredentialValues {
@@ -155,7 +156,7 @@ export function emptyCredentialValues(): CredentialValues {
     endpoint: '', apiKey: '', cfClearance: '',
     azureResourceName: '', azureDeploymentId: '', azureApiVersion: '',
     awsRegion: '', awsAccessKeyId: '', awsSecretAccessKey: '', awsSessionToken: '',
-    VERTEXROUTERIDPLACEHOLDER: '', vertexLocation: '', vertexServiceAccountKey: '',
+    vertexProjectId: '', vertexLocation: '', vertexServiceAccountKey: '',
   };
 }
 
@@ -274,6 +275,7 @@ export function ConnectionCredentialsFields(props: Props) {
                 : provider === 'ollama' ? 'not required for local models'
                 : 'sk-…'
               }
+              required={!editing && (isWebProvider(provider) || provider === 'anthropic-oauth')}
               style={{ paddingRight: 40 }} />
             <button type="button" onClick={() => setShowToken(v => !v)}
               style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
@@ -362,10 +364,10 @@ export function ConnectionCredentialsFields(props: Props) {
       {provider === 'vertex' && (
         <>
           <div className="form-group">
-            <label className="form-label">{t('common.connectionFields.gcpRouterId')}</label>
-            <input className="form-input" value={values.VERTEXROUTERIDPLACEHOLDER}
-              onChange={e => onChange({ VERTEXROUTERIDPLACEHOLDER: e.target.value })}
-              placeholder={t('common.connectionFields.gcpRouterIdPlaceholder')} required />
+            <label className="form-label">{t('common.connectionFields.gcpProjectId')}</label>
+            <input className="form-input" value={values.vertexProjectId}
+              onChange={e => onChange({ vertexProjectId: e.target.value })}
+              placeholder={t('common.connectionFields.gcpProjectIdPlaceholder')} required />
           </div>
           <div className="form-group">
             <label className="form-label">{t('common.connectionFields.gcpLocationLabel')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('common.connectionFields.gcpLocationDefaultHint')}</span></label>

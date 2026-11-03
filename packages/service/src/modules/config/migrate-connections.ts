@@ -15,6 +15,7 @@ import { createHash } from 'node:crypto';
 import type { ModelConfig, ProviderConnection, ModelInstance } from '@routerly/shared';
 import { suggestConnectionLabel, isConnectionLabelTaken } from '@routerly/shared';
 import { readConfig, writeConfig } from './loader.js';
+import { defaultUpstreamModelId } from '../provider/resolve.js';
 
 /**
  * Credential fields on ModelConfig, in the fixed order used by the fingerprint hash.
@@ -73,7 +74,7 @@ function buildInstance(model: ModelConfig, connId: string): ModelInstance {
   const instance: ModelInstance = {
     id: model.id,
     connectionId: connId,
-    upstreamModelId: model.upstreamModelId ?? model.id,
+    upstreamModelId: model.upstreamModelId ?? defaultUpstreamModelId(model.id),
     cost: model.cost,
     // ponytail: no catalog lookup here, 0 means "unknown until user edits" — acceptable since this is a one-shot migration of pre-existing data, not new-model creation
     contextWindow: model.contextWindow ?? 0,
@@ -97,7 +98,7 @@ export async function migrateModelsToConnections(): Promise<{ connections: numbe
   const MIGRATED_SUFFIX = ' (migrated)';
   let labelsChanged = false;
   for (const c of existingConnections) {
-    if (c.label.endsWith(MIGRATED_SUFFIX)) {
+    if (c.label?.endsWith(MIGRATED_SUFFIX)) {
       c.label = c.label.slice(0, -MIGRATED_SUFFIX.length);
       labelsChanged = true;
     }
@@ -109,8 +110,10 @@ export async function migrateModelsToConnections(): Promise<{ connections: numbe
   // renaming the later ones in place is safe.
   const kept: string[] = [];
   for (const c of existingConnections) {
-    if (isConnectionLabelTaken(c.label, kept)) {
-      c.label = suggestConnectionLabel(c.providerId, c.providerName, kept);
+    // A connection persisted without a label (hand-edited or older writer) gets a generated one;
+    // providerId may be missing too in a corrupt file.
+    if (!c.label || isConnectionLabelTaken(c.label, kept)) {
+      c.label = suggestConnectionLabel(c.providerId ?? '', c.providerName, kept);
       labelsChanged = true;
     }
     kept.push(c.label);

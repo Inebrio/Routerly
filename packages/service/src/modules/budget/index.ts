@@ -41,8 +41,8 @@ const upstream: Processor<ProxyContext> = {
 export const budgetModule: RouterlyModule = defineModule({
   manifest: {
     id: 'budget',
-    version: '0.4.0',
-    dependsOn: { 'reverse-proxy': '^0.4.0', 'provider': '^0.4.0' },
+    version: '0.6.0',
+    dependsOn: { 'reverse-proxy': '^0.6.0', 'provider': '^0.6.0' },
   },
   register({ container }) {
     container.register(BUDGET, { isAllowed, getViolatedLimits, getLimitUsageSnapshot })

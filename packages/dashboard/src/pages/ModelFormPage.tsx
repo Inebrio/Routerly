@@ -128,6 +128,7 @@ const EMPTY_FORM = {
   cachePerMillion: '',
   cacheWritePerMillion: '',
   contextWindow: '',
+  timeout: '',
   // Azure OpenAI
   azureResourceName: '',
   azureDeploymentId: '',
@@ -138,7 +139,7 @@ const EMPTY_FORM = {
   awsSecretAccessKey: '',
   awsSessionToken: '',
   // Google Vertex AI
-  VERTEXROUTERIDPLACEHOLDER: '',
+  vertexProjectId: '',
   vertexLocation: '',
   vertexServiceAccountKey: '',
 };
@@ -286,7 +287,7 @@ export function ModelFormPage() {
       }
     }
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [id, isEditing, editingModelId]);
 
   // ── Catalog override helpers ───────────────────────────────────────────────
@@ -455,7 +456,10 @@ export function ModelFormPage() {
         customModel = false;
       }
     } else {
+      // Routerly ID without the provider prefix: keep it as-is and prefill the upstream name
+      // so the required "model name" field is not left empty (which blocked saving).
       customId = model.id;
+      formId = model.upstreamModelId ?? model.id.slice(model.id.indexOf('/') + 1);
     }
 
     // If prices are 0 (model was created without specifying them), fall back to preset values
@@ -479,7 +483,7 @@ export function ModelFormPage() {
     const m = model as Model & {
       azureResourceName?: string; azureDeploymentId?: string; azureApiVersion?: string;
       awsRegion?: string; awsAccessKeyId?: string; awsSessionToken?: string;
-      VERTEXROUTERIDPLACEHOLDER?: string; vertexLocation?: string; vertexServiceAccountKey?: string;
+      vertexProjectId?: string; vertexLocation?: string; vertexServiceAccountKey?: string;
     };
 
     setForm(f => ({
@@ -496,6 +500,7 @@ export function ModelFormPage() {
       cachePerMillion: cachePrice != null ? String(cachePrice) : '',
       cacheWritePerMillion: cacheWritePrice != null ? String(cacheWritePrice) : '',
       contextWindow: ctxWindow != null ? String(ctxWindow) : '',
+      timeout: model.timeout != null ? String(model.timeout) : '',
       azureResourceName: m.azureResourceName ?? '',
       azureDeploymentId: m.azureDeploymentId ?? '',
       azureApiVersion: m.azureApiVersion ?? '',
@@ -503,7 +508,7 @@ export function ModelFormPage() {
       awsAccessKeyId: m.awsAccessKeyId ?? '',
       awsSecretAccessKey: '',
       awsSessionToken: m.awsSessionToken ?? '',
-      VERTEXROUTERIDPLACEHOLDER: m.VERTEXROUTERIDPLACEHOLDER ?? '',
+      vertexProjectId: m.vertexProjectId ?? '',
       vertexLocation: m.vertexLocation ?? '',
       vertexServiceAccountKey: '',
     }));
@@ -551,7 +556,7 @@ export function ModelFormPage() {
   }
 
   /* v8 ignore next 7 */
-  function effectiveId(): string {
+  function _effectiveId(): string {
     if (form.customId.trim()) return form.customId.trim();
     const prefix = form.provider === 'custom' && form.customProviderName.trim()
       ? form.customProviderName.trim()
@@ -616,7 +621,7 @@ export function ModelFormPage() {
               ...(form.awsSecretAccessKey ? { awsSecretAccessKey: form.awsSecretAccessKey } : {}),
               ...(form.awsSessionToken   ? { awsSessionToken: form.awsSessionToken }     : {}),
               // Google Vertex AI
-              ...(form.VERTEXROUTERIDPLACEHOLDER   ? { VERTEXROUTERIDPLACEHOLDER: form.VERTEXROUTERIDPLACEHOLDER }     : {}),
+              ...(form.vertexProjectId   ? { vertexProjectId: form.vertexProjectId }     : {}),
               ...(form.vertexLocation    ? { vertexLocation: form.vertexLocation }       : {}),
               ...(form.vertexServiceAccountKey ? { vertexServiceAccountKey: form.vertexServiceAccountKey } : {}),
             }),
@@ -627,8 +632,10 @@ export function ModelFormPage() {
         ...(form.cachePerMillion ? { cachePerMillion: parseFloat(form.cachePerMillion) } : {}),
         ...(form.cacheWritePerMillion ? { cacheWritePerMillion: parseFloat(form.cacheWritePerMillion) } : {}),
         ...(form.contextWindow ? { contextWindow: parseInt(form.contextWindow, 10) } : {}),
+        // Empty on edit resets to the default (null); empty on create just omits it.
+        ...(form.timeout ? { timeout: parseInt(form.timeout, 10) } : isEditing ? { timeout: null } : {}),
         ...(pricingTiersPayload.length ? { pricingTiers: pricingTiersPayload } : {}),
-        ...(Object.keys(fieldOverrides).length ? { fieldOverrides } : {}),
+        fieldOverrides,
         limits: limitRows
           .filter(l => l.value !== '' && !isNaN(parseFloat(l.value)))
           .map(rowToLimit),
@@ -695,7 +702,7 @@ export function ModelFormPage() {
             <div className="form-group">
               <label className="form-label">{t('models.form.identification.provider')}</label>
               <SearchableSelect
-                options={PROVIDERS.map(p => ({ value: p, label: PROVIDER_LABEL_KEYS[p] ? t(PROVIDER_LABEL_KEYS[p]!) : p }))}
+                options={(PROVIDERS.includes(form.provider) || !form.provider ? PROVIDERS : [form.provider, ...PROVIDERS]).map(p => ({ value: p, label: PROVIDER_LABEL_KEYS[p] ? t(PROVIDER_LABEL_KEYS[p]!) : p }))}
                 value={form.provider}
                 onChange={v => handleProviderChange(v as Provider)}
               />
@@ -797,7 +804,7 @@ export function ModelFormPage() {
                   endpoint: form.endpoint, apiKey: form.apiKey, cfClearance: form.cfClearance,
                   azureResourceName: form.azureResourceName, azureDeploymentId: form.azureDeploymentId, azureApiVersion: form.azureApiVersion,
                   awsRegion: form.awsRegion, awsAccessKeyId: form.awsAccessKeyId, awsSecretAccessKey: form.awsSecretAccessKey, awsSessionToken: form.awsSessionToken,
-                  VERTEXROUTERIDPLACEHOLDER: form.VERTEXROUTERIDPLACEHOLDER, vertexLocation: form.vertexLocation, vertexServiceAccountKey: form.vertexServiceAccountKey,
+                  vertexProjectId: form.vertexProjectId, vertexLocation: form.vertexLocation, vertexServiceAccountKey: form.vertexServiceAccountKey,
                 }}
                 onChange={patch => {
                   setForm(f => ({ ...f, ...patch }));
@@ -868,6 +875,12 @@ export function ModelFormPage() {
               <label className="form-label">{t('models.form.pricing.contextWindow')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('models.form.pricing.contextWindowHint')}</span><FieldBadge field="contextWindow" /></label>
               <input className="form-input" type="number" step="1000" value={form.contextWindow}
                 onChange={e => { setForm(f => ({ ...f, contextWindow: e.target.value })); setOverride('contextWindow', true); }} placeholder="128000" />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">{t('models.form.pricing.timeout')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('models.form.pricing.timeoutHint')}</span></label>
+              <input className="form-input" type="number" min="1" step="1" value={form.timeout}
+                onChange={e => setForm(f => ({ ...f, timeout: e.target.value }))} placeholder="60000" />
             </div>
           </div>
 
@@ -1045,8 +1058,8 @@ export function ModelFormPage() {
               </button>
             )}
             {testState && testState !== 'loading' && (
-              <span style={{ fontSize: '0.82rem', color: testState.ok ? 'var(--success)' : 'var(--danger)' }}>
-                {testState.ok ? `✓ ${testState.latencyMs}ms` : `✗ ${testState.error?.slice(0, 60)}`}
+              <span title={testState.error} style={{ fontSize: '0.82rem', color: testState.ok ? 'var(--success)' : 'var(--danger)' }}>
+                {testState.ok ? `✓ ${testState.latencyMs}ms` : `✗ ${testState.error?.slice(0, 200)}`}
               </span>
             )}
           </div>

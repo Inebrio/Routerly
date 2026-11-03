@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { calculateCost } from './cost.js'
 import type { ModelConfig } from '@routerly/shared'
 
@@ -37,6 +37,17 @@ describe('calculateCost', () => {
     // 1M cached → inputPerMillion(1.0) + 1M output → 2.0 = 3.0
     const cost = calculateCost(1_000_000, 1_000_000, model(), 1_000_000)
     expect(cost).toBeCloseTo(3.0, 9)
+  })
+
+  it('warns once per model when cache reads have no cachePerMillion', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const m = { ...model(), id: 'warn-once-model' } as ModelConfig
+    calculateCost(1000, 0, m, 500)
+    calculateCost(1000, 0, m, 500)
+    expect(warn).toHaveBeenCalledTimes(1)
+    calculateCost(1000, 0, { ...model({ cachePerMillion: 0.1 }), id: 'priced-model' } as ModelConfig, 500)
+    expect(warn).toHaveBeenCalledTimes(1)
+    warn.mockRestore()
   })
 
   it('cache write uses cacheWritePerMillion when set', () => {

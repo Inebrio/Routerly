@@ -100,6 +100,8 @@ Only available when `configured: false`.
 GET /api/me
 ```
 
+Returns `id`, `email`, `roleId`, `permissions` (the role's current permissions, resolved on every call) and `language` when set. The dashboard reads it when restoring a session so a role change applies after a reload.
+
 ### Set Language
 
 ```
@@ -133,6 +135,16 @@ model in the response carries a `connectionId` pointing at the connection it
 resolves against. See [Connections](#connections) and
 [Dashboard: Models: Preconfigured vs Custom Connection](../dashboard/models.md#preconfigured-vs-custom-connection)
 for the higher-level explanation.
+
+### Model Catalog
+
+```
+GET /api/models/catalog
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:read`; `settings:read` is not needed)
+
+Returns the known models per provider, each flagged `isConfigured` when already registered. It feeds the model picker, so it follows the model permissions, unlike the catalog repository settings routes (`/api/catalog/*`), which need `settings:read` or `settings:write`.
 
 ### List Models
 
@@ -171,6 +183,7 @@ POST /api/models
 **Request fields:**
 - `connectionId` (optional): bind the model to an existing connection instead of supplying credentials inline. When present, `apiKey`/`endpoint`/`cfClearance` and the other credential fields are ignored; the connection's provider must match `provider` (`400` otherwise, `404` if `connectionId` does not exist).
 - When `connectionId` is **absent**, `apiKey`/`endpoint`/`cfClearance` (and any provider-specific credential fields) are used to create a dedicated, single-model connection with id `conn-for-<id>`, and the model binds to it. This is the same wire shape the endpoint accepted before the connections cutover, so existing integrations are unaffected.
+- `timeout` (optional): upstream request timeout in milliseconds, positive integer (default `60000` when omitted). Non-integer or non-positive values return `400`. Returned on the model. On `PUT`, omitting it keeps the current value and `null` resets it to the default.
 - `fieldOverrides` (optional): object mapping field names to `true` to lock them against catalog sync. Supported fields: `inputPerMillion`, `outputPerMillion`, `cachePerMillion`, `cacheWritePerMillion`, `pricingTiers`, `contextWindow`, `capabilities`.
 
 **Response `201`:** the created model (redacted), including `connectionId`.
@@ -216,6 +229,8 @@ Changing a field value automatically sets `fieldOverrides[fieldName] = true`. To
 ```
 DELETE /api/models/:id
 ```
+
+**Errors**: `404` model not found · `409` `{ error, usedBy }` the model is still referenced by a router or router token (`usedBy` = router ids; nothing is deleted) · `403` insufficient permissions
 
 If the model owned its dedicated `conn-for-<id>` connection and no other model instance references it, the connection is deleted along with the model.
 
@@ -358,7 +373,7 @@ intentional for those providers.
 
 **Response `200`:** the created connection, `credentials` omitted (see List Connections above).
 
-**Errors**: `400` invalid body / unknown `providerId` / `label_taken` (`{"error":"label_taken","message":"Label \"<name>\" is already used by another connection"}`) · `403` insufficient permissions or `module_disabled` (oauth/web connection while the corresponding `provider-oauth`/`provider-web` module is disabled)
+**Errors**: `400` invalid body / unknown `providerId` / `label_taken` (`{"error":"label_taken","message":"Label \"<name>\" is already used by another connection"}`) · `403` insufficient permissions
 
 ### Update Connection
 
@@ -385,7 +400,7 @@ encrypted counterpart.
 
 **Response `200`:** the updated connection, `credentials` omitted.
 
-**Errors**: `400` invalid body · `404` connection not found · `403` insufficient permissions or `module_disabled`
+**Errors**: `400` invalid body · `404` connection not found · `403` insufficient permissions
 
 ### Delete Connection
 
@@ -397,7 +412,7 @@ DELETE /api/connections/:id
 
 **Response**: `204 No Content`
 
-**Errors**: `404` connection not found · `403` insufficient permissions
+**Errors**: `404` connection not found · `409` `{ error, usedBy }` the connection is still used by one or more models (`usedBy` = model ids; nothing is deleted) · `403` insufficient permissions
 
 ---
 
@@ -454,7 +469,7 @@ POST /api/instances
 **Fields:**
 - `connectionId` - id of an existing connection (required)
 - `upstreamModelId` - the provider's model id, e.g. `gpt-5-mini` (required)
-- `cost` - `{ inputPerMillion, outputPerMillion, cachePerMillion?, cacheWritePerMillion?, pricingTiers? }` (required)
+- `cost` - `{ inputPerMillion, outputPerMillion, cachePerMillion?, cacheWritePerMillion?, pricingTiers? }` (required). When `cachePerMillion` is omitted, cache-read tokens are billed at `inputPerMillion` (and `cacheWritePerMillion` falls back the same way); the service logs a one-time warning per model on the first cache hit. Set `cachePerMillion` to price cache reads correctly.
 - `contextWindow` - token limit (required)
 - `limits` - array of usage limit objects, same shape as [router token limits](#create-token) (optional)
 - `capabilities` - `{ thinking?, vision?, functionCalling?, json?, embedding? }`, overrides the connection provider's `nativeCapabilities` (optional)
@@ -518,9 +533,6 @@ See [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profile
 for the selector and fallback strategy reference. Both fields are optional on
 write and default to `argmax` and `next-best`; the API is the only surface that
 sets them, since the dashboard and the CLI do not expose either.
-
-All profile endpoints return `403 module_disabled` when the `profiles` module
-is disabled.
 
 ### List Profiles
 
@@ -762,21 +774,24 @@ written.**
 - `sampleMessages`: message array to run the pipeline over, same shape as an
   [LLM Proxy](./llm-proxy.md) request's `messages` (required, min 1)
 - `steps`: the optimizer steps to dry-run, same shape as the
-  [`optimizers` router field](#optimizers-router-field) (required)
+  [`optimizers` router field](#optimizers-router-field). Optional when
+  `routerId` is given: omitted, the preview runs the pipeline the router really
+  uses, which is its assigned optimizer profile or, with none, its saved custom
+  steps. Sent, exactly these steps run (use it to preview unsaved edits)
 - `routerId`: optional. When given, the preview runs "as" that router (its
-  other config is read; nothing is written); `404` if unknown. The `steps`
-  in the request body still drive which optimizers run. The router's own
-  saved `optimizers.steps` are not substituted in
+  other config is read; nothing is written); `404` if unknown. Without
+  `steps`, `routerId` is required (`400` otherwise)
 - `model`: optional model id the sample is addressed to. `headroom` sizes its
   budget on the requested model's context window, so without one it reports a
   skip reason instead of trimming, exactly as it would on a request naming a
   model Routerly has no window for
 
-**Response `200`:**
+**Response `200`** (`pipeline.kind` is `profile`, with `profileId` and `label`, when the router's assigned profile ran; `custom` otherwise):
 ```json
 {
   "estimatedTokensBefore": 55,
   "estimatedTokensAfter": 30,
+  "pipeline": { "kind": "custom", "label": "Custom" },
   "messages": [{ "role": "user", "content": "Hello, help me this." }],
   "perStep": [
     {
@@ -907,11 +922,6 @@ models, routing profile, optimizer pipeline, guardrails) becomes comparable.
 See [Concepts: Experiments](../concepts/experiments.md) for how a test lives,
 the rotations and how the numbers are computed.
 
-Experiments are a **module**. With it disabled every route below answers
-`403 {"error":"module_disabled"}` before the handler runs, so a client can
-tell "turned off" from "not allowed" (`403 Forbidden` with a
-`Required permission:` message).
-
 Tokens are returned with `token` stripped on every read: the raw value exists
 only in the `201` of [Create Experiment](#create-experiment) and the response
 of [Create Experiment Token](#create-experiment-token), the same rule router
@@ -964,7 +974,7 @@ GET /api/experiments
 | `judgeScores` | Verdict tally per variant id: `{ count, totalScore, lastAt }`. Absent until the first verdict |
 | `minSamplesPerVariant` | Overrides the default of `30` |
 
-**Errors**: `403` insufficient permissions · `403` `module_disabled`
+**Errors**: `403` insufficient permissions
 
 ### Get Experiment
 
@@ -976,8 +986,7 @@ GET /api/experiments/:id
 
 **Response `200`**: one experiment, same shape as the list entries.
 
-**Errors**: `404` not found · `403` insufficient permissions · `403`
-`module_disabled`
+**Errors**: `404` not found · `403` insufficient permissions
 
 ### Experiment Metrics
 
@@ -1042,8 +1051,7 @@ guardrail passes and the judge's own verdicts are gateway overhead: counting
 them would make the cheap variant look expensive for a reason the operator
 cannot act on.
 
-**Errors**: `404` not found · `403` insufficient permissions · `403`
-`module_disabled`
+**Errors**: `404` not found · `403` insufficient permissions
 
 ### Create Experiment
 
@@ -1080,7 +1088,7 @@ value. It is returned here and nowhere else.
 
 **Errors**: `400` invalid body · `404` `router_not_found` (with the offending
 `routerIds`) · `409` name already taken · `403` insufficient permissions ·
-`403` `module_disabled`
+`403` insufficient permissions
 
 ### Update Experiment
 
@@ -1101,7 +1109,7 @@ window to the period after the change.
 **Response `200`**: the updated experiment.
 
 **Errors**: `400` invalid body · `404` not found · `404` `router_not_found` ·
-`403` insufficient permissions · `403` `module_disabled`
+`403` insufficient permissions
 
 ### Create Experiment Token
 
@@ -1130,8 +1138,7 @@ A client uses it exactly like a router token: same base URL, this value in
 place of the router's. Each request lands on one variant and is billed to
 that variant's router. Nothing about the test reaches the wire.
 
-**Errors**: `404` not found · `403` insufficient permissions · `403`
-`module_disabled`
+**Errors**: `404` not found · `403` insufficient permissions
 
 ### Revoke Experiment Token
 
@@ -1145,7 +1152,7 @@ DELETE /api/experiments/:id/tokens/:tokenId
 failing immediately.
 
 **Errors**: `404` not found · `404` token not found · `403` insufficient
-permissions · `403` `module_disabled`
+permissions · `403` insufficient permissions
 
 ### Delete Experiment
 
@@ -1160,8 +1167,7 @@ DELETE /api/experiments/:id
 The experiment's tokens go with it, so every client still calling one starts
 getting `401`. Move those clients to a router token first.
 
-**Errors**: `404` not found · `403` insufficient permissions · `403`
-`module_disabled`
+**Errors**: `404` not found · `403` insufficient permissions
 
 ---
 
@@ -1172,6 +1178,12 @@ getting `401`. Move those clients to a router token first.
 ```
 GET /api/routers
 ```
+
+The list is not filtered by router membership: every caller holding
+`router:read` sees every router (name, kind, token snippets, never full tokens).
+Membership (`/api/routers/:id/members`) records who administers a router and
+scopes MCP access; it does not hide routers. To keep a router out of someone's
+view, do not grant them `router:read`.
 
 There is no single-router route: read a router from this list. Routers are
 addressed by `id`, never by name or slug.
@@ -1196,6 +1208,11 @@ Only `name` is required. `models` holds target model references, not bare id
 strings: each entry is `{ modelId, prompt? }`. **Response `201`**: the created
 router plus a `token` field with the first router token in clear text, which
 is the only time it is readable.
+
+Model ids that are not in the model registry are accepted (a model may be
+unmapped or managed elsewhere) but listed in a `warnings` string array on the
+response, e.g. `Model "nope/x" is not in the model registry`. The field is
+absent when every model is registered. `PUT /api/routers/:id` behaves the same.
 
 **Errors**: `400` empty name · `400` invalid `timeoutMs` · `409` a router with
 that name already exists · `403` insufficient permissions
@@ -2086,13 +2103,14 @@ GET /api/settings
 PUT /api/settings
 ```
 
-`defaultLanguage` (1-10 characters) sets the instance default dashboard language; other values return `400`.
+`defaultLanguage` (1-10 characters) sets the instance default dashboard language; other values return `400`. `channel` sets the update channel the service checks against (`PUT` takes effect immediately, no restart — the running update checker is updated in place); an unrecognized value returns `400`.
 
 ```json
 {
   "port": 3000,
   "logLevel": "info",
   "publicUrl": "https://routerly.example.com",
+  "channel": "develop",
   "providerRepos": [
     {
       "url": "https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/",
@@ -2107,19 +2125,42 @@ PUT /api/settings
 ```
 
 **Fields:**
-- `port`, `logLevel`, `publicUrl`, `requireMfa` - service configuration (optional)
+- `logLevel` must be one of `fatal`, `error`, `warn`, `info`, `debug`, `trace`; anything else answers `400`.
+- `port`, `logLevel`, `publicUrl`, `requireMfa` - service configuration (optional). `publicUrl` must be an `http://`/`https://` URL (trailing slash removed) or `""` to clear it; `usageRetention.maxAgeDays`/`maxSizeMb` must be positive integers; otherwise `400`. When `requireMfa` is `true`, every management route except `/api/me`, `/api/me/language`, `POST /api/auth/2fa/setup` and `POST /api/auth/2fa/confirm` answers `403 {"error":"mfa_required"}` to a user who has not enabled 2FA
+- `channel` - update channel: `latest`, `current`, `next`, `stable`, `develop`, or a version tag such as `v0.4.0` (optional)
 - `providerRepos` - array of provider repository objects (optional)
 
 **ProviderRepo object:**
 - `url` - repository endpoint (required)
 - `enabled` - whether the repo is active (optional, default `true`)
-- `channel` - named channel to prefer (optional, e.g. `stable`, `latest`)
+- `channel` - named channel to prefer (optional, e.g. `stable`, `latest`) — this is the provider catalog's own channel concept, unrelated to the update channel above
+
+**Errors**: `400 { "error": "Invalid channel. Accepted values: latest, current, next, stable, develop, or a version tag such as v0.4.0." }` when `channel` is not one of the five names above or a version tag.
+
+:::warning Breaking change
+`develop` is not an alias for `next`: it is its own channel, the bleeding-edge line. An instance that had `develop` persisted under the old meaning now tracks the bleeding-edge line instead of `next`. No migration runs on disk. A persisted `"channel": "stable"` stays valid and is never rewritten.
+:::
+
+### Get Available Releases
+
+```
+GET /api/system/releases
+```
+
+Requires a valid dashboard session (any role). Used by the dashboard's channel selector.
+
+**Response `200`:**
+```json
+{ "channels": ["latest", "current", "next", "develop"], "versions": [] }
+```
+
+`channels` always includes the four channel names above, plus any non-semver GitHub tag found among the repository's releases. `versions` is currently always empty.
 
 ---
 
 ## Modules
 
-Manage optional service modules. Core modules (`config`, `provider`, `catalog`, `reverse-proxy`, `routing`) are always-on and cannot be disabled. Optional modules (e.g. `guardrails`, `pii`) can be toggled on or off; disabling a module removes its features entirely at boot (no hot-swap). Changes require a service restart.
+Every module is core and always active; there is no endpoint to enable or disable one. A stored configuration that marks a module disabled is cleared at service start.
 
 ### List Modules
 
@@ -2155,78 +2196,11 @@ GET /api/modules
 |-------|------|-------------|
 | `id` | string | Module identifier |
 | `version` | string | Module version. Always equal to the running product's version, not versioned independently per module |
-| `enabled` | boolean | Whether the module is currently active. When a module is disabled, its routes, tools, and features are not loaded at boot; disabling requires a service restart to take effect |
-| `alwaysOn` | boolean | Whether this is a core module that cannot be disabled |
+| `enabled` | boolean | Always `true` |
+| `alwaysOn` | boolean | Always `true` |
 | `dependsOn` | array | List of module IDs this module depends on; empty array if no dependencies |
 
 **Errors**: `403` insufficient permissions
-
-### Enable Module
-
-```
-POST /api/modules/:id/enable
-```
-
-**Auth**: `Authorization: Bearer <jwt>` (requires `modules:manage`)
-
-Enables a module. Returns `409` if the module is unknown or has unmet dependencies. Always-on modules are already enabled by definition and can be targeted here without error (no-op, returns `200`).
-
-**Response `200`:**
-```json
-{
-  "id": "guardrails",
-  "enabled": true,
-  "restartRequired": true
-}
-```
-
-**Response `409` (unknown module):**
-```json
-{ "error": "Unknown module \"unknown-module\"" }
-```
-
-**Response `409` (unmet dependencies):**
-```json
-{ "error": "Cannot enable \"guardrails\": depends on disabled provider" }
-```
-
-**Errors**: `403` insufficient permissions · `409` module cannot be enabled
-
-### Disable Module
-
-```
-POST /api/modules/:id/disable
-```
-
-**Auth**: `Authorization: Bearer <jwt>` (requires `modules:manage`)
-
-Disables a module. Returns `409` if the module is always-on, unknown, or required by another enabled module.
-
-**Response `200`:**
-```json
-{
-  "id": "guardrails",
-  "enabled": false,
-  "restartRequired": true
-}
-```
-
-**Response `409` (always-on):**
-```json
-{ "error": "Module \"reverse-proxy\" is always-on and cannot be disabled" }
-```
-
-**Response `409` (unknown module):**
-```json
-{ "error": "Unknown module \"unknown-module\"" }
-```
-
-**Response `409` (required by dependents):**
-```json
-{ "error": "Cannot disable \"provider\": required by reverse-proxy, routing" }
-```
-
-**Errors**: `403` insufficient permissions · `409` module cannot be disabled
 
 ---
 
@@ -2481,6 +2455,7 @@ PATCH /api/notifications/channels/:id
 
 - To **clear event filters**, send an empty array: `"events": []`
 - To **clear targets**, send an empty object: `"targets": {}`
+- Sending `null` for any non-secret optional field (e.g. `"targets": null`, `"username": null`) removes the field from the stored channel.
 - **Secret fields** (passwords, API keys, tokens) are only updated when explicitly provided and non-empty. Omitting a secret field leaves it unchanged.
 
 **Response `200`**
@@ -3083,20 +3058,21 @@ No authentication required.
   "configDir": "/Users/you/.routerly/config",
   "dataDir": "/Users/you/.routerly/data",
   "uptimeSeconds": 3600,
-  "channel": "stable",
+  "channel": "current",
+  "rawChannel": "current",
   "isDocker": false,
   "updateInfo": {
     "available": true,
     "currentVersion": "0.2.0",
     "latestVersion": "0.3.0",
-    "channel": "stable",
+    "channel": "current",
     "releaseUrl": "https://github.com/Inebrio/Routerly/releases/tag/v0.3.0",
     "checkedAt": "2026-06-09T10:00:00.000Z"
   }
 }
 ```
 
-`updateInfo` is `null` if no check has completed yet (first 24 hours after boot). `isDocker` is `true` when the service is running inside a Docker container.
+`updateInfo` is `null` if no check has completed yet (first 24 hours after boot). `isDocker` is `true` when the service is running inside a Docker container. `channel` is the stored value as-is; `rawChannel` is kept for compatibility and always equals `channel` — neither is ever silently substituted, so a persisted value is reported back verbatim rather than corrected (see [Update Settings](#update-settings)).
 
 ---
 
@@ -3115,10 +3091,13 @@ Requires authentication. Forces an immediate check against the GitHub Releases A
   "available": false,
   "currentVersion": "0.2.0",
   "latestVersion": "0.2.0",
-  "channel": "stable",
-  "checkedAt": "2026-06-09T12:34:56.000Z"
+  "channel": "current",
+  "checkedAt": "2026-06-09T12:34:56.000Z",
+  "status": "ok"
 }
 ```
+
+`status` is `ok` when the channel was compared, `disabled` when update checking is off on this instance (non-production run or `ROUTERLY_DISABLE_UPDATE_CHECK=true`; no request is made and `checkedAt` is empty), or `error` when the request failed (the reason is in `error`, `latestVersion` is empty and `available` is `false`). `currentVersion` is always the installed version.
 
 ---
 

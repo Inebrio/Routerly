@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "થીમ: {{theme}}"
     },
+    "language": {
+      "label": "ભાષા",
+      "saveError": "તમારી ભાષા સંચય કરી શકાઈ નથી. પહેલાંની ભાષામાં પરત ફર્યું."
+    },
     "sidebar": {
       "expand": "સાઇડબાર વિસ્તૃત કરો",
       "collapse": "સાઇડબાર સંકુચિત કરો"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "કેટલીક કોન્ફિગરેશન ફાઇલોને પરવાનગીધારક accessધરાવે છે ({{files}})। સ્ટાર્ટআપ અને વિનંતીઓ હજી પણ કાર્ય કરે છે. તેને સેટિંગ્સ → સુરક્ષા થી ઠીક કરો, અથવા જ્યારે અનુકૂળ હોય ત્યારે હોસ્ટ ફાઇલસિસ્ટમથી ઠીક કરો.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "બંધ કરો",
       "updateAvailable": "Routerly v{{latest}} ઉપલબ્ધ છે. તમે v{{current}} પર છો.",
       "updateLink": "સેટિંગ્સમાં અપડેટ કરો",
@@ -40,9 +45,6 @@
       "telemetryLink": "શું મોકલવામાં આવે છે?",
       "telemetryYes": "હા, મદદ કરો",
       "telemetryNo": "આભાર નથી"
-    },
-    "language": {
-      "label": "ભાષા"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "સેશન ટોકન",
       "awsSessionTokenOptionalHint": "(વૈકલ્પિક, અસ્થાયી ક્રેડેન્શિયલ્સ માટે)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "GCP રાઉટર ID",
-      "gcpRouterIdPlaceholder": "મારો-gcp-રાઉટર",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "સ્થાન",
       "gcpLocationDefaultHint": "(ડિફોલ્ટ: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "ઍક્સેસ ટોકન",
         "sessionTokenLabel": "સેશન ટોકન",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "sessionKey કૂકી મૂલ્ય ટોકેન (sk-ant-sid01-…)",
-        "openaiInstructions": "ChatGPT માં લૉગ ઇન કર્યા પછી, નવા ટૅબમાં <code>https://chatgpt.com/api/auth/session</code> ખોલો. <code>accessToken</code> ક્ષેત્ર (આમ <code>eyJ</code>) ની મૂલ્યતા કોપી કરો. ટોકન દરેક ~24 કલાક સમાપ્ત હોય છે. વિશ્વાસી ઍક્સેસ માટે, નીચે <strong>cf_clearance</strong> ક્ષેત્ર પણ ભરો.",
-        "anthropicInstructions": "<strong>તમારું સેશન કી મેળવવા માટે:</strong> Claude માં લૉગ ઇન કર્યા પછી, DevTools (F12) → Application → Cookies → <code>claude.ai</code> → <code>sessionKey</code> કૂકી મૂલ્ય કોપી કરો (આમ <code>sk-ant-sid01-</code>). કી પર્યંત માન્ય રહે છે તમે લૉગ આઉટ કરો તેવા પર્યંત."
+        "sessionTokenPlaceholder": "sessionKey કૂકીનું મૂલ્ય પેસ્ટ કરો (sk-ant-sid…)",
+        "openaiInstructions": "ChatGPT માં લૉગ ઇન કર્યા પછી, નવા ટૅબમાં <code>https://chatgpt.com/api/auth/session</code> ખોલો. <code>accessToken</code> ક્ષેત્ર (<code>eyJ</code> થી શરૂ થાય છે) ની મૂલ્યતા કોપી કરો. ટોકન લગભગ 10 દિવસ માટે માન્ય રહે છે; જ્યારે ટેસ્ટ 401 સાથે નિષ્ફળ થવા લાગે ત્યારે નવો પેસ્ટ કરો. વિશ્વાસી ઍક્સેસ માટે, નીચે <strong>cf_clearance</strong> ક્ષેત્ર પણ ભરો.",
+        "anthropicInstructions": "<strong>તમારી સત્ર કી કેવી રીતે મેળવવી:</strong> <code>https://claude.ai</code> પર લૉગ ઇન હોય ત્યારે, DevTools ખોલવા માટે F12 દબાવો. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. કૂકી <code>sessionKey</code> ની <strong>Value</strong> કૉપિ કરો (<code>sk-ant-sid</code> થી શરૂ થાય છે, ઉદાહરણ તરીકે <code>sk-ant-sid02-</code>). આ HttpOnly કૂકી છે, તેથી પૃષ્ઠ કન્સોલમાંથી દેખાતી નથી. તમે લૉગ આઉટ કરો અથવા તે સમાપ્ત થાય ત્યાં સુધી માન્ય રહે છે; જો પરીક્ષણ નિષ્ફળ થવા લાગે તો નવી પેસ્ટ કરો."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "સંધારણ OAuth ટોકન",
@@ -417,7 +419,8 @@
       "status": "સ્થિતિ",
       "encoding": "એન્કોડિંગ",
       "frames": "ફ્રેમ્સ",
-      "bytes": "બાઇટ્સ"
+      "bytes": "બાઇટ્સ",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "ભાષા",
       "description": "ડેશબોર્ડ જે ભાષામાં બતાવવામાં આવે છે તે પસંદ કરો.",
       "languageLabel": "ભાષા",
-      "saved": "ભાષા પ્રાધાન્યતા સાચવેલું."
+      "saved": "ભાષા પ્રાધાન્યતા સાચવેલું.",
+      "saveError": "તમારી ભાષા પસંદગી સંચય કરી શકાઈ નથી. પહેલાંની પસંદગીમાં પરત ફર્યું."
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "સાચવી રહ્યા છીએ…",
         "enable": "સક્ષમ કરો",
         "disable": "અક્ષમ કરો"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "બજેટ – રીસેટ",
         "systemStartup": "સિસ્ટમ – સ્ટાર્ટઅપ",
         "systemShutdown": "સિસ્ટમ – શટડાઉન",
-        "systemUpdateAvailable": "સિસ્ટમ – અપડેટ ઉપલબ્ધ"
+        "systemUpdateAvailable": "સિસ્ટમ – અપડેટ ઉપલબ્ધ",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "ચેનલ દૂર કરો",
       "removeChannelConfirm": "ચેનલ દૂર કરો?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} વપરાશકર્તા",
         "userCount_other": "{{count}} વપરાશકર્તાઓ",
-        "everyone": "બધા"
+        "everyone": "બધા",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "લોડ નિષ્ફળ"
@@ -831,6 +838,9 @@
         },
         "optional": "(વૈકલ્પિક)",
         "keepCurrentPlaceholder": "હાલના રાખવા માટે ખાલી છોડો",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "બધા રાઉટર્સ થી ઇવેન્ટ્સ પ્રાપ્ત કરવા માટે ખાલી છોડો.",
           "cooldownHeading": "શીતળન",
           "cooldownSuffix": "સેકંડ (0 = કોઈ શીતળન નથી)",
-          "cooldownHint": "આ ચેનલ તે જ ઇવેન્ટ માટે ફરીથી આગ્નેય કરી શકે તે માટે ન્યૂનતમ અંતરાલ."
+          "cooldownHint": "આ ચેનલ તે જ ઇવેન્ટ માટે ફરીથી આગ્નેય કરી શકે તે માટે ન્યૂનતમ અંતરાલ.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "પ્રાપ્તકર્તાઓ / લક્ષ્યો",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "ચેનલ્સ શોધો…",
         "noResults": "કોઈ પરિણામ નથી",
         "emptyTitle": "હજુ કોઈ સૂચના ચેનલ્સ ગઠીત નથી.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "કોઈ પણ ચેનલ્સ સક્રિય ફિલ્ટર્સ સાથે મેળતા નથી.",
         "nameInlinePlaceholder": "લેબલ (વૈકલ્પિક)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "એકીકરણ દૂર કરો",
       "saving": "સાચવી રહ્યા છીએ…",
       "save": "સાચવો",
-      "addButton": "એકીકરણ ઉમેરો"
+      "addButton": "એકીકરણ ઉમેરો",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "છેલ્લે તપાસ"
       },
       "noCheckPerformed": "હજુ કોઈ અપડેટ તપાસ કરવામાં આવી નથી.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "અપડેટ તપાસો",
       "checking": "તપાસી રહ્યા છીએ…",
       "updateTo": "v{{version}} માટે અપડેટ કરો",
@@ -1121,7 +1137,8 @@
         "checkFailed": "તપાસ નિષ્ફળ",
         "updateFailed": "અપડેટ નિષ્ફળ"
       },
-      "channel": "ચેનલ"
+      "channel": "ચેનલ",
+      "channelNote": "current દરેક નવા સ્થિર રિલીઝને અનુસરે છે; stable ફક્ત રિલીઝ પ્રમોટ થાય ત્યારે જ ખસે છે, તેથી બંને અલગ હોઈ શકે છે."
     },
     "security": {
       "authentication": "પ્રમાણીકરણ",
@@ -1156,6 +1173,8 @@
       "count": "1 રાઉટર",
       "count_other": "{{count}} રાઉટર્સ",
       "newRouter": "નવો રાઉટર",
+      "newOrchestrator": "નવો ઓર્કેસ્ટ્રેટર",
+      "newPassthrough": "નવો પાસથ્રુ",
       "empty": "હજુ કોઈ રાઉટર્સ નથી.",
       "emptyFiltered": "આ પ્રકારનો કોઈ રાઉટર નથી.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "આ રાઉટર દૂર કરો?",
       "errors": {
         "deleteFailed": "રાઉટર દૂર કરવામાં ભૂલ"
-      },
-      "newOrchestrator": "નવો ઓર્કેસ્ટ્રેટર",
-      "newPassthrough": "નવો પાસથ્રુ"
+      }
     },
     "layout": {
       "notFound": "રાઉટર મળી નથી",
@@ -1191,10 +1208,10 @@
       "backToRouters": "રાઉટર્સ પર પાછલું",
       "backToRoutersTitle": "રાઉટર્સ પર પાછલું",
       "newRouter": "નવો રાઉટર",
+      "newKind": "નવો {{kind}}",
       "loading": "લોડ કરી રહ્યા છીએ...",
       "routerId": "રાઉટર ID:",
-      "saveFirstHint": "આ ટેબ અનલૉક કરવા માટે રાઉટર પ્રથમ સાચવો",
-      "newKind": "નવો {{kind}}"
+      "saveFirstHint": "આ ટેબ અનલૉક કરવા માટે રાઉટર પ્રથમ સાચવો"
     },
     "dashboard": {
       "period": "સમયગાળો",
@@ -1212,7 +1229,9 @@
         "ttft": "પહેલા ટોકનનો સમય",
         "notMeasured": "આ કૉલ્સમાં માપવામાં આવતું નથી",
         "reliability": "વિશ્વસનીયતા",
-        "errorsAndBlocked": "{{errors}} ભૂલો · {{blocked}} બ્લોક કરાયું"
+        "errorsAndBlocked": "{{errors}} ભૂલો · {{blocked}} બ્લોક કરાયું",
+        "errorsAndBlocked_one": "{{errors}} ભૂલ · {{blocked}} બ્લોક કરાયું",
+        "errorsAndBlocked_other": "{{errors}} ભૂલો · {{blocked}} બ્લોક કરાયું"
       },
       "tokens": {
         "input": "ઇનપુટ ટોકન્સ:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "બેસ URL <code>{{baseUrl}}</code>, <code>/v1</code> વિના: SDK તેને ઉમેરે છે.",
         "curl": "curl",
-        "curlHint": "કંઈ પણ ઇન્સ્ટોલ કર્યા વિના વાયર તપાસો, પછી <usageLink>ઉપયોગ</usageLink> માં કૉલ માટે તપાસો."
+        "curlHint": "કંઈ પણ ઇન્સ્ટોલ કર્યા વિના વાયર તપાસો, પછી <usageLink>ઉપયોગ</usageLink> માં કૉલ માટે તપાસો.",
+        "passthrough": {
+          "heading": "કેવી રીતે જોડાવું",
+          "intro": "Passthrough દરેક વિનંતી બિનસંશોધિત આગળ ભેજે છે — તમારું પોતાનું <strong>તમારું</strong> અપસ્ટ્રીમ પ્રદાતા કી API કી તરીકે ઉપયોગ કરો, Routerly ટોકન ક્યારેય નહીં. Routerly આ રાઉટર માટે કોઈ પ્રમાણપત્ર સંચય કે જારી કરતો નથી; ક્લાયંટ જે પણ મોકલે છે તે સીધો પ્રદાતાને જાય છે.",
+          "noLimits": "બજેટ અને મર્યાદા આ રાઉટર પર લાગુ નથી: Passthrough ટ્રાફિકની કિંમત અજ્ઞાત છે, તેથી તે ક્યારેય તપાસવામાં આવતી નથી અથવા કોઈ ખર્ચ મર્યાદા તરફ ગણવામાં આવતી નથી.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "બેસ URL <code>{{url}}</code> — કોઈ <code>/v1</code> પ્રત્યય નથી, SDK હજી પણ તેનો પોતાનો પાથ ઉમેરે છે બરાબર જેમ તે વાસ્તવિક OpenAI API સામે કરશે.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "બેસ URL <code>{{url}}</code> — SDK હજી પણ <code>/v1/messages</code> પોતે ઉમેરે છે, બરાબર જેમ તે વાસ્તવિક Anthropic API સામે કરશે."
+        }
       },
       "form": {
         "kind": "પ્રકાર",
         "kindFixedHint": "રાઉટર બનાવ્યા એક બાર નિશ્ચિત.",
         "routerName": "રાઉટર નામ",
         "routerNamePlaceholder": "મારી એપ",
+        "passthroughPath": "પાથ",
+        "passthroughPathHint": "ક્લાયેન્ટ્સ જે URL કૉલ કરે તેનો ભાગ બની જાય: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "અગ્રણી સેટિંગ્સ",
         "ttftTimeout": "TTFT ટાઈમઆઉટ (ms)",
         "ttftTimeoutHint": "જો મોડલ આ સમયમાં પ્રથમ પ્રતિક્રિયા બાઈટ મોકલતું નથી, Routerly તેને રોક અને આગલા ઉમેદવાર પ્રયાસ કરે છે. કુલ પ્રતિક્રિયા સમયગાળો સીમિત નથી. તે 0 સુધી રાહ માટે સમૃદ્ધ કરો જ્યાં સુધી પ્રદાતા લે છે.",
         "traceContent": "ટ્રેસ સામગ્રી",
         "traceContentHint": "ટ્રેસ્ સેધમાં મેટાડેટા (મોડલ્સ, સ્કોર્સ, ટોકન્સ, ખર્ચ, વિલંબ) મહત્ત્વપૂર્ણ છે. આ તમે પણ મોકલેલ પ્રોમ્પ્ટ્સ અને પ્રાપ્ત જવાબો રેકોર્ડ કરવા માટે સક્ષમ કરો. તે ઉપયોગ રેકોર્ડ સાથે સંગ્રહિત અને કોઈ પણ વાંચી શકે છે અહેવાલો રીપોર્ટ.",
         "capturePromptsAndAnswers": "પ્રોમ્પ્ટ્સ અને જવાબો કેપ્ચર કરો",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "પરિવર્તનો સાચવો",
         "createRouter": "રાઉટર બનાવો",
-        "passthroughPath": "પાથ",
-        "passthroughPathHint": "ક્લાયેન્ટ્સ જે URL કૉલ કરે તેનો ભાગ બની જાય: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "ઓર્કેસ્ટ્રેટર બનાવો",
         "createPassthrough": "પાસથ્રુ બનાવો"
       }
@@ -1384,6 +1414,7 @@
       "saving": "સાચવી રહ્યા છીએ...",
       "saved": "સાચવાયું",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "ટોકન બચત પૂર્વદર્શન",
         "description": "વર્તમાન (અસાચવેલ) પાઇપલાઇન પ્રોમ્પ્ટ દ્વારા ચલાવો દરેક પગલું શું દૂર કરે છે અને તેનો ખર્ચ શું છે તે જોવા માટે. નમૂના કણોમાંથી એક પસંદ કરો, અથવા તમારું પોતાનું પ્રોમ્પ્ટ ટાઈપ કરો.",
         "promptLabel": "પ્રોમ્પ્ટ",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "હજુ કોઈ વિનંતી મોકલી નથી.",
       "turnTraceLog": "ટર્ન #{{turn}} ટ્રેસ લોગ · {{count}} ઇવેન્ટ",
       "turnTraceLog_other": "ટર્ન #{{turn}} ટ્રેસ લોગ · {{count}} ઇવેન્ટ્સ"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "મોડલ્સ",
       "subtitle": "Routerly સાથે નોધણી LLM પ્રદાતાઓ",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "મોડલ્સ",
         "health": "સ્વાસ્થ્ય"
@@ -2242,7 +2284,8 @@
       "next": "આગલું",
       "page": "પૃષ્ઠ {{page}} નું {{totalPages}}",
       "total": "({{count}} કુલ)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "બધા",
         "success": "સફલતા",
         "blocked": "બ્લોક કરાયું",
-        "error": "ભૂલ"
+        "error": "ભૂલ",
+        "sessionId": "સેશન ID",
+        "endUser": "અંતિમ વપરાશકર્તા",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "કોઈપણ સેશન",
+        "endUserPlaceholder": "કોઈપણ અંતિમ વપરાશકર્તા",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "બધા",
@@ -2383,7 +2432,10 @@
         "timestamp": "સમય તથ્ય",
         "guardrailTriggered": "ગાર્ડરેલ ટ્રિગર કરાયું",
         "blockedBy": "દ્વારા બ્લોક કરાયું",
-        "piiRedacted": "PII સંપાદિત કરાયું"
+        "piiRedacted": "PII સંપાદિત કરાયું",
+        "sessionId": "સેશન ID",
+        "endUser": "અંતિમ વપરાશકર્તા",
+        "tags": "Tags"
       },
       "errorMessage": "ભૂલ સંદેશ",
       "eventCount": "{{count}} ઇવેન્ટ",
@@ -2457,7 +2509,8 @@
       "show": "ડીબગ બતાવો",
       "empty": "હજુ કોઈ ડીબગ ડેટા નથી.",
       "emptyHint": "રૂટિંગ વિગતો જોવા માટે સંદેશ મોકલો.",
-      "turnTraceLog": "ટર્ન #{{turn}} ટ્રેસ લોગ"
+      "turnTraceLog": "ટર્ન #{{turn}} ટ્રેસ લોગ",
+      "resize": "ડિબગ પેનલનું કદ બદલો"
     },
     "compare": {
       "modelLabel": "મોડલ {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "ભૂમિકા અપડેટ નિષ્ફળ",
       "createFailed": "ભૂમિકા બનાવવું નિષ્ફળ",
       "deleteFailed": "ભૂમિકા દૂર કરવું નિષ્ફળ"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "કનેક્ટ પર પાછલું",
     "title": "કનેક્ટ",
     "docs": "ડોક્સ",
-    "notEnabledPrefix": "ક્લાયંટ ગોઠવણકાર સક્ષમ નથી. વ્યવસ્થાપક તેને સક્ષમ કરવા માટે પૂછો",
     "noClientPrefix": "કોઈ ક્લાયંટ નામ",
     "errors": {
       "loadFailed": "ક્લાયંટ્સ લોડ નિષ્ફળ: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "તે ક્લાયંટ મોડલ ટ્રાફિક Routerly દ્વારા માર્ગ આપે છે.",
     "mcpLabel": "MCP",
     "mcpDescription": "તે અંદર Routerly સાધન સર્વર લોડ કરે છે.",
-    "notEnabledPrefix": "ક્લાયંટ ગોઠવણકાર સક્ષમ નથી. વ્યવસ્થાપક તેને સક્ષમ કરવા માટે પૂછો",
     "errors": {
       "loadFailed": "ક્લાયંટ્સ લોડ નિષ્ફળ: {{error}}"
     },

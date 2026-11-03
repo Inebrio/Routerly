@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "थीम: {{theme}}"
     },
+    "language": {
+      "label": "भाषा",
+      "saveError": "आपकी भाषा सहेजी नहीं जा सकी। पिछली भाषा पर वापस किया गया।"
+    },
     "sidebar": {
       "expand": "साइडबार को विस्तारित करें",
       "collapse": "साइडबार को संकुचित करें"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "कुछ कॉन्फ़िगरेशन फाइलों के पास अनुमत एक्सेस है ({{files}})। स्टार्टअप और अनुरोध अभी भी काम करते हैं। इसे सेटिंग्स → सुरक्षा से ठीक करें, या जब सुविधाजनक हो तो होस्ट फाइलसिस्टेम से ठीक करें।",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "खारिज करें",
       "updateAvailable": "Routerly v{{latest}} उपलब्ध है। आप v{{current}} पर हैं।",
       "updateLink": "सेटिंग्स में अपडेट करें",
@@ -40,9 +45,6 @@
       "telemetryLink": "क्या भेजा जा रहा है?",
       "telemetryYes": "हां, मदद करें",
       "telemetryNo": "नहीं धन्यवाद"
-    },
-    "language": {
-      "label": "भाषा"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "सेशन टोकन",
       "awsSessionTokenOptionalHint": "(वैकल्पिक, अस्थायी क्रेडेंशियल के लिए)",
       "awsSessionTokenPlaceholder": "AQoDYXdz...",
-      "gcpRouterId": "GCP राउटर आईडी",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "स्थान",
       "gcpLocationDefaultHint": "(डिफ़ॉल्ट: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "एक्सेस टोकन",
         "sessionTokenLabel": "सेशन टोकन",
         "accessTokenPlaceholder": "eyJ...",
-        "sessionTokenPlaceholder": "sessionKey कुकी मान पेस्ट करें (sk-ant-sid01-...)",
-        "openaiInstructions": "ChatGPT में लॉगिन करते समय, एक नए टैब में <code>https://chatgpt.com/api/auth/session</code> खोलें। <code>accessToken</code> फ़ील्ड (जो <code>eyJ</code> से शुरू होता है) का मान कॉपी करें। टोकन हर ~24 घंटे में समाप्त हो जाता है। विश्वसनीय पहुंच के लिए, नीचे <strong>cf_clearance</strong> फ़ील्ड भी भरें।",
-        "anthropicInstructions": "<strong>अपनी सेशन की कैसे प्राप्त करें:</strong> Claude में लॉगिन करते समय, DevTools (F12) → Application → Cookies → <code>claude.ai</code> खोलें → <code>sessionKey</code> कुकी का मान कॉपी करें (<code>sk-ant-sid01-</code> से शुरू)। आपके लॉग आउट करने तक की मान्यता है।"
+        "sessionTokenPlaceholder": "sessionKey कुकी का मान पेस्ट करें (sk-ant-sid…)",
+        "openaiInstructions": "ChatGPT में लॉगिन करते समय, एक नए टैब में <code>https://chatgpt.com/api/auth/session</code> खोलें। <code>accessToken</code> फ़ील्ड (जो <code>eyJ</code> से शुरू होता है) का मान कॉपी करें। टोकन लगभग 10 दिनों तक मान्य रहता है; जब टेस्ट 401 के साथ विफल होने लगे, तो नया टोकन पेस्ट करें। विश्वसनीय पहुंच के लिए, नीचे <strong>cf_clearance</strong> फ़ील्ड भी भरें।",
+        "anthropicInstructions": "<strong>अपनी सेशन की कैसे प्राप्त करें:</strong> <code>https://claude.ai</code> में लॉग इन रहते हुए, DevTools खोलने के लिए F12 दबाएँ। Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. कुकी <code>sessionKey</code> की <strong>Value</strong> कॉपी करें (<code>sk-ant-sid</code> से शुरू होती है, उदाहरण के लिए <code>sk-ant-sid02-</code>)। यह एक HttpOnly कुकी है, इसलिए पेज कंसोल से दिखाई नहीं देती। यह लॉग आउट करने या समाप्त होने तक मान्य रहती है; यदि टेस्ट विफल होने लगे तो नई कुकी पेस्ट करें।"
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "सदस्यता OAuth टोकन",
@@ -417,7 +419,8 @@
       "status": "स्थिति",
       "encoding": "एन्कोडिंग",
       "frames": "फ्रेम",
-      "bytes": "बाइट"
+      "bytes": "बाइट",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "भाषा",
       "description": "डैशबोर्ड को जिस भाषा में प्रदर्शित किया जाएगा उसे चुनें।",
       "languageLabel": "भाषा",
-      "saved": "भाषा पसंद सहेजी गई।"
+      "saved": "भाषा पसंद सहेजी गई।",
+      "saveError": "आपकी भाषा प्राथमिकता सहेजी नहीं जा सकी। पिछली प्राथमिकता पर वापस किया गया।"
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "बचत हो रही है...",
         "enable": "सक्षम करें",
         "disable": "अक्षम करें"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "बजट — रीसेट",
         "systemStartup": "सिस्टम — स्टार्टअप",
         "systemShutdown": "सिस्टम — शटडाउन",
-        "systemUpdateAvailable": "सिस्टम — अपडेट उपलब्ध"
+        "systemUpdateAvailable": "सिस्टम — अपडेट उपलब्ध",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "चैनल हटाएं",
       "removeChannelConfirm": "चैनल हटाएं?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} उपयोगकर्ता",
         "userCount_other": "{{count}} उपयोगकर्ता",
-        "everyone": "सभी"
+        "everyone": "सभी",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "लोड करने में विफल"
@@ -831,6 +838,9 @@
         },
         "optional": "(वैकल्पिक)",
         "keepCurrentPlaceholder": "मौजूदा को रखने के लिए रिक्त छोड़ें",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "सभी राउटर से इवेंट प्राप्त करने के लिए खाली छोड़ें।",
           "cooldownHeading": "कूलडाउन",
           "cooldownSuffix": "सेकंड (0 = कूलडाउन नहीं)",
-          "cooldownHint": "इस चैनल को एक ही इवेंट के लिए फिर से फायर करने से पहले न्यूनतम अंतराल।"
+          "cooldownHint": "इस चैनल को एक ही इवेंट के लिए फिर से फायर करने से पहले न्यूनतम अंतराल।",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "प्राप्तकर्ता / लक्ष्य",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "चैनल खोजें...",
         "noResults": "कोई परिणाम नहीं",
         "emptyTitle": "कोई सूचना चैनल अभी तक कॉन्फ़िगर नहीं किए गए।",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "कोई चैनल सक्रिय फ़िल्टर से मेल नहीं खाते।",
         "nameInlinePlaceholder": "लेबल (वैकल्पिक)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "एकीकरण हटाएं",
       "saving": "बचत हो रही है...",
       "save": "सहेजें",
-      "addButton": "एकीकरण जोड़ें"
+      "addButton": "एकीकरण जोड़ें",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "अंतिम जांच"
       },
       "noCheckPerformed": "अभी तक कोई अपडेट जांच नहीं की गई।",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "अपडेट के लिए जांचें",
       "checking": "जांच हो रही है...",
       "updateTo": "v{{version}} को अपडेट करें",
@@ -1121,7 +1137,8 @@
         "checkFailed": "जांच विफल",
         "updateFailed": "अपडेट विफल"
       },
-      "channel": "चैनल"
+      "channel": "चैनल",
+      "channelNote": "current हर नए स्थिर रिलीज़ का अनुसरण करता है; stable केवल तब बदलता है जब कोई रिलीज़ प्रमोट की जाती है, इसलिए दोनों अलग हो सकते हैं।"
     },
     "security": {
       "authentication": "प्रमाणीकरण",
@@ -1156,6 +1173,8 @@
       "count": "1 राउटर",
       "count_other": "{{count}} राउटर",
       "newRouter": "नया राउटर",
+      "newOrchestrator": "नया ऑर्केस्ट्रेटर",
+      "newPassthrough": "नया पास-थ्रू",
       "empty": "अभी कोई राउटर नहीं।",
       "emptyFiltered": "इस प्रकार का कोई राउटर नहीं।",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "इस राउटर को हटाएं?",
       "errors": {
         "deleteFailed": "राउटर हटाने में त्रुटि"
-      },
-      "newOrchestrator": "नया ऑर्केस्ट्रेटर",
-      "newPassthrough": "नया पास-थ्रू"
+      }
     },
     "layout": {
       "notFound": "राउटर नहीं मिला",
@@ -1191,10 +1208,10 @@
       "backToRouters": "राउटर पर वापस जाएं",
       "backToRoutersTitle": "राउटर पर वापस",
       "newRouter": "नया राउटर",
+      "newKind": "नया {{kind}}",
       "loading": "लोड हो रहा है...",
       "routerId": "राउटर आईडी:",
-      "saveFirstHint": "इस टैब को अनलॉक करने के लिए पहले राउटर सहेजें",
-      "newKind": "नया {{kind}}"
+      "saveFirstHint": "इस टैब को अनलॉक करने के लिए पहले राउटर सहेजें"
     },
     "dashboard": {
       "period": "अवधि",
@@ -1212,7 +1229,9 @@
         "ttft": "पहले टोकन में समय",
         "notMeasured": "इन कॉल पर मापा नहीं गया",
         "reliability": "विश्वसनीयता",
-        "errorsAndBlocked": "{{errors}} त्रुटियां · {{blocked}} अवरुद्ध"
+        "errorsAndBlocked": "{{errors}} त्रुटियां · {{blocked}} अवरुद्ध",
+        "errorsAndBlocked_one": "{{errors}} त्रुटि · {{blocked}} अवरुद्ध",
+        "errorsAndBlocked_other": "{{errors}} त्रुटियां · {{blocked}} अवरुद्ध"
       },
       "tokens": {
         "input": "इनपुट टोकन:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "आधार URL <code>{{baseUrl}}</code>, <code>/v1</code> के बिना: SDK इसे जोड़ता है।",
         "curl": "curl",
-        "curlHint": "कुछ भी स्थापित किए बिना वायरिंग की जांच करें, फिर <usageLink>उपयोग</usageLink> में कॉल खोजें।"
+        "curlHint": "कुछ भी स्थापित किए बिना वायरिंग की जांच करें, फिर <usageLink>उपयोग</usageLink> में कॉल खोजें।",
+        "passthrough": {
+          "heading": "कैसे जुड़ें",
+          "intro": "Passthrough हर अनुरोध को अपरिवर्तित भेजता है — अपनी <strong>अपनी</strong> अपस्ट्रीम प्रदाता कुंजी को API कुंजी के रूप में उपयोग करें, कभी भी Routerly टोकन नहीं। Routerly इस राउटर के लिए कोई साख संग्रहीत या जारी नहीं करता है; जो कुछ भी क्लाइंट भेजता है वह सीधे प्रदाता को जाता है।",
+          "noLimits": "बजट और सीमाएं इस राउटर पर लागू नहीं होती हैं: Passthrough ट्रैफिक की लागत अज्ञात है, इसलिए इसे कभी भी जांचा नहीं जाता है या किसी भी व्यय सीमा के विरुद्ध गिना नहीं जाता है।",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "आधार URL <code>{{url}}</code> — कोई <code>/v1</code> प्रत्यय नहीं, SDK अभी भी अपना पथ जोड़ता है बिल्कुल जैसे यह वास्तविक OpenAI API के विरुद्ध करता है।",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "आधार URL <code>{{url}}</code> — SDK अभी भी <code>/v1/messages</code> स्वयं जोड़ता है, बिल्कुल जैसे यह वास्तविक Anthropic API के विरुद्ध करता है।"
+        }
       },
       "form": {
         "kind": "प्रकार",
         "kindFixedHint": "राउटर बनाने के बाद तय।",
         "routerName": "राउटर नाम",
         "routerNamePlaceholder": "मेरा ऐप",
+        "passthroughPath": "पाथ",
+        "passthroughPathHint": "उन क्लाइंट्स द्वारा बुलाए जाने वाले URL का हिस्सा बन जाता है: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "उन्नत सेटिंग्स",
         "ttftTimeout": "TTFT टाइमआउट (ms)",
         "ttftTimeoutHint": "यदि कोई मॉडल इस समय के भीतर पहली प्रतिक्रिया बाइट नहीं भेजता, तो Routerly इसे त्याग देता है और अगले उम्मीदवार को कोशिश करता है। कुल प्रतिक्रिया अवधि को सीमित नहीं करता। इसे 0 पर सेट करें जब तक प्रदाता चाहे प्रतीक्षा करने के लिए।",
         "traceContent": "ट्रेस सामग्री",
         "traceContentHint": "ट्रेस हमेशा मेटाडेटा (मॉडल, स्कोर, टोकन, लागत, विलंबता) रिकॉर्ड करते हैं। भेजे गए प्रॉम्प्ट और प्राप्त उत्तर भी रिकॉर्ड करने के लिए इसे चालू करें। उन्हें उपयोग रिकॉर्ड के साथ संग्रहीत किया जाता है और जो भी रिपोर्ट पढ़ सकते हैं उन्हें दृश्य।",
         "capturePromptsAndAnswers": "प्रॉम्प्ट और उत्तर कैप्चर करें",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "परिवर्तन सहेजें",
         "createRouter": "राउटर बनाएं",
-        "passthroughPath": "पाथ",
-        "passthroughPathHint": "उन क्लाइंट्स द्वारा बुलाए जाने वाले URL का हिस्सा बन जाता है: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "ऑर्केस्ट्रेटर बनाएं",
         "createPassthrough": "पास-थ्रू बनाएं"
       }
@@ -1384,6 +1414,7 @@
       "saving": "बचत हो रही है...",
       "saved": "सहेजा गया",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "टोकन बचत पूर्वावलोकन",
         "description": "पूर्वावलोकन के लिए मौजूदा (अप्रस्तुत) पाइपलाइन को एक प्रॉम्प्ट पर चलाएं देखने के लिए कि प्रत्येक चरण क्या हटाता है और इसकी लागत क्या है। नमूना बातचीत में से एक चुनें, या अपना स्वयं का प्रॉम्प्ट टाइप करें।",
         "promptLabel": "प्रॉम्प्ट",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "अभी तक कोई अनुरोध नहीं भेजा गया।",
       "turnTraceLog": "बारी #{{turn}} ट्रेस लॉग · {{count}} इवेंट",
       "turnTraceLog_other": "बारी #{{turn}} ट्रेस लॉग · {{count}} इवेंट"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "मॉडल",
       "subtitle": "Routerly के साथ पंजीकृत LLM प्रदाता",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "मॉडल",
         "health": "स्वास्थ्य"
@@ -2242,7 +2284,8 @@
       "next": "अगला",
       "page": "पृष्ठ {{page}} का {{totalPages}}",
       "total": "({{count}} कुल)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "सभी",
         "success": "सफलता",
         "blocked": "अवरुद्ध",
-        "error": "त्रुटि"
+        "error": "त्रुटि",
+        "sessionId": "सेशन आईडी",
+        "endUser": "अंतिम उपयोगकर्ता",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "कोई भी सेशन",
+        "endUserPlaceholder": "कोई भी अंतिम उपयोगकर्ता",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "सभी",
@@ -2383,7 +2432,10 @@
         "timestamp": "समय मुद्रा",
         "guardrailTriggered": "गार्डरेल ट्रिगर किया गया",
         "blockedBy": "द्वारा अवरुद्ध",
-        "piiRedacted": "PII संपादित"
+        "piiRedacted": "PII संपादित",
+        "sessionId": "सेशन आईडी",
+        "endUser": "अंतिम उपयोगकर्ता",
+        "tags": "Tags"
       },
       "errorMessage": "त्रुटि संदेश",
       "eventCount": "{{count}} इवेंट",
@@ -2457,7 +2509,8 @@
       "show": "डीबग दिखाएं",
       "empty": "अभी कोई डीबग डेटा नहीं।",
       "emptyHint": "राउटिंग विवरण देखने के लिए एक संदेश भेजें।",
-      "turnTraceLog": "बारी #{{turn}} ट्रेस लॉग"
+      "turnTraceLog": "बारी #{{turn}} ट्रेस लॉग",
+      "resize": "डीबग पैनल का आकार बदलें"
     },
     "compare": {
       "modelLabel": "मॉडल {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "भूमिका अपडेट करने में विफल",
       "createFailed": "भूमिका बनाने में विफल",
       "deleteFailed": "भूमिका हटाने में विफल"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "कनेक्ट पर वापस जाएं",
     "title": "कनेक्ट",
     "docs": "डॉक्स",
-    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगर करने वाला सक्षम नहीं है। एक प्रशासक को इसके साथ सक्षम करने के लिए कहें",
     "noClientPrefix": "कोई क्लाइंट नहीं नाम दिया गया",
     "errors": {
       "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "उस क्लाइंट मॉडल ट्रैफ़िक को Routerly के माध्यम से राउट करता है।",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly को इसके अंदर एक उपकरण सर्वर के रूप में लोड करता है।",
-    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगर करने वाला सक्षम नहीं है। एक प्रशासक को इसके साथ सक्षम करने के लिए कहें",
     "errors": {
       "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
     },

@@ -158,8 +158,17 @@ export class StreamingScrubber {
       this.buffer.lastIndexOf('\t'),
     );
     if (lastSpace <= 0) return '';
-    const safe = this.buffer.slice(0, lastSpace + 1);
-    this.buffer = this.buffer.slice(lastSpace + 1);
+    // Entities written with spaces (phone "+39 333 1234567", card, IBAN) span several
+    // tokens: keep the trailing digit-bearing short tokens buffered until the entity ends.
+    let cut = lastSpace + 1;
+    for (;;) {
+      const m = /(\S+)\s+$/.exec(this.buffer.slice(0, cut));
+      if (!m || !/\d/.test(m[1]!) || m[1]!.length > 12) break;
+      cut -= m[0].length;
+    }
+    if (cut <= 0) return '';
+    const safe = this.buffer.slice(0, cut);
+    this.buffer = this.buffer.slice(cut);
     const { text: scrubbed, found, counts } = scrubText(safe, this.effective);
     found.forEach((e) => this.found.add(e));
     addCounts(this.counts, counts);

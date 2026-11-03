@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdtemp, rm, readFile, writeFile, appendFile } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, writeFile, appendFile, stat } from 'node:fs/promises';
 import * as fsPromises from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -68,6 +68,24 @@ describe('read/write/append round-trip', () => {
   it('appendUsageRecordsNdjson([]) is a no-op', async () => {
     await appendUsageRecordsNdjson([]);
     expect(await readUsageNdjson()).toEqual([]);
+  });
+});
+
+describe('file mode', () => {
+  const mode = async () => ((await stat(pathState.usage)).mode & 0o777);
+
+  it('creates the file with mode 600 on append and full rewrite', async () => {
+    await appendUsageRecordsNdjson([makeRecord('a')]);
+    expect(await mode()).toBe(0o600);
+    await writeUsageNdjson([makeRecord('b')]);
+    expect(await mode()).toBe(0o600);
+  });
+
+  it('tightens an existing 644 file', async () => {
+    await writeFile(pathState.usage, '', { mode: 0o644 });
+    await fsPromises.chmod(pathState.usage, 0o644);
+    await appendUsageRecordsNdjson([makeRecord('a')]);
+    expect(await mode()).toBe(0o600);
   });
 });
 
@@ -143,6 +161,17 @@ describe('AC2 — append cost does not grow with history', () => {
 
     expect(fsPromises.appendFile).toHaveBeenCalled();
     expect(fsPromises.readFile).not.toHaveBeenCalled();
+  });
+
+  it('appending to a large history leaves the existing bytes untouched (append-only prefix)', async () => {
+    await writeUsageNdjson(Array.from({ length: 5000 }, (_, i) => makeRecord(`h${i}`)));
+    const before = await readFile(pathState.usage, 'utf-8');
+
+    await appendUsageRecordsNdjson([makeRecord('new1'), makeRecord('new2')]);
+
+    const after = await readFile(pathState.usage, 'utf-8');
+    expect(after.startsWith(before)).toBe(true);
+    expect(after.slice(before.length).trim().split('\n')).toHaveLength(2);
   });
 });
 

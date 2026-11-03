@@ -117,6 +117,12 @@ describe('processResponse — JSON body', () => {
     await expect(getModels()).rejects.toThrow('Label "Main" is already used by another connection');
   });
 
+  it('reads the message of a nested { error: { message } } body instead of [object Object]', async () => {
+    const { getModels } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(500, { error: { message: 'x' } }, false));
+    await expect(getModels()).rejects.toThrow(/^x$/);
+  });
+
   it('throws HTTP status when non-ok and no error field', async () => {
     const { getModels } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(400, {}, false));
@@ -232,7 +238,7 @@ describe('proactive token refresh', () => {
     storage['lr_refresh_token'] = 'ref';
 
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', user: {} }));
-    const { checkSetupStatus } = await api();
+    const { checkSetupStatus: _checkSetupStatus } = await api();
     // We test the path directly through checkSetupStatus — not /auth/refresh itself, since that's internal.
     // This test is covered by "does not call refresh for expiry=0" below.
     expect(true).toBe(true);
@@ -665,6 +671,14 @@ describe('testModel', () => {
     expect(result.ok).toBe(true);
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
+
+  it('resolves ok:false instead of rejecting when the service answers 500', async () => {
+    const { testModel } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(500, { error: 'boom' }));
+    const result = await testModel('m1');
+    expect(result.ok).toBe(false);
+    expect(result.error).toBeTruthy();
+  });
 });
 
 // ── Routers ──────────────────────────────────────────────────────────────────
@@ -898,6 +912,18 @@ describe('getUsage', () => {
     expect(url).toContain('callType=completion');
     expect(url).toContain('requestType=embedding');
     expect(url).toContain('outcome=success');
+  });
+
+  it('sends sessionId, endUserId and tag as tag[key]=value; ignores a malformed tag', async () => {
+    const { getUsage } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockRes(200, { summary: {}, byModel: {}, timeline: [], records: [] }));
+    await getUsage('all', undefined, undefined, undefined, 1, 20, { sessionId: 's1', endUserId: 'u1', tag: 'team=a=b' });
+    const url = decodeURIComponent((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string);
+    expect(url).toContain('sessionId=s1');
+    expect(url).toContain('endUserId=u1');
+    expect(url).toContain('tag[team]=a=b');
+    await getUsage('all', undefined, undefined, undefined, 1, 20, { tag: 'novalue' });
+    expect(decodeURIComponent((fetch as ReturnType<typeof vi.fn>).mock.calls[1]![0] as string)).not.toContain('tag[');
   });
 
   it('skips callType=all, requestType=all and outcome=all', async () => {
@@ -1140,6 +1166,15 @@ describe('getMe', () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'me', email: 'a@b.com', roleId: 'admin' }));
     const result = await getMe();
     expect(result.id).toBe('me');
+  });
+
+  it('shares one request between concurrent callers', async () => {
+    const { getMe } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockClear();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'me', email: 'a@b.com', roleId: 'admin' }));
+    const [a, b] = await Promise.all([getMe(), getMe()]);
+    expect(a).toBe(b);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -1394,24 +1429,16 @@ describe('getModules', () => {
   });
 });
 
-describe('enableModule', () => {
-  it('POST /modules/:id/enable with encodeURIComponent', async () => {
-    const { enableModule } = await api();
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'g 1', enabled: true, restartRequired: true }));
-    await enableModule('g 1');
-    const [url, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]! as [string, RequestInit];
-    expect(url).toContain(`${encodeURIComponent('g 1')}/enable`);
-    expect(init.method).toBe('POST');
-  });
-});
-
-describe('disableModule', () => {
-  it('POST /modules/:id/disable with encodeURIComponent', async () => {
-    const { disableModule } = await api();
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'g 1', enabled: false, restartRequired: true }));
-    await disableModule('g 1');
-    const [url, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]! as [string, RequestInit];
-    expect(url).toContain(`${encodeURIComponent('g 1')}/disable`);
-    expect(init.method).toBe('POST');
+describe('unhandledrejection for mfa_required', () => {
+  const fire = (reason: unknown) => {
+    const ev = Object.assign(new Event('unhandledrejection', { cancelable: true }), { reason });
+    window.dispatchEvent(ev);
+    return ev.defaultPrevented;
+  };
+  it('suppresses 403 mfa_required rejections only', async () => {
+    await api();
+    expect(fire(Object.assign(new Error('x'), { status: 403, code: 'mfa_required' }))).toBe(true);
+    expect(fire(Object.assign(new Error('x'), { status: 403, code: 'other' }))).toBe(false);
+    expect(fire(new Error('x'))).toBe(false);
   });
 });

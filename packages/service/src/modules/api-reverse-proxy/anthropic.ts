@@ -7,6 +7,7 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{ Body: MessagesRequest }>('/v1/messages', async (request, reply) => {
     const ctx = buildAnthropicContext(request, reply);
     await runProxy(getProxyPipeline(), ctx);
+    return reply;
   });
 
   // ─── POST /v1/messages/count_tokens ──────────────────────────────────────────

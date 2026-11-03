@@ -27,6 +27,7 @@ vi.mock('../store.js', () => ({
 }));
 
 import { makeExperimentsCommand } from './experiments.js';
+import { STICKY_KEYS } from '@routerly/shared';
 import type { ExperimentConfig, ExperimentMetrics, RouterConfig } from '@routerly/shared';
 
 afterEach(() => vi.clearAllMocks());
@@ -99,20 +100,18 @@ describe('experiments list', () => {
     expect(mockApi).toHaveBeenCalledWith('GET', '/api/experiments');
   });
 
+  it('lists raw JSON with --json', async () => {
+    mockApi.mockResolvedValueOnce([experiment]);
+    const lines = capture();
+    await makeCmd().parseAsync(['node', 'experiments', 'list', '--json']);
+    expect(JSON.parse(lines.join('\n'))[0].id).toBe('exp-1');
+  });
+
   it('shows the empty state', async () => {
     mockApi.mockResolvedValueOnce([]);
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'list']);
     expect(lines.join('\n')).toContain('No experiments found');
-  });
-
-  it('names the module when it is disabled', async () => {
-    const { ApiError } = await import('../api.js');
-    mockApi.mockRejectedValueOnce(new ApiError(403, 'module_disabled'));
-    const exitSpy = expectExit();
-    await expect(makeCmd().parseAsync(['node', 'experiments', 'list'])).rejects.toThrow('exit');
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('routerly modules enable experiments'));
   });
 
   it('exits 1 on a non-ApiError', async () => {
@@ -235,6 +234,28 @@ describe('experiments create', () => {
     await expect(makeCmd().parseAsync(['node', 'experiments', 'create', '--name', 'X', '--rotation', 'nope'])).rejects.toThrow('exit');
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Unknown --rotation "nope"'));
     expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it.each([
+    [['--variant', ':label'], 'Invalid --variant'],
+    [['--variant', 'cheap-api=abc'], 'Invalid weight'],
+    [['--sticky-key', 'nope'], 'Unknown --sticky-key'],
+    [['--min-samples', '1.5'], 'Expected a whole number'],
+    [['--min-samples', '0'], 'Invalid --min-samples'],
+  ])('rejects invalid flags %j', async (flags, msg) => {
+    const exitSpy = expectExit();
+    await expect(makeCmd().parseAsync(['node', 'experiments', 'create', '--name', 'X', ...flags])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining(msg));
+  });
+
+  it('sends description, sticky key and min samples', async () => {
+    mockApi.mockResolvedValueOnce({ ...experiment, token: 'x' });
+    await makeCmd().parseAsync([
+      'node', 'experiments', 'create', '--name', 'X', '--description', 'd', '--sticky-key', STICKY_KEYS[0], '--min-samples', '5',
+    ]);
+    const [, , body] = mockApi.mock.calls[0] as [string, string, Record<string, unknown>];
+    expect(body).toMatchObject({ description: 'd', stickyKey: STICKY_KEYS[0], minSamplesPerVariant: 5 });
   });
 
   it('outputs raw JSON with --json', async () => {

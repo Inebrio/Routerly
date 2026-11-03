@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveEffectiveModel } from './resolve.js';
+import { buildUpstreamUrl } from '../api-reverse-proxy/passthrough.js';
 import type { ModelInstance, ProviderConnection } from '@routerly/shared';
 
 describe('resolveEffectiveModel', () => {
@@ -27,6 +28,27 @@ describe('resolveEffectiveModel', () => {
     expect(eff.id).toBe('anthropic/claude');
   });
 
+  it.each(['anthropic', 'anthropic-oauth'])('defaults a missing %s endpoint so /v1/messages gets a valid URL (ROUT-284)', (providerId) => {
+    const conn = { id: 'c1', providerId, label: 'A', credentials: { apiKey: 't' }, enabled: true } as ProviderConnection;
+    const inst = { id: 'm', connectionId: 'c1', upstreamModelId: 'm', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0 } as ModelInstance;
+    const eff = resolveEffectiveModel(inst, conn);
+    expect(eff.endpoint).toBe('https://api.anthropic.com');
+    expect(buildUpstreamUrl(eff, '/v1/messages')).toBe('https://api.anthropic.com/v1/messages');
+  });
+
+  it('defaults a missing anthropic-web endpoint to claude.ai so /v1/messages gets a valid URL (ROUT-302)', () => {
+    const conn = { id: 'c1', providerId: 'anthropic-web', label: 'A', credentials: { apiKey: 't' }, enabled: true } as ProviderConnection;
+    const inst = { id: 'm', connectionId: 'c1', upstreamModelId: 'm', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0 } as ModelInstance;
+    const eff = resolveEffectiveModel(inst, conn);
+    expect(buildUpstreamUrl(eff, '/v1/messages')).toBe('https://claude.ai/v1/messages');
+  });
+
+  it('carries the instance timeout to the effective model', () => {
+    const conn = { id: 'c1', providerId: 'custom', label: 'A', credentials: {}, endpoint: 'http://x', enabled: true } as ProviderConnection;
+    const inst = { id: 'm', connectionId: 'c1', upstreamModelId: 'm', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0, timeout: 5000 } as ModelInstance;
+    expect(resolveEffectiveModel(inst, conn).timeout).toBe(5000);
+  });
+
   it('maps aws credentials for bedrock connections', () => {
     const conn: ProviderConnection = {
       id: 'c2',
@@ -44,5 +66,28 @@ describe('resolveEffectiveModel', () => {
     };
     const eff = resolveEffectiveModel(inst, conn);
     expect(eff.awsRegion).toBe('us-east-1');
+  });
+
+  describe('upstreamModelId (ROUT-283)', () => {
+    const conn = { id: 'c1', providerId: 'openai', label: 'A', credentials: {}, enabled: true } as ProviderConnection;
+    const mk = (id: string, upstreamModelId: string) =>
+      ({ id, connectionId: 'c1', upstreamModelId, cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0 }) as ModelInstance;
+    it('strips the provider prefix when stored upstreamModelId equals the full id', () => {
+      const eff = resolveEffectiveModel(mk('openai/gpt-4.1-nano', 'openai/gpt-4.1-nano'), conn);
+      expect(eff.upstreamModelId).toBe('gpt-4.1-nano');
+      expect(eff.name).toBe('gpt-4.1-nano');
+    });
+    it('keeps an explicit alias', () => {
+      expect(resolveEffectiveModel(mk('openai/my-alias', 'gpt-4o'), conn).upstreamModelId).toBe('gpt-4o');
+    });
+    it('leaves ids without a slash alone', () => {
+      expect(resolveEffectiveModel(mk('m', 'm'), conn).upstreamModelId).toBe('m');
+    });
+  });
+
+  it.each(['deepseek', 'groq', 'together', 'perplexity', 'xai', 'mistral', 'cohere', 'fireworks', 'cerebras'])('defaults a missing %s endpoint (ROUT-367)', (providerId) => {
+    const conn: ProviderConnection = { id: 'c', providerId, label: 'L', credentials: { apiKey: 'k' }, enabled: true };
+    const inst: ModelInstance = { id: `${providerId}/m`, connectionId: 'c', upstreamModelId: 'm', cost: { inputPerMillion: 1, outputPerMillion: 1 }, contextWindow: 1000 };
+    expect(resolveEffectiveModel(inst, conn).endpoint).toMatch(/^https:\/\//);
   });
 });

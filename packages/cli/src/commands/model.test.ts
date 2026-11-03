@@ -69,7 +69,7 @@ const baseModel = {
   cost: { inputPerMillion: 5, outputPerMillion: 15 },
 };
 
-const fullModel = {
+const _fullModel = {
   ...baseModel,
   contextWindow: 128_000,
   capabilities: { vision: true, functionCalling: true, streaming: false },
@@ -99,6 +99,12 @@ describe('routerly model list', () => {
     expect(mockApi).toHaveBeenCalledWith('GET', '/api/models');
     expect(out.join('\n')).toContain('gpt-4o');
     expect(out.join('\n')).toContain('openai');
+  });
+
+  it('prints - instead of $undefined for models without pricing', async () => {
+    mockApi.mockResolvedValue([{ ...baseModel, cost: {} }]);
+    const { out } = await run('list');
+    expect(out.join('\n')).not.toContain('undefined');
   });
 
   it('prints empty message when no models', async () => {
@@ -285,7 +291,7 @@ describe('routerly model add', () => {
     mockApi.mockResolvedValue(baseModel);
     const { out } = await run('add', '--id', 'gpt-4o', '--provider', 'openai');
     const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
-    const cost = body['cost'] as { inputPerMillion: number; outputPerMillion: number };
+    const cost = body as { inputPerMillion: number; outputPerMillion: number };
     expect(cost.inputPerMillion).toBe(5);
     expect(cost.outputPerMillion).toBe(15);
     expect(out.join(' ')).toContain('pricing from preset');
@@ -301,9 +307,26 @@ describe('routerly model add', () => {
     mockApi.mockResolvedValue(baseModel);
     await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--input-price', '2.5', '--output-price', '10');
     const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
-    const cost = body['cost'] as { inputPerMillion: number; outputPerMillion: number };
+    const cost = body as { inputPerMillion: number; outputPerMillion: number };
     expect(cost.inputPerMillion).toBe(2.5);
     expect(cost.outputPerMillion).toBe(10);
+  });
+
+  it('sends flat price fields (no nested cost) and keeps 0 as a valid price', async () => {
+    mockApi.mockResolvedValue({});
+    await run('add', '--id', 'ollama/q', '--provider', 'ollama', '--input-price', '0', '--output-price', '0');
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect(body['cost']).toBeUndefined();
+    expect(body['inputPerMillion']).toBe(0);
+    expect(body['outputPerMillion']).toBe(0);
+  });
+
+  it('leaves prices unset (not 0) when no flag and no preset', async () => {
+    mockApi.mockResolvedValue({});
+    await run('add', '--id', 'my-custom-model', '--provider', 'custom');
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect('inputPerMillion' in body).toBe(false);
+    expect('outputPerMillion' in body).toBe(false);
   });
 
   it('uses provider default endpoint for openai', async () => {
@@ -397,7 +420,7 @@ describe('routerly model add', () => {
     const tiers = JSON.stringify([{ metric: 'context_tokens', above: 200000, inputPerMillion: 7.5, outputPerMillion: 22.5 }]);
     await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--pricing-tiers-json', tiers);
     const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
-    const cost = body['cost'] as { pricingTiers?: unknown[] };
+    const cost = body as { pricingTiers?: unknown[] };
     expect(cost.pricingTiers).toHaveLength(1);
   });
 
@@ -467,17 +490,49 @@ describe('routerly model add', () => {
     mockApi.mockResolvedValue({});
     await run('add', '--id', 'my-model', '--provider', 'custom');
     const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
-    const cost = body['cost'] as { pricingTiers?: unknown };
+    const cost = body as { pricingTiers?: unknown };
     expect(cost.pricingTiers).toBeUndefined();
   });
 
   it('binds to an existing connection via --connection, sending no credentials', async () => {
     mockApi.mockResolvedValue({});
     await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'conn-abc123', '--api-key', 'sk-should-be-dropped');
-    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    const body = mockApi.mock.calls.find(c => c[0] === 'POST')![2] as Record<string, unknown>;
     expect(body['connectionId']).toBe('conn-abc123');
     expect(body).not.toHaveProperty('apiKey');
     expect(body).not.toHaveProperty('endpoint');
+  });
+
+  it('resolves --connection by label to the connection id', async () => {
+    mockApi.mockImplementation((m: string, path: string) =>
+      Promise.resolve(path === '/api/connections' ? [{ id: 'conn-abc123', label: 'dev-openai' }] : {}));
+    await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'dev-openai');
+    const post = mockApi.mock.calls.find(c => c[0] === 'POST')!;
+    expect((post[2] as Record<string, unknown>)['connectionId']).toBe('conn-abc123');
+  });
+
+  it('accepts --connection as an id when connections are listed', async () => {
+    mockApi.mockImplementation((m: string, path: string) =>
+      Promise.resolve(path === '/api/connections' ? [{ id: 'conn-abc123', label: 'dev-openai' }] : {}));
+    await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'conn-abc123');
+    const post = mockApi.mock.calls.find(c => c[0] === 'POST')!;
+    expect((post[2] as Record<string, unknown>)['connectionId']).toBe('conn-abc123');
+  });
+
+  it('errors naming the connection and does not POST when it is unknown', async () => {
+    mockApi.mockImplementation((m: string, path: string) =>
+      Promise.resolve(path === '/api/connections' ? [{ id: 'conn-abc123', label: 'dev-openai' }] : {}));
+    const { err } = await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'nope');
+    expect(err.join('\n')).toContain("Connection 'nope' not found");
+    expect(mockApi.mock.calls.some(c => c[0] === 'POST')).toBe(false);
+  });
+
+  it('sends --connection unchanged when connections cannot be listed', async () => {
+    mockApi.mockImplementation((m: string, path: string) =>
+      path === '/api/connections' ? Promise.reject(new ApiError(403, 'Forbidden')) : Promise.resolve({}));
+    await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'raw-id');
+    const post = mockApi.mock.calls.find(c => c[0] === 'POST')!;
+    expect((post[2] as Record<string, unknown>)['connectionId']).toBe('raw-id');
   });
 
   it('creates a dedicated connection from inline --api-key when --connection is not given', async () => {
@@ -492,7 +547,7 @@ describe('routerly model add', () => {
   it('skips reading the vertex SA key file when --connection is given', async () => {
     mockApi.mockResolvedValue({});
     await run('add', '--id', 'v', '--provider', 'vertex', '--connection', 'conn-vertex', '--vertex-sa-key', '/nonexistent/path.json');
-    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    const body = mockApi.mock.calls.find(c => c[0] === 'POST')![2] as Record<string, unknown>;
     expect(body['connectionId']).toBe('conn-vertex');
     expect(body).not.toHaveProperty('vertexServiceAccountKey');
   });
@@ -601,7 +656,7 @@ describe('routerly model edit', () => {
     mockApi.mockResolvedValueOnce([baseModel]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--api-key', 'sk-new');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { inputPerMillion: number; outputPerMillion: number };
+    const cost = putBody as { inputPerMillion: number; outputPerMillion: number };
     expect(cost.inputPerMillion).toBe(5);
     expect(cost.outputPerMillion).toBe(15);
   });
@@ -610,15 +665,26 @@ describe('routerly model edit', () => {
     mockApi.mockResolvedValueOnce([baseModel]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--input-price', '2.5');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { inputPerMillion: number };
+    const cost = putBody as { inputPerMillion: number };
     expect(cost.inputPerMillion).toBe(2.5);
+  });
+
+  it('sends flat prices and resends existing limits on edit', async () => {
+    const limits = [{ metric: 'cost', windowType: 'period', period: 'monthly', value: 200 }];
+    mockApi.mockResolvedValueOnce([{ ...baseModel, limits }]).mockResolvedValueOnce({});
+    await run('edit', 'gpt-4o', '--input-price', '3');
+    const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
+    expect(putBody['cost']).toBeUndefined();
+    expect(putBody['inputPerMillion']).toBe(3);
+    expect(putBody['outputPerMillion']).toBe(15);
+    expect(putBody['limits']).toEqual(limits);
   });
 
   it('sends cache price when --cache-price provided', async () => {
     mockApi.mockResolvedValueOnce([baseModel]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--cache-price', '0.5');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { cachePerMillion?: number };
+    const cost = putBody as { cachePerMillion?: number };
     expect(cost.cachePerMillion).toBe(0.5);
   });
 
@@ -629,7 +695,7 @@ describe('routerly model edit', () => {
     }]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--output-price', '20');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { cachePerMillion?: number };
+    const cost = putBody as { cachePerMillion?: number };
     expect(cost.cachePerMillion).toBe(0.5);
   });
 
@@ -694,7 +760,7 @@ describe('routerly model edit', () => {
     const tiers = JSON.stringify([{ metric: 'context_tokens', above: 100000, inputPerMillion: 7.5, outputPerMillion: 22.5 }]);
     await run('edit', 'gpt-4o', '--pricing-tiers-json', tiers);
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { pricingTiers?: unknown[] };
+    const cost = putBody as { pricingTiers?: unknown[] };
     expect(cost.pricingTiers).toHaveLength(1);
   });
 
@@ -712,7 +778,7 @@ describe('routerly model edit', () => {
     }]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--api-key', 'sk-new');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { pricingTiers?: unknown[] };
+    const cost = putBody as { pricingTiers?: unknown[] };
     expect(cost.pricingTiers).toHaveLength(1);
   });
 
@@ -723,15 +789,13 @@ describe('routerly model edit', () => {
     expect(putBody).not.toHaveProperty('limits');
   });
 
-  it('falls back to 0 for inputPerMillion/outputPerMillion when existing.cost is missing (lines 482-483)', async () => {
-    // A model with no cost field to hit the ?? 0 branches
+  it('keeps prices unset when existing.cost is missing', async () => {
     const noCostModel = { id: 'gpt-4o', name: 'gpt-4o', provider: 'openai', endpoint: 'https://api.openai.com/v1' };
     mockApi.mockResolvedValueOnce([noCostModel]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--api-key', 'sk-new');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { inputPerMillion: number; outputPerMillion: number };
-    expect(cost.inputPerMillion).toBe(0);
-    expect(cost.outputPerMillion).toBe(0);
+    expect('inputPerMillion' in putBody).toBe(false);
+    expect('outputPerMillion' in putBody).toBe(false);
   });
 
   it('URL-encodes the model id in the PUT path', async () => {
@@ -889,7 +953,7 @@ describe('routerly model edit --interactive', () => {
     }));
     await makeCmd().parseAsync(['node', 'model', 'edit', 'gpt-4o', '--interactive']);
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { pricingTiers?: unknown[] };
+    const cost = putBody as { pricingTiers?: unknown[] };
     expect(cost.pricingTiers).toHaveLength(1);
     vi.doUnmock('inquirer');
   });
@@ -915,7 +979,7 @@ describe('routerly model edit --interactive', () => {
     }));
     await makeCmd().parseAsync(['node', 'model', 'edit', 'gpt-4o', '--interactive']);
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { pricingTiers?: unknown[] };
+    const cost = putBody as { pricingTiers?: unknown[] };
     // empty array → pricingTiers key omitted because tiers.length is 0
     expect(cost.pricingTiers).toBeUndefined();
     vi.doUnmock('inquirer');

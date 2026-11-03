@@ -27,7 +27,7 @@ async function runRetentionSweep(): Promise<void> {
 }
 
 export const usageModule: RouterlyModule = defineModule({
-  manifest: { id: 'usage', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0', config: '^0.4.0' } },
+  manifest: { id: 'usage', version: '0.6.0', dependsOn: { 'reverse-proxy': '^0.6.0', config: '^0.6.0' } },
   register({ container, events }) {
     container.register(USAGE_TRACKER, { trackUsage })
 

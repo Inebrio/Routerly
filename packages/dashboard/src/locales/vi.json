@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Chủ đề: {{theme}}"
     },
+    "language": {
+      "label": "Ngôn ngữ",
+      "saveError": "Không thể lưu ngôn ngữ của bạn. Đã khôi phục về ngôn ngữ trước đó."
+    },
     "sidebar": {
       "expand": "Mở rộng thanh bên",
       "collapse": "Thu gọn thanh bên"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Một số tệp cấu hình có quyền truy cập cho phép ({{files}})। Khởi động và yêu cầu vẫn hoạt động. Sửa nó từ Cài đặt → Bảo mật, hoặc từ hệ thống tệp máy chủ khi thuận tiện.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Bỏ qua",
       "updateAvailable": "Routerly v{{latest}} có sẵn. Bạn đang dùng v{{current}}.",
       "updateLink": "Cập nhật trong Cài đặt",
@@ -40,9 +45,6 @@
       "telemetryLink": "Điều gì được gửi?",
       "telemetryYes": "Có, giúp đỡ tôi",
       "telemetryNo": "Không, cảm ơn"
-    },
-    "language": {
-      "label": "Ngôn ngữ"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "Token phiên",
       "awsSessionTokenOptionalHint": "(tùy chọn, cho thông tin đăng nhập tạm thời)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "ID bộ định tuyến GCP",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Vị trí",
       "gcpLocationDefaultHint": "(mặc định: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "Token truy cập",
         "sessionTokenLabel": "Token phiên",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Dán giá trị cookie sessionKey (sk-ant-sid01-…)",
-        "openaiInstructions": "Trong khi đăng nhập vào ChatGPT, mở <code>https://chatgpt.com/api/auth/session</code> trong tab mới. Sao chép giá trị của trường <code>accessToken</code> (bắt đầu bằng <code>eyJ</code>). Token hết hạn mỗi ~24 giờ. Để truy cập đáng tin cậy, hãy điền vào trường <strong>cf_clearance</strong> bên dưới.",
-        "anthropicInstructions": "<strong>Cách lấy khóa phiên của bạn:</strong> Trong khi đăng nhập vào Claude, mở DevTools (F12) → Application → Cookies → <code>claude.ai</code> → sao chép giá trị của cookie <code>sessionKey</code> (bắt đầu bằng <code>sk-ant-sid01-</code>). Khóa sẽ hợp lệ cho đến khi bạn đăng xuất."
+        "sessionTokenPlaceholder": "Dán giá trị cookie sessionKey (sk-ant-sid…)",
+        "openaiInstructions": "Trong khi đăng nhập vào ChatGPT, mở <code>https://chatgpt.com/api/auth/session</code> trong tab mới. Sao chép giá trị của trường <code>accessToken</code> (bắt đầu bằng <code>eyJ</code>). Token có hiệu lực khoảng 10 ngày; hãy dán token mới khi Test bắt đầu thất bại với lỗi 401. Để truy cập đáng tin cậy, hãy điền vào trường <strong>cf_clearance</strong> bên dưới.",
+        "anthropicInstructions": "<strong>Cách lấy khóa phiên của bạn:</strong> Khi đã đăng nhập vào <code>https://claude.ai</code>, nhấn F12 để mở DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Sao chép <strong>Value</strong> của cookie <code>sessionKey</code> (bắt đầu bằng <code>sk-ant-sid</code>, ví dụ <code>sk-ant-sid02-</code>). Đây là cookie HttpOnly nên không hiển thị được từ bảng điều khiển của trang. Khóa vẫn hợp lệ cho đến khi bạn đăng xuất hoặc hết hạn; hãy dán khóa mới nếu Kiểm tra bắt đầu thất bại."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Token OAuth đăng ký",
@@ -417,7 +419,8 @@
       "status": "trạng thái",
       "encoding": "mã hóa",
       "frames": "khung",
-      "bytes": "byte"
+      "bytes": "byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "Ngôn ngữ",
       "description": "Chọn ngôn ngữ mà bảng điều khiển được hiển thị.",
       "languageLabel": "Ngôn ngữ",
-      "saved": "Tùy chỉnh ngôn ngữ đã được lưu."
+      "saved": "Tùy chỉnh ngôn ngữ đã được lưu.",
+      "saveError": "Không thể lưu tùy chỉnh ngôn ngữ của bạn. Đã khôi phục về tùy chỉnh trước đó."
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "Đang lưu…",
         "enable": "Bật",
         "disable": "Tắt"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "Ngân sách - Đặt lại",
         "systemStartup": "Hệ thống - Khởi động",
         "systemShutdown": "Hệ thống - Tắt",
-        "systemUpdateAvailable": "Hệ thống - Cập nhật có sẵn"
+        "systemUpdateAvailable": "Hệ thống - Cập nhật có sẵn",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Xóa kênh",
       "removeChannelConfirm": "Xóa kênh?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} perm",
         "userCount": "{{count}} người dùng",
         "userCount_other": "{{count}} người dùng",
-        "everyone": "Mọi người"
+        "everyone": "Mọi người",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Không thể tải"
@@ -831,6 +838,9 @@
         },
         "optional": "(tùy chọn)",
         "keepCurrentPlaceholder": "Để trống để giữ hiện tại",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "Để trống để nhận sự kiện từ tất cả bộ định tuyến.",
           "cooldownHeading": "Thời gian hạ nhiệt",
           "cooldownSuffix": "giây (0 = không hạ nhiệt)",
-          "cooldownHint": "Khoảng thời gian tối thiểu trước khi kênh này có thể kích hoạt lại cho cùng một sự kiện."
+          "cooldownHint": "Khoảng thời gian tối thiểu trước khi kênh này có thể kích hoạt lại cho cùng một sự kiện.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Người nhận / Mục tiêu",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "Tìm kiếm kênh…",
         "noResults": "Không có kết quả",
         "emptyTitle": "Chưa cấu hình kênh thông báo nào.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Không có kênh nào phù hợp với các bộ lọc hoạt động.",
         "nameInlinePlaceholder": "Nhãn (tùy chọn)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "Xóa tích hợp",
       "saving": "Đang lưu…",
       "save": "Lưu",
-      "addButton": "Thêm tích hợp"
+      "addButton": "Thêm tích hợp",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "Lần kiểm tra cuối"
       },
       "noCheckPerformed": "Chưa thực hiện kiểm tra cập nhật.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Kiểm tra cập nhật",
       "checking": "Đang kiểm tra…",
       "updateTo": "Cập nhật thành v{{version}}",
@@ -1121,7 +1137,8 @@
         "checkFailed": "Kiểm tra không thành công",
         "updateFailed": "Cập nhật không thành công"
       },
-      "channel": "Kênh"
+      "channel": "Kênh",
+      "channelNote": "current theo mọi bản phát hành ổn định mới; stable chỉ dịch chuyển khi một bản phát hành được nâng cấp, nên hai kênh có thể khác nhau."
     },
     "security": {
       "authentication": "Xác thực",
@@ -1156,6 +1173,8 @@
       "count": "1 bộ định tuyến",
       "count_other": "{{count}} bộ định tuyến",
       "newRouter": "Bộ định tuyến mới",
+      "newOrchestrator": "Orchestrator mới",
+      "newPassthrough": "Passthrough mới",
       "empty": "Chưa có bộ định tuyến nào.",
       "emptyFiltered": "Không có router loại này.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "Xóa bộ định tuyến này?",
       "errors": {
         "deleteFailed": "Lỗi khi xóa bộ định tuyến"
-      },
-      "newOrchestrator": "Orchestrator mới",
-      "newPassthrough": "Passthrough mới"
+      }
     },
     "layout": {
       "notFound": "Không tìm thấy bộ định tuyến",
@@ -1191,10 +1208,10 @@
       "backToRouters": "Quay lại bộ định tuyến",
       "backToRoutersTitle": "Quay lại bộ định tuyến",
       "newRouter": "Bộ định tuyến mới",
+      "newKind": "{{kind}} mới",
       "loading": "Đang tải...",
       "routerId": "ID bộ định tuyến:",
-      "saveFirstHint": "Lưu bộ định tuyến trước tiên để mở khóa tab này",
-      "newKind": "{{kind}} mới"
+      "saveFirstHint": "Lưu bộ định tuyến trước tiên để mở khóa tab này"
     },
     "dashboard": {
       "period": "Khoảng thời gian",
@@ -1212,7 +1229,9 @@
         "ttft": "Thời gian tới token đầu tiên",
         "notMeasured": "không được đo trên những cuộc gọi này",
         "reliability": "Độ tin cậy",
-        "errorsAndBlocked": "{{errors}} lỗi · {{blocked}} bị chặn"
+        "errorsAndBlocked": "{{errors}} lỗi · {{blocked}} bị chặn",
+        "errorsAndBlocked_one": "{{errors}} lỗi · {{blocked}} bị chặn",
+        "errorsAndBlocked_other": "{{errors}} lỗi · {{blocked}} bị chặn"
       },
       "tokens": {
         "input": "Token đầu vào:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "SDK Anthropic",
         "anthropicBaseUrlHint": "URL cơ sở <code>{{baseUrl}}</code>, không có <code>/v1</code>: SDK thêm nó.",
         "curl": "curl",
-        "curlHint": "Kiểm tra dây kết nối mà không cần cài đặt bất cứ thứ gì, sau đó tìm cuộc gọi trong <usageLink>Mức sử dụng</usageLink>."
+        "curlHint": "Kiểm tra dây kết nối mà không cần cài đặt bất cứ thứ gì, sau đó tìm cuộc gọi trong <usageLink>Mức sử dụng</usageLink>.",
+        "passthrough": {
+          "heading": "Cách kết nối",
+          "intro": "Passthrough chuyển tiếp từng yêu cầu mà không sửa đổi — hãy sử dụng <strong>khóa nhà cung cấp riêng của bạn</strong> làm khóa API, không bao giờ là token Routerly. Routerly không lưu trữ hoặc cấp thông tin xác thực cho bộ định tuyến này; bất cứ điều gì máy khách gửi đi thẳng đến nhà cung cấp.",
+          "noLimits": "Ngân sách và giới hạn không áp dụng cho bộ định tuyến này: chi phí lưu lượng Passthrough không xác định, vì vậy không bao giờ được kiểm tra hoặc tính vào bất kỳ giới hạn chi tiêu nào.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — không có hậu tố <code>/v1</code>, SDK vẫn thêm đường dẫn của nó chính xác như cách nó sẽ làm đối với API OpenAI thực tế.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK vẫn thêm <code>/v1/messages</code> chính nó, chính xác như cách nó sẽ làm đối với API Anthropic thực tế."
+        }
       },
       "form": {
         "kind": "Loại",
         "kindFixedHint": "Đã sửa khi bộ định tuyến được tạo.",
         "routerName": "Tên bộ định tuyến",
         "routerNamePlaceholder": "Ứng dụng của tôi",
+        "passthroughPath": "Đường dẫn",
+        "passthroughPathHint": "Trở thành một phần của URL mà các khách hàng gọi: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Cài đặt nâng cao",
         "ttftTimeout": "Hết giờ TTFT (ms)",
         "ttftTimeoutHint": "Nếu mô hình không gửi byte phản hồi đầu tiên trong khoảng thời gian này, Routerly sẽ hủy bỏ nó và thử ứng cử viên tiếp theo. Không giới hạn tổng thời lượng phản hồi. Đặt thành 0 để chờ đợi bao lâu nhà cung cấp cần.",
         "traceContent": "Vết nội dung",
         "traceContentHint": "Vết luôn ghi lại siêu dữ liệu (mô hình, điểm, token, chi phí, độ trễ). Bật điều này để cũng ghi lại các nhắc được gửi và câu trả lời nhận được. Chúng được lưu trữ với bản ghi sử dụng và hiển thị cho bất kỳ ai có thể đọc báo cáo.",
         "capturePromptsAndAnswers": "Nắm bắt nhắc nhở và câu trả lời",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Lưu các thay đổi",
         "createRouter": "Tạo bộ định tuyến",
-        "passthroughPath": "Đường dẫn",
-        "passthroughPathHint": "Trở thành một phần của URL mà các khách hàng gọi: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Tạo Orchestrator",
         "createPassthrough": "Tạo Passthrough"
       }
@@ -1384,6 +1414,7 @@
       "saving": "Đang lưu...",
       "saved": "Đã lưu",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Xem trước tiết kiệm token",
         "description": "Chạy đường ống hiện tại (chưa lưu) qua một nhắc để xem những gì mỗi bước loại bỏ và chi phí là gì. Chọn một trong các cuộc trò chuyện mẫu, hoặc nhập nhắc của riêng bạn.",
         "promptLabel": "Nhắc",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "Chưa gửi yêu cầu nào.",
       "turnTraceLog": "Lượt #{{turn}} nhật ký vết · {{count}} sự kiện",
       "turnTraceLog_other": "Lượt #{{turn}} nhật ký vết · {{count}} sự kiện"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "Mô hình",
       "subtitle": "Mô hình nhà cung cấp LLM được đăng ký với Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Mô hình",
         "health": "Sức khỏe"
@@ -2242,7 +2284,8 @@
       "next": "Tiếp theo",
       "page": "Trang {{page}} của {{totalPages}}",
       "total": "({{count}} tổng cộng)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "Tất cả",
         "success": "Thành công",
         "blocked": "Bị chặn",
-        "error": "Lỗi"
+        "error": "Lỗi",
+        "sessionId": "ID phiên",
+        "endUser": "Người dùng cuối",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Bất kỳ phiên nào",
+        "endUserPlaceholder": "Bất kỳ người dùng cuối nào",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Tất cả",
@@ -2383,7 +2432,10 @@
         "timestamp": "Dấu thời gian",
         "guardrailTriggered": "Tường lửa được kích hoạt",
         "blockedBy": "Bị chặn bởi",
-        "piiRedacted": "PII bị làm mờ"
+        "piiRedacted": "PII bị làm mờ",
+        "sessionId": "ID phiên",
+        "endUser": "Người dùng cuối",
+        "tags": "Tags"
       },
       "errorMessage": "Thông báo lỗi",
       "eventCount": "{{count}} sự kiện",
@@ -2457,7 +2509,8 @@
       "show": "Hiển thị gỡ lỗi",
       "empty": "Chưa có dữ liệu gỡ lỗi nào.",
       "emptyHint": "Gửi tin nhắn để xem chi tiết định tuyến.",
-      "turnTraceLog": "Lượt #{{turn}} nhật ký vết"
+      "turnTraceLog": "Lượt #{{turn}} nhật ký vết",
+      "resize": "Thay đổi kích thước bảng gỡ lỗi"
     },
     "compare": {
       "modelLabel": "Mô hình {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "Không thể cập nhật vai trò",
       "createFailed": "Không thể tạo vai trò",
       "deleteFailed": "Không thể xóa vai trò"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "Quay lại kết nối",
     "title": "Kết nối",
     "docs": "Tài liệu",
-    "notEnabledPrefix": "Trình cấu hình khách hàng không được bật. Yêu cầu quản trị viên bật nó bằng",
     "noClientPrefix": "Không có khách hàng tên",
     "errors": {
       "loadFailed": "Không thể tải khách hàng: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "định tuyến lưu lượng mô hình khách hàng đó thông qua Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "tải Routerly dưới dạng máy chủ công cụ bên trong nó.",
-    "notEnabledPrefix": "Trình cấu hình khách hàng không được bật. Yêu cầu quản trị viên bật nó bằng",
     "errors": {
       "loadFailed": "Không thể tải khách hàng: {{error}}"
     },

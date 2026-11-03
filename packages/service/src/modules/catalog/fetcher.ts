@@ -127,9 +127,9 @@ class CatalogFetcher {
       }
     }
 
-    // Last repo in the list overrides earlier ones
+    // First repo in the list wins on conflict: apply from last to first so earlier rows override
     const merged: ProviderCatalog = {};
-    for (const repo of this.repos) {
+    for (const repo of [...this.repos].reverse()) {
       const cat = this.repoCatalog.get(repo.url);
       if (cat && repo.enabled) Object.assign(merged, cat);
     }

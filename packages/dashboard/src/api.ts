@@ -15,6 +15,13 @@ function msUntilExpiry(): number {
   return Math.max(0, parseInt(raw, 10) - Date.now());
 }
 
+// With requireMfa on and no 2FA, App redirects to the Profile while in-flight page calls
+// reject with 403 mfa_required; those rejections are expected, not page errors.
+window.addEventListener('unhandledrejection', (e: PromiseRejectionEvent) => {
+  const r = e.reason as ApiError | undefined;
+  if (r?.status === 403 && r.code === 'mfa_required') e.preventDefault();
+});
+
 let refreshPromise: Promise<boolean> | null = null;
 
 /** Attempts a silent refresh. Returns true if successful. Concurrent calls share one promise. */
@@ -104,15 +111,16 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 /** Thrown by request()/processResponse() on any non-2xx response. `status` lets
  * callers distinguish e.g. 404 (feature/module disabled) from other failures. */
-export type ApiError = Error & { status?: number };
+export type ApiError = Error & { status?: number; code?: string };
 
-function httpError(message: string, status: number): ApiError {
+function httpError(message: string, status: number, code?: string): ApiError {
   const err: ApiError = new Error(message);
   err.status = status;
+  if (code) err.code = code;
   return err;
 }
 
-async function processResponse<T>(res: Response, path: string): Promise<T> {
+async function processResponse<T>(res: Response, _path: string): Promise<T> {
   if (res.status === 204) return undefined as T;
 
   const text = await res.text();
@@ -124,7 +132,7 @@ async function processResponse<T>(res: Response, path: string): Promise<T> {
   let data: unknown;
   try {
     data = JSON.parse(text);
-  } catch (err) {
+  } catch (_err) {
     console.error('Failed to parse API response as JSON:', text);
     throw new Error('Invalid JSON response from server');
   }
@@ -132,8 +140,11 @@ async function processResponse<T>(res: Response, path: string): Promise<T> {
   if (!res.ok) {
     // Some routes answer with a machine code plus a sentence (`label_taken` +
     // "Label ... is already used"); the sentence is the one worth showing.
-    const body = data as { error?: string; message?: string };
-    throw httpError(body.message ?? body.error ?? `HTTP ${res.status}`, res.status);
+    // /api/usage and others wrap it: { error: { message } }.
+    const body = data as { error?: string | { message?: string }; message?: string };
+    const code = typeof body.error === 'string' ? body.error : undefined;
+    const nested = typeof body.error === 'object' ? body.error?.message : undefined;
+    throw httpError(body.message ?? nested ?? code ?? `HTTP ${res.status}`, res.status, code);
   }
   return data as T;
 }
@@ -215,6 +226,7 @@ export interface Model {
   upstreamModelId?: string;
   cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; cacheWritePerMillion?: number; pricingTiers?: PricingTier[] };
   contextWindow?: number;
+  timeout?: number;
   limits?: Limit[];
   /** @deprecated use limits */ globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
   capabilities?: ModelCapabilities;
@@ -303,11 +315,15 @@ export const updateModel = (id: string, data: {
   fieldOverrides?: Partial<Record<string, boolean>>;
 }) => request<Model>(`/models/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
-export const testModel = (id: string) => request<{ ok: boolean; latencyMs: number; error?: string }>(`/models/${encodeURIComponent(id)}/test`, { method: 'POST' });
+export const testModel = (id: string): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
+  request<{ ok: boolean; latencyMs: number; error?: string }>(`/models/${encodeURIComponent(id)}/test`, { method: 'POST' })
+    // never reject: callers show a spinner until this resolves
+    .catch((e: unknown) => ({ ok: false, latencyMs: 0, error: e instanceof Error ? e.message : String(e) }));
 
 export interface RoutingPolicy {
   type: 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining' | 'semantic-intent' | 'model-preference';
   enabled: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   config?: any;
 }
 
@@ -425,6 +441,7 @@ export const updateRouter = (id: string, data: {
   guardrails?: GuardrailConfig | null;
   pii?: PiiConfig | null;
   optimizers?: OptimizerConfig | null;
+  notifications?: { channels: string[] } | null;
   traceContent?: boolean;
 }) => request<Router>(`/routers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteRouter = (id: string) => request<void>(`/routers/${id}`, { method: 'DELETE' });
@@ -494,17 +511,7 @@ export interface ModuleInfo {
   dependsOn: string[];
 }
 
-export interface ModuleToggleResult {
-  id: string;
-  enabled: boolean;
-  restartRequired: boolean;
-}
-
 export const getModules = () => request<ModuleInfo[]>('/modules');
-export const enableModule = (id: string) =>
-  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/enable`, { method: 'POST' });
-export const disableModule = (id: string) =>
-  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/disable`, { method: 'POST' });
 
 // ── Usage Stats ───────────────────────────────────────────────────────────
 export interface TraceEntry {
@@ -531,6 +538,9 @@ export interface UsageRecord {
   piiRedacted?: string[];
   /** Router token the call authenticated with. Absent on records written before it was tracked. */
   tokenId?: string;
+  sessionId?: string;
+  endUserId?: string;
+  tags?: Record<string, string>;
 }
 
 import type { UsageByModelEntry, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries } from '@routerly/shared';
@@ -571,6 +581,10 @@ export interface GetUsageOptions {
   callType?: string;
   requestType?: string;
   outcome?: string;
+  sessionId?: string;
+  endUserId?: string;
+  /** `key=value`, same syntax as the CLI `--tag`. Anything without both parts is ignored. */
+  tag?: string;
   /** Ask the service for the counterfactual block. Costs a config read, so opt in. */
   savings?: boolean;
   /** Ask the service for the savings series over time. Same cost as `savings`, so opt in. */
@@ -590,6 +604,10 @@ export const getUsage = (period = 'monthly', routerId?: string, from?: string, t
   if (opts?.callType && opts.callType !== 'all') params.set('callType', opts.callType);
   if (opts?.requestType && opts.requestType !== 'all') params.set('requestType', opts.requestType);
   if (opts?.outcome  && opts.outcome  !== 'all') params.set('outcome',  opts.outcome);
+  if (opts?.sessionId) params.set('sessionId', opts.sessionId);
+  if (opts?.endUserId) params.set('endUserId', opts.endUserId);
+  const eq = opts?.tag?.indexOf('=') ?? -1;
+  if (opts?.tag && eq > 0 && eq < opts.tag.length - 1) params.set(`tag[${opts.tag.slice(0, eq)}]`, opts.tag.slice(eq + 1));
   if (opts?.savings) params.set('savings', '1');
   if (opts?.series) params.set('series', '1');
   return request<UsageStats>(`/usage?${params.toString()}`);
@@ -717,11 +735,11 @@ export interface Settings {
   port: number;
   host: string;
   dashboardEnabled: boolean;
-  logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
+  logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
   /** Public base URL of the service — used in "How to connect" when dashboard runs on a different host. */
   publicUrl?: string;
   notifications?: NotificationsConfig;
-  /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
+  /** Distribution channel for updates: 'latest' | 'current' | 'next' | 'stable' | 'develop' | vX.Y.Z tag */
   channel?: string;
   /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
   telemetry?: TelemetryConfig;
@@ -755,6 +773,8 @@ export interface UpdateInfo {
   channel: string;
   releaseUrl?: string;
   checkedAt: string;
+  status: 'ok' | 'disabled' | 'error';
+  error?: string;
 }
 
 export interface SystemInfo {
@@ -791,6 +811,8 @@ export const triggerUpdate = () => request<{ message: string }>('/system/update'
 export interface AvailableReleases {
   channels: string[];
   versions: string[];
+  /** Version each named channel currently points to; unresolved channels are omitted. */
+  channelVersions?: Record<string, string>;
 }
 export const getAvailableReleases = () => request<AvailableReleases>('/system/releases');
 
@@ -850,10 +872,13 @@ export interface Me {
   id: string;
   email: string;
   roleId: string;
+  permissions?: string[];
   language?: string;
 }
 
-export const getMe = () => request<Me>('/me');
+// AuthProvider and LanguageProvider both ask for /me when a session is restored: share one request.
+let meInFlight: Promise<Me> | undefined;
+export const getMe = () => (meInFlight ??= request<Me>('/me').finally(() => { meInFlight = undefined; }));
 export const updateMe = (data: { currentPassword: string; newPassword: string }) =>
   request<Me>('/me', { method: 'PUT', body: JSON.stringify(data) });
 export const updateMyLanguage = (language: string) =>
@@ -1089,7 +1114,7 @@ export const resetResilience = (body?: { level: ResilienceLevel; id: string }) =
 
 // ── Profiles (routing, optimizer, security) ───────────────────────────────
 import type {
-  SelectorType, FallbackStrategyType,
+  
   Profile, ProfileKind, RoutingProfile, OptimizerProfile, SecurityProfile,
 } from '@routerly/shared';
 export type {
@@ -1206,6 +1231,8 @@ export interface OptimizerPreviewResult {
   estimatedTokensBefore: number;
   estimatedTokensAfter: number;
   perStep: OptimizerPreviewStep[];
+  /** Which pipeline ran: the router's assigned profile or its custom steps. */
+  pipeline?: { kind: 'profile' | 'custom'; profileId?: string; label: string };
   /** The prompt the whole pipeline would forward. */
   messages: Message[];
 }
@@ -1215,7 +1242,8 @@ export const previewOptimizers = (body: {
   /** Model the sample is addressed to, so context-window steps have a window. */
   model?: string;
   sampleMessages: Message[];
-  steps: OptimizerStep[];
+  /** Omit to run the router's own pipeline (assigned profile, else saved custom steps). */
+  steps?: OptimizerStep[];
 }) => request<OptimizerPreviewResult>('/optimizers/preview', { method: 'POST', body: JSON.stringify(body) });
 
 /** One installable LLMLingua-2 checkpoint, as the service host reports it. */
@@ -1264,3 +1292,21 @@ export interface ClientsResponse {
 /** 404s (as an ApiError with `status === 404`) when the client-configurator module is disabled. */
 export const getClients = () => request<ClientsResponse>('/clients');
 
+
+// ── Playground Debug panel layout (per-browser preference) ───────────────────
+const PLAYGROUND_DEBUG_KEY = 'lr_playground_debug';
+export interface PlaygroundDebugLayout { width: number | null; collapsed: boolean }
+
+export function getPlaygroundDebugLayout(): PlaygroundDebugLayout {
+  try {
+    const v = JSON.parse(localStorage.getItem(PLAYGROUND_DEBUG_KEY) ?? 'null');
+    return {
+      width: typeof v?.width === 'number' && Number.isFinite(v.width) ? v.width : null,
+      collapsed: v?.collapsed === true,
+    };
+  } catch { return { width: null, collapsed: false }; }
+}
+
+export function setPlaygroundDebugLayout(layout: PlaygroundDebugLayout): void {
+  try { localStorage.setItem(PLAYGROUND_DEBUG_KEY, JSON.stringify(layout)); } catch { /* storage unavailable */ }
+}

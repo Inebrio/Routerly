@@ -7,7 +7,6 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 import { isKnownProvider, providerDescriptorRegistry, getProviderDescriptor } from '../provider/descriptor.js';
-import { isModuleEnabled } from '../../core/modules/registry.js';
 import { encryptCredential } from '../../lib/crypto-cred.js';
 
 // ── Route-local auth helpers (mirrors api.ts; no shared route-helper module exists) ──
@@ -50,26 +49,6 @@ function redactConnection(connection: ProviderConnection): Omit<ProviderConnecti
   // key, not by assigning undefined. Same JSON either way.
   const { credentials: _secret, ...rest } = connection;
   return Object.keys(safe).length > 0 ? { ...rest, credentials: safe } : rest;
-}
-
-/**
- * Gates connection create/update on the oauth/web module records. Only oauth and web
- * support-level providers require a module check; api-key/local/native providers are
- * always-on and skip the extra config read.
- */
-async function checkProviderModuleGate(providerId: string, reply: FastifyReply): Promise<boolean> {
-  const supportLevel = getProviderDescriptor(providerId)?.supportLevel;
-  if (supportLevel !== 'oauth' && supportLevel !== 'web') return true;
-
-  const moduleId = supportLevel === 'oauth' ? 'provider-oauth' : 'provider-web';
-  const records = await readConfig('modules');
-  if (isModuleEnabled(records, moduleId)) return true;
-
-  reply.status(403).send({
-    error: 'module_disabled',
-    message: `Provider connections requiring the '${supportLevel}' module cannot be created or updated while '${moduleId}' is disabled.`,
-  });
-  return false;
 }
 
 /**
@@ -122,6 +101,7 @@ export interface ConnectionCredentialFields {
   cfClearance?: string | undefined;
   oauthPlain?: string | undefined;
   refreshPlain?: string | undefined;
+  authFilePath?: string | undefined;
   expiresAt?: number | undefined;
   cookiePlain?: string | undefined;
   cfClearancePlain?: string | undefined;
@@ -164,7 +144,9 @@ export function buildConnectionCredentials(
     if (fields.cookiePlain) plain.cookiePlain = fields.cookiePlain;
     if (fields.cfClearancePlain) plain.cfClearancePlain = fields.cfClearancePlain;
   } else if (supportLevel === 'oauth') {
-    if (fields.apiKey) plain.oauthPlain = fields.apiKey;
+    // openai-oauth's form field is the Codex auth file path, not a token.
+    if (fields.apiKey) plain[provider === 'openai-oauth' ? 'authFilePath' : 'oauthPlain'] = fields.apiKey;
+    if (fields.authFilePath) plain.authFilePath = fields.authFilePath;
     if (fields.oauthPlain) plain.oauthPlain = fields.oauthPlain;
     if (fields.refreshPlain) plain.refreshPlain = fields.refreshPlain;
     if (typeof fields.expiresAt === 'number') plain.expiresAt = fields.expiresAt;
@@ -188,6 +170,7 @@ const credentialFieldsSchema = z.object({
   cfClearance: z.string(),
   oauthPlain: z.string(),
   refreshPlain: z.string(),
+  authFilePath: z.string(),
   expiresAt: z.number(),
   cookiePlain: z.string(),
   cfClearancePlain: z.string(),
@@ -276,6 +259,7 @@ const instanceSchema = z.object({
   upstreamModelId: z.string(),
   cost: tokenCostSchema,
   contextWindow: z.number(),
+  timeout: z.number().int().positive().optional(),
   limits: z.array(limitSchema).optional(),
   capabilities: capabilitiesSchema.optional(),
 });
@@ -306,7 +290,6 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     if (!requirePerm(req, 'connections:manage', reply)) return;
     const parsed = connectionSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
-    if (!(await checkProviderModuleGate(parsed.data.providerId, reply))) return;
 
     const connections = await readConfig('connections');
     const resolved = resolveConnectionLabel(
@@ -314,11 +297,20 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     );
     if ('error' in resolved) return reply.status(400).send({ error: 'label_taken', message: resolved.error });
 
+    const credentials = buildConnectionCredentials(parsed.data.providerId, parsed.data.credentials ?? {});
+    // An anthropic-oauth connection without its token can never work: reject it at creation.
+    // (openai-oauth is exempt: blank means the default ~/.codex/auth.json.)
+    if (parsed.data.providerId === 'anthropic-oauth' && !credentials.oauthEnc) {
+      return reply.status(400).send({ error: 'oauth_token_required', message: 'OAuth token is required' });
+    }
+    if (getProviderDescriptor(parsed.data.providerId)?.supportLevel === 'web' && !credentials.cookieEnc) {
+      return reply.status(400).send({ error: 'cookie_required', message: 'Access/session token is required' });
+    }
     const connection = {
       id: uuidv4(),
       ...parsed.data,
       label: resolved.label,
-      credentials: buildConnectionCredentials(parsed.data.providerId, parsed.data.credentials ?? {}),
+      credentials,
     } as ProviderConnection;
     connections.push(connection);
     await writeConfig('connections', connections);
@@ -336,7 +328,6 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
 
     const effectiveProviderId = parsed.data.providerId ?? connections[index]!.providerId;
-    if (!(await checkProviderModuleGate(effectiveProviderId, reply))) return;
 
     const patchData = { ...parsed.data } as Partial<ProviderConnection>;
     if (parsed.data.label !== undefined) {
@@ -366,6 +357,10 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     const connections = await readConfig('connections');
     const filtered = connections.filter(c => c.id !== req.params.id);
     if (filtered.length === connections.length) return reply.status(404).send({ error: 'Not found' });
+    const usedBy = (await readConfig('instances')).filter(i => i.connectionId === req.params.id).map(i => i.id);
+    if (usedBy.length) {
+      return reply.status(409).send({ error: `Connection is used by model(s): ${usedBy.join(', ')}`, usedBy });
+    }
     await writeConfig('connections', filtered);
     audit(req, 'connection:delete', 'success', { id: req.params.id });
     return reply.status(204).send();

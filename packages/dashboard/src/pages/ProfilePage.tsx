@@ -14,6 +14,7 @@ import { useFilterState } from '../hooks/useFilterState';
 import { ProfileMcpTab } from './ProfileMcpTab';
 import { ProfilePreferencesTab } from './ProfilePreferencesTab';
 import { DateRangePicker, parseStoredRange, type DateRange } from '../components/DateRangePicker';
+import { writeToClipboard } from '../utils/clipboard';
 import { SearchableSelect } from '../components/SearchableSelect';
 
 // ─── Notifications tab ────────────────────────────────────────────────────────
@@ -898,7 +899,7 @@ function ProfileSecurityTab() {
                 type="button"
                 className="btn btn-ghost"
                 style={{ fontSize: '0.8rem' }}
-                onClick={() => navigator.clipboard.writeText(tfaBackupCodes.join('\n'))}
+                onClick={() => void writeToClipboard(tfaBackupCodes.join('\n'))}
               >
                 {t('profile.security.tfa.copyBackupCodes')}
               </button>
@@ -953,7 +954,7 @@ function ProfileSecurityTab() {
                   type="button"
                   className="btn btn-ghost"
                   style={{ fontSize: '0.8rem' }}
-                  onClick={() => navigator.clipboard.writeText(newBackupCodes.join('\n'))}
+                  onClick={() => void writeToClipboard(newBackupCodes.join('\n'))}
                 >
                   {t('profile.security.tfa.copy')}
                 </button>

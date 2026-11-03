@@ -72,4 +72,11 @@ describe('sendTeams', () => {
     const bodyBlocks = body.attachments[0].content.body as { type: string }[];
     expect(bodyBlocks.some((b) => b.type === 'FactSet')).toBe(false);
   });
+
+  it('rejects a private IP webhookUrl without fetching', async () => {
+    const mockFetch = vi.fn()
+    vi.stubGlobal('fetch', mockFetch)
+    await expect(sendTeams({ ...cfg, webhookUrl: 'http://192.168.1.1/x' }, payload)).rejects.toThrow('private or loopback')
+    expect(mockFetch).not.toHaveBeenCalled()
+  });
 });

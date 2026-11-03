@@ -15,6 +15,7 @@ interface PreviewResult {
   estimatedTokensBefore: number;
   estimatedTokensAfter: number;
   perStep: { id: string; before: number; after: number; messages?: Message[]; rolledBack?: boolean; skipReason?: string }[];
+  pipeline?: { kind: 'profile' | 'custom'; profileId?: string; label: string };
   messages?: Message[];
 }
 
@@ -352,11 +353,10 @@ it has no context window to size against instead of trimming.
           sampleMessages = opts.message.map(text => ({ role: 'user', content: text }));
         }
         const router = await resolveRouter(nameOrId);
-        const steps = router.optimizers?.steps ?? [];
+        // No steps sent: the service runs the router's real pipeline (profile or custom).
         const result = await api<PreviewResult>('POST', '/api/optimizers/preview', {
           routerId: router.id,
           sampleMessages,
-          steps,
           ...(opts.model ? { model: opts.model } : {}),
         });
 
@@ -364,6 +364,7 @@ it has no context window to size against instead of trimming.
           console.log(JSON.stringify(result, null, 2));
           return;
         }
+        if (result.pipeline) console.log(chalk.gray('Pipeline:      ') + (result.pipeline.kind === 'profile' ? `profile ${result.pipeline.label}` : 'custom'));
         console.log(chalk.gray('Tokens before: ') + result.estimatedTokensBefore);
         console.log(chalk.gray('Tokens after:  ') + result.estimatedTokensAfter);
         console.log(chalk.gray('Saved:         ') + (result.estimatedTokensBefore - result.estimatedTokensAfter));

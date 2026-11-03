@@ -32,13 +32,19 @@ vi.mock('../components/SearchableSelect', () => ({
 
 // ponytail: gate 'resilience:manage' on a mutable flag ('mock' prefix so vi.mock hoist allows it);
 // everything else the component asks `can()` about is granted.
-let mockCanManage = true;
+const mockCanManage = true;
 let mockCanWriteModels = true;
+let mockCanReadModels = true;
+let mockCanReadReport = true;
+let mockCanReadConnections = true;
 vi.mock('../AuthContext', () => ({
   useAuth: () => ({
     can: (p: string) => {
       if (p === 'resilience:manage') return mockCanManage;
       if (p === 'model:write') return mockCanWriteModels;
+      if (p === 'model:read') return mockCanReadModels;
+      if (p === 'report:read') return mockCanReadReport;
+      if (p === 'connections:read') return mockCanReadConnections;
       return true;
     },
   }),
@@ -153,6 +159,14 @@ describe('ModelsPage — models list', () => {
     mockCanWriteModels = true;
   });
 
+  it('filter does not crash on models without endpoint (ROUT-281)', async () => {
+    mockGetModels.mockResolvedValue([makeModel({ id: 'other-model', endpoint: undefined })]);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('other-model')).toBeTruthy());
+    await userEvent.type(screen.getByPlaceholderText(/Filter models/), 'zzz');
+    expect(screen.queryByText('other-model')).toBeNull();
+  });
+
   it('shows filtered empty state when filter matches nothing', async () => {
     mockGetModels.mockResolvedValue([makeModel()]);
     renderPage();
@@ -225,6 +239,18 @@ describe('ModelsPage — models list', () => {
     expect(hasDash).toBe(true);
   });
 
+  it('shows dashes for missing prices and 0 context, $0 for free prices', async () => {
+    mockGetModels.mockResolvedValue([
+      makeModel({ id: 'no-data', cost: {} as any, contextWindow: 0 }),
+      makeModel({ id: 'free', cost: { inputPerMillion: 0, outputPerMillion: 0, cachePerMillion: null } }),
+    ]);
+    renderPage();
+    await waitFor(() => screen.getByText('no-data'));
+    const cells = (id: string) => Array.from(screen.getByText(id).closest('tr')!.querySelectorAll('td')).map(td => td.textContent);
+    expect(cells('no-data').slice(3, 7)).toEqual(['—', '—', '—', '—']);
+    expect(cells('free').slice(3, 5)).toEqual(['$0', '$0']);
+  });
+
   it('sorts by provider when Provider header clicked', async () => {
     mockGetModels.mockResolvedValue([
       makeModel({ id: 'z-model', provider: 'openai' }),
@@ -254,6 +280,49 @@ describe('ModelsPage — models list', () => {
 });
 
 // ── ConfirmDialog / delete flow ────────────────────────────────────────────────
+
+describe('ModelsPage — without model:read', () => {
+  it('shows the permission message and does not call the models, connections or health APIs', async () => {
+    mockCanReadModels = false;
+    try {
+      renderPage();
+      expect(screen.getByText("You don't have permission to view models.")).toBeTruthy();
+      expect(getModels).not.toHaveBeenCalled();
+      expect(getConnections).not.toHaveBeenCalled();
+      expect(getProviderHealth).not.toHaveBeenCalled();
+    } finally {
+      mockCanReadModels = true;
+    }
+  });
+});
+
+describe('ModelsPage — without report:read / connections:read', () => {
+  it('does not call the health API without report:read, still loads models', async () => {
+    mockCanReadReport = false;
+    try {
+      mockGetModels.mockResolvedValue([makeModel()]);
+      renderPage();
+      await waitFor(() => screen.getByText('gpt-4o'));
+      expect(getProviderHealth).not.toHaveBeenCalled();
+      expect(getConnections).toHaveBeenCalled();
+    } finally {
+      mockCanReadReport = true;
+    }
+  });
+
+  it('does not call the connections API without connections:read, still loads models', async () => {
+    mockCanReadConnections = false;
+    try {
+      mockGetModels.mockResolvedValue([makeModel()]);
+      renderPage();
+      await waitFor(() => screen.getByText('gpt-4o'));
+      expect(getConnections).not.toHaveBeenCalled();
+      expect(getProviderHealth).toHaveBeenCalled();
+    } finally {
+      mockCanReadConnections = true;
+    }
+  });
+});
 
 describe('ModelsPage — delete with ConfirmDialog', () => {
   it('shows confirm dialog when delete button clicked', async () => {
@@ -285,6 +354,17 @@ describe('ModelsPage — delete with ConfirmDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     await waitFor(() => expect(mockDeleteModel).toHaveBeenCalledWith('gpt-4o'));
     await waitFor(() => expect(screen.queryByText('gpt-4o')).toBeNull());
+  });
+
+  it('shows the error and keeps the row when deleteModel is rejected', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    mockDeleteModel.mockRejectedValue(new Error('Model "gpt-4o" is used by router(s): r1.'));
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await userEvent.click(screen.getByTitle('Remove'));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    await waitFor(() => screen.getByText(/is used by router\(s\)/));
+    expect(screen.getByText('gpt-4o')).toBeTruthy();
   });
 });
 
@@ -363,6 +443,16 @@ describe('ModelsPage — health columns (merged table)', () => {
     expect(screen.getByText(/Requests/)).toBeTruthy();
     expect(screen.getByText(/Last success/)).toBeTruthy();
     expect(screen.getByText(/Cooldown/)).toBeTruthy();
+  });
+
+  it('health table uses the compact layout so it fits 1280px (ROUT-464)', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
+    const th = screen.getByText(/Last success/).closest('th')!;
+    expect(th.closest('table')!.className).toContain('table-compact');
+    expect(th.style.whiteSpace).toBe('');
   });
 
   it('shows Healthy badge when health data matches model', async () => {
@@ -1296,5 +1386,31 @@ describe('ModelsPage — permissions', () => {
     expect(screen.queryByTitle('Edit')).toBeNull();
     expect(screen.getByTitle('Test')).toBeTruthy();
     mockCanWriteModels = true;
+  });
+});
+
+describe('ModelsPage — per-model Reset', () => {
+  async function reset(model: Record<string, unknown>) {
+    mockResetResilience.mockResolvedValue(undefined);
+    mockGetModels.mockResolvedValue([makeModel(model)]);
+    mockGetProviderHealth.mockResolvedValue({ providers: [makeHealthProvider()] });
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
+    await userEvent.click(await screen.findByTitle('Reset circuit breaker'));
+    await userEvent.click(await screen.findByText('Confirm'));
+    await waitFor(() => expect(mockResetResilience).toHaveBeenCalledTimes(3));
+  }
+
+  it('resets the connection key by connectionId', async () => {
+    await reset({ connectionId: 'conn-1' });
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'connection', id: 'conn-1' });
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'provider', id: 'openai' });
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'model', id: 'gpt-4o' });
+  });
+
+  it('falls back to provider for legacy models without connectionId', async () => {
+    await reset({});
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'connection', id: 'openai' });
   });
 });

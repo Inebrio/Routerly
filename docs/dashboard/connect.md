@@ -28,10 +28,7 @@ above. Or navigate to `/dashboard/connect` directly.
 
 ![Connect page: the generic endpoint block on top, then the clients grouped by setup method, each tile with its brand mark, support badge and connect modes](../assets/screenshot-connect.png)
 
-The nav item is only shown if the client-configurator module is enabled on
-the server. If it is disabled, the page shows an empty state pointing at
-`routerly modules enable clients`. The Overview page carries a shortcut card
-to this section under the same condition.
+The Overview page carries a shortcut card to this section.
 
 The page opens with **Point any client here**, the generic setup, valid for
 anything built on the OpenAI or Anthropic SDK whether or not it appears in

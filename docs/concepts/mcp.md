@@ -129,6 +129,8 @@ on that instance.
 | `create_router_token` | `token:write` | Mints a new API token on a router. Returns only `id`/`tokenSnippet`/`createdAt`/`scopes`; the raw token is never returned to the MCP client. |
 | `toggle_model` | `router:write` | Flips the `enabled` flag on one of a router's model refs. The flag is persisted but not yet honored by the routing engine. |
 
+Every write tool call is recorded in the audit log as `mcp:<tool>` (user of the token, `routerId`, `modelId`, the tool's result ids; never the raw token). A call refused for a missing permission is recorded as `forbidden`.
+
 ---
 
 ## Errors

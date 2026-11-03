@@ -20,11 +20,6 @@ payload field is added, so a client changes only its base URL and key, exactly
 as with any other Routerly token. See
 [Architecture](./architecture.md).
 
-Experiments are a **module** and ship enabled with the rest of `0.4.0`. With
-the module off, every management route answers `403 module_disabled`, the
-dashboard hides the section and the CLI prints the command that turns it back
-on (`routerly modules enable experiments`). See
-[Dashboard: Modules](../dashboard/settings.md#modules-tab).
 
 ---
 
@@ -62,6 +57,9 @@ The rotation decides which variant serves a given request.
 `weighted` reads each variant's `weight`. Weights are normalised against their
 own sum, so `1` / `1` and `50` / `50` mean the same thing, and a variant with
 no weight counts as `1`. A test that sets no weights at all splits evenly.
+Weights are relative, not percentages, and are not required to sum to 100:
+`70` / `20` runs as 77.8% / 22.2%. `routerly experiments show` prints the
+effective share of each variant. A negative weight is rejected with a 400.
 
 Sticky assignments and the round-robin cursor live in memory only. A service
 restart re-splits the traffic, which costs a little balance and no

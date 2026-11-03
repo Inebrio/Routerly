@@ -1,14 +1,16 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { ModelConfig } from '@routerly/shared';
 
-const mockCreate = vi.fn().mockResolvedValue({
+const mockResult = {
   id: 'chatcmpl-test',
   object: 'chat.completion',
   created: 1234567890,
   model: 'gpt-4o',
   choices: [{ index: 0, message: { role: 'assistant', content: 'Hello' }, finish_reason: 'stop' }],
   usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
-});
+};
+const mockCreate = vi.fn(() =>
+  Object.assign(Promise.resolve(mockResult), { withResponse: async () => ({ data: mockResult, response: { headers: new Headers() } }) }));
 
 const mockConstructorArgs: Record<string, unknown>[] = [];
 

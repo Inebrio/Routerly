@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "தீம்: {{theme}}"
     },
+    "language": {
+      "label": "மொழி",
+      "saveError": "உங்கள் மொழியைச் சேமிக்க முடியவில்லை. முந்தைய மொழிக்குத் திரும்பியது."
+    },
     "sidebar": {
       "expand": "பக்க பட்டையை விரிக்கவும்",
       "collapse": "பக்க பட்டையை சுருக்கவும்"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "சில கட்டமைப்பு கோப்புகளுக்கு அனுமதிக்க கூடிய அணுகல் உள்ளது ({{files}})। தொடக்கம் மற்றும் கோரிக்கைகள் இன்னும் சரியாக வேலை செய்கின்றன. அமைப்புகள் → பாதுகாப்பு இலிருந்து சரிசெய்யவும், அல்லது வசதியான போது ஹோஸ்ட் கோப்பு முறைமையிலிருந்து சரிசெய்யவும்.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "நிராகரிக்கவும்",
       "updateAvailable": "Routerly v{{latest}} கிடைக்கிறது. நீங்கள் v{{current}} இல் இருக்கிறீர்கள்.",
       "updateLink": "அமைப்புகளில் புதுப்பிக்கவும்",
@@ -40,9 +45,6 @@
       "telemetryLink": "என்ன அனுப்பப்படுகிறது?",
       "telemetryYes": "ஆம், உதவி",
       "telemetryNo": "இல்லை நன்றி"
-    },
-    "language": {
-      "label": "மொழி"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "அமர்வு டோகன்",
       "awsSessionTokenOptionalHint": "(விரும்பத்தகாய, தற்காலிக நிலைமைகளுக்கு)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "GCP திசையாக்குபவர் ID",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "இடம்",
       "gcpLocationDefaultHint": "(முன்னிருப்பு: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "அ அணுக்கம் டோகன்",
         "sessionTokenLabel": "அமர்வு டோகன்",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "sessionKey குக்கி மதிப்பை பேஸ் செய்யவும் (sk-ant-sid01-…)",
-        "openaiInstructions": "ChatGPT இல் நுழையும் போது, <code>https://chatgpt.com/api/auth/session</code> புதிய தாளில் திறக்கவும். <code>accessToken</code> கள் மதிப்பை நகலெடு (தொடங்குகிறது <code>eyJ</code> ). டோகன் ~24 மணி நேரம் வாழ்கிறது. நির்ভরக்கதமான அ அணுக்கம், கீழே <strong>cf_clearance</strong> கள் வகையை கொட்டவும்.",
-        "anthropicInstructions": "<strong>உங்கள் அமர்வு விசை தேர்வு மாறிக்கொள்ளும்:</strong> Claude இல் நுழையும் போது, DevTools (F12) → உருப்பொருள் → குக்கிகள் → <code>claude.ai</code> → <code>sessionKey</code> குக்கி மதிப்பை நகலெடு (தொடங்குகிறது <code>sk-ant-sid01-</code> ). விசை செல்லலாம் வரை செயல்பாடு நீங்கள் வெளிவருங்கள் வரை."
+        "sessionTokenPlaceholder": "sessionKey குக்கி மதிப்பை ஒட்டவும் (sk-ant-sid…)",
+        "openaiInstructions": "ChatGPT இல் நுழையும் போது, <code>https://chatgpt.com/api/auth/session</code> புதிய தாளில் திறக்கவும். <code>accessToken</code> கள் மதிப்பை நகலெடு (தொடங்குகிறது <code>eyJ</code> ). டோகன் சுமார் 10 நாட்கள் செல்லுபடியாகும்; சோதனை 401 உடன் தோல்வியடையத் தொடங்கும்போது புதிய டோகனை ஒட்டவும். நির்ভরக்கதமான அ அணுக்கம், கீழே <strong>cf_clearance</strong> கள் வகையை கொட்டவும்.",
+        "anthropicInstructions": "<strong>உங்கள் அமர்வு விசையை எவ்வாறு பெறுவது:</strong> <code>https://claude.ai</code> இல் உள்நுழைந்த நிலையில், DevTools ஐத் திறக்க F12 ஐ அழுத்தவும். Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. <code>sessionKey</code> குக்கியின் <strong>Value</strong> ஐ நகலெடுக்கவும் (<code>sk-ant-sid</code> உடன் தொடங்கும், எடுத்துக்காட்டாக <code>sk-ant-sid02-</code>). இது HttpOnly குக்கி, எனவே பக்க கன்சோலில் தெரியாது. நீங்கள் வெளியேறும் வரை அல்லது காலாவதியாகும் வரை செல்லுபடியாகும்; சோதனை தோல்வியடையத் தொடங்கினால் புதியதை ஒட்டவும்."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "சந்தா OAuth டோகன்",
@@ -417,7 +419,8 @@
       "status": "நிலை",
       "encoding": "குறியாக்கம்",
       "frames": "பிரேம்கள்",
-      "bytes": "பைட்டுகள்"
+      "bytes": "பைட்டுகள்",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "மொழி",
       "description": "கட்டக்கம் மொழி பாணி வேண்ட்டை உள்ளடக்கப்பட்ட தளம் தேர்ந்தெடு.",
       "languageLabel": "மொழி",
-      "saved": "மொழி விருப்பம் சேமிக்கப்பட்ட."
+      "saved": "மொழி விருப்பம் சேமிக்கப்பட்ட.",
+      "saveError": "உங்கள் மொழி விருப்பத்தைச் சேமிக்க முடியவில்லை. முந்தைய மொழிக்குத் திரும்பியது."
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "சேமிக்கப்படுகிறது…",
         "enable": "இயக்கவும்",
         "disable": "முடக்கவும்"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "பட்ஜெட் – சாரம் மாற்றவும்",
         "systemStartup": "கணினி – தொடக்கம்",
         "systemShutdown": "கணினி – ஹிறுக்கம்",
-        "systemUpdateAvailable": "கணினி – புதிப்பிக்க கிடைக்கிறது"
+        "systemUpdateAvailable": "கணினி – புதிப்பிக்க கிடைக்கிறது",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "சிறை அகற்றவும்",
       "removeChannelConfirm": "சிறை அகற்ற?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} பயனர்",
         "userCount_other": "{{count}} பயனர்கள்",
-        "everyone": "அனைவரும்"
+        "everyone": "அனைவரும்",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "சுமை தவறிவிட்டது"
@@ -831,6 +838,9 @@
         },
         "optional": "(விரும்பத்தகாய)",
         "keepCurrentPlaceholder": "தற்போதைய பயணப் விட விட்டு",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "தட்டு அனைத்து திசையாக்குபவர்கள் மூலம் நிகழ்வுகளை பெற வெளிப்பாக வேண்டாம்.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "விநாடி (0 = மூட்டை சீல் நிலை)",
-          "cooldownHint": "குறைந்த अंतराल இந்த சिறை பயண்ட் மறு ஒரே நிகழ்வு।"
+          "cooldownHint": "குறைந்த अंतराल இந்த சिறை பயண்ட் மறு ஒரே நிகழ்வு।",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "பெறுநர்கள் / இலக்கங்கள்",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "சிறைகளை தேடு…",
         "noResults": "முடிவுகள் இல்லை",
         "emptyTitle": "எந்த அறிவிப்பு சिறைகளை அமைப்பு வேண்டும் இல்லை.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "எந்த சिறைகளை செயல்பட்ட வடிகட்ட பொருத்தம் நிலை।",
         "nameInlinePlaceholder": "பெயர் (விரும்பத்தகாய)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "ஒருங்கிணைப்பு அகற்றவும்",
       "saving": "சேமிக்கப்படுகிறது…",
       "save": "சேமிக்க",
-      "addButton": "ஒருங்கிணைப்பு சேர்க்கவும்"
+      "addButton": "ஒருங்கிணைப்பு சேர்க்கவும்",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "கடைசி சோதனை"
       },
       "noCheckPerformed": "புதிப்பிக்க சோதனை செயல்படுத்த வேண்டும் இல்லை.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "புதிப்பிக்கம் சோதனை",
       "checking": "சோதனை…",
       "updateTo": "v{{version}} குக்குவிக்கவும்",
@@ -1121,7 +1137,8 @@
         "checkFailed": "சோதனை தவறிவிட்டது",
         "updateFailed": "புதிப்பிக்க தவறிவிட்டது"
       },
-      "channel": "சிறை"
+      "channel": "சிறை",
+      "channelNote": "current ஒவ்வொரு புதிய நிலையான வெளியீட்டையும் பின்பற்றும்; stable ஒரு வெளியீடு உயர்த்தப்படும்போது மட்டுமே நகரும், எனவே இரண்டும் வேறுபடலாம்."
     },
     "security": {
       "authentication": "உறுப்படி",
@@ -1156,6 +1173,8 @@
       "count": "1 திசையாக்குபவர்",
       "count_other": "{{count}} திசையாக்குபவர்கள்",
       "newRouter": "புதிய திசையாக்குபவர்",
+      "newOrchestrator": "புதிய ஆர்கெஸ்ட்ரேட்டர்",
+      "newPassthrough": "புதிய பாஸ்-த்ரு",
       "empty": "எந்த திசையாக்குபவர்கள் இல்லை.",
       "emptyFiltered": "இந்த வகையின் நল் இல்லை.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "இந்த திசையாக்குபவர் நீக்க?",
       "errors": {
         "deleteFailed": "திசையாக்குபவர் நீக்க பிழை"
-      },
-      "newOrchestrator": "புதிய ஆர்கெஸ்ட்ரேட்டர்",
-      "newPassthrough": "புதிய பாஸ்-த்ரு"
+      }
     },
     "layout": {
       "notFound": "திசையாக்குபவர் கண்டுபிடிக்கப்படவில்லை",
@@ -1191,10 +1208,10 @@
       "backToRouters": "திசையாக்குபவர்கள் திரும்ப",
       "backToRoutersTitle": "திசையாக்குபவர்கள் திரும்ப",
       "newRouter": "புதிய திசையாக்குபவர்",
+      "newKind": "புதிய {{kind}}",
       "loading": "சுமை...",
       "routerId": "திசையாக்குபவர் ID:",
-      "saveFirstHint": "இந்த தாள் திறக்க திசையாக்குபவர் முதலாக சேமிக்க",
-      "newKind": "புதிய {{kind}}"
+      "saveFirstHint": "இந்த தாள் திறக்க திசையாக்குபவர் முதலாக சேமிக்க"
     },
     "dashboard": {
       "period": "காலம்",
@@ -1212,7 +1229,9 @@
         "ttft": "முதல் டோகன் நேரம்",
         "notMeasured": "இல் அளவிட வேண்டும் இந்த அழைப்புகள் தகவல்",
         "reliability": "நம்பிக்கை",
-        "errorsAndBlocked": "{{errors}} பிழைகளை · {{blocked}} தொண்டு"
+        "errorsAndBlocked": "{{errors}} பிழைகளை · {{blocked}} தொண்டு",
+        "errorsAndBlocked_one": "{{errors}} பிழைகளை · {{blocked}} தொண்டு",
+        "errorsAndBlocked_other": "{{errors}} பிழைகளை · {{blocked}} தொண்டு"
       },
       "tokens": {
         "input": "உள்ளீடு டோகன்கள்:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "বேस URL <code>{{baseUrl}}</code>, இல்லாமல் <code>/v1</code>: SDK சேர்க்க।",
         "curl": "curl",
-        "curlHint": "கம்பி சோதனை நிறுவல் இல்லாமல், பின்னர் தேடு அழைப்பு <usageLink>பயன்பாடு</usageLink>."
+        "curlHint": "கம்பி சோதனை நிறுவல் இல்லாமல், பின்னர் தேடு அழைப்பு <usageLink>பயன்பாடு</usageLink>.",
+        "passthrough": {
+          "heading": "இணைக்கும் முறை",
+          "intro": "Passthrough ஒவ்வொரு கோரிக்கையையும் மாற்றமின்றி அனுப்புகிறது — உங்கள் <strong>சொந்த</strong> மேல்நிலை வழங்கியின் விசையை API விசையாகப் பயன்படுத்தவும், Routerly டோகன் ஒருபோதும் இல்லை. Routerly இந்த வழிதிருப்பியின் நற்சான்றை சேமிக்கவோ வழங்கவோ இல்லை; கிளையன்ட் அனுப்புவது நரம்பு வழங்கிக்கு செல்கிறது.",
+          "noLimits": "இந்த வழிதிருப்பிக்கு பட்ജெட்டும் வரம்புகளும் பொருந்தாது: Passthrough ட்ராஃபிக்கிற்கான செலவு தெரியாது, எனவே அது எந்த செலவு வரம்புக்கும் சரிபார்க்கப்படாது அல்லது கணக்கிடப்படாது.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — <code>/v1</code> suffix இல்லை, SDK இன்னும் உண்மையான OpenAI API க்கு எதிரான அதன் பாதையை சேர்க்கிறது.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK இன்னும் <code>/v1/messages</code> என்பதை தானே சேர்க்கிறது, உண்மையான Anthropic API க்கு எதிரான இதேபோல் செய்கிறது."
+        }
       },
       "form": {
         "kind": "வகை",
         "kindFixedHint": "ஒரு முறை திசையாக்குபவர் உருவாக்க நிலைநிறுத்த.",
         "routerName": "திசையாக்குபவர் பெயர்",
         "routerNamePlaceholder": "என் ஆப்",
+        "passthroughPath": "பாதை",
+        "passthroughPathHint": "கிளையண்டுகள் அழைக்கும் URL-ன் பகுதியாக மாறுகிறது: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "மேம்பட்ட அமைப்புகளை",
         "ttftTimeout": "TTFT Timeout (ms)",
         "ttftTimeoutHint": "ஒரு மாதிரி கோரை முதல் பதிலுக்கும் பைட் இந்த நேரம் இல் அனுப்பாமல், Routerly நிறுத்த அதை மற்றும் அடுத்த பொறுத்தம் முயற்சி. மொத்த பதிலுக்கும் நெடுக்கு நிலைநிறுத்த வேண்டும் இல்லை. 0 அமைப்பு வழங்குநர் தேவை வரை காத்திருக்க.",
         "traceContent": "தடம் உள்ளடக்கம்",
         "traceContentHint": "தடம் எப்போதும் அளவிட தரவு (மாதிரிகள், மதிப்புகள், டோகன்கள், செலவு, தாமதம்). தூண்டல் அனுப்ப மற்றும் விளக்க பெற் இல் இந்த செய். அவை சேமிக்கப்பட்ட பயன்பாடு பதிவு மற்றும் பார்வை யாரும் பெற பற்றி.",
         "capturePromptsAndAnswers": "தூண்டல் மற்றும் விளக்க பெற்",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "மாற்றங்கள் சேமிக்க",
         "createRouter": "திசையாக்குபவர் உருவாக்க",
-        "passthroughPath": "பாதை",
-        "passthroughPathHint": "கிளையண்டுகள் அழைக்கும் URL-ன் பகுதியாக மாறுகிறது: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "ஆர்கெஸ்ட்ரேட்டர் உருவாக்கவும்",
         "createPassthrough": "பாஸ்-த்ரு உருவாக்கவும்"
       }
@@ -1384,6 +1414,7 @@
       "saving": "சேமிக்கப்படுகிறது...",
       "saved": "சேமிக்கப்பட்டது",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "டோகன் சேமிப்பு முன்",
         "description": "தற்போதைய (சேமிக்கப்படாத) குழாய இயக்க ஒரு தூண்டல் மூலம் பார்வை என்ன ஒவ்வொரு கட்ட குறைக்க மற்றும் என்ன அதை செலவு. பொறுத்தம் மாதிரிக் உரை தொட்டுக்கள் ஒன்று, அல்லது வகை உங்கள் சொந்த தூண்டல்.",
         "promptLabel": "தூண்டல்",
@@ -1493,9 +1524,9 @@
         "limitMetric": {
           "cost": "செலவு",
           "calls": "Requests",
-          "input_tokens": "Input tokens",
-          "output_tokens": "Output tokens",
-          "total_tokens": "Total tokens"
+          "input_tokens": "உள்ளீட்டு டோகன்கள்",
+          "output_tokens": "வெளியீட்டு டோகன்கள்",
+          "total_tokens": "மொத்த டோகன்கள்"
         },
         "period": {
           "hourly": "Hourly",
@@ -1528,16 +1559,16 @@
     "users": {
       "title": "பாதுகாப்பு",
       "description": "ஒரு பகிரங்க பாதுகாப்பு சுயவிவரம் பயன்படுத்த, அல்லு இந்த திசையாக்குபவர் சொந்த பாதுகாப்பு மற்றும் PII கொள்கைகளை வரையறை।",
-      "addButton": "Add Member",
-      "addNewTitle": "Add New Member",
-      "selectUserPlaceholder": "Select a user...",
+      "addButton": "உறுப்பினரைச் சேர்க்கவும்",
+      "addNewTitle": "புதிய உறுப்பினரைச் சேர்க்கவும்",
+      "selectUserPlaceholder": "பயனரைத் தேர்ந்தெடுக்கவும்...",
       "addConfirmButton": "Add",
       "cancelButton": "Cancel",
-      "empty": "No members found.",
-      "removeConfirm": "Are you sure you want to remove this member?",
-      "saveTitle": "Save changes",
-      "changeRoleTitle": "Change Role",
-      "removeTitle": "Remove Member",
+      "empty": "உறுப்பினர் எவரும் கண்டுபிடிக்கப்படவில்லை.",
+      "removeConfirm": "இந்த உறுப்பினரை அகற்ற நீங்கள் உறுதியாக இருக்கிறீர்களா?",
+      "saveTitle": "மாற்றங்களைச் சேமிக்கவும்",
+      "changeRoleTitle": "பாத்திரத்தை மாற்றவும்",
+      "removeTitle": "உறுப்பினரை அகற்றவும்",
       "roles": {
         "viewer": "Viewer",
         "editor": "Editor",
@@ -1549,10 +1580,10 @@
         "actions": "Actions"
       },
       "errors": {
-        "loadFailed": "Failed to load users",
-        "addFailed": "Error adding member",
-        "updateFailed": "Error updating member",
-        "removeFailed": "Error removing member"
+        "loadFailed": "பயனர்களை ஏற்றுவதில் தோல்வி",
+        "addFailed": "உறுப்பினரைச் சேர்க்கும் போது பிழை",
+        "updateFailed": "உறுப்பினரைப் புதுப்பிக்கும் போது பிழை",
+        "removeFailed": "உறுப்பினரை அகற்றுவதில் பிழை"
       }
     },
     "logs": {
@@ -1636,7 +1667,7 @@
     "test": {
       "defaultSystemMessage": "நீங்கள் ஒரு உதவிக்குத் தயாரான AI உதவி.",
       "errors": {
-        "unknown": "Unknown error occurred",
+        "unknown": "எதிர்பாராத பிழை ஏற்பட்டது",
         "onlyImages": "தொடும் உள்ளீடு வரையப் விளக்கத்தை ஆதரிக்க போது தொடும்."
       },
       "title": "பாதுகாப்பு",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "எந்த கோரிக்கை இல் அனுப்பப்பட்ட.",
       "turnTraceLog": "பாலி #{{turn}} தடம் சொல்ல · {{count}} ஈவன்",
       "turnTraceLog_other": "பாலி #{{turn}} தடம் சொல்ல · {{count}} ஈவன்கள்"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "மாதிரிகள்",
       "subtitle": "LLM வழங்குநர்கள் Routerly உடன் பதிவு",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "மாதிரிகள்",
         "health": "ஆரோக்கியம்"
@@ -1969,7 +2011,7 @@
           "p95Latency": "P95 தாமதம் (1h)",
           "requests": "कोरुकल (1h)",
           "lastSuccess": "கடைசி வெற்றி",
-          "cooldownLockout": "Cooldown / lockout"
+          "cooldownLockout": "குளிர்ச்சி / பூட்டு"
         },
         "status": {
           "healthy": "ஆரோக்கிய",
@@ -2242,7 +2284,8 @@
       "next": "அடுத்த",
       "page": "பக்கம் {{page}} {{totalPages}} இல்",
       "total": "({{count}} மொத्त)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "सभी",
         "success": "सफलता",
         "blocked": "ब्लॉक किया",
-        "error": "त्रुटि"
+        "error": "त्रुटि",
+        "sessionId": "அமர்வு ஐடி",
+        "endUser": "இறுதிப் பயனர்",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "எந்த அமர்வும்",
+        "endUserPlaceholder": "எந்த இறுதிப் பயனரும்",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "सभी",
@@ -2383,7 +2432,10 @@
         "timestamp": "Timestamp",
         "guardrailTriggered": "गार्डरेल ट्रिगर किया गया",
         "blockedBy": "द्वारा ब्लॉक किया गया",
-        "piiRedacted": "PII संपादित किया गया"
+        "piiRedacted": "PII संपादित किया गया",
+        "sessionId": "அமர்வு ஐடி",
+        "endUser": "இறுதிப் பயனர்",
+        "tags": "Tags"
       },
       "errorMessage": "त्रुटि संदेश",
       "eventCount": "{{count}} घटना",
@@ -2457,7 +2509,8 @@
       "show": "डीबग दिखाएं",
       "empty": "अभी तक कोई डीबग डेटा नहीं।",
       "emptyHint": "रूटिंग विवरण देखने के लिए एक संदेश भेजें।",
-      "turnTraceLog": "टर्न #{{turn}} ट्रेस लॉग"
+      "turnTraceLog": "टर्न #{{turn}} ट्रेस लॉग",
+      "resize": "பிழைத்திருத்த பலகத்தின் அளவை மாற்றவும்"
     },
     "compare": {
       "modelLabel": "मॉडल {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "भूमिका को अपडेट करने में विफल",
       "createFailed": "भूमिका बनाने में विफल",
       "deleteFailed": "भूमिका हटाने में विफल"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "कनेक्ट पर वापस जाएं",
     "title": "कनेक्ट करें",
     "docs": "दस्तावेज़",
-    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगरेटर सक्षम नहीं है। सेटअप के लिए एडमिन को कहें",
     "noClientPrefix": "कोई क्लाइंट नाम नहीं",
     "errors": {
       "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "उस क्लाइंट मॉडल ट्रैफ़िक को Routerly के माध्यम से रूट करता है।",
     "mcpLabel": "MCP",
     "mcpDescription": "इसके अंदर Routerly को एक उपकरण सर्वर के रूप में लोड करता है।",
-    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगरेटर सक्षम नहीं है। सेटअप के लिए एडमिन को कहें",
     "errors": {
       "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
     },

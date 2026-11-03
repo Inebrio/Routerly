@@ -75,6 +75,26 @@ function stubGithubNotFound(): void {
   });
 }
 
+/** Per-path GitHub stub: body for 200, absent path → 404. Records every requested path. */
+const requestedPaths: string[] = [];
+function stubGithubRoutes(routes: Record<string, object>): void {
+  requestedPaths.length = 0;
+  mockRequest.mockImplementation((opts: { path: string }, cb: (res: MockRes) => void) => {
+    requestedPaths.push(opts.path);
+    const req = new EventEmitter() as ReqLike;
+    req.end = () => {
+      const res = new EventEmitter() as MockRes;
+      const body = routes[opts.path];
+      res.statusCode = body ? 200 : 404;
+      cb(res);
+      res.emit('data', Buffer.from(body ? JSON.stringify(body) : 'Not Found'));
+      res.emit('end');
+    };
+    req.destroy = () => {};
+    return req;
+  });
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 let checker: UpdateChecker;
@@ -182,36 +202,57 @@ describe('UpdateChecker.check()', () => {
     const first = await checker.check();
     expect(first.latestVersion).toBe('1.0.0');
 
-    // Second check fails — cached result should be preserved (not overwritten by fallback)
+    // Second check fails — the caller is told so, but the cached good result is preserved
     stubGithubError();
     const second = await checker.check();
-    expect(second.latestVersion).toBe('1.0.0');
+    expect(second.status).toBe('error');
+    expect(checker.getLastResult()!.status).toBe('ok');
     expect(checker.getLastResult()!.latestVersion).toBe('1.0.0');
   });
 
-  it('swallows network errors and returns safe fallback', async () => {
+  it('reports network errors as status=error, never as up to date', async () => {
     stubGithubError();
 
     checker.start('0.1.5', 'latest');
     const result = await checker.check();
 
+    expect(result.status).toBe('error');
+    expect(result.error).toBe('Network failure');
     expect(result.available).toBe(false);
     expect(result.currentVersion).toBe('0.1.5');
-    expect(result.latestVersion).toBe('0.1.5');
+    expect(result.latestVersion).toBe('');
   });
 
-  it('swallows non-200 GitHub responses and returns safe fallback', async () => {
+  it('reports non-200 GitHub responses as status=error', async () => {
     stubGithubNotFound();
 
     checker.start('0.1.5', 'current');
     const result = await checker.check();
 
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('404');
     expect(result.available).toBe(false);
+  });
+
+  it('reports status=ok on a successful check', async () => {
+    stubGithubOk({ tag_name: 'v0.1.5', html_url: '', prerelease: false });
+    checker.start('0.1.5', 'latest');
+    expect((await checker.check()).status).toBe('ok');
+  });
+
+  it('configure() without start(): status=disabled, real version and channel, no request made', async () => {
+    checker.configure('0.5.4', 'develop');
+    const result = await checker.check();
+
+    expect(mockRequest).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ status: 'disabled', currentVersion: '0.5.4', channel: 'develop', available: false });
+    expect(checker.getLastResult()).toMatchObject({ status: 'disabled', currentVersion: '0.5.4' });
   });
 });
 
 describe('UpdateChecker.getLastResult()', () => {
-  it('returns null before any check has completed', () => {
+  it('returns null before any check has completed on an enabled checker', () => {
+    checker.start('0.1.5', 'latest');
     expect(checker.getLastResult()).toBeNull();
   });
 
@@ -298,7 +339,7 @@ describe('UpdateChecker.getAvailableReleases()', () => {
     expect(result.channels).toContain('next');
   });
 
-  it('returns base channels plus extra non-semver tags from GitHub, excluding the deprecated aliases', async () => {
+  it('returns base channels plus extra non-semver tags from GitHub, excluding the canonical channel names themselves', async () => {
     stubGithubOk([
       { tag_name: 'beta-2', draft: false, prerelease: true },
       { tag_name: 'v0.1.5', draft: false, prerelease: false },
@@ -306,6 +347,7 @@ describe('UpdateChecker.getAvailableReleases()', () => {
       { tag_name: 'draft-only', draft: true, prerelease: false },
       { tag_name: 'stable', draft: false, prerelease: false },
       { tag_name: 'develop', draft: false, prerelease: false },
+      { tag_name: 'channel-stable', draft: false, prerelease: true },
     ]);
 
     // Do NOT call start() — it fires check() which would consume the first mock call
@@ -315,9 +357,13 @@ describe('UpdateChecker.getAvailableReleases()', () => {
     expect(result.channels).not.toContain('v0.1.5')
     // draft-only is skipped
     expect(result.channels).not.toContain('draft-only')
-    // stable/develop are deprecated aliases, excluded even as rolling GitHub tags
-    expect(result.channels).not.toContain('stable')
-    expect(result.channels).not.toContain('develop')
+    // 'develop' is now a base channel (UPDATE_CHANNELS), so the rolling
+    // GitHub tag of the same name is excluded from "extra" and must not
+    // appear twice; the same holds for 'stable'. Pointer releases (channel-*)
+    // are never offered as channels of their own.
+    expect(result.channels.filter((c) => c === 'develop')).toHaveLength(1)
+    expect(result.channels.filter((c) => c === 'stable')).toHaveLength(1)
+    expect(result.channels).not.toContain('channel-stable')
   });
 
   it('falls back to base channels when fetchAllReleases returns invalid JSON', async () => {
@@ -335,34 +381,32 @@ describe('UpdateChecker.getAvailableReleases()', () => {
     });
 
     const result = await checker.getAvailableReleases();
-    expect(result.channels).toEqual(['latest', 'current', 'next']);
+    expect(result.channels).toEqual(['latest', 'current', 'next', 'stable', 'develop']);
   });
 });
 
-describe('UpdateChecker.getAvailableReleases() base set (RC-3)', () => {
-  it('starts with exactly the canonical channel set and never includes deprecated aliases, even if GitHub still has them as tags', async () => {
+describe('UpdateChecker.getAvailableReleases() base set', () => {
+  it('starts with exactly the canonical five-channel set, stable and develop included as plain members', async () => {
     stubGithubOk([
-      { tag_name: 'stable', draft: false, prerelease: false },
-      { tag_name: 'develop', draft: false, prerelease: false },
       { tag_name: 'nightly', draft: false, prerelease: false },
     ]);
 
     const result = await checker.getAvailableReleases();
 
-    expect(result.channels.slice(0, 3)).toEqual(['latest', 'current', 'next']);
-    expect(result.channels).not.toContain('stable');
-    expect(result.channels).not.toContain('develop');
+    expect(result.channels.slice(0, 5)).toEqual(['latest', 'current', 'next', 'stable', 'develop']);
     expect(result.channels).toContain('nightly');
   });
 });
 
-describe('UpdateChecker channel resolution and deprecation warnings (RC-3)', () => {
+describe('UpdateChecker channel resolution', () => {
   const REPO_PATH = '/repos/Inebrio/Routerly';
 
   it.each([
     ['latest', `${REPO_PATH}/releases/latest`],
     ['current', `${REPO_PATH}/releases/latest`],
-    ['next', `${REPO_PATH}/releases/tags/next`],
+    ['next', `${REPO_PATH}/releases/tags/channel-next`],
+    ['stable', `${REPO_PATH}/releases/tags/channel-stable`],
+    ['develop', `${REPO_PATH}/releases/tags/channel-develop`],
     ['v0.3.0', `${REPO_PATH}/releases/tags/v0.3.0`],
   ])('channel "%s" resolves to %s (AC8, EC3)', async (channel, expectedPath) => {
     stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
@@ -373,27 +417,53 @@ describe('UpdateChecker channel resolution and deprecation warnings (RC-3)', () 
     expect(lastRequestPath).toBe(expectedPath);
   });
 
-  it.each([
-    ['stable', 'current', `${REPO_PATH}/releases/latest`],
-    ['develop', 'next', `${REPO_PATH}/releases/tags/next`],
-  ])('deprecated alias "%s" resolves like "%s" (%s) and warns exactly once across two check() calls (AC2/AC3)', async (alias, canonical, expectedPath) => {
+  it('stable and current resolve to their own releases when they diverge (ROUT-551 AC2)', async () => {
+    const R = `${REPO_PATH}/releases`;
+    stubGithubRoutes({
+      [`${R}?per_page=100`]: [
+        { tag_name: 'v0.6.1', name: 'v0.6.1', html_url: 'u1', draft: false, prerelease: false },
+        { tag_name: 'v0.6.0', name: 'v0.6.0', html_url: 'u0', draft: false, prerelease: false },
+      ] as unknown as object,
+      [`${R}/tags/channel-stable`]: { tag_name: 'channel-stable', name: 'Routerly stable (→ v0.6.0)', html_url: 'ps', draft: false, prerelease: true },
+    });
+
+    checker.start('0.5.0', 'stable');
+    const stable = await checker.check();
+    expect(stable).toMatchObject({ status: 'ok', channel: 'stable', latestVersion: '0.6.0', available: true });
+
+    checker.updateChannel('current');
+    const current = await checker.check();
+    expect(current).toMatchObject({ status: 'ok', channel: 'current', latestVersion: '0.6.1' });
+
+    const releases = await checker.getAvailableReleases();
+    expect(releases.channelVersions).toMatchObject({ latest: '0.6.1', current: '0.6.1', stable: '0.6.0' });
+    // next/develop pointers do not exist in this stub: omitted, not guessed
+    expect(releases.channelVersions).not.toHaveProperty('next');
+  });
+
+  it('stable without its pointer release reports status=error, never falling back to current', async () => {
+    stubGithubNotFound();
+    checker.start('0.5.0', 'stable');
+    const result = await checker.check();
+    expect(result.status).toBe('error');
+    expect(result.latestVersion).toBe('');
+  });
+
+  it('develop resolves against its own tag path, distinct from next, with no deprecation warning (AC3, AC4)', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
 
-    checker.start('0.1.5', alias);
-    await checker.check();
+    checker.start('0.1.5', 'develop');
     await checker.check();
 
-    expect(lastRequestPath).toBe(expectedPath);
-    expect(checker.getLastResult()?.channel).toBe(canonical);
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy).toHaveBeenCalledWith(
-      `Update channel "${alias}" was renamed to "${canonical}". "${alias}" still works but is deprecated and will be removed in a future release; switch to "${canonical}".`,
-    );
+    expect(lastRequestPath).toBe(`${REPO_PATH}/releases/tags/channel-develop`);
+    expect(lastRequestPath).not.toBe(`${REPO_PATH}/releases/tags/channel-next`);
+    expect(checker.getLastResult()?.channel).toBe('develop');
+    expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();
   });
 
-  it('does not warn for canonical channel names', async () => {
+  it('does not warn for any canonical channel name', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
 
@@ -401,28 +471,6 @@ describe('UpdateChecker channel resolution and deprecation warnings (RC-3)', () 
     await checker.check();
 
     expect(warnSpy).not.toHaveBeenCalled();
-    warnSpy.mockRestore();
-  });
-
-  it('warns again for a different alias even if one was already warned', async () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
-
-    checker.start('0.1.5', 'stable');
-    checker.updateChannel('develop');
-
-    expect(warnSpy).toHaveBeenCalledTimes(2);
-    warnSpy.mockRestore();
-  });
-
-  it('does not warn again when updateChannel repeats the same alias', async () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
-
-    checker.start('0.1.5', 'stable');
-    checker.updateChannel('stable');
-
-    expect(warnSpy).toHaveBeenCalledTimes(1);
     warnSpy.mockRestore();
   });
 });
@@ -463,6 +511,47 @@ describe('UpdateChecker.stop()', () => {
     checker.stop();
     checker.stop();
     // Should not throw
+  });
+});
+
+describe('UpdateChecker channel resolution against pre-releases and legacy pointers (ROUT-382)', () => {
+  const REPO_PATH = '/repos/Inebrio/Routerly';
+  const rel = (tag: string, extra: object = {}) => ({ tag_name: tag, name: tag, html_url: `https://x/${tag}`, prerelease: true, draft: false, ...extra });
+
+  it.each(['latest', 'current'])('"%s" picks the highest plain vX.Y.Z including pre-releases, not /releases/latest', async (channel) => {
+    stubGithubRoutes({
+      [`${REPO_PATH}/releases?per_page=100`]: [rel('next'), rel('v0.5.3'), rel('v0.10.0'), rel('v0.2.0', { prerelease: false }), rel('v9.9.9', { draft: true })],
+      [`${REPO_PATH}/releases/latest`]: rel('v0.2.0', { prerelease: false }),
+    });
+    prime(checker, '0.4.0', channel);
+    const result = await checker.check();
+    expect(result.latestVersion).toBe('0.10.0');
+    expect(result.status).toBe('ok');
+    expect(requestedPaths).not.toContain(`${REPO_PATH}/releases/latest`);
+  });
+
+  it('"current" falls back to /releases/latest when the release list is unavailable', async () => {
+    stubGithubRoutes({ [`${REPO_PATH}/releases/latest`]: rel('v0.2.0', { prerelease: false }) });
+    prime(checker, '0.1.0', 'current');
+    const result = await checker.check();
+    expect(result.latestVersion).toBe('0.2.0');
+  });
+
+  it('"next" falls back to the legacy "next" release and reads the version from its title', async () => {
+    stubGithubRoutes({ [`${REPO_PATH}/releases/tags/next`]: rel('next', { name: 'Routerly next (→ v0.5.3)' }) });
+    prime(checker, '0.4.0', 'next');
+    const result = await checker.check();
+    expect(result.status).toBe('ok');
+    expect(result.latestVersion).toBe('0.5.3');
+    expect(requestedPaths).toEqual([`${REPO_PATH}/releases/tags/channel-next`, `${REPO_PATH}/releases/tags/next`]);
+  });
+
+  it('"develop" with neither pointer release reports status=error', async () => {
+    stubGithubRoutes({});
+    prime(checker, '0.4.0', 'develop');
+    const result = await checker.check();
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('404');
   });
 });
 
@@ -556,6 +645,7 @@ describe('UpdateChecker — remaining uncovered branches', () => {
 function prime(c: UpdateChecker, currentVersion: string, channel: string): void {
   (c as unknown as { _currentVersion: string })._currentVersion = currentVersion;
   (c as unknown as { _channel: string })._channel = channel;
+  (c as unknown as { _enabled: boolean })._enabled = true;
 }
 
 describe('UpdateChecker — system.update_available announcement (RA-15)', () => {

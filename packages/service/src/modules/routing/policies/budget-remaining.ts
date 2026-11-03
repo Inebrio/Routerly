@@ -25,6 +25,7 @@ export const budgetRemainingPolicy: PolicyFn = async ({ candidates, config: _, t
   const allRouters = await readConfig('routers');
 
   // Usa il routerId dell'input per trovare il progetto corrente
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   const router = (allRouters as any[]).find((p: any) => p.id === routerId);
 
   const headrooms = await Promise.all(

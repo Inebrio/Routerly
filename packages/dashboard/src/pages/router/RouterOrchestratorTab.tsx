@@ -153,8 +153,8 @@ export function RouterOrchestratorTab() {
           return { routerId: r.routerId, ...(limits.length > 0 ? { limits } : {}) };
         }),
         policies: policies.map(p => {
-          const { internalId, ...rest } = p;
-          return { ...rest, enabled: true };
+          const { internalId: _internalId, ...rest } = p;
+          return rest;
         }),
       };
       const updated = await updateRouter(router.id, payload);

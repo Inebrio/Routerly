@@ -94,7 +94,7 @@ Click a channel row to navigate to its **edit page** for detailed configuration.
    - **Dashboard**: name only (no credentials)
    - **Email providers** (SMTP, SES, SendGrid, Azure, Google): host, auth, from address
    - **Webhooks/Native** (Webhook, Slack, Teams, PagerDuty, Discord): integration URLs and keys
-4. (Optional) Filter by **Events** - select specific event types to route to this channel; leave empty to receive all
+4. (Optional) Filter by **Events** - select specific event types to route to this channel; required for external channels (no events = silent); `dashboard` channels receive all when empty
 5. (Optional) Set **Recipients / Targets** - pick roles, permissions, or individual users; leave empty for everyone
 6. Click **Create Channel**
 7. Use **Send Test** to verify the channel works before relying on it for real events
@@ -111,7 +111,7 @@ Among the built-in events, the update checker raises **System – Update Availab
 
 Click the channel row or the **Edit** button to open the edit page. You can change:
 - **Name** - friendly label
-- **Events** - event filter (leave empty for all)
+- **Events** - event filter (external channels with none are silent; `dashboard` channels receive all)
 - **Recipients / Targets** - audience filter
 - **Connection details** - provider-specific fields (host, API keys, etc.). Secret fields (passwords, API keys, tokens) show as masked (`***`) when present; clearing the field will leave it unchanged. To update a secret, re-enter it in the text field.
 
@@ -229,15 +229,8 @@ Click the **Refresh** button in the top right to invalidate the 6-hour in-memory
 
 ## Modules {#modules-tab}
 
-Optional service modules are managed from the CLI, not from the dashboard:
+Every module is core and always active, so the dashboard has no module controls. `routerly modules list` shows the modules. See [CLI — Commands](../cli/commands#routerly-modules).
 
-```bash
-routerly modules list
-routerly modules enable <id>
-routerly modules disable <id>
-```
-
-Module changes require a service restart to take effect. See [CLI — Commands](../cli/commands#routerly-modules) for the full command reference and the list of modules.
 
 ---
 
@@ -387,7 +380,7 @@ System information about the running instance:
 | Field | Description |
 |-------|-------------|
 | **Version** | Routerly version string |
-| **Channel** | Active update channel: `latest`, `current`, `next`, or a pinned version tag. Editable — see [Update Channel](#update-channel) below |
+| **Channel** | Active update channel: `latest`, `current`, `next`, `develop`, or a pinned version tag. Editable — see [Update Channel](#update-channel) below |
 | **Uptime** | How long the service has been running since last start |
 | **Node.js** | Node.js runtime version |
 | **Platform** | OS and architecture |
@@ -395,16 +388,20 @@ System information about the running instance:
 
 ### Update Channel
 
-The channel selector lets you choose which release stream Routerly follows when checking for updates:
+The channel selector lets you choose which release stream Routerly follows when checking for updates. Each option shows the version the channel currently points to (for example `stable · 0.6.0`), and a note under the selector reminds you that `current` follows every new stable release while `stable` moves only when a release is promoted, so the two can differ:
 
 | Channel | Description |
 |---------|-------------|
 | `latest` | Newest production-ready release |
 | `current` | Newest production-ready release (same as `latest`) |
-| `next` | Unstable/rolling release line |
+| `next` | Validated pre-release line, promoted from `develop` |
+| `stable` | Release explicitly promoted to stable; moves only on promotion, so it can lag behind `current` |
+| `develop` | Bleeding-edge, unreviewed release line |
 | Custom version | Pin to a specific release tag (e.g. `v0.2.0`) |
 
-`stable` and `develop` are still accepted as deprecated aliases for `current` and `next`, respectively. Removal is planned no earlier than the release after next.
+:::warning Breaking change
+`develop` is not an alias for `next`: it is its own channel, the bleeding-edge line. An instance that had `develop` persisted under the old meaning now tracks the bleeding-edge line instead of `next`.
+:::
 
 Changing the channel takes effect immediately — the running service is notified without a restart.
 
@@ -426,6 +423,8 @@ Shows the current update status for the active channel. The service checks for n
 | **Current version** | The version currently running |
 | **Available version** | The latest version on the active channel, or "Up to date" if already current |
 | **Last checked** | Timestamp of the most recent check against the GitHub Releases API |
+
+When update checking is switched off on the instance (the service is not running in production, or `ROUTERLY_DISABLE_UPDATE_CHECK=true`), the Current version is still shown and the section says that the update check is disabled instead of "Up to date". If the check fails (network error, GitHub rate limit), the section shows the error instead of a result.
 
 **Check for updates** forces an immediate check against the GitHub Releases API and refreshes the displayed result.
 

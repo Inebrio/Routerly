@@ -80,17 +80,6 @@ describe('GET /api/experiments', () => {
     await app.close()
     expect(res.statusCode).toBe(403)
   })
-
-  it('answers 403 when the experiments module is disabled', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'GET', url: '/api/experiments',
-      headers: authWith('experiments:read', { modules: [{ id: 'experiments', enabled: false }] }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-    expect(JSON.parse(res.body).error).toBe('module_disabled')
-  })
 })
 
 describe('GET /api/experiments/:id', () => {
@@ -185,17 +174,6 @@ describe('GET /api/experiments/:id/metrics', () => {
     await app.close()
     expect(res.statusCode).toBe(403)
   })
-
-  it('403s when the experiments module is disabled', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'GET', url: '/api/experiments/exp-1/metrics',
-      headers: authWith('experiments:read', { experiments: [experiment()], modules: [{ id: 'experiments', enabled: false }] }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-    expect(JSON.parse(res.body).error).toBe('module_disabled')
-  })
 })
 
 describe('POST /api/experiments', () => {
@@ -258,6 +236,21 @@ describe('POST /api/experiments', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(400)
+  })
+
+  it('400 names the full field path and rejects a negative weight', async () => {
+    const app = await buildApp()
+    const call = (payload: Record<string, unknown>) => app.inject({
+      method: 'POST', url: '/api/experiments',
+      headers: authWith('experiments:manage', { routers }), payload,
+    })
+    const judge = await call({ name: 'J', judge: { enabled: true, modelId: 'm', criteria: [], sampleRate: 2 } })
+    const weight = await call({ name: 'W', variants: [{ routerId: 'r', weight: -1 }] })
+    await app.close()
+    expect(judge.statusCode).toBe(400)
+    expect(judge.json().error).toContain('judge.sampleRate')
+    expect(weight.statusCode).toBe(400)
+    expect(weight.json().error).toContain('variants.0.weight')
   })
 
   it('forbids without experiments:manage', async () => {

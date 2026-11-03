@@ -25,8 +25,8 @@ Routerly authenticates with `claude.ai` using your browser session key cookie. R
 1. Open [claude.ai](https://claude.ai) in your browser and log in.
 2. Open DevTools: press `F12` or right-click and select **Inspect**.
 3. Go to **Application** (Chrome/Edge) or **Storage** (Firefox).
-4. Select **Cookies** in the left sidebar, then click `claude.ai`.
-5. Find the cookie named `sessionKey` (value starts with `sk-ant-sid01-`). Copy its value.
+4. Select **Cookies** in the left sidebar, then click `https://claude.ai`.
+5. Find the cookie named `sessionKey` (value starts with `sk-ant-sid`, currently `sk-ant-sid02-`). Copy its **Value**. The cookie is HttpOnly, so it is not readable from the page console.
 
 :::info Cookie expiry
 The session cookie expires when your browser session ends or after a period of inactivity. When requests start failing with a 401 error, repeat this step and update the model in Routerly.
@@ -52,7 +52,7 @@ Go to **Models > Add Model** and fill in:
 routerly model add \
   --id claude-web-opus \
   --provider anthropic-web \
-  --api-key sk-ant-sid01-...
+  --api-key sk-ant-sid02-...
 ```
 
 ---
