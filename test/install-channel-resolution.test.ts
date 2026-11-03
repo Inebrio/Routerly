@@ -153,13 +153,14 @@ describe('install.sh — GitHub release resolution (ROUT-382)', () => {
 })
 
 describe('install.sh — channel validation (RMT-2 AC2/EC1/EC4)', () => {
-  it('rejects the retired "stable" alias before ever calling curl, exit 1', () => {
+  it('accepts "stable" as a rolling channel and requests the "channel-stable" tag', () => {
     const { binDir, logFile } = makeStubCurlBin()
     const result = runInstallSh('stable', binDir)
 
     expect(result.status).toBe(1)
-    expect(result.stderr).toContain("Unknown channel: 'stable'. Valid values: latest, current, next, develop")
-    expect(fs.existsSync(logFile)).toBe(false)
+    expect(result.stderr).toContain("Could not fetch channel 'stable'")
+    expect(result.stderr).not.toContain('Unknown channel')
+    expect(fs.readFileSync(logFile, 'utf-8')).toContain('/releases/tags/channel-stable')
   })
 
   it('rejects an arbitrary unknown channel the same way, message lists "develop" (RMT-2 EC4)', () => {
@@ -167,7 +168,7 @@ describe('install.sh — channel validation (RMT-2 AC2/EC1/EC4)', () => {
     const result = runInstallSh('bogus-channel', binDir)
 
     expect(result.status).toBe(1)
-    expect(result.stderr).toContain("Unknown channel: 'bogus-channel'. Valid values: latest, current, next, develop")
+    expect(result.stderr).toContain("Unknown channel: 'bogus-channel'. Valid values: latest, current, next, stable, develop")
     expect(fs.existsSync(logFile)).toBe(false)
   })
 })
