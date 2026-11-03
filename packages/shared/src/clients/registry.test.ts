@@ -217,6 +217,7 @@ describe('buildMcpSnippet', () => {
     expect(snippet).toContain('openclaw mcp add routerly');
     expect(snippet).toContain('--transport streamable-http');
     expect(snippet).toContain(`--url ${BASE_URL}/mcp`);
+    expect(snippet).toContain(`--header "Authorization=Bearer ${MCP_TOKEN}"`);
   });
 
   it('cursor: mcpServers entry with url and the Authorization header', () => {

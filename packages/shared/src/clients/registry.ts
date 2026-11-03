@@ -354,8 +354,9 @@ export function buildMcpSnippet(meta: ClientMeta, baseUrl: string, mcpToken: str
       );
     }
     case 'openclaw': {
-      // OpenClaw defaults to the sse transport, which Routerly does not serve.
-      return `openclaw mcp add routerly \\\n  --url ${endpoint} \\\n  --transport streamable-http \\\n  --header "Authorization: Bearer ${mcpToken}"`;
+      // OpenClaw defaults to the sse transport, which Routerly does not serve;
+      // --header takes KEY=VALUE.
+      return `openclaw mcp add routerly \\\n  --url ${endpoint} \\\n  --transport streamable-http \\\n  --header "Authorization=Bearer ${mcpToken}"`;
     }
     case 'cursor': {
       // ~/.cursor/mcp.json (or .cursor/mcp.json in a project). A `url` entry is
