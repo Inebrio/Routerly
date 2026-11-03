@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Changed
 
+- **CLI test suite stable under load.** `packages/cli` sets `testTimeout` to 30s so cold dynamic imports no longer fail `auth login` / `router pii add` tests on a busy machine (ROUT-556).
 - **Version 0.6.0.** The next release is numbered 0.6.0: while the major is 0, `release.config.mjs` maps a BREAKING CHANGE to a minor bump instead of 1.0.0. The breaking change in this release is that `develop` is now its own channel instead of an alias for `next` (ROUT-539).
 
 ### Fixed

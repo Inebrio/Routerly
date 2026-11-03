@@ -8,6 +8,8 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts'],
+    // Cold dynamic imports (real inquirer after a doMock/doUnmock) exceed 5s on a loaded machine.
+    testTimeout: 30_000,
     setupFiles: ['./src/test-setup.ts'],
     coverage: {
       provider: 'v8',
