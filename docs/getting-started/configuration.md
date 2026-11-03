@@ -58,7 +58,7 @@ Open **Settings → General** in the dashboard. Changes take effect immediately 
 | `port` | `3000` | TCP port the service listens on |
 | `host` | `"0.0.0.0"` | Bind address (`"127.0.0.1"` for local-only) |
 | `dashboardEnabled` | `true` | Whether to serve the web dashboard |
-| `logLevel` | `"info"` | Log verbosity: `trace` / `debug` / `info` / `warn` / `error` |
+| `logLevel` | `"info"` | Log verbosity: `fatal` / `error` / `warn` / `info` / `debug` / `trace` (other values are rejected with 400) |
 | `publicUrl` | `"http://localhost:3000"` | External URL shown in the dashboard connection snippets |
 | `channel` | `"current"` | Update channel: `"latest"`, `"current"`, `"next"`, `"develop"`, or a version tag (e.g. `"v0.2.0"`). Editable from the dashboard or via `routerly update channel` |
 | `notifications` | `[]` | Array of notification channel configurations |

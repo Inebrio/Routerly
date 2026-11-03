@@ -55,6 +55,7 @@ Shows and lets you edit:
 - **Slug** — URL-safe identifier (read-only after creation)
 - **Timeout (TTFT)** — how long a model attempt may take to produce its first token, in milliseconds. Defaults to `2000`; `0` waits as long as the provider takes
 - **Trace content** — off by default. Traces always record metadata (models, scores, guardrail outcomes, tokens, cost, latency); turn **Capture prompts and answers** on to also record the message contents. They are stored with the usage record, shown in the [Usage](usage.md#trace-view) trace view and the [Playground](playground.md#debug), included in [exported traces](settings.md#exporting-traces), and visible to anyone who can read reports. CLI equivalent: `routerly router edit <router> --trace-content`
+- **Notification channels** — optional per-router override: tick external notification channels (webhook, email, native…) that also receive this router's events, in addition to the channels matching globally. Shown only to users with the `notification:write` permission. CLI equivalent: `routerly router edit <router> --notification-channel <channel>`
 - **Connection Info** — base URL and masked token snippet ready to copy into your SDK configuration
 - **Budget** — router-level cost limit (daily / monthly)
 
@@ -78,11 +79,13 @@ Routing Configuration** button below. The inline policy editor is hidden:
 policies, selector and fallback strategy all come from the profile and follow
 its later edits, which are made on the [Profiles](./profiles.md) page.
 
-**Custom** clears the assignment and restores this router's own inline
-policies. Switching from Profile to Custom pre-loads the assigned profile's
-policies into the editor as a starting point; they are not persisted until
-**Save Routing Configuration** is clicked, so the copy can be edited or
-discarded first.
+Choosing a profile or switching between **Profile** and **Custom** never
+changes what is stored: a notice shows the pending change and nothing is
+persisted until **Save Routing Configuration** is clicked (**Discard** drops
+it). **Custom** always shows this router's own stored policies, unchanged. To
+start them from a profile, use **Copy into custom**; when custom policies
+already exist it asks for confirmation before replacing them, and the copy is
+still unsaved until you save.
 
 ### Adding Models
 
@@ -128,10 +131,11 @@ is forwarded to a provider.
 A **Profile** / **Custom** switch at the top of the tab decides where the
 pipeline comes from, exactly like the [Routing tab](#routing-profile). In
 **Profile** mode a dropdown assigns a shared
-[optimizer profile](./profiles.md); the assignment saves immediately and the
-pipeline editor is replaced by a read-only list of the profile's enabled
-steps. Switching to **Custom** clears the assignment and pre-loads those steps
-into the editor, unsaved, so they can be adjusted before **Save Optimizers**.
+[optimizer profile](./profiles.md); the pipeline editor is replaced by a
+read-only list of the profile's enabled steps. The choice is a pending change
+(shown in a notice, with **Discard**) and is applied only on **Save Optimizers**.
+**Custom** always shows the router's own stored steps; **Copy into custom**
+fills the editor from a profile after a confirmation when steps already exist.
 
 The switch is only shown with `optimizers:manage`.
 
@@ -208,8 +212,11 @@ threshold, are written.
 
 ### Preview Panel
 
-Below the pipeline editor, **Preview token savings** dry-runs the current
-(unsaved) UI state of the pipeline against one prompt. No upstream call is
+Below the pipeline editor, **Preview token savings** dry-runs the pipeline
+the router uses against one prompt: in **Profile** mode the assigned profile's
+steps, in **Custom** mode the current (unsaved) steps of the editor. The preview
+follows the mode and profile shown on screen, including a choice you have not saved yet. The result
+names the pipeline it ran, and is cleared when you switch mode or profile. No upstream call is
 made and nothing is saved. It matches `POST /api/optimizers/preview` (see
 [API: Optimizers](../api/management.md#optimizers)).
 
@@ -343,10 +350,11 @@ Configure request filtering and data protection for this router.
 A **Profile** / **Custom** switch at the top of the tab decides where the
 guardrails and PII policies come from, exactly like the
 [Routing tab](#routing-profile). In **Profile** mode a dropdown assigns a
-shared [security profile](./profiles.md); the assignment saves immediately and
-the editors below are replaced by a read-only list of the profile's rules and
-PII policies. Switching to **Custom** clears the assignment and pre-loads that
-configuration into the editors, unsaved, so it can be adjusted before saving.
+shared [security profile](./profiles.md); the editors below are replaced by a
+read-only list of the profile's rules and PII policies. The choice is a pending
+change (shown in a notice, with **Discard**) applied only on save. **Custom**
+always shows the router's own stored rules; **Copy into custom** fills the
+editors from a profile after a confirmation when custom rules already exist.
 
 ### Content Guardrails
 
@@ -382,7 +390,7 @@ Each rule card displays:
 | **Regex** | Regex patterns (one per line, case-insensitive) |
 | **Semantic** | Embedding model ID, optional fallback embedding models (multi-select, tried in order), example phrases to block, similarity threshold (0-1, default 0.82) |
 | **Topic** | Allowed-topics description, score threshold (0-1, default 0.5) |
-| **Moderation** | Custom instructions (required): instructions to inject or pass to the judge. Score threshold (0-1, default 0.5). |
+| **Moderation** | Custom instructions (required): the policy, written in plain words (for example "Do not talk about English cinema"). The judge rates how strongly the text violates it (0 = complies, 1 = clear violation) and the rule triggers above the threshold (0-1, default 0.5). When `inject` is on, the same text is added to the system prompt. Without custom instructions the built-in harm categories apply. |
 
 ##### Judge response (reason-first scoring)
 

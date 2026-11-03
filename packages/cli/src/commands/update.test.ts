@@ -98,6 +98,30 @@ describe('routerly update check', () => {
     expect(lines.some(l => l.includes('up to date'))).toBe(true);
   });
 
+  it.each([
+    [{ ...upToDateInfo, status: 'disabled', latestVersion: '' }, 'disabled'],
+    [{ ...upToDateInfo, status: 'error', error: 'GitHub API returned 403', latestVersion: '' }, 'GitHub API returned 403'],
+  ])('exits 1 with the reason on stderr when status is not ok (%#)', async (info, text) => {
+    mockApi.mockResolvedValue(info);
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('check')).rejects.toThrow('exit');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errSpy.mock.calls.map(c => c.join(' ')).join('\n')).toContain(text);
+    exitSpy.mockRestore();
+    errSpy.mockRestore();
+  });
+
+  it('--json passes the status through', async () => {
+    mockApi.mockResolvedValue({ ...upToDateInfo, status: 'disabled' });
+    const { lines, spy } = captureConsole();
+    await run('check', '--json');
+    spy.mockRestore();
+    expect(JSON.parse(lines.join('\n')).status).toBe('disabled');
+  });
+
   it('prints update available message when newer version exists', async () => {
     mockApi.mockResolvedValue(updateAvailableInfo);
     const { lines, spy } = captureConsole();
@@ -146,16 +170,19 @@ describe('routerly update check', () => {
 // ── update channel ─────────────────────────────────────────────────────────
 
 describe('routerly update channel', () => {
-  it('help text lists the four real channels and version tags', () => {
+  it('help text lists the five real channels and version tags', () => {
     const cmd = makeUpdateCommand();
     const channelCmd = cmd.commands.find(c => c.name() === 'channel')!;
     const helpText = channelCmd.helpInformation();
 
-    expect(helpText).toContain('latest | current | next | develop | vX.Y.Z');
+    expect(helpText.replace(/\s+/g, ' ')).toContain('latest | current | next | stable | develop | vX.Y.Z');
   });
 
-  it('shows a stored, retired alias value verbatim with no stderr output (RMT-2)', async () => {
-    mockApi.mockResolvedValue({ channel: 'stable' });
+  it('shows a stored stable channel as selected, with the version each channel points to', async () => {
+    mockApi.mockImplementation(async (_m: string, path: string) =>
+      path === '/api/system/releases'
+        ? { channelVersions: { current: '0.6.1', stable: '0.6.0', develop: '0.7.0-dev.1' } }
+        : { channel: 'stable' });
     const { lines, spy } = captureConsole();
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -163,7 +190,9 @@ describe('routerly update channel', () => {
 
     spy.mockRestore();
     expect(mockApi).toHaveBeenCalledWith('GET', '/api/settings');
-    expect(lines.some(l => l.includes('stable'))).toBe(true);
+    expect(lines.some(l => /stable\s+v0\.6\.0.*selected/.test(l))).toBe(true);
+    expect(lines.some(l => /current\s+v0\.6\.1/.test(l))).toBe(true);
+    expect(lines.some(l => /next\s+.*unavailable/.test(l))).toBe(true);
     expect(errorSpy).not.toHaveBeenCalled();
     errorSpy.mockRestore();
   });
@@ -209,14 +238,22 @@ describe('routerly update channel', () => {
     errorSpy.mockRestore();
   });
 
-  it('rejects the retired "stable" alias, surfaced as the service\'s ApiError on stderr with exit 1 (RMT-2 AC2)', async () => {
-    mockApi.mockRejectedValueOnce(new ApiError(400, 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.'));
+  it('sets "stable" as its own channel', async () => {
+    mockApi.mockResolvedValue({ channel: 'stable' });
+    const { spy } = captureConsole();
+    await run('channel', 'stable');
+    spy.mockRestore();
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', { channel: 'stable' });
+  });
+
+  it('surfaces the service\'s ApiError for an invalid channel on stderr with exit 1', async () => {
+    mockApi.mockRejectedValueOnce(new ApiError(400, 'Invalid channel. Accepted values: latest, current, next, stable, develop, or a version tag such as v0.4.0.'));
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
 
-    await expect(run('channel', 'stable')).rejects.toThrow('exit');
+    await expect(run('channel', 'bogus')).rejects.toThrow('exit');
 
-    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', { channel: 'stable' });
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', { channel: 'bogus' });
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(errorSpy.mock.calls.some(c => String(c[0]).includes('Invalid channel'))).toBe(true);
     errorSpy.mockRestore();

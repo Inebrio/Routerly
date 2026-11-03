@@ -1,17 +1,18 @@
 import { describe, it, expect } from 'vitest';
-import {
+import type {
   OptimizerClass,
   OptimizerId,
   OptimizerEstimate,
   OptimizerResult,
   OptimizerStep,
   OptimizerConfig,
-  OptimizerCallStat,
+  OptimizerCallStat} from './optimizers.js';
+import {
   OPTIMIZER_CATALOG,
   optimizerLabel,
   optimizerThreshold,
 } from './optimizers.js';
-import { RouterConfig } from './config.js';
+import type { RouterConfig } from './config.js';
 
 describe('type-checks', () => {
   it('type-checks', () => {

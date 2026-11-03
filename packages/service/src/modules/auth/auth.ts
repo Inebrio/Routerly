@@ -6,6 +6,7 @@ import { emitEvent } from '../notifications/emitter.js';
 import { applyProfiles } from '../routing/profiles/store.js';
 import { resolveExperimentRequest } from '../experiments/resolve.js';
 import { conversationPrefix } from '../experiments/rotation.js';
+import { protocolError, protocolForUrl } from '../../lib/protocol-errors.js';
 
 // Augment FastifyRequest to carry the resolved router and token
 declare module 'fastify' {
@@ -64,6 +65,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', async (request: FastifyRequest, reply) => {
     // Skip auth for non-LLM-proxy routes (health check, dashboard UI, dashboard API)
     const url = request.url;
+    const proto = () => protocolForUrl(url);
     // /mcp is self-authenticating (see modules/mcp/http.ts): it resolves the
     // router token and enforces the mcp scope itself, so skip the proxy auth here.
     // /passthrough/* authenticates nothing of its own (RTR-03): the client's own
@@ -73,10 +75,8 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
     const incomingToken = extractRouterToken(request.headers);
     if (!incomingToken) {
-      return reply.status(401).send({
-        error: 'unauthorized',
-        message: 'Missing or invalid Authorization header. Expected: Bearer <router-token>',
-      });
+      return reply.status(401).send(protocolError(proto(), 401,
+        'Missing or invalid Authorization header. Expected: Bearer <router-token>', 'invalid_api_key'));
     }
 
     const resolved = await resolveRouterByToken(incomingToken);
@@ -86,7 +86,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
       // Enforce expiry
       if (token.expiresAt && new Date(token.expiresAt) < new Date()) {
         void emitEvent('auth.token_invalid', 'warning', { routerId: router.id, reason: 'expired' }, {});
-        return reply.status(401).send({ error: 'Token expired' });
+        return reply.status(401).send(protocolError(proto(), 401, 'Token expired', 'token_expired'));
       }
 
       // Track lastUsedAt — fire-and-forget, don't block the request
@@ -121,13 +121,11 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     if (experiment) {
       if (experiment.status === 'expired') {
         void emitEvent('auth.token_invalid', 'warning', { experimentId: experiment.experiment.id, reason: 'expired' }, {});
-        return reply.status(401).send({ error: 'Token expired' });
+        return reply.status(401).send(protocolError(proto(), 401, 'Token expired', 'token_expired'));
       }
       if (experiment.status === 'misconfigured') {
-        return reply.status(503).send({
-          error: 'experiment_misconfigured',
-          message: `Experiment "${experiment.experiment.name}" has no variant pointing at an existing router.`,
-        });
+        return reply.status(503).send(protocolError(proto(), 503,
+          `Experiment "${experiment.experiment.name}" has no variant pointing at an existing router.`, 'experiment_misconfigured'));
       }
       request.router = await applyProfiles(experiment.router);
       request.token = experiment.token;
@@ -136,10 +134,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     }
 
     void emitEvent('auth.token_invalid', 'warning', { reason: 'not_found' }, {});
-    return reply.status(401).send({
-      error: 'unauthorized',
-      message: 'Invalid router token.',
-    });
+    return reply.status(401).send(protocolError(proto(), 401, 'Invalid router token.', 'invalid_api_key'));
   });
 };
 

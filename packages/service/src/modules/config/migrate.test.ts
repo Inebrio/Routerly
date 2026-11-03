@@ -913,6 +913,15 @@ describe('migrateUsageToNdjson', () => {
     expect(mockRename).not.toHaveBeenCalled();
   });
 
+  it('writes the migrated usage.ndjson with mode 600', async () => {
+    mockAccess.mockRejectedValue(enoent());
+    mockReadFile.mockResolvedValueOnce('[]').mockResolvedValue('');
+
+    await migrateUsageToNdjson();
+
+    expect(mockWriteFile).toHaveBeenCalledWith(expect.stringContaining('.migrate-tmp'), '', expect.objectContaining({ mode: 0o600 }));
+  });
+
   it('returns 0 when there is no legacy usage.json (fresh install)', async () => {
     mockAccess.mockRejectedValue(enoent());
     mockReadFile.mockRejectedValue(enoent());

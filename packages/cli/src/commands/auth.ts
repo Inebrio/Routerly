@@ -15,7 +15,7 @@ import { apiWith, api, ApiError } from '../api.js';
 
 interface LoginResponse {
   token: string;
-  /** Permanent refresh token returned at login (absent when calling /api/auth/refresh) */
+  /** Permanent refresh token returned at login (also returned, rotated, by /api/auth/refresh) */
   refreshToken?: string;
   user: { id: string; email: string; role: string };
   /** Set on HTTP 202 when the account has 2FA enabled */
@@ -113,7 +113,7 @@ Examples:
         // Step 1: check if this email is already in use (regardless of --alias)
         if (sameEmail) {
           const { action } = await inquirer.prompt([{
-            type: 'list',
+            type: 'select',
             name: 'action',
             message: `Email "${email}" is already saved as account "${sameEmail.alias}". What do you want to do?`,
             choices: [
@@ -137,7 +137,7 @@ Examples:
           // New email, --alias provided: check alias conflict
           if (existing.has(opts.alias)) {
             const { action } = await inquirer.prompt([{
-              type: 'list',
+              type: 'select',
               name: 'action',
               message: `Alias "${opts.alias}" is already in use. What do you want to do?`,
               choices: [
@@ -208,7 +208,7 @@ Examples:
           const p = JSON.parse(Buffer.from(data.token.split('.')[0]!, 'base64url').toString()) as { exp?: number };
           if (p.exp) expiresAt = p.exp;
         } catch { /* keep default */ }
-        await saveAccount({ ...account, token: data.token, expiresAt });
+        await saveAccount({ ...account, token: data.token, expiresAt, ...(data.refreshToken ? { refreshToken: data.refreshToken } : {}) });
         console.log(chalk.green(`✓ Token refreshed for "${account.alias}".`));
         console.log(chalk.gray(`  Expires: ${new Date(expiresAt).toLocaleString('it-IT')}`));
       } catch (err) {

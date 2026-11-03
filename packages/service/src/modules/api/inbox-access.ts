@@ -39,6 +39,8 @@ export function requiredPermission(event: string): Permission | undefined {
   if (event.startsWith('auth.')) return 'audit:read';
   if (event.startsWith('config.model')) return 'model:read';
   if (event.startsWith('config.router')) return 'router:read';
+  // Only operators who can fix the files are told about them.
+  if (event === 'system.permissions_unsafe') return 'settings:write';
   if (event.startsWith('system.')) return 'settings:read';
   return undefined;
 }

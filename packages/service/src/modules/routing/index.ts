@@ -1,7 +1,9 @@
 import { PASSTHROUGH_MODEL_ID, type ResilienceStore } from '@routerly/shared'
-import { defineModule, type Processor, type RouterlyModule } from '../../core/index.js'
+import { defineModule, shortCircuit, type Processor, type RouterlyModule } from '../../core/index.js'
 import { ROUTER, PROXY_PIPELINE, RESILIENCE_STORE } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
+import { recallUpstreamError } from '../reverse-proxy/last-upstream-error.js'
+import { upstreamErrorBody } from '../../lib/protocol-errors.js'
 import { routeRequest } from './router.js'
 import { migrateProfiles } from './profiles/migrate.js'
 import { addRoutingDecision } from './routingMemoryStore.js'
@@ -81,17 +83,43 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
       }
       // The trace routeRequest returns is for callers without an event bus (the MCP
       // read tool): here every entry already went out through ctx.emit.
-      const { models } = await routeRequest(
-        ctx.request,
-        ctx.router,
-        ctx.log,
-        ctx.emit,
-        ctx.token,
-        ctx.traceId,
-        ctx.conversationId,
-        resilienceStore,
-      )
-      ctx.candidates = models
+      try {
+        const { models } = await routeRequest(
+          ctx.request,
+          ctx.router,
+          ctx.log,
+          ctx.emit,
+          ctx.token,
+          ctx.traceId,
+          ctx.conversationId,
+          resilienceStore,
+        )
+        ctx.candidates = models
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        const noModels = message.startsWith('no_models_available')
+        if (noModels || message.startsWith('all_models_excluded_by_policies')) {
+          // Every model is out (e.g. circuit open after an upstream auth failure) or the router has none: a provider-shaped 503, not a bare 500.
+          const lastErr = noModels ? undefined : recallUpstreamError(ctx.router.id)
+          if (lastErr) {
+            const protocol = ctx.protocol === 'anthropic' ? 'anthropic' : 'openai'
+            ctx.result = { kind: 'block', status: lastErr.status, body: upstreamErrorBody(protocol, lastErr.status, lastErr.body) }
+            return shortCircuit(ctx.result)
+          }
+          const text = 'No model of this router is currently available.'
+          ctx.result = ctx.protocol === 'anthropic'
+            ? { kind: 'block', status: 503, body: { type: 'error', error: { type: 'overloaded_error', message: text } } }
+            : { kind: 'block', status: 503, body: { error: { message: text, type: 'server_error' } } }
+          return shortCircuit(ctx.result)
+        }
+        if (!message.startsWith('all_models_limits_exceeded')) throw err
+        // Same 429 shapes as the guardrails over-limit block (guardrails/index.ts).
+        const text = 'Usage limit exceeded for every model of this router.'
+        ctx.result = ctx.protocol === 'anthropic'
+          ? { kind: 'block', status: 429, body: { type: 'error', error: { type: 'rate_limit_error', message: text } } }
+          : { kind: 'block', status: 429, body: { error: { message: text, type: 'insufficient_quota' } } }
+        return shortCircuit(ctx.result)
+      }
     },
   }
 }
@@ -115,11 +143,11 @@ const memory: Processor<ProxyContext> = {
 }
 
 export const routingModule: RouterlyModule = defineModule({
-  manifest: { id: 'routing', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0', resilience: '^0.4.0' } },
+  manifest: { id: 'routing', version: '0.6.0', dependsOn: { 'reverse-proxy': '^0.6.0', resilience: '^0.6.0' } },
   async migrate() {
     const migrated = await migrateProfiles()
     if (migrated > 0) {
-      // eslint-disable-next-line no-console
+       
       console.log(`[startup] migrated ${migrated} record(s) to the multi-kind profile shape`)
     }
   },

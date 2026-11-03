@@ -24,6 +24,7 @@ export interface ProxyResult {
   // passthrough: verbatim upstream Response already piped by upstream.execute.
   status?: number
   body?: unknown            // stream: AsyncIterable; json/block: response object
+  headers?: Record<string, string> // provider response headers to forward (OpenAI lane, non-Responses)
 }
 
 export interface ProxyContext {

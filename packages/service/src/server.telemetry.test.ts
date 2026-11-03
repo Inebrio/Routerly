@@ -26,13 +26,13 @@ vi.mock('./modules/config/loader.js', () => ({
   initConfigDirs: mockInitConfigDirs,
   readConfig: mockReadConfig,
   writeConfig: mockWriteConfig,
-  pruneOrphanUsage: vi.fn(async () => 0),
+  effectivePort: (s: { port: number }) => s.port,
   appendUsageRecord: vi.fn(),
   getOrCreateSecret: mockGetOrCreateSecret,
 }));
 vi.mock('./modules/auth/jwt.js', () => ({ loadSecret: mockLoadSecret }));
 vi.mock('./lib/crypto-cred.js', () => ({ loadCredentialKey: mockLoadCredentialKey }));
-vi.mock('./modules/update-checker/update-checker.js', () => ({ updateChecker: { start: vi.fn() } }));
+vi.mock('./modules/update-checker/update-checker.js', () => ({ updateChecker: { start: vi.fn(), configure: vi.fn() } }));
 
 vi.mock('fastify', () => ({
   default: vi.fn(() => ({
@@ -41,8 +41,10 @@ vi.mock('fastify', () => ({
     listen: vi.fn().mockResolvedValue(undefined),
     log: { warn: vi.fn(), error: vi.fn() },
     setNotFoundHandler: vi.fn(),
+    addContentTypeParser: vi.fn(),
     decorate: vi.fn(),
     addHook: vi.fn(),
+    setErrorHandler: vi.fn(),
   })),
 }));
 vi.mock('@fastify/cors', () => ({ default: vi.fn() }));
@@ -55,6 +57,14 @@ vi.mock('./modules/config/migrate.js', () => ({
   migrateProjectConfigs: vi.fn(async () => 0),
   migrateRouterStorage: vi.fn(async () => undefined as number | undefined),
   migrateUsageToNdjson: vi.fn(async () => 0),
+  reenableModules: vi.fn(async () => [] as string[]),
+  migrateRolePermissions: vi.fn(async () => 0),
+  migrateUsageRouterId: vi.fn(async () => 0),
+  migrateNotificationChannelScope: vi.fn(async () => 0),
+  migrateOrchestratorCandidateOrder: vi.fn(async () => 0),
+  migratePassthroughPseudoModel: vi.fn(async () => 0),
+  migrateSettings: vi.fn(async () => [] as string[]),
+  migrateUserRouterIds: vi.fn(async () => 0),
 }));
 vi.mock('./modules/config/permission-guard.js', () => ({ enforceStartupGuard: vi.fn() }));
 

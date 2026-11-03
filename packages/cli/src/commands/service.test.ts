@@ -66,7 +66,7 @@ describe('service status', () => {
   it('prints status table when logged in', async () => {
     mockGetCurrentAccount.mockResolvedValue(account);
     mockApi
-      .mockResolvedValueOnce({ version: '0.3.0', uptime: 125, nodeVersion: 'v22.0.0' }) // system/info
+      .mockResolvedValueOnce({ version: '0.3.0', uptimeSeconds: 125, nodeVersion: 'v22.0.0' }) // system/info
       .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info', listeningAddresses: ['http://127.0.0.1:3000', 'http://192.168.1.10:3000'] }) // settings
       .mockResolvedValueOnce([{}, {}]) // models
       .mockResolvedValueOnce([{}]); // routers
@@ -75,7 +75,7 @@ describe('service status', () => {
     await run('status');
     const out = lines.join('\n');
     expect(out).toContain('0.3.0');
-    expect(out).toContain('2m 5s'); // 125s = 2m 5s
+    expect(out).toContain('2m 5s'); // 125s
     expect(out).toContain('3000');
     expect(out).toContain('enabled');
     expect(out).toContain('Listening at:  http://127.0.0.1:3000');
@@ -101,7 +101,7 @@ describe('service status', () => {
     mockGetCurrentAccount.mockResolvedValue(account);
     // system/info resolves, settings rejects
     mockApi
-      .mockResolvedValueOnce({ version: '0.3.0', uptime: 0, nodeVersion: 'v22' })
+      .mockResolvedValueOnce({ version: '0.3.0', uptimeSeconds: 0, nodeVersion: 'v22' })
       .mockRejectedValueOnce(new Error('settings error'))
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
@@ -207,6 +207,13 @@ describe('service configure', () => {
     expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ logLevel: 'debug' }));
   });
 
+  it('rejects an invalid --log-level with exit 1 and no API call (ROUT-354)', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(run('configure', '--log-level', 'verbose')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
   it('sends PUT with metricsEnabled=true when --metrics true', async () => {
     mockApi.mockResolvedValueOnce(undefined);
     await run('configure', '--metrics', 'true');
@@ -225,12 +232,12 @@ describe('service configure', () => {
     expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ prometheusAuthToken: 'mysecret' }));
   });
 
-  it('sets prometheusAuthToken to undefined when --metrics-token is empty string', async () => {
+  it('sends empty prometheusAuthToken when --metrics-token is empty string (server removes it)', async () => {
     mockApi.mockResolvedValueOnce(undefined);
     await run('configure', '--metrics-token', '');
     const call = mockApi.mock.calls[0];
     const patch = call![2] as Record<string, unknown>;
-    expect(patch['prometheusAuthToken']).toBeUndefined();
+    expect(patch['prometheusAuthToken']).toBe('');
   });
 
   it('sends publicUrl when --public-url provided', async () => {
@@ -249,6 +256,11 @@ describe('service configure', () => {
     mockApi.mockResolvedValueOnce(undefined);
     await run('configure', '--require-mfa', 'false');
     expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ requireMfa: false }));
+  });
+
+  it('rejects a non-boolean --require-mfa without calling the API', async () => {
+    await expect(run('configure', '--require-mfa', 'maybe')).rejects.toThrow();
+    expect(mockApi).not.toHaveBeenCalled();
   });
 
   it('sends usageRetention.maxAgeDays after fetching current settings, when --usage-retention-days provided alone', async () => {
@@ -302,6 +314,20 @@ describe('service configure', () => {
     const patch = call![2] as { usageRetention: Record<string, unknown> };
     expect(patch.usageRetention).toEqual({ maxAgeDays: 30 });
     expect(patch.usageRetention.maxSizeMb).toBeUndefined();
+  });
+
+  it.each([
+    ['--usage-retention-max-mb', '1.5'],
+    ['--usage-retention-max-mb', 'abc'],
+    ['--usage-retention-max-mb', '0'],
+    ['--usage-retention-days', '30.5'],
+    ['--usage-retention-days', '-3'],
+  ])('rejects %s %s with exit 1 and no API call', async (flag, value) => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(run('configure', flag, value)).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('positive integer'));
+    expect(mockApi).not.toHaveBeenCalled();
   });
 
   it('does not call GET /api/settings when no usage-retention flags are provided', async () => {
@@ -446,6 +472,15 @@ metric_with_nan_value not_a_number
     await run('metrics', '--raw');
     vi.unstubAllGlobals();
     expect(lines.join('\n')).toContain('routerly_requests_total counter');
+  });
+
+  it('sends --token as the Bearer instead of the account token', async () => {
+    mockRequireAccount.mockResolvedValue(account);
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, text: async () => prometheusText });
+    vi.stubGlobal('fetch', fetchMock);
+    await run('metrics', '--raw', '--token', 'promtok');
+    vi.unstubAllGlobals();
+    expect(fetchMock.mock.calls[0]![1]).toEqual({ headers: { Authorization: 'Bearer promtok' } });
   });
 
   it('shows empty message when Prometheus text has no parseable metrics', async () => {

@@ -252,6 +252,8 @@ describe('routeRequest', () => {
           apiKey: 'super-secret',
           nested: { password: 'hidden', value: 42 },
           plain: 'visible',
+          fallbackModelIds: [],
+          list: [{ token: 'x', ok: 1 }],
         },
       },
     ])
@@ -263,6 +265,8 @@ describe('routeRequest', () => {
     expect(config.apiKey).toBe('***')
     expect(config.nested.password).toBe('***')
     expect(config.plain).toBe('visible')
+    expect(config.fallbackModelIds).toEqual([])
+    expect(config.list).toEqual([{ token: '***', ok: 1 }])
   })
 
   it('logs routing result when log is provided (covers log?.info path)', async () => {
@@ -692,6 +696,23 @@ describe('routeRequest', () => {
     const errorEmit = emit.mock.calls.find((c: any) => c[0].message === 'policy:error:cheapest')
     expect(errorEmit).toBeDefined()
     expect(errorEmit![0].details.error).toBe('policy crash')
+  })
+
+  it('emits router:policies-failed and recap failedPolicies when every policy throws (ROUT-434)', async () => {
+    mockModels([makeModel('m1'), makeModel('m2')])
+    mockIsAllowed.mockResolvedValue(true)
+    mockCheapestPolicy.mockRejectedValue(new Error('policy crash'))
+
+    const emit = vi.fn()
+    const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    await routeRequest(request, router, log as any, emit)
+
+    const failed = emit.mock.calls.find((c: any) => c[0].message === 'router:policies-failed')
+    expect(failed![0].details).toEqual({ policies: [{ type: 'cheapest', error: 'policy crash' }], allFailed: true })
+    const recap = emit.mock.calls.find((c: any) => c[0].message === 'router:recap')
+    expect(recap![0].details.failedPolicies).toEqual([{ type: 'cheapest', error: 'policy crash' }])
+    expect(log.warn).toHaveBeenCalled()
   })
 
   it('abstained policies: emits router:abstained and logs when all policies return uniform scores', async () => {

@@ -4,6 +4,7 @@ import type { Message, OptimizerResult } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import type { Optimizer } from '../registry.js'
 import { readMessages, segment, tokensOf, writeMessages } from '../messages.js'
+import { onConfigWrite } from '../../config/write-hooks.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
 
 // ponytail: trim-oldest to fit; no re-summarize (that is ccr's job).
@@ -25,13 +26,12 @@ function reservedOf(ctx: ProxyContext): number {
 // writeConfig only if that turns out to matter.
 const WINDOWS_TTL_MS = 30_000
 let windows: { at: number; byId: Map<string, number> } | null = null
-let refreshing = false
+let refreshing: Promise<void> | null = null
 
-/** Kick a background refresh; never awaited, never throws into the request. */
-function refreshWindows(): void {
-  if (refreshing) return
-  refreshing = true
-  void listEffectiveModels()
+/** Refresh the snapshot; request paths fire and forget, never throws into the request. */
+function refreshWindows(): Promise<void> {
+  if (refreshing) return refreshing
+  return (refreshing = listEffectiveModels()
     .then((models) => {
       const byId = new Map<string, number>()
       for (const m of models) if ((m.contextWindow ?? 0) > 0) byId.set(m.id, m.contextWindow!)
@@ -42,14 +42,24 @@ function refreshWindows(): void {
       // silently turn a working trimmer off mid-flight.
     })
     .finally(() => {
-      refreshing = false
-    })
+      refreshing = null
+    }))
 }
+
+// A model created or edited is visible to the very next request: refresh
+// (awaited by the writer) whenever models or their connections are written.
+// A refresh already in flight may have read the files before the write: wait it out, then read again.
+const refreshAfterWrite = async (): Promise<void> => {
+  await refreshing
+  await refreshWindows()
+}
+onConfigWrite('instances', refreshAfterWrite)
+onConfigWrite('connections', refreshAfterWrite)
 
 /** Test seam, and the way a model edit takes effect before the TTL runs out. */
 export function resetContextWindowCache(): void {
   windows = null
-  refreshing = false
+  refreshing = null
 }
 
 /**
@@ -78,8 +88,27 @@ interface Plan {
 }
 
 /**
+ * Split one turn into its opening message and its rounds. A round starts at each
+ * `assistant` message and runs up to the next one, so a tool call and its results
+ * (OpenAI `tool` messages, Anthropic `tool_result` user messages) stay together.
+ */
+function rounds(turn: Message[]): { head: Message[]; rounds: Message[][] } {
+  const first = turn.findIndex((m, i) => i > 0 && m.role === 'assistant')
+  if (first < 0) return { head: turn, rounds: [] }
+  const out: Message[][] = []
+  for (const m of turn.slice(first)) {
+    if (m.role === 'assistant') out.push([m])
+    else out[out.length - 1]!.push(m)
+  }
+  return { head: turn.slice(0, first), rounds: out }
+}
+
+/**
  * Drop the oldest turns, each in full (never split a turn), until the prompt
- * fits `budget` or only the newest turn remains — whichever comes first.
+ * fits `budget` or only the newest turn remains. An agent session is ONE turn
+ * (a single user prompt followed by dozens of tool rounds), so when the newest
+ * turn alone is over budget its oldest tool rounds go too, keeping the opening
+ * message and the latest round.
  */
 function plan(messages: Message[], budget: number): Plan {
   const { system, turns } = segment(messages)
@@ -88,10 +117,18 @@ function plan(messages: Message[], budget: number): Plan {
   while (remaining.length > 1 && tokensOf([...system, ...remaining.flat()]) > budget) {
     remaining = remaining.slice(1)
   }
-  if (remaining.length === turns.length) {
+  let last = remaining[remaining.length - 1] ?? []
+  const split = rounds(last)
+  let kept = split.rounds
+  const older = remaining.slice(0, -1).flat()
+  while (kept.length > 1 && tokensOf([...system, ...older, ...split.head, ...kept.flat()]) > budget) {
+    kept = kept.slice(1)
+  }
+  if (kept.length < split.rounds.length) last = [...split.head, ...kept.flat()]
+  if (remaining.length === turns.length && kept.length === split.rounds.length) {
     return { changed: false, newMessages: messages, before, after: before }
   }
-  const newMessages = [...system, ...remaining.flat()]
+  const newMessages = [...system, ...older, ...last]
   return { changed: true, newMessages, before, after: tokensOf(newMessages) }
 }
 
@@ -150,8 +187,10 @@ export const headroomOptimizer = {
     const now = readMessages(ctx.request)
     const present = new Set(now.map((m) => JSON.stringify(m)))
     for (const m of system) if (!present.has(JSON.stringify(m))) return false
-    const newest = turns[turns.length - 1] ?? []
-    for (const m of newest) if (!present.has(JSON.stringify(m))) return false
+    // The newest turn keeps its opening message and its latest round: older tool
+    // rounds of an over-long agent turn are what plan() may have dropped.
+    const { head, rounds: rs } = rounds(turns[turns.length - 1] ?? [])
+    for (const m of [...head, ...(rs[rs.length - 1] ?? [])]) if (!present.has(JSON.stringify(m))) return false
     return true
   },
 
@@ -174,10 +213,11 @@ export const headroomOptimizer = {
 export const headroomModule: RouterlyModule = defineModule({
   manifest: {
     id: 'optimizer-headroom',
-    version: '0.4.0',
-    dependsOn: { 'optimizer-core': '^0.4.0' },
+    version: '0.6.0',
+    dependsOn: { 'optimizer-core': '^0.6.0' },
   },
   register({ container }) {
     container.resolve(OPTIMIZER_REGISTRY).register(headroomOptimizer)
+    void refreshWindows() // warm the cache at boot
   },
 })

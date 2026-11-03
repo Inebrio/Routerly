@@ -34,7 +34,7 @@ vi.mock('node:fs/promises', () => ({
   stat: vi.fn().mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' })),
 }))
 
-import { readConfig, writeConfig, initConfigDirs, getOrCreateSecret, appendUsageRecord, pruneOrphanUsage } from './loader.js'
+import { readConfig, writeConfig, initConfigDirs, getOrCreateSecret, appendUsageRecord, effectivePort } from './loader.js'
 import * as fs from 'node:fs/promises'
 import lockfile from 'proper-lockfile'
 
@@ -114,7 +114,7 @@ describe('readConfig', () => {
     await expect(readConfig('models')).rejects.toThrow('permission denied')
   })
 
-  it('seeds modules default with provider-web disabled (off by default) on first run', async () => {
+  it('seeds an empty modules default (all modules always active) on first run', async () => {
     const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
     mockReadFile.mockRejectedValueOnce(err)
     const releaseFn = vi.fn().mockResolvedValue(undefined)
@@ -122,7 +122,7 @@ describe('readConfig', () => {
     mockReadFile.mockRejectedValueOnce(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))
 
     const result = await readConfig('modules')
-    expect(result).toEqual([{ id: 'provider-web', enabled: false }])
+    expect(result).toEqual([])
   })
 
   it('returns default settings when settings file missing', async () => {
@@ -342,47 +342,17 @@ describe('getOrCreateSecret', () => {
   })
 })
 
-describe('pruneOrphanUsage (#77 BUG-5)', () => {
-  // readConfig reads usage.ndjson (NDJSON, one record per line) and routers.json
-  // (still a JSON array) by path; route the mock per path.
-  function byPath(usage: unknown[], routers: unknown[]) {
-    mockReadFile.mockImplementation(((p: string) =>
-      Promise.resolve(
-        p.endsWith('usage.ndjson') ? usage.map((r) => JSON.stringify(r)).join('\n')
-        : p.endsWith('routers.json') ? JSON.stringify(routers)
-        : '[]',
-      )) as any)
-  }
-
-  it('removes records whose routerId matches no router, keeps real ones', async () => {
-    const releaseFn = vi.fn().mockResolvedValue(undefined)
-    mockLock.mockResolvedValue(releaseFn)
-    const usage = [
-      { id: 'u1', routerId: 'real-1', cost: 0.1 },
-      { id: 'u2', routerId: 'guardrail', cost: 0, outcome: 'error' },
-      { id: 'u3', routerId: 'real-2', cost: 0.2 },
-      { id: 'u4', routerId: 'guardrail', cost: 0, outcome: 'error' },
-    ]
-    byPath(usage, [{ id: 'real-1' }, { id: 'real-2' }])
-
-    const removed = await pruneOrphanUsage()
-
-    expect(removed).toBe(2)
-    // wrote the pruned usage back (via temp file), keeping only real records
-    const writeCall = mockWriteFile.mock.calls.find(c => String(c[0]).startsWith('/test/data/usage.ndjson.tmp-'))
-    expect(writeCall).toBeDefined()
-    const written = String(writeCall![1]).split('\n').filter(Boolean).map((l) => JSON.parse(l))
-    expect(written.map((r: any) => r.id)).toEqual(['u1', 'u3'])
-    expect(mockRename).toHaveBeenCalledWith(String(writeCall![0]), '/test/data/usage.ndjson')
+describe('effectivePort (ROUT-323)', () => {
+  afterEach(() => { delete process.env['ROUTERLY_PORT'] })
+  it('uses settings port when ROUTERLY_PORT is unset', () => {
+    expect(effectivePort({ port: 3000 })).toBe(3000)
   })
-
-  it('does nothing (no write) when there are no orphans', async () => {
-    byPath(
-      [{ id: 'u1', routerId: 'real-1', cost: 0.1 }],
-      [{ id: 'real-1' }],
-    )
-    const removed = await pruneOrphanUsage()
-    expect(removed).toBe(0)
-    expect(mockWriteFile.mock.calls.some(c => String(c[0]).endsWith('usage.ndjson'))).toBe(false)
+  it('ROUTERLY_PORT overrides settings port', () => {
+    process.env['ROUTERLY_PORT'] = '3917'
+    expect(effectivePort({ port: 3000 })).toBe(3917)
+  })
+  it.each(['abc', '0', '70000', '1.5', ''])('ignores invalid value %j', (v) => {
+    process.env['ROUTERLY_PORT'] = v
+    expect(effectivePort({ port: 3000 })).toBe(3000)
   })
 })

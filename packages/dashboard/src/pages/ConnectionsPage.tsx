@@ -73,7 +73,10 @@ export function ConnectionsPage() {
         <p>{t('connections.list.subtitle')}</p>
       </div>
       <div className="page-body">
-        {error && <div className="form-error" style={{ marginBottom: 20 }}>{error}</div>}
+        {error && (
+          // Scrolled into view: with a long list the banner sits above the fold and the failed removal looked silent.
+          <div className="form-error" role="alert" style={{ marginBottom: 20 }} ref={el => el?.scrollIntoView?.({ block: 'center' })}>{error}</div>
+        )}
 
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>

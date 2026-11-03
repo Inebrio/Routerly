@@ -76,9 +76,28 @@ export function segment(messages: Message[]): { system: Message[]; turns: Messag
   return { system, turns }
 }
 
-/** Total estimated tokens across a set of messages. */
+/**
+ * Text of the tool payload a message carries beyond its plain text: OpenAI
+ * `tool_calls[].function.arguments`, Anthropic `tool_use.input` and the content of
+ * `tool_result` (string or text blocks). `messageText` skips all of it, so an agent
+ * session on the Anthropic lane counted as a few tokens instead of tens of thousands.
+ */
+function toolPayloadText(m: Message): string {
+  let out = ''
+  const calls = (m as { tool_calls?: Array<{ function?: { arguments?: unknown } }> }).tool_calls
+  if (Array.isArray(calls)) for (const c of calls) if (typeof c?.function?.arguments === 'string') out += c.function.arguments
+  if (Array.isArray(m.content)) {
+    for (const b of m.content as Array<{ type?: string; input?: unknown; content?: unknown }>) {
+      if (b?.type === 'tool_use') out += JSON.stringify(b.input ?? {})
+      else if (b?.type === 'tool_result') out += typeof b.content === 'string' ? b.content : messageText(b.content)
+    }
+  }
+  return out
+}
+
+/** Total estimated tokens across a set of messages, tool payloads included. */
 export function tokensOf(messages: Message[]): number {
-  return messages.reduce((sum, m) => sum + estimateTokens(messageText(m.content)), 0)
+  return messages.reduce((sum, m) => sum + estimateTokens(messageText(m.content) + toolPayloadText(m)), 0)
 }
 
 /** What one message's text mostly is. Drives which optimizers may touch it. */

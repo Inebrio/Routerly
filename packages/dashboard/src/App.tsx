@@ -19,6 +19,7 @@ import { RoutersPage } from './pages/RoutersPage';
 import { RouterLayout } from './pages/router/RouterLayout';
 import { RouterDashboardTab } from './pages/router/RouterDashboardTab';
 import { RouterGeneralTab } from './pages/router/RouterGeneralTab';
+import { RouterTestTab } from './pages/router/RouterTestTab';
 import { RouterFormRouter } from './pages/router/RouterFormRouter';
 import { RouterFormOrchestrator } from './pages/router/RouterFormOrchestrator';
 import { RouterFormPassthrough } from './pages/router/RouterFormPassthrough';
@@ -132,7 +133,7 @@ function ThemeCycleButton() {
   );
 }
 
-function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+function Sidebar({ collapsed, onToggle, version }: { collapsed: boolean; onToggle: () => void; version?: string | undefined }) {
   const { t } = useTranslation();
   const { user, logout, can } = useAuth();
   const navigate = useNavigate();
@@ -238,6 +239,9 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           <LogOut size={15} />
           <span className="nav-label">{t('app.nav.signOut')}</span>
         </button>
+        {version && !collapsed && (
+          <div className="sidebar-version" data-testid="sidebar-version" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.6, textAlign: 'center', padding: '2px 0' }}>v{version}</div>
+        )}
       </div>
     </aside>
   );
@@ -255,14 +259,17 @@ export function __resetPermissionCheckForTests() {
   permissionWarningFiles = [];
 }
 
-function ProtectedLayout() {
+function ProtectedShell() {
   const { t } = useTranslation();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, can } = useAuth();
+  const canReadSettings = can('settings:read');
+  const canFixPermissions = can('settings:write');
   const navigate = useNavigate();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('lr-sidebar') === 'collapsed');
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('lr-sidebar') === 'collapsed' || window.innerWidth <= 768);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isDocker, setIsDocker] = useState(false);
+  const [version, setVersion] = useState<string>();
   const [bannerDismissed, setBannerDismissed] = useState(() => {
     return localStorage.getItem('lr-update-banner-dismissed') === 'true';
   });
@@ -271,42 +278,56 @@ function ProtectedLayout() {
   const [permissionWarning, setPermissionWarning] = useState<string[]>(permissionWarningFiles);
   const [permissionWarningDismissed, setPermissionWarningDismissed] = useState(false);
   const [permissionBlockedDetail, setPermissionBlockedDetail] = useState<PermissionBlockedDetail | null>(null);
+  const [permissionBlockedNotice, setPermissionBlockedNotice] = useState(false);
 
   useEffect(() => {
     getSystemInfo()
       .then(info => {
         setIsDocker(info.isDocker);
+        setVersion(info.version);
         if (info.updateInfo?.available) setUpdateInfo(info.updateInfo);
       })
       .catch(/* v8 ignore next */ () => { /* non-critical */ });
   }, []);
 
-  // AC6/AC8/EC4: fetch permission status once per session (module-level flag), show a
+  // AC6/AC8/EC4: fetch permission status on mount (module-level flag) and every 10 s, show a
   // warning banner if any general-severity file is unsafe, never block on it.
   useEffect(() => {
+    function refresh() {
+      getPermissionStatus()
+        .then(status => {
+          const warnings = status.unsafe.filter(u => u.severity === 'general').map(u => u.file);
+          permissionWarningFiles = warnings;
+          setPermissionWarning(warnings);
+        })
+        .catch(/* v8 ignore next */ () => { /* non-critical: hard block, if any, surfaces via the 423 event */ });
+    }
+    // Roles without settings:read cannot read the status: skip the call, no 403.
+    if (!canReadSettings) return;
     if (permissionCheckDone) {
       setPermissionWarning(permissionWarningFiles);
-      return;
+    } else {
+      permissionCheckDone = true;
+      refresh();
     }
-    permissionCheckDone = true;
-    getPermissionStatus()
-      .then(status => {
-        const warnings = status.unsafe.filter(u => u.severity === 'general').map(u => u.file);
-        permissionWarningFiles = warnings;
-        setPermissionWarning(warnings);
-      })
-      .catch(/* v8 ignore next */ () => { /* non-critical: hard block, if any, surfaces via the 423 event */ });
-  }, []);
+    // A fix or a config write from the CLI emits no event: poll so the banner
+    // clears (or reappears) on its own.
+    const timer = setInterval(refresh, 10_000);
+    return () => clearInterval(timer);
+  }, [canReadSettings]);
 
   // AC6: any 423 from api.ts surfaces here as a blocking modal.
   useEffect(() => {
     function onBlocked(e: Event) {
       const detail = (e as CustomEvent<PermissionBlockedDetail>).detail;
-      if (detail) setPermissionBlockedDetail(detail);
+      if (!detail) return;
+      // Operators who cannot fix it get a neutral notice; the service notifies those who can.
+      if (canFixPermissions) setPermissionBlockedDetail(detail);
+      else setPermissionBlockedNotice(true);
     }
     window.addEventListener('lr-permission-blocked', onBlocked);
     return () => window.removeEventListener('lr-permission-blocked', onBlocked);
-  }, []);
+  }, [canFixPermissions]);
 
   function handlePermissionFixed() {
     setPermissionBlockedDetail(null);
@@ -322,13 +343,18 @@ function ProtectedLayout() {
   }, []);
 
   useEffect(() => {
+    // No settings:read → the call would only 403 (the service still enforces requireMfa).
+    if (!canReadSettings) return;
     getSettings()
       .then(s => {
         if (user?.role === 'admin' && s.telemetry === undefined) setTelemetryUndecided(true);
         setRequireMfa(!!s.requireMfa);
       })
-      .catch(/* v8 ignore next */ () => { /* non-critical */ });
-  }, [user]);
+      .catch((e: { status?: number; code?: string }) => {
+        // The service refuses management calls to users without 2FA when requireMfa is on.
+        if (e.status === 403 && e.code === 'mfa_required') setRequireMfa(true);
+      });
+  }, [user, canReadSettings]);
 
   useEffect(() => {
     if (!isLoading && requireMfa && !user?.totpEnabled && !location.pathname.startsWith('/dashboard/profile')) {
@@ -352,18 +378,16 @@ function ProtectedLayout() {
 
   function handleTelemetryChoice(enabled: boolean) {
     setTelemetryUndecided(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     updateSettings({ telemetry: { enabled } } as any).catch(/* v8 ignore next */ () => { /* non-critical */ });
   }
 
   const showUpdateBanner = !bannerDismissed && !isDocker && user?.role === 'admin' && updateInfo?.available;
   const showPermissionWarning = !permissionWarningDismissed && permissionWarning.length > 0;
 
-  if (isLoading) return <div className="loading-center"><div className="spinner" /></div>;
-  /* v8 ignore next */
-  if (!user) return <Navigate to={`/dashboard/login?to=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   return (
     <div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
-      <Sidebar collapsed={collapsed} onToggle={handleToggle} />
+      <Sidebar collapsed={collapsed} onToggle={handleToggle} version={version} />
       <main className="main-content">
         {showPermissionWarning && (
           <div style={{
@@ -381,6 +405,27 @@ function ProtectedLayout() {
             </span>
             <button
               onClick={() => setPermissionWarningDismissed(true)}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, color: 'inherit', opacity: 0.7 }}
+              title={t('app.banner.dismiss')}
+            >
+              ×
+            </button>
+          </div>
+        )}
+        {permissionBlockedNotice && (
+          <div style={{
+            background: 'var(--warning-bg, #fffbeb)',
+            borderBottom: '1px solid var(--warning-border, #f6e05e)',
+            padding: '10px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            fontSize: '0.85rem',
+            color: 'var(--warning-text, #744210)',
+          }}>
+            <span>{t('app.banner.permissionBlocked')}</span>
+            <button
+              onClick={() => setPermissionBlockedNotice(false)}
               style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, color: 'inherit', opacity: 0.7 }}
               title={t('app.banner.dismiss')}
             >
@@ -449,10 +494,11 @@ function ProtectedLayout() {
             display: 'flex',
             alignItems: 'center',
             gap: 12,
+            flexWrap: 'wrap',
             fontSize: '0.85rem',
             color: 'var(--info-text, #1e40af)',
           }}>
-            <span style={{ flex: 1 }}>
+            <span style={{ flex: '1 1 240px' }}>
               <strong>{t('app.banner.telemetryTitle')}</strong>{' '}
               {t('app.banner.telemetryBody')}{' '}
               <a
@@ -485,6 +531,14 @@ function ProtectedLayout() {
 }
 
 /** Checks setup status once on first load and redirects to /dashboard/setup if needed. */
+function ProtectedLayout() {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+  if (isLoading) return <div className="loading-center"><div className="spinner" /></div>;
+  if (!user) return <Navigate to={`/dashboard/login?to=${encodeURIComponent(location.pathname + location.search)}`} replace />;
+  return <ProtectedShell />;
+}
+
 function SetupGuard() {
   const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
@@ -496,7 +550,7 @@ function SetupGuard() {
       })
       .catch(() => { /* service not reachable – let the normal flow handle it */ })
       .finally(() => setChecking(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   if (checking) return <div className="loading-center"><div className="spinner" /></div>;
@@ -574,6 +628,7 @@ const router = createBrowserRouter([
               { index: true, element: <RouterDashboardTab /> },
               { path: 'dashboard', element: <RouterDashboardTab /> },
               { path: 'general', element: <RouterGeneralTab /> },
+              { path: 'test', element: <RouterTestTab /> },
               { path: 'routing', element: <RouterRoutingTab /> },
               { path: 'optimizer', element: <RouterOptimizerTab /> },
               { path: 'token', element: <RouterTokenTab /> },

@@ -4,7 +4,7 @@ vi.mock('./modules/config/loader.js', () => ({
   initConfigDirs: vi.fn(),
   readConfig: vi.fn(),
   writeConfig: vi.fn(),
-  pruneOrphanUsage: vi.fn(async () => 0),
+  effectivePort: (s: { port: number }) => s.port,
   appendUsageRecord: vi.fn(),
   getOrCreateSecret: vi.fn(),
 }))
@@ -15,14 +15,18 @@ vi.mock('./modules/auth/jwt.js', () => ({
   generateRawToken: vi.fn(() => 'raw'),
 }))
 vi.mock('./lib/crypto-cred.js', () => ({ loadCredentialKey: vi.fn() }))
-vi.mock('./modules/auth/auth.js', () => ({ default: vi.fn(async () => {}) }))
+vi.mock('./modules/auth/auth.js', () => ({
+  default: vi.fn(async () => {}),
+  extractRouterToken: vi.fn(() => null),
+  resolveRouterByToken: vi.fn(async () => null),
+}))
 vi.mock('./modules/api-reverse-proxy/openai.js', () => ({ openaiRoutes: vi.fn(async () => {}) }))
 vi.mock('./modules/api-reverse-proxy/anthropic.js', () => ({ anthropicRoutes: vi.fn(async () => {}) }))
 vi.mock('./modules/api/api.js', () => ({ apiRoutes: vi.fn(async () => {}) }))
 vi.mock('./modules/telemetry/telemetry.js', () => ({ pingTelemetry: vi.fn().mockResolvedValue(true) }))
 vi.mock('./modules/notifications/emitter.js', () => ({ emitEvent: vi.fn(async () => {}) }))
 vi.mock('./modules/update-checker/update-checker.js', () => ({
-  updateChecker: { start: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
+  updateChecker: { start: vi.fn(), configure: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
 vi.mock('./modules/config/migrate.js', () => ({
   migrateProjectConfigs: vi.fn(async () => 0),
@@ -32,8 +36,10 @@ vi.mock('./modules/config/migrate.js', () => ({
   migrateUsageRouterId: vi.fn(async () => 0),
   migrateNotificationChannelScope: vi.fn(async () => 0),
   migrateUsageToNdjson: vi.fn(async () => 0),
+  reenableModules: vi.fn(async () => [] as string[]),
   migrateOrchestratorCandidateOrder: vi.fn(async () => 0),
   migratePassthroughPseudoModel: vi.fn(async () => 0),
+  migrateUserRouterIds: vi.fn(async () => 0),
 }))
 vi.mock('./modules/config/permission-guard.js', () => ({ enforceStartupGuard: vi.fn() }))
 
@@ -70,6 +76,32 @@ describe('buildServer', () => {
     expect(JSON.parse(res.body).status).toBe('ok')
   })
 
+  it('does not add Vary: Origin on passthrough responses without an Origin header', async () => {
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
+
+    const server = await buildServer()
+    const plain = await server.inject({ method: 'POST', url: '/passthrough/nope/v1/chat/completions', payload: {} })
+    const browser = await server.inject({ method: 'POST', url: '/passthrough/nope/v1/chat/completions', payload: {}, headers: { origin: 'http://x.test' } })
+    await server.close()
+
+    expect(plain.headers.vary).toBeUndefined()
+    expect(browser.headers.vary).toBe('Origin')
+  })
+
+  // Regression (ROUT-360): the catch-all must be wired in the real server; unmatched
+  // /v1 paths reach passthroughHandler (401 without a token) instead of a Fastify 404.
+  it('routes unregistered /v1 paths to the catch-all (401, not 404)', async () => {
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
+
+    const server = await buildServer()
+    const post = await server.inject({ method: 'POST', url: '/v1/embeddings', payload: { model: 'm', input: 'hi' } })
+    const get = await server.inject({ method: 'GET', url: '/v1/files' })
+    await server.close()
+
+    expect(post.statusCode).toBe(401)
+    expect(get.statusCode).toBe(401)
+  })
+
   it('redirects GET / to /dashboard/', async () => {
     mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
 
@@ -103,7 +135,28 @@ describe('buildServer', () => {
   })
 })
 
+vi.mock('./modules/mcp/stdio.js', () => ({ startStdioServer: vi.fn() }))
+
 describe('startServer', () => {
+  it('does not bind the port in MCP stdio mode (service already listening on it)', async () => {
+    const { createServer } = await import('node:net')
+    const busy = createServer()
+    await new Promise<void>(r => busy.listen(3096, '127.0.0.1', r))
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never)
+    vi.stubEnv('ROUTERLY_MCP_STDIO', '1')
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false, port: 3096, host: '127.0.0.1' } as any)
+    const log = console.log
+    try {
+      await startServer()
+      expect(exit).not.toHaveBeenCalled()
+    } finally {
+      console.log = log
+      vi.unstubAllEnvs()
+      exit.mockRestore()
+      await new Promise(r => busy.close(r))
+    }
+  })
+
   it('fires pingTelemetry install event on first start (no lastPingedVersion)', async () => {
     const settings: any = {
       logLevel: 'silent', dashboardEnabled: false,
@@ -192,16 +245,12 @@ describe('startServer', () => {
     expect(mockPingTelemetry).not.toHaveBeenCalled()
   })
 
-  it('prunes orphan usage records on startup and logs when any removed (BUG-5)', async () => {
-    const { pruneOrphanUsage } = await import('./modules/config/loader.js')
-    vi.mocked(pruneOrphanUsage).mockResolvedValueOnce(18)
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+  it('never rewrites usage history at startup (ROUT-552)', async () => {
+    const { writeConfig } = await import('./modules/config/loader.js')
     mockSettings({ logLevel: 'silent', dashboardEnabled: false, port: 3095, host: '127.0.0.1', telemetry: { enabled: false } } as any)
 
     await startServer()
 
-    expect(pruneOrphanUsage).toHaveBeenCalled()
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('pruned 18 orphan usage record'))
-    logSpy.mockRestore()
+    expect(vi.mocked(writeConfig).mock.calls.some((c) => c[0] === 'usage')).toBe(false)
   })
 })

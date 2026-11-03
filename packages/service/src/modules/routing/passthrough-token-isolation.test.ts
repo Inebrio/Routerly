@@ -155,6 +155,6 @@ describe('cross-router token isolation (PR-E AC3/EC5)', () => {
     await app.close()
 
     expect(res.statusCode).toBe(401)
-    expect(res.json()).toEqual({ error: 'unauthorized', message: 'Invalid router token.' })
+    expect(res.json()).toEqual({ error: { message: 'Invalid router token.', type: 'invalid_request_error', param: null, code: 'invalid_api_key' } })
   })
 })

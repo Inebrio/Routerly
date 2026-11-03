@@ -134,7 +134,7 @@ beforeEach(() => {
     perStep: [{ id: 'ccr', before: 100, after: 60, messages: [{ role: 'user', content: 'hello' }] }],
     messages: [{ role: 'user', content: 'hello' }],
   });
-  setAuth(['optimizers:read', 'optimizers:manage']);
+  setAuth(['optimizers:read', 'optimizers:manage', 'router:write']);
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -148,8 +148,8 @@ describe('RouterOptimizerTab', () => {
     expect(cbs[0]).toBeChecked(); // ccr first (configured), enabled
     expect(screen.getByDisplayValue('6')).toBeInTheDocument();
     // extras appended, disabled
-    expect(screen.getByText('Session Dedup')).toBeInTheDocument();
-    expect(screen.getByText('Caveman')).toBeInTheDocument();
+    expect(await screen.findByText('Session Dedup')).toBeInTheDocument();
+    expect(await screen.findByText('Caveman')).toBeInTheDocument();
   });
 
   it('shows loading then content', async () => {
@@ -189,12 +189,64 @@ describe('RouterOptimizerTab', () => {
     expect(screen.getAllByText(/40/).length).toBeGreaterThan(0);
   });
 
+  it('custom mode sends the current rows; the result names the pipeline', async () => {
+    const user = userEvent.setup();
+    mockPreview.mockResolvedValueOnce({ estimatedTokensBefore: 10, estimatedTokensAfter: 5, perStep: [], messages: [], pipeline: { kind: 'custom', label: 'Custom' } });
+    renderTab();
+    await waitFor(() => expect(screen.getByLabelText('Sample prompt')).toBeInTheDocument());
+    await user.type(screen.getByPlaceholderText(/sample user message/i), 'hi');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    const [body] = mockPreview.mock.calls[0] as [{ steps?: unknown[] }];
+    expect(body.steps).toEqual([{ id: 'ccr', enabled: true, threshold: 6 }]);
+    expect(await screen.findByText('Pipeline run: Custom')).toBeInTheDocument();
+  });
+
+  it('profile mode sends no steps and names the profile (ROUT-440)', async () => {
+    const user = userEvent.setup();
+    mockPreview.mockResolvedValueOnce({ estimatedTokensBefore: 10, estimatedTokensAfter: 5, perStep: [], messages: [], pipeline: { kind: 'profile', profileId: 'optimizer-safe', label: 'Safe' } });
+    renderTab({ ...mockRouter, optimizerProfileId: 'optimizer-safe' });
+    await waitFor(() => expect(screen.getByLabelText('Sample prompt')).toBeInTheDocument());
+    await user.type(screen.getByPlaceholderText(/sample user message/i), 'hi');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    const [body] = mockPreview.mock.calls[0] as [Record<string, unknown>];
+    expect('steps' in body).toBe(false);
+    expect(await screen.findByText('Pipeline run: Safe')).toBeInTheDocument();
+  });
+
+  it('an unsaved Custom draft previews the custom rows and clears the previous result (ROUT-440)', async () => {
+    const user = userEvent.setup();
+    mockPreview.mockResolvedValueOnce({ estimatedTokensBefore: 10, estimatedTokensAfter: 5, perStep: [], messages: [], pipeline: { kind: 'profile', profileId: 'custom-opt', label: 'Custom opt' } });
+    mockPreview.mockResolvedValueOnce({ estimatedTokensBefore: 10, estimatedTokensAfter: 6, perStep: [], messages: [], pipeline: { kind: 'custom', label: 'Custom' } });
+    renderStatefulTab({ ...assignedRouter, optimizers: { steps: [{ id: 'ccr', enabled: true }] } });
+    await waitFor(() => expect(screen.getByLabelText('Optimizer Profile')).toBeInTheDocument());
+    await user.type(screen.getByPlaceholderText(/sample user message/i), 'hi');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    expect(await screen.findByText('Pipeline run: Custom opt')).toBeInTheDocument();
+    expect('steps' in (mockPreview.mock.calls[0]![0] as object)).toBe(false);
+    await user.click(screen.getByRole('button', { name: 'Custom' }));
+    expect(screen.queryByText(/Pipeline run:/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    const [body] = mockPreview.mock.calls[1] as [{ steps?: { id: string }[] }];
+    expect(body.steps?.find(x => x.id === 'ccr')).toBeTruthy();
+    expect(await screen.findByText('Pipeline run: Custom')).toBeInTheDocument();
+    mockAssignProfile.mockClear();
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+  });
+
   it('hides edit controls without optimizers:manage', async () => {
     setAuth(['optimizers:read']);
     renderTab();
     await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: /save optimizers/i })).not.toBeInTheDocument();
     // checkboxes disabled
+    expect(screen.getAllByRole('checkbox')[0]).toBeDisabled();
+  });
+
+  it('hides edit controls with optimizers:manage but without router:write', async () => {
+    setAuth(['optimizers:read', 'optimizers:manage']);
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /save optimizers/i })).not.toBeInTheDocument();
     expect(screen.getAllByRole('checkbox')[0]).toBeDisabled();
   });
 
@@ -259,12 +311,18 @@ describe('RouterOptimizerTab — optimizer profile assignment', () => {
     expect(screen.queryByLabelText('Optimizer Profile')).not.toBeInTheDocument();
   });
 
-  it('switching to Profile assigns the first built-in profile', async () => {
+  it('switching to Profile only drafts the built-in profile: nothing is saved until Save', async () => {
     const user = userEvent.setup();
+    mockUpdateRouter.mockClear();
     renderTab();
     await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Profile' }));
+    expect(await screen.findByRole('status')).toHaveTextContent(/Nothing is applied until you save/);
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+    expect(mockUpdateRouter).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: /save optimizers/i }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { optimizer: 'optimizer-safe' }));
+    expect(mockUpdateRouter).not.toHaveBeenCalled();
   });
 
   it('falls back to the first user profile when no built-in exists', async () => {
@@ -273,7 +331,32 @@ describe('RouterOptimizerTab — optimizer profile assignment', () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Profile' }));
+    await user.click(await screen.findByRole('button', { name: /save optimizers/i }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { optimizer: 'custom-opt' }));
+  });
+
+  it('an unsaved Profile draft previews that profile\'s steps under its name (ROUT-440)', async () => {
+    const user = userEvent.setup();
+    mockPreview.mockResolvedValueOnce({ estimatedTokensBefore: 10, estimatedTokensAfter: 5, perStep: [], messages: [], pipeline: { kind: 'custom', label: 'Custom' } });
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Profile' }));
+    await user.type(screen.getByPlaceholderText(/sample user message/i), 'hi');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    const [body] = mockPreview.mock.calls[0] as [{ steps?: { id: string }[] }];
+    expect(body.steps?.length).toBeGreaterThan(0);
+    expect(await screen.findByText(/Pipeline run: (?!Custom$)/)).toBeInTheDocument();
+  });
+
+  it('Discard drops the pending change without any request', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Profile' }));
+    await user.click(await screen.findByRole('button', { name: /discard change/i }));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument();
+    expect(mockAssignProfile).not.toHaveBeenCalled();
   });
 
   it('reports an error when no optimizer profile exists', async () => {
@@ -301,24 +384,48 @@ describe('RouterOptimizerTab — optimizer profile assignment', () => {
     expect(labels).toContain('My Pipeline');
   });
 
-  it('selecting another profile reassigns it', async () => {
+  it('selecting another profile only drafts it until Save', async () => {
     const user = userEvent.setup();
     renderTab(assignedRouter);
     const select = await screen.findByLabelText('Optimizer Profile');
     await user.selectOptions(select, 'custom-opt');
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+    await user.click(await screen.findByRole('button', { name: /save optimizers/i }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { optimizer: 'custom-opt' }));
   });
 
-  it('switching to Custom clears the profile and prefills its steps', async () => {
+  it('switching to Custom keeps the stored custom steps and saves nothing until Save', async () => {
     const user = userEvent.setup();
-    mockAssignProfile.mockResolvedValue({ ...mockRouter, optimizers: { steps: [] } });
-    renderStatefulTab(assignedRouter);
+    mockAssignProfile.mockResolvedValue({ ...mockRouter, optimizers: mockRouter.optimizers });
+    renderStatefulTab({ ...assignedRouter, optimizers: { steps: [{ id: 'ccr', enabled: true }] } });
     await waitFor(() => expect(screen.getByLabelText('Optimizer Profile')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Custom' }));
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+    // The stored custom step (ccr), not the profile's session-dedup, is checked.
+    await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /save optimizers/i }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const [, payload] = mockUpdateRouter.mock.calls[0] as [string, { optimizers: { steps: { id: string; enabled: boolean }[] } }];
+    expect(payload.optimizers.steps.find(x => x.id === 'ccr')?.enabled).toBe(true);
+    expect(payload.optimizers.steps.find(x => x.id === 'session-dedup')?.enabled ?? false).toBe(false);
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { optimizer: null }));
-    // The profile's enabled session-dedup step is now this router's own first row.
-    await waitFor(() => expect(screen.getAllByRole('checkbox')[0]).toBeChecked());
-    expect(screen.getAllByText(/Session Dedup/)[0]).toBeInTheDocument();
+  });
+
+  it('Copy into custom asks for confirmation and fills the editor only', async () => {
+    const user = userEvent.setup();
+    mockUpdateRouter.mockClear();
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
+    await user.selectOptions(screen.getByLabelText('Start custom settings from a profile'), 'optimizer-safe');
+    await user.click(screen.getByRole('button', { name: /copy into custom/i }));
+    expect(screen.getByText(/This replaces the custom settings/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByText(/This replaces the custom settings/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /copy into custom/i }));
+    await user.click(screen.getByRole('button', { name: 'Replace' }));
+    expect(screen.queryByText(/This replaces the custom settings/)).not.toBeInTheDocument();
+    expect(mockUpdateRouter).not.toHaveBeenCalled();
+    expect(mockAssignProfile).not.toHaveBeenCalled();
   });
 
   it('clicking the already active mode does nothing', async () => {
@@ -335,6 +442,7 @@ describe('RouterOptimizerTab — optimizer profile assignment', () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Profile' }));
+    await user.click(await screen.findByRole('button', { name: /save optimizers/i }));
     await waitFor(() => expect(screen.getByText('assign boom')).toBeInTheDocument());
   });
 

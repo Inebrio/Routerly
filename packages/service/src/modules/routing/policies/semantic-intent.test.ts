@@ -44,13 +44,15 @@ import type { SemanticIntentConfig } from '@routerly/shared';
  * Test fixtures only carry {id, apiKey?, endpoint?}; fill in the ModelConfig fields the
  * split helper requires with inert defaults.
  */
-function mockModelsRegistry(entries: Array<{ id: string; apiKey?: string; endpoint?: string }>): void {
+function mockModelsRegistry(entries: Array<{ id: string; apiKey?: string; endpoint?: string; inputPerMillion?: number }>): void {
   const { instances, connections } = splitModelsIntoInstancesConnections(
     entries.map((e) => ({
-      ...e,
+      id: e.id,
+      ...(e.apiKey ? { apiKey: e.apiKey } : {}),
+      ...(e.endpoint ? { endpoint: e.endpoint } : {}),
       name: e.id,
       provider: 'openai' as const,
-      cost: { inputPerMillion: 0, outputPerMillion: 0 },
+      cost: { inputPerMillion: e.inputPerMillion ?? 0, outputPerMillion: 0 },
     })),
   );
   mockReadConfig.mockImplementation(async (key: string) => {
@@ -513,6 +515,36 @@ describe('semanticIntentPolicy — model registry credential injection', () => {
     // Classification succeeded — embedding provider was called
     expect(mockProvider.embed).toHaveBeenCalled();
     expect(result.routing).toHaveLength(2);
+  });
+
+  it('sends the upstream name, not the namespaced registry id, to the embedding provider', async () => {
+    mockModelsRegistry([{ id: 'openai/text-embedding-3-small', apiKey: 'sk-x', endpoint: 'https://api.openai.com/v1' }]);
+    mockProvider.embed.mockResolvedValue({ embeddings: [[1, 0, 0]], inputTokens: 0 });
+
+    await semanticIntentPolicy({
+      request: makeRequest('write code'),
+      candidates: [makeCandidate('coder-model'), makeCandidate('chat-model')],
+      config: { ...baseConfig, embedding_model: 'openai/text-embedding-3-small' },
+    });
+
+    expect(mockProvider.embed).toHaveBeenCalled();
+    for (const call of mockProvider.embed.mock.calls) expect(call[1]).toBe('text-embedding-3-small');
+  });
+
+  it('charges the embedding at the registered price for a namespaced registry id', async () => {
+    mockModelsRegistry([{ id: 'openai/text-embedding-3-small', apiKey: 'sk-x', endpoint: 'https://api.openai.com/v1', inputPerMillion: 0.02 }]);
+    mockProvider.embed.mockResolvedValue({ embeddings: [[1, 0, 0]], inputTokens: 8 });
+
+    await semanticIntentPolicy({
+      request: makeRequest('write code'),
+      candidates: [makeCandidate('coder-model'), makeCandidate('chat-model')],
+      config: { ...baseConfig, embedding_model: 'openai/text-embedding-3-small' },
+      routerId: 'proj-test',
+    });
+
+    expect(trackUsage).toHaveBeenCalledWith(
+      expect.objectContaining({ model: expect.objectContaining({ cost: { inputPerMillion: 0.02, outputPerMillion: 0 } }) }),
+    );
   });
 
   it('passes all candidates through when embedding model is not in registry', async () => {

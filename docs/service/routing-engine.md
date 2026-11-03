@@ -33,6 +33,10 @@ For each incoming request the engine performs the following steps:
 
 7. **Fallback** — If the winning model returns a provider error or timeout, the engine retries with the next-highest scoring candidate. This continues until a model succeeds or the candidate set is exhausted (→ `503`).
 
+### The `model` field in the request body
+
+On a router token the `model` field of the request body is **not** a selector: the engine ignores it and picks a candidate from the router's own model list, on every lane (`/v1/chat/completions`, `/v1/messages`, `/v1/responses`). A `model` that is unknown or not among the router's members therefore never produces a `404 model_not_found`; the request is served by the selected member. This keeps drop-in compatibility with clients that send a fixed model name (Cursor, Claude Code, SDK defaults). To force one model, use a `pinned` policy. Requests with an invalid or missing router token are still refused with `401`.
+
 ### Optimizers and Context Window Fit
 
 Prompt/context optimizers (see [Concepts: Optimizers](../concepts/optimizers.md))

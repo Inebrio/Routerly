@@ -181,11 +181,6 @@ function setOrchestratorExhausted(ctx: ProxyContext): void {
     };
     return;
   }
-  if (ctx.stream) {
-    const errChunk = { id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] };
-    ctx.result = { kind: 'stream', body: (async function* () { yield errChunk })() };
-    return;
-  }
   ctx.result = { kind: 'block', status: 503, body: { error: { message: 'All orchestrator candidate routers failed or are budget-exhausted.', type: 'server_error' } } };
 }
 

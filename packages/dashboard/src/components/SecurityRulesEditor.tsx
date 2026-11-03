@@ -14,8 +14,10 @@ import {
   type SemanticGuardConfig,
   type TopicGuardConfig,
 } from '../api';
+import { blocksResponseStreaming } from '@routerly/shared';
 import { SearchableSelect } from './SearchableSelect';
 import { MultiSelect } from './MultiSelect';
+import { uuid } from '../utils/uuid';
 
 const ALL_PII_ENTITIES: PiiEntity[] = ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'];
 
@@ -46,7 +48,7 @@ const RULE_TYPE_DESCRIPTIONS: Record<GuardrailRuleType, string> = {
 };
 
 function makeDefaultRule(type: GuardrailRuleType): RuleWithId {
-  const _id = crypto.randomUUID();
+  const _id = uuid();
   switch (type) {
     case 'regex':
       return { _id, type, target: 'request', block: true, log: true, config: { patterns: [] } };
@@ -221,7 +223,7 @@ function PiiPolicyCard({
 // ── Target selector ───────────────────────────────────────────────────────────
 
 function TargetSelector({ value, onChange }: { value: GuardrailTarget | undefined; onChange: (v: GuardrailTarget) => void }) {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const reqChecked = value === 'request' || value === 'both';
   const resChecked = value === 'response' || value === 'both';
 
@@ -724,9 +726,7 @@ export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolici
   const { regexErrorsByRule, moderationErrorIds } = validateSecurityRules(rules);
 
   // Section-level guardrail warnings (both banners live at the top of the section)
-  const hasResponseBlockingRule = rules.some(
-    r => r.block === true && (r.target === 'response' || r.target === 'both'),
-  );
+  const hasResponseBlockingRule = blocksResponseStreaming(rules);
   const hasInjectingRule = rules.some(r => r.inject === true);
 
   // ponytail: embedding-only models can't act as chat judges — exclude them

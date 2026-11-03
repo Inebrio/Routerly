@@ -35,13 +35,13 @@ describe('RC-5, AC1: Changesets is fully removed', () => {
   })
 })
 
-describe('RC-5, AC2: only the four surviving workflows remain', () => {
-  it('.github/workflows contains exactly ci.yml, docker-rebuild.yml, docs-deploy.yml, release.yml', () => {
+describe('RC-5, AC2: only the five surviving workflows remain', () => {
+  it('.github/workflows contains exactly ci.yml, docker-rebuild.yml, docs-deploy.yml, release.yml, stable-pointer.yml', () => {
     const files = fs
       .readdirSync(path.join(REPO_ROOT, '.github/workflows'))
       .filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'))
       .sort()
-    expect(files).toEqual(['ci.yml', 'docker-rebuild.yml', 'docs-deploy.yml', 'release.yml'].sort())
+    expect(files).toEqual(['ci.yml', 'docker-rebuild.yml', 'docs-deploy.yml', 'release.yml', 'stable-pointer.yml'].sort())
   })
 
   it('the superseded workflow files are gone', () => {
@@ -82,11 +82,15 @@ describe('RC-5, AC6: no Changesets reference survives in the contributor-facing 
     expect(fs.existsSync(path.join(REPO_ROOT, '.claude/commands/changeset.md'))).toBe(false)
   })
 
-  it('.claude/agents/backend-engineer.md does not reference changesets/action', () => {
-    const raw = fs.readFileSync(
-      path.join(REPO_ROOT, '.claude/agents/backend-engineer.md'),
-      'utf-8',
-    )
-    expect(raw).not.toContain('changesets/action')
-  })
+  // .claude/agents is not versioned: skip where the file is absent (CI)
+  it.skipIf(!fs.existsSync(path.join(REPO_ROOT, '.claude/agents/backend-engineer.md')))(
+    '.claude/agents/backend-engineer.md does not reference changesets/action',
+    () => {
+      const raw = fs.readFileSync(
+        path.join(REPO_ROOT, '.claude/agents/backend-engineer.md'),
+        'utf-8',
+      )
+      expect(raw).not.toContain('changesets/action')
+    },
+  )
 })

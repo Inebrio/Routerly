@@ -14,6 +14,7 @@ export interface CandidateModel {
 export interface PolicyRoutingEntry {
   model: string;   // model ID
   point: number;   // punteggio assegnato da questa policy (0.0 – 1.0)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   [key: string]: any; // campi extra opzionali specifici della policy
 }
 
@@ -30,6 +31,7 @@ export interface PolicyInput {
   /** Lista dei modelli candidati */
   candidates: CandidateModel[];
   /** Configurazione specifica della policy (da RouterConfig.policies[n].config) */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   config?: any;
   /** Logger opzionale (da Fastify request.log) */
   log?: Logger;

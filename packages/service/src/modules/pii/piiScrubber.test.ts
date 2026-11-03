@@ -168,6 +168,22 @@ describe('StreamingScrubber', () => {
     expect(typeof full).toBe('string');
   });
 
+  it('masks a spaced phone number split between chunks (ROUT-452)', () => {
+    const s = new StreamingScrubber(eff(5));
+    let out = '';
+    for (const c of ['mail a@example.com call +39 333 ', '1234567 please']) out += s.push(c);
+    out += s.flush();
+    expect(out).toBe('mail [EMAIL] call [PHONE_NUMBER] please');
+  });
+
+  it('masks a spaced phone number cut right after the country code (ROUT-452)', () => {
+    const s = new StreamingScrubber(eff(5));
+    let out = '';
+    for (const c of ['call +39 ', '333 ', '1234567 ', 'please now']) out += s.push(c);
+    out += s.flush();
+    expect(out).toBe('call [PHONE_NUMBER] please now');
+  });
+
   it('flush() scrubs and returns remaining buffer', () => {
     const s = new StreamingScrubber(eff(30));
     s.push('hello ');

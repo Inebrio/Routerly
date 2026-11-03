@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "ธีม: {{theme}}"
     },
+    "language": {
+      "label": "ภาษา",
+      "saveError": "ไม่สามารถบันทึกภาษาของคุณ กลับไปที่ภาษาก่อนหน้า"
+    },
     "sidebar": {
       "expand": "ขยายแถบด้านข้าง",
       "collapse": "ย่อแถบด้านข้าง"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "ไฟล์การตั้งค่าบางไฟล์มีการเข้าถึงที่ได้รับอนุญาต ({{files}})। การเริ่มต้นและคำขอยังคงใช้งานได้ ซ่อมแซมจากการตั้งค่า → ความปลอดภัย หรือจากระบบไฟล์ของโฮสต์เมื่อสะดวก",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "ปิด",
       "updateAvailable": "Routerly v{{latest}} พร้อมใช้งาน คุณใช้ v{{current}} อยู่",
       "updateLink": "อัปเดตในการตั้งค่า",
@@ -40,9 +45,6 @@
       "telemetryLink": "มีการส่งอะไร",
       "telemetryYes": "ใช่ ช่วยเหลือ",
       "telemetryNo": "ไม่ ขอบคุณ"
-    },
-    "language": {
-      "label": "ภาษา"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "โทเค็นเซッ션นี้",
       "awsSessionTokenOptionalHint": "(เลือกได้ สำหรับข้อมูลประจำตัวชั่วคราว)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "GCP Router ID",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "ตำแหน่ง",
       "gcpLocationDefaultHint": "(ค่าเริ่มต้น: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "โทเค็นเข้าถึง",
         "sessionTokenLabel": "โทเค็นเซัสชั่น",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "วางค่า sessionKey คุกกี้ (sk-ant-sid01-…)",
-        "openaiInstructions": "ในขณะที่เข้าสู่ระบบ ChatGPT ให้เปิด <code>https://chatgpt.com/api/auth/session</code> ในแท็บใหม่ คัดลอกค่าของฟิลด์ <code>accessToken</code> (เริ่มต้นด้วย <code>eyJ</code>) โทเค็นหมดอายุทุก ~24 ชั่วโมง สำหรับการเข้าถึงที่เชื่อถือได้ ให้เติมฟิลด์ <strong>cf_clearance</strong> ด้านล่างด้วย",
-        "anthropicInstructions": "<strong>วิธีรับกุญแจนั่งร้าน:</strong> ขณะที่เข้าสู่ระบบ Claude ให้เปิด DevTools (F12) → Application → Cookies → <code>claude.ai</code> → คัดลอกค่าของคุกกี้ <code>sessionKey</code> (เริ่มต้นด้วย <code>sk-ant-sid01-</code>) คีย์จะยังคงใช้ได้จนกว่าคุณจะออกจากระบบ"
+        "sessionTokenPlaceholder": "วางค่าคุกกี้ sessionKey (sk-ant-sid…)",
+        "openaiInstructions": "ในขณะที่เข้าสู่ระบบ ChatGPT ให้เปิด <code>https://chatgpt.com/api/auth/session</code> ในแท็บใหม่ คัดลอกค่าของฟิลด์ <code>accessToken</code> (เริ่มต้นด้วย <code>eyJ</code>) โทเค็นมีอายุใช้งานประมาณ 10 วัน ให้วางโทเค็นใหม่เมื่อการทดสอบเริ่มล้มเหลวด้วย 401 สำหรับการเข้าถึงที่เชื่อถือได้ ให้เติมฟิลด์ <strong>cf_clearance</strong> ด้านล่างด้วย",
+        "anthropicInstructions": "<strong>วิธีรับคีย์เซสชันของคุณ:</strong> ขณะที่ล็อกอินอยู่ที่ <code>https://claude.ai</code> ให้กด F12 เพื่อเปิด DevTools Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. คัดลอก <strong>Value</strong> ของคุกกี้ <code>sessionKey</code> (ขึ้นต้นด้วย <code>sk-ant-sid</code> เช่น <code>sk-ant-sid02-</code>) เป็นคุกกี้ HttpOnly จึงมองไม่เห็นจากคอนโซลของหน้าเว็บ ใช้งานได้จนกว่าคุณจะออกจากระบบหรือหมดอายุ หากการทดสอบเริ่มล้มเหลว ให้วางคีย์ใหม่"
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "โทเค็น OAuth การสมัครสมาชิก",
@@ -417,7 +419,8 @@
       "status": "สถานะ",
       "encoding": "การเข้ารหัส",
       "frames": "เฟรม",
-      "bytes": "ไบต์"
+      "bytes": "ไบต์",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "ภาษา",
       "description": "เลือกภาษาที่แสดงแดชบอร์ด",
       "languageLabel": "ภาษา",
-      "saved": "ตั้งค่าภาษาที่บันทึก"
+      "saved": "ตั้งค่าภาษาที่บันทึก",
+      "saveError": "ไม่สามารถบันทึกการตั้งค่าภาษาของคุณ กลับไปที่ภาษาก่อนหน้า"
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "กำลังบันทึก…",
         "enable": "เปิดใช้งาน",
         "disable": "ปิดใช้งาน"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "งบประมาณ - รีเซ็ต",
         "systemStartup": "ระบบ - เริ่มต้น",
         "systemShutdown": "ระบบ - ปิด",
-        "systemUpdateAvailable": "ระบบ - อัปเดตพร้อม"
+        "systemUpdateAvailable": "ระบบ - อัปเดตพร้อม",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "ลบช่อง",
       "removeChannelConfirm": "ลบช่อง?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} ผู้ใช้",
         "userCount_other": "{{count}} ผู้ใช้",
-        "everyone": "ทุกคน"
+        "everyone": "ทุกคน",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "ไม่สามารถโหลด"
@@ -831,6 +838,9 @@
         },
         "optional": "(เลือกได้)",
         "keepCurrentPlaceholder": "ปล่อยให้ว่างเพื่อเก็บไว้ปัจจุบัน",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "ปล่อยให้ว่างเพื่อรับเหตุการณ์จากเราเตอร์ทั้งหมด",
           "cooldownHeading": "เวลาพักร้อน",
           "cooldownSuffix": "วินาที (0 = ไม่มีเวลาพักร้อน)",
-          "cooldownHint": "ช่วงเวลาขั้นต่ำก่อนที่ช่องนี้สามารถยิงอีกครั้งสำหรับเหตุการณ์เดียวกัน"
+          "cooldownHint": "ช่วงเวลาขั้นต่ำก่อนที่ช่องนี้สามารถยิงอีกครั้งสำหรับเหตุการณ์เดียวกัน",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "ผู้รับ / เป้าหมาย",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "ค้นหาช่อง…",
         "noResults": "ไม่มีผลลัพธ์",
         "emptyTitle": "ยังไม่มีช่องการแจ้งเตือนที่ตั้งค่าไว้",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "ไม่มีช่องที่ตรงกับตัวกรองที่ใช้งาน",
         "nameInlinePlaceholder": "ป้ายกำกับ (เลือกได้)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "ลบการรวม",
       "saving": "กำลังบันทึก…",
       "save": "บันทึก",
-      "addButton": "เพิ่มการรวม"
+      "addButton": "เพิ่มการรวม",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "ตรวจสอบล่าสุด"
       },
       "noCheckPerformed": "ยังไม่มีการตรวจสอบการอัปเดต",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "ตรวจสอบการอัปเดต",
       "checking": "กำลังตรวจสอบ…",
       "updateTo": "อัปเดตเป็น v{{version}}",
@@ -1121,7 +1137,8 @@
         "checkFailed": "ตรวจสอบล้มเหลว",
         "updateFailed": "อัปเดตล้มเหลว"
       },
-      "channel": "ช่อง"
+      "channel": "ช่อง",
+      "channelNote": "current ตามทุกรุ่นเสถียรใหม่ ส่วน stable จะเลื่อนเมื่อมีการเลื่อนระดับรุ่นเท่านั้น ดังนั้นทั้งสองอาจต่างกันได้"
     },
     "security": {
       "authentication": "การยืนยัน",
@@ -1156,6 +1173,8 @@
       "count": "1 เราเตอร์",
       "count_other": "{{count}} เราเตอร์",
       "newRouter": "เราเตอร์ใหม่",
+      "newOrchestrator": "Orchestrator ใหม่",
+      "newPassthrough": "Passthrough ใหม่",
       "empty": "ยังไม่มีเราเตอร์",
       "emptyFiltered": "ไม่มีรูเตอร์ประเภทนี้",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "ลบเราเตอร์นี้?",
       "errors": {
         "deleteFailed": "ข้อผิดพลาดในการลบเราเตอร์"
-      },
-      "newOrchestrator": "Orchestrator ใหม่",
-      "newPassthrough": "Passthrough ใหม่"
+      }
     },
     "layout": {
       "notFound": "ไม่พบเราเตอร์",
@@ -1191,10 +1208,10 @@
       "backToRouters": "กลับไปเราเตอร์",
       "backToRoutersTitle": "กลับไปเราเตอร์",
       "newRouter": "เราเตอร์ใหม่",
+      "newKind": "{{kind}} ใหม่",
       "loading": "กำลังโหลด...",
       "routerId": "Router ID:",
-      "saveFirstHint": "บันทึกเราเตอร์ก่อนเพื่อปลดล็อกแท็บนี้",
-      "newKind": "{{kind}} ใหม่"
+      "saveFirstHint": "บันทึกเราเตอร์ก่อนเพื่อปลดล็อกแท็บนี้"
     },
     "dashboard": {
       "period": "ช่วงเวลา",
@@ -1212,7 +1229,9 @@
         "ttft": "เวลาถึงโทเค็นแรก",
         "notMeasured": "ไม่ได้วัดในการโทรเหล่านี้",
         "reliability": "ความน่าเชื่อถือ",
-        "errorsAndBlocked": "{{errors}} ข้อผิดพลาด · {{blocked}} ถูกบล็อก"
+        "errorsAndBlocked": "{{errors}} ข้อผิดพลาด · {{blocked}} ถูกบล็อก",
+        "errorsAndBlocked_one": "{{errors}} ข้อผิดพลาด · {{blocked}} ถูกบล็อก",
+        "errorsAndBlocked_other": "{{errors}} ข้อผิดพลาด · {{blocked}} ถูกบล็อก"
       },
       "tokens": {
         "input": "โทเค็นอินพุต:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "URL ฐาน <code>{{baseUrl}}</code> โดยไม่มี <code>/v1</code>: SDK เพิ่มมัน",
         "curl": "curl",
-        "curlHint": "ตรวจสอบการเดินสายโดยไม่ติดตั้งอะไรจากนั้นมองหาการโทรใน <usageLink>การใช้</usageLink>"
+        "curlHint": "ตรวจสอบการเดินสายโดยไม่ติดตั้งอะไรจากนั้นมองหาการโทรใน <usageLink>การใช้</usageLink>",
+        "passthrough": {
+          "heading": "วิธีการเชื่อมต่อ",
+          "intro": "Passthrough ส่งต่อคำขออย่างตรงไปตรงมา — ใช้คีย์ผู้ให้บริการต้นน้ำของ <strong>คุณเอง</strong> เป็นคีย์ API ไม่เคยใช้โทเค็น Routerly Routerly ไม่ได้เก็บหรือออกใบรับรองสำหรับเราเตอร์นี้ สิ่งที่ไคลเอนต์ส่งไปจะไปยังผู้ให้บริการโดยตรง",
+          "noLimits": "งบประมาณและขีดจำกัดไม่ใช้กับเราเตอร์นี้ ต้นทุนสำหรับการจราจร Passthrough ไม่เป็นที่ทราบ ดังนั้นจึงไม่ได้ตรวจสอบหรือนับเทียบกับขีดจำกัดการใช้จ่ายใด ๆ",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — ไม่มี suffix <code>/v1</code> SDK ยังคงเพิ่มเส้นทางของตัวเองเหมือนกับที่จะทำกับ API OpenAI จริง",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK ยังคงเพิ่ม <code>/v1/messages</code> ด้วยตัวเอง เหมือนกับที่จะทำกับ API Anthropic จริง"
+        }
       },
       "form": {
         "kind": "ชนิด",
         "kindFixedHint": "คงที่เมื่อสร้างเราเตอร์",
         "routerName": "ชื่อเราเตอร์",
         "routerNamePlaceholder": "แอปของฉัน",
+        "passthroughPath": "เส้นทาง",
+        "passthroughPathHint": "กลายเป็นส่วนหนึ่งของ URL ที่ไคลเอนต์เรียก: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "การตั้งค่าขั้นสูง",
         "ttftTimeout": "TTFT Timeout (ms)",
         "ttftTimeoutHint": "หากรุ่นไม่ส่งไบต์การตอบสนองแรกภายในเวลานี้ Routerly ยกเลิกและลองผู้สมัครรายถัดไป ไม่ จำกัด ระยะเวลารวม ตั้งค่าเป็น 0 เพื่อรอตราบใจผู้ให้บริการจนถึง",
         "traceContent": "ติดตามเนื้อหา",
         "traceContentHint": "ร่องรอยบันทึกข้อมูลมูลค่า (รุ่น คะแนน โทเค็น ต้นทุน ความล่าช้า) เปิดนี้ให้บันทึกพรอมต์ที่ส่งและคำตอบที่ได้รับเช่นกัน พวกเขาจัดเก็บกับเรกคอร์ดการใช้งานและมองเห็นให้ใครก็ได้ที่สามารถอ่านรายงาน",
         "capturePromptsAndAnswers": "เก็บพรอมต์และคำตอบ",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "บันทึกการเปลี่ยนแปลง",
         "createRouter": "สร้างเราเตอร์",
-        "passthroughPath": "เส้นทาง",
-        "passthroughPathHint": "กลายเป็นส่วนหนึ่งของ URL ที่ไคลเอนต์เรียก: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "สร้าง Orchestrator",
         "createPassthrough": "สร้าง Passthrough"
       }
@@ -1384,6 +1414,7 @@
       "saving": "กำลังบันทึก...",
       "saved": "บันทึกแล้ว",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "เก็บโทเค็นพรอมต์ดู",
         "description": "เรียกใช้ไพพไลน์ปัจจุบัน (ไม่บันทึก) ในพรอมต์เพื่อดูว่าแต่ละขั้นตอนลบออกและราคาเท่าใด เลือกหนึ่งในสนทนาตัวอย่าง หรือพิมพ์พรอมต์ของคุณเอง",
         "promptLabel": "พรอมต์",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "ยังไม่ได้ส่งคำขอ",
       "turnTraceLog": "เปิดเผยบันทึก #{{turn}} · {{count}} เหตุการณ์",
       "turnTraceLog_other": "เปิดเผยบันทึก #{{turn}} · {{count}} เหตุการณ์"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "รุ่น",
       "subtitle": "ผู้ให้บริการ LLM ลงทะเบียนกับ Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "รุ่น",
         "health": "สุขภาพ"
@@ -2242,7 +2284,8 @@
       "next": "ถัดไป",
       "page": "หน้า {{page}} ของ {{totalPages}}",
       "total": "({{count}} รวม)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "ทั้งหมด",
         "success": "สำเร็จ",
         "blocked": "ถูกบล็อก",
-        "error": "ข้อผิดพลาด"
+        "error": "ข้อผิดพลาด",
+        "sessionId": "รหัสเซสชัน",
+        "endUser": "ผู้ใช้ปลายทาง",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "เซสชันใดก็ได้",
+        "endUserPlaceholder": "ผู้ใช้ปลายทางคนใดก็ได้",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "ทั้งหมด",
@@ -2383,7 +2432,10 @@
         "timestamp": "ประทับเวลา",
         "guardrailTriggered": "ป้องกันท่าที",
         "blockedBy": "ถูกบล็อกโดย",
-        "piiRedacted": "PII แก้ไข"
+        "piiRedacted": "PII แก้ไข",
+        "sessionId": "รหัสเซสชัน",
+        "endUser": "ผู้ใช้ปลายทาง",
+        "tags": "Tags"
       },
       "errorMessage": "ข้อความข้อผิดพลาด",
       "eventCount": "{{count}} เหตุการณ์",
@@ -2457,7 +2509,8 @@
       "show": "แสดงการแก้จุดบกพร่อง",
       "empty": "ยังไม่มีข้อมูลการแก้จุดบกพร่อง",
       "emptyHint": "ส่งข้อความเพื่อดูรายละเอียดการกำหนดเส้นทาง",
-      "turnTraceLog": "เปิดเผยบันทึก #{{turn}}"
+      "turnTraceLog": "เปิดเผยบันทึก #{{turn}}",
+      "resize": "ปรับขนาดแผงดีบัก"
     },
     "compare": {
       "modelLabel": "รุ่น {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "ไม่สามารถอัปเดตบทบาท",
       "createFailed": "ไม่สามารถสร้างบทบาท",
       "deleteFailed": "ไม่สามารถลบบทบาท"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "กลับไปเชื่อมต่อ",
     "title": "เชื่อมต่อ",
     "docs": "เอกสาร",
-    "notEnabledPrefix": "ตัวแต่งค่าไคลเอนต์ไม่ได้เปิดใช้งาน ขอให้ผู้ดูแลระบบเปิดใช้งานด้วย",
     "noClientPrefix": "ไม่มีไคลเอนต์ชื่อ",
     "errors": {
       "loadFailed": "ไม่สามารถโหลดไคลเอนต์: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "เส้นทางไคลเอนต์ที่รับส่งข้อมูลรุ่นผ่าน Routerly",
     "mcpLabel": "MCP",
     "mcpDescription": "โหลด Routerly เป็นเซิร์ฟเวอร์เครื่องมือภายใน",
-    "notEnabledPrefix": "ตัวแต่งค่าไคลเอนต์ไม่ได้เปิดใช้งาน ขอให้ผู้ดูแลระบบเปิดใช้งานด้วย",
     "errors": {
       "loadFailed": "ไม่สามารถโหลดไคลเอนต์: {{error}}"
     },

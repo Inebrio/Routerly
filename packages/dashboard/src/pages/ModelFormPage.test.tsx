@@ -298,6 +298,43 @@ describe('ModelFormPage — edit path', () => {
     expect(screen.getByRole('heading', { name: /Edit Model/ })).toBeTruthy();
   });
 
+  it('keeps the provider of a model whose provider is missing from the catalog (ROUT-469)', async () => {
+    const model = makeModel({ id: 'openai-web/gpt-5', provider: 'openai-web' });
+    mockGetModels.mockResolvedValue([model]);
+
+    renderPage('/dashboard/models/openai-web%2Fgpt-5');
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      expect(all[0]!.value).toBe('openai-web');
+      expect(Array.from(all[0]!.options).map(o => o.value)).toContain('openai-web');
+    });
+  });
+
+  it('prefills the model name when the Routerly ID has no provider prefix (ROUT-376)', async () => {
+    const model = makeModel({ id: 'custom-prefix/gpt-4.1-nano', provider: 'openai' });
+    mockGetModels.mockResolvedValue([model]);
+
+    renderPage('/dashboard/models/custom-prefix%2Fgpt-4.1-nano');
+
+    const input = await screen.findByPlaceholderText(/my-fine-tuned-model/) as HTMLInputElement;
+    expect(input.value).toBe('gpt-4.1-nano');
+  });
+
+  it('shows the stored timeout in a field that accepts round values (step 1)', async () => {
+    mockGetModels.mockResolvedValue([makeModel({ id: 'openai/gpt-5.2', provider: 'openai', timeout: 5000 })]);
+
+    renderPage('/dashboard/models/openai%2Fgpt-5.2');
+
+    const input = await waitFor(() => {
+      const el = document.querySelector('input[placeholder="60000"]') as HTMLInputElement | null;
+      expect(el).toBeTruthy();
+      return el!;
+    });
+    expect(input.value).toBe('5000');
+    expect(input.step).toBe('1');
+  });
+
   it('shows error when editing unknown id', async () => {
     mockGetModels.mockResolvedValue([]);
 
@@ -336,7 +373,7 @@ describe('ModelFormPage — navigation state.catalogEntry', () => {
 
     // Pricing fields are 0 for local/free model
     const spinners = screen.getAllByRole('spinbutton') as HTMLInputElement[];
-    const inputPrice = spinners.find(i => i.name === 'inputPerMillion' || i.placeholder?.includes('Input'));
+    const _inputPrice = spinners.find(i => i.name === 'inputPerMillion' || i.placeholder?.includes('Input'));
     // local free: value is '0'
     const zeroFields = spinners.filter(i => i.value === '0');
     expect(zeroFields.length).toBeGreaterThanOrEqual(2);
@@ -497,7 +534,7 @@ describe('ModelFormPage — provider-specific fields', () => {
       if (all[0]!.value !== 'vertex') throw new Error('not yet');
     });
 
-    expect(screen.getByPlaceholderText('my-gcp-router')).toBeTruthy();
+    expect(screen.getByPlaceholderText('my-gcp-project')).toBeTruthy();
     expect(screen.getByPlaceholderText('us-central1')).toBeTruthy();
     expect(screen.getByPlaceholderText(/Paste the contents/)).toBeTruthy();
   });
@@ -527,7 +564,7 @@ describe('ModelFormPage — provider-specific fields', () => {
 
     expect(screen.getByText(/Unofficial provider/)).toBeTruthy();
     expect(screen.getByText(/Session Token/)).toBeTruthy();
-    expect(screen.getByPlaceholderText(/sk-ant-sid01/)).toBeTruthy();
+    expect(screen.getByPlaceholderText(/sk-ant-sid/)).toBeTruthy();
   });
 
   it('anthropic-oauth shows subscription info and OAuth Token label', async () => {
@@ -1326,7 +1363,7 @@ describe('ModelFormPage — save create', () => {
 
     const user = userEvent.setup();
     // Give it a custom ID so we don't hit the "already exists" guard
-    const customIdInput = screen.getByPlaceholderText(/openai\//) as HTMLInputElement ?? screen.getAllByRole('textbox')[0]!;
+    const _customIdInput = screen.getByPlaceholderText(/openai\//) as HTMLInputElement ?? screen.getAllByRole('textbox')[0]!;
     // use the modelId input directly
     const allTextboxes = screen.getAllByRole('textbox') as HTMLInputElement[];
     const customIdBox = allTextboxes.find(i => i.name === 'modelId');
@@ -1503,7 +1540,7 @@ describe('ModelFormPage — edit provider-specific models', () => {
       provider: 'vertex',
       endpoint: 'https://us-central1-aiplatform.googleapis.com',
       cost: { inputPerMillion: 3.5, outputPerMillion: 10.5, cachePerMillion: null },
-      VERTEXROUTERIDPLACEHOLDER: 'my-gcp-router',
+      vertexProjectId: 'my-gcp-project',
       vertexLocation: 'us-central1',
     });
     mockGetModels.mockResolvedValue([model]);
@@ -1515,7 +1552,7 @@ describe('ModelFormPage — edit provider-specific models', () => {
       if (all[0]!.value !== 'vertex') throw new Error('not yet');
     });
 
-    expect(screen.getByDisplayValue('my-gcp-router')).toBeTruthy();
+    expect(screen.getByDisplayValue('my-gcp-project')).toBeTruthy();
     expect(screen.getByDisplayValue('us-central1')).toBeTruthy();
   });
 
@@ -1840,7 +1877,7 @@ describe('ModelFormPage — show/hide token', () => {
 
     // Click the eye toggle
     const toggleBtns = screen.getAllByRole('button').filter(b => !b.hasAttribute('type') || b.getAttribute('type') === 'button');
-    const eyeBtn = toggleBtns.find(b => b.querySelector('svg'));
+    const _eyeBtn = toggleBtns.find(b => b.querySelector('svg'));
     // Find specifically the eye toggle (not submit/cancel/back)
     const eyeToggle = screen.getAllByRole('button').find(b =>
       b.style.background === 'none' && !b.textContent?.trim()
@@ -2294,13 +2331,13 @@ describe('ModelFormPage — provider-specific field save', () => {
       if (all[0]!.value !== 'vertex') throw new Error('not yet');
     });
 
-    await user.type(screen.getByPlaceholderText('my-gcp-router'), 'my-router');
+    await user.type(screen.getByPlaceholderText('my-gcp-project'), 'my-router');
 
     await user.click(screen.getByRole('button', { name: /Create Model/ }));
     await waitFor(() => expect(mockCreateModel).toHaveBeenCalled());
 
     const payload = (mockCreateModel.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
-    expect(payload.VERTEXROUTERIDPLACEHOLDER).toBe('my-router');
+    expect(payload.vertexProjectId).toBe('my-router');
   });
 
   it('updateModel sends azureApiVersion when filled', async () => {
@@ -2337,7 +2374,7 @@ describe('ModelFormPage — provider-specific field save', () => {
       provider: 'vertex',
       endpoint: 'https://us-central1-aiplatform.googleapis.com',
       cost: { inputPerMillion: 3.5, outputPerMillion: 10.5, cachePerMillion: null },
-      VERTEXROUTERIDPLACEHOLDER: 'my-proj',
+      vertexProjectId: 'my-proj',
       vertexLocation: 'eu-west4',
     });
     mockGetModels.mockResolvedValue([model]);
@@ -2353,7 +2390,7 @@ describe('ModelFormPage — provider-specific field save', () => {
     await waitFor(() => expect(mockUpdateModel).toHaveBeenCalled());
 
     const payload = (mockUpdateModel.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
-    expect(payload.VERTEXROUTERIDPLACEHOLDER).toBe('my-proj');
+    expect(payload.vertexProjectId).toBe('my-proj');
     expect(payload.vertexLocation).toBe('eu-west4');
   });
 });
@@ -2615,6 +2652,26 @@ describe('ModelFormPage — CopyCode button (anthropic-oauth)', () => {
     await user.click(copyBtn);
 
     expect(writeText).toHaveBeenCalledWith('claude setup-token');
+  });
+
+  it('CopyCode copies via execCommand fallback when navigator.clipboard is missing (HTTP)', async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+    if (!document.execCommand) Object.defineProperty(document, 'execCommand', { value: () => false, configurable: true, writable: true });
+    const execCommand = vi.spyOn(document, 'execCommand').mockReturnValue(true);
+
+    renderPage('/dashboard/models/new?provider=anthropic-oauth');
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      if (all[0]!.value !== 'anthropic-oauth') throw new Error('not yet');
+    });
+
+    await user.click(screen.getByTitle('Copy to clipboard'));
+
+    await waitFor(() => expect(execCommand).toHaveBeenCalledWith('copy'));
+    await waitFor(() => expect(screen.getByTitle('Copied!')).toBeTruthy());
+    execCommand.mockRestore();
   });
 });
 
@@ -3521,7 +3578,7 @@ describe('ModelFormPage — handleSave AWS/Vertex secret fields', () => {
       if (all[0]!.value !== 'vertex') throw new Error('not yet');
     });
 
-    const routerInput = screen.getByPlaceholderText('my-gcp-router') as HTMLInputElement;
+    const routerInput = screen.getByPlaceholderText('my-gcp-project') as HTMLInputElement;
     await user.type(routerInput, 'my-router');
 
     const keyTextarea = screen.getByPlaceholderText(/Paste the contents/) as HTMLTextAreaElement;

@@ -55,7 +55,7 @@ async function getGoogleAccessToken(serviceAccountKeyJson: string): Promise<stri
  * Auth is handled via service account JWT token exchange.
  */
 export class VertexAdapter extends OpenAIAdapter {
-  protected override getClient(model: ModelConfig): OpenAI {
+  protected override getClient(_model: ModelConfig): OpenAI {
     // Token is fetched async; getClient is synchronous here so we return a placeholder.
     // The actual token is injected via a custom fetch implementation in the OpenAI SDK.
     // We override chatCompletion/streamCompletion to await the token first.
@@ -67,11 +67,13 @@ export class VertexAdapter extends OpenAIAdapter {
     const token    = saKey ? await getGoogleAccessToken(saKey) : (model.apiKey ?? '');
     const project  = model.vertexProjectId ?? '';
     const location = model.vertexLocation  ?? 'us-central1';
-    const baseURL  = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${project}/locations/${location}/endpoints/openapi`;
+    const host     = model.endpoint?.replace(/\/$/, '') || `https://${location}-aiplatform.googleapis.com`;
+    const baseURL  = `${host}/v1beta1/projects/${project}/locations/${location}/endpoints/openapi`;
     return new OpenAI({
       apiKey:   token,
       baseURL,
       timeout:  model.timeout ?? 60000,
+      maxRetries: 0, // retry/failover is Routerly's job (resilience + candidate loop); SDK retries multiplied the timeout x3
       defaultHeaders: { Authorization: `Bearer ${token}` },
     });
   }

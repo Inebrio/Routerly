@@ -13,6 +13,8 @@ import { MemoryRouter } from 'react-router-dom';
 
 // ── Module mocks (hoisted) ─────────────────────────────────────────────────
 
+let layoutStore: { width: number | null; collapsed: boolean } = { width: null, collapsed: false };
+
 vi.mock('../api.js', () => ({
   getRouters: vi.fn(),
   getPlaygroundPresets: vi.fn(),
@@ -20,6 +22,8 @@ vi.mock('../api.js', () => ({
   deletePlaygroundPreset: vi.fn(),
   getTrace: vi.fn(),
   streamTraces: vi.fn(),
+  getPlaygroundDebugLayout: vi.fn(() => ({ ...layoutStore })),
+  setPlaygroundDebugLayout: vi.fn((l: { width: number | null; collapsed: boolean }) => { layoutStore = { ...l }; }),
 }));
 
 // ponytail: mock SearchableSelect as a plain <select> so getByRole('combobox')/fireEvent.change tests keep working
@@ -114,6 +118,7 @@ async function setupWithToken() {
 // ── beforeEach ─────────────────────────────────────────────────────────────
 
 beforeEach(() => {
+  layoutStore = { width: null, collapsed: false };
   vi.mocked(getRouters).mockResolvedValue([FAKE_ROUTER] as never);
   vi.mocked(getPlaygroundPresets).mockResolvedValue([]);
   vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
@@ -188,10 +193,43 @@ describe('TestPage — clean turn', () => {
   });
 });
 
+describe('TestPage — non-streaming JSON reply (response-blocking rule)', () => {
+  function jsonReply(content: string, finishReason: string) {
+    return new Response(JSON.stringify({
+      id: 'm1', object: 'chat.completion', model: 'm',
+      choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: finishReason }],
+    }), { status: 200, headers: { 'content-type': 'application/json', 'x-routerly-trace': 'trace-123' } });
+  }
+
+  it('shows the answer of a stream:false JSON body in the assistant bubble', async () => {
+    vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+    global.fetch = vi.fn().mockResolvedValue(jsonReply('Paris', 'stop'));
+
+    await setupWithToken();
+    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'capital of France?');
+    await userEvent.keyboard('{Enter}');
+
+    await waitFor(() => expect(screen.queryByText('Paris')).not.toBeNull(), { timeout: 4000 });
+  });
+
+  it('detects content_filter in a JSON body as a blocked turn', async () => {
+    vi.mocked(getTrace).mockResolvedValue({
+      trace: [{ message: 'guardrail:response-triggered', panel: 'response', details: { rule: 'mod:x', target: 'response', block: true, blockMessage: 'Not allowed.' } }],
+    } as never);
+    global.fetch = vi.fn().mockResolvedValue(jsonReply('', 'content_filter'));
+
+    await setupWithToken();
+    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hitchcock');
+    await userEvent.keyboard('{Enter}');
+
+    await waitFor(() => expect(screen.queryByText('Not allowed.')).not.toBeNull(), { timeout: 4000 });
+  });
+});
+
 // ── Cross-chunk SSE buffering ──────────────────────────────────────────────
 
 /** Returns a Response whose reader yields the given chunks in order. */
-function makeChunkedSSEResponse(chunks: string[], traceId = 'trace-123') {
+function makeChunkedSSEResponse(chunks: string[], _traceId = 'trace-123') {
   const enc = new TextEncoder();
   let i = 0;
   return new Response(
@@ -297,7 +335,7 @@ describe('TestPage — Clear resets debug', () => {
 
     // Click the first Clear button (chat-area; resets both messages and debug)
     const clearBtns = screen.getAllByRole('button', { name: 'Clear' });
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     await userEvent.click(clearBtns[0]!);
 
     // Messages gone
@@ -451,6 +489,50 @@ describe('TestPage — debug sidebar hide/show', () => {
     await waitFor(() =>
       expect(screen.queryByTitle('Hide debug')).not.toBeNull()
     );
+  });
+});
+
+describe('TestPage — debug panel resize and persistence', () => {
+  const width = () => Number(screen.getByTestId('debug-resize-handle').getAttribute('aria-valuenow'));
+
+  it('keyboard resize stays within min and max', async () => {
+    await setupWithToken();
+    expect(width()).toBe(380);
+    const handle = screen.getByTestId('debug-resize-handle');
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(width()).toBe(396);
+    fireEvent.keyDown(handle, { key: 'End' });
+    expect(width()).toBe(720);
+    fireEvent.keyDown(handle, { key: 'ArrowLeft', shiftKey: true });
+    expect(width()).toBe(720);
+    fireEvent.keyDown(handle, { key: 'Home' });
+    expect(width()).toBe(280);
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    expect(width()).toBe(280);
+    fireEvent.keyDown(handle, { key: 'Enter' });
+    expect(width()).toBe(380);
+  });
+
+  it('collapse then expand restores the previous width and persists the choice', async () => {
+    await setupWithToken();
+    fireEvent.keyDown(screen.getByTestId('debug-resize-handle'), { key: 'End' });
+    await userEvent.click(screen.getByTestId('debug-collapse'));
+    expect(screen.queryByTestId('debug-panel')).toBeNull();
+    expect(layoutStore).toEqual({ width: 720, collapsed: true });
+    await userEvent.click(screen.getByTestId('debug-expand'));
+    expect(width()).toBe(720);
+  });
+
+  it('starts from the stored layout and re-limits an out-of-range width', async () => {
+    layoutStore = { width: 5000, collapsed: false };
+    await setupWithToken();
+    expect(width()).toBe(720);
+  });
+
+  it('starts collapsed when the stored layout says so', async () => {
+    layoutStore = { width: 400, collapsed: true };
+    await setupWithToken();
+    expect(screen.queryByTestId('debug-expand')).not.toBeNull();
   });
 });
 
@@ -615,6 +697,24 @@ describe('TestPage — fetch HTTP error', () => {
     await waitFor(() =>
       expect(screen.queryByText('Rate limited')).not.toBeNull(),
     { timeout: 4000 });
+  });
+
+  it('wraps a long unbroken error text inside the banner (ROUT-462)', async () => {
+    vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+    const long = 'sk-' + '*'.repeat(300);
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { message: long } }), {
+      status: 401,
+      headers: { 'content-type': 'application/json' },
+    }));
+
+    await setupWithToken();
+
+    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hi');
+    await userEvent.keyboard('{Enter}');
+
+    const banner = await screen.findByText(long, undefined, { timeout: 4000 });
+    expect(banner.style.overflowWrap).toBe('anywhere');
+    expect(banner.style.maxWidth).toBe('100%');
   });
 
   it('shows HTTP status error when response body is not parseable JSON', async () => {
@@ -956,7 +1056,7 @@ describe('TestPage — debug sidebar trace entries rendered', () => {
     );
 
     // Click summary to expand
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     await userEvent.click(screen.getAllByText('Turn #1 trace log')[0]!);
     // TraceEntryRenderer mock renders entry.message
     await waitFor(() =>
@@ -1630,7 +1730,7 @@ describe('TestPage — debug sidebar trace entry last item', () => {
 
     // The trace log should be clickable to expand trace entries
     await waitFor(() => expect(screen.queryAllByText('Turn #1 trace log').length).toBeGreaterThan(0));
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     await userEvent.click(screen.getAllByText('Turn #1 trace log')[0]!);
 
     // Both trace entries should render — last entry triggers j === traces.length-1 branch
@@ -2379,6 +2479,37 @@ describe('TestPage — handleSend stream=false when streamEnabled=false', () => 
 
     const fetchCall = (vi.mocked(global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, { body: string }])[1];
     expect(JSON.parse(fetchCall.body).stream).toBe(false);
+  });
+});
+
+// ── Temperature is optional: omitted by default, sent once the slider is enabled (ROUT-193) ──
+
+describe('TestPage — optional temperature', () => {
+  it('omits temperature by default and sends it after enabling the checkbox', async () => {
+    vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+    global.fetch = vi.fn().mockResolvedValue(makeSSEResponse('stop', 'Temp reply'));
+
+    await setupWithToken();
+
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    await userEvent.type(textarea, 'first');
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() => expect(screen.queryByText('Temp reply')).not.toBeNull(), { timeout: 4000 });
+
+    const bodyOf = (i: number) => JSON.parse(
+      (vi.mocked(global.fetch as ReturnType<typeof vi.fn>).mock.calls[i] as [string, { body: string }])[1].body,
+    );
+    expect('temperature' in bodyOf(0)).toBe(false);
+
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Temp' }));
+    fireEvent.change(document.querySelectorAll('input[type="range"]')[0]!, { target: { value: '0.3' } });
+
+    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'second');
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() => expect(vi.mocked(global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(1));
+    const sent = vi.mocked(global.fetch as ReturnType<typeof vi.fn>).mock.calls
+      .map((_, i) => bodyOf(i)).filter(b => b.messages);
+    expect(sent[sent.length - 1].temperature).toBe(0.3);
   });
 });
 

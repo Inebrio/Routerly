@@ -234,6 +234,23 @@ describe('ConnectionsPage — remove connection', () => {
     await waitFor(() => expect(screen.queryByText('delete failed')).not.toBeNull());
   });
 
+  it('scrolls the deletion error into view and shows the 409 usedBy message', async () => {
+    const user = userEvent.setup();
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    mockGetConnections.mockResolvedValue([makeConnection()]);
+    mockDeleteConnection.mockRejectedValue(new Error('Connection is used by model(s): gpt-4o'));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
+
+    await user.click(screen.getByTitle('Remove'));
+    await user.click(screen.getByText('Confirm'));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('used by model(s): gpt-4o');
+    expect(scroll).toHaveBeenCalled();
+  });
+
   it('shows a fallback message when deletion fails with a non-Error value', async () => {
     const user = userEvent.setup();
     mockGetConnections.mockResolvedValue([makeConnection()]);

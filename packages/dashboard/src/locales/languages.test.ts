@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { matchBrowserLanguage, isSupportedLanguage } from './languages';
 
 describe('matchBrowserLanguage', () => {
@@ -30,5 +33,28 @@ describe('matchBrowserLanguage', () => {
   it('isSupportedLanguage', () => {
     expect(isSupportedLanguage('pt-BR')).toBe(true);
     expect(isSupportedLanguage('xx')).toBe(false);
+  });
+});
+
+describe('web provider instructions (ROUT-289)', () => {
+  const dir = path.dirname(fileURLToPath(import.meta.url));
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));
+  it.each(files)('%s has current sessionKey hints and no stale sid01', (f) => {
+    const w = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')).common.connectionFields.webProvider;
+    expect(w.anthropicInstructions).toContain('sk-ant-sid');
+    expect(w.anthropicInstructions).toContain('Storage');
+    expect(w.sessionTokenPlaceholder).toContain('sk-ant-sid');
+    expect(JSON.stringify(w)).not.toContain('sid01');
+    expect(w.openaiInstructions).not.toMatch(/24/);
+  });
+});
+
+describe('router dashboard plural keys (ROUT-513)', () => {
+  const dir = path.dirname(fileURLToPath(import.meta.url));
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));
+  it.each(files)('%s has errorsAndBlocked plural keys', (f) => {
+    const s = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')).routers.dashboard.stats;
+    expect(s.errorsAndBlocked_one).toBeTruthy();
+    expect(s.errorsAndBlocked_other).toBeTruthy();
   });
 });

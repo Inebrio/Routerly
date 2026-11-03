@@ -61,6 +61,15 @@ describe('trackUsage', () => {
     expect(record.cost).toBeCloseTo(20, 2)
   })
 
+  it('records zero cost for a failed call with no resolved model, null for a successful one', async () => {
+    mockGetTrace.mockReturnValue(null)
+    const base = { routerId: 'proj-1', modelId: 'gone', inputTokens: 0, outputTokens: 0, latencyMs: 5 }
+    await trackUsage({ ...base, outcome: 'error' })
+    await trackUsage({ ...base, outcome: 'success' })
+    expect(mockAppendUsageRecord.mock.calls[0]![0].cost).toBe(0)
+    expect(mockAppendUsageRecord.mock.calls[1]![0].cost).toBeNull()
+  })
+
   it('calculates cached token cost correctly', async () => {
     mockGetTrace.mockReturnValue(null)
     const model = { ...makeModel(), cost: { inputPerMillion: 5, outputPerMillion: 15, cachePerMillion: 0.5 } }

@@ -1,7 +1,20 @@
-# Advisory only. Never blocks a push, never captures a screenshot, never
-# commits anything. On release/* branches, proposes which screenshots the
-# pushed commits may have affected, using scripts/screenshots-affected.mjs.
+# Two jobs:
+# 1. Dev-box guard: when IS_SANDBOX=1 (dispatcher runs), refuse any push whose
+#    remote ref is develop or main. Those pushes trigger the release pipeline
+#    and need the maintainer's confirmation. Not bypass-proof (--no-verify).
+# 2. Advisory only, never blocks: on release/* branches, proposes which
+#    screenshots the pushed commits may have affected, using
+#    scripts/screenshots-affected.mjs.
 set +e
+
+refs=$(cat)
+
+if [ "${IS_SANDBOX:-}" = "1" ]; then
+  if printf '%s\n' "$refs" | awk '{print $3}' | grep -qE '^refs/heads/(develop|main)$'; then
+    echo "pre-push: push to develop/main refused in a dispatcher session (IS_SANDBOX=1)." >&2
+    exit 1
+  fi
+fi
 
 branch=$(git rev-parse --abbrev-ref HEAD)
 
@@ -16,7 +29,9 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   if [ -n "$local_sha" ] && [ "$local_sha" != "$zero" ] && [ -n "$remote_sha" ] && [ "$remote_sha" != "$zero" ]; then
     range="$remote_sha..$local_sha"
   fi
-done
+done <<EOF_REFS
+$refs
+EOF_REFS
 
 echo "screenshot-review (advisory, does not block this push): range $range"
 

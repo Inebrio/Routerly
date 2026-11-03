@@ -11,6 +11,7 @@ vi.mock('./router.js', () => ({
 
 const { routeRequest } = await import('./router.js')
 const { routingModule } = await import('./index.js')
+const { rememberUpstreamError, forgetUpstreamError } = await import('../reverse-proxy/last-upstream-error.js')
 
 function harness() {
   const container = new ServiceContainer()
@@ -93,6 +94,67 @@ describe('routing module', () => {
       expect(routeRequestMock).toHaveBeenCalledWith(
         ctx.request, ctx.router, ctx.log, expect.any(Function), ctx.token, ctx.traceId, ctx.conversationId, fakeStore,
       )
+    })
+  })
+
+  describe('limits exhausted on a non-passthrough router', () => {
+    it.each([
+      ['openai', { error: { message: 'Usage limit exceeded for every model of this router.', type: 'insufficient_quota' } }],
+      ['anthropic', { type: 'error', error: { type: 'rate_limit_error', message: 'Usage limit exceeded for every model of this router.' } }],
+    ] as const)('returns a 429 block for %s', async (protocol, body) => {
+      routeRequestMock.mockRejectedValue(new Error('all_models_limits_exceeded'))
+      const { container, events, pipeline } = harness()
+      await routingModule.register({ container, events })
+      const proc = pipeline.orderedFor('routing.prepare').find((p) => p.id === 'routing.prepare')!
+      const ctx = baseCtx({ protocol })
+      await proc.run(ctx)
+      expect(ctx.result).toEqual({ kind: 'block', status: 429, body })
+    })
+
+    it.each([
+      ['openai', { error: { message: 'No model of this router is currently available.', type: 'server_error' } }],
+      ['anthropic', { type: 'error', error: { type: 'overloaded_error', message: 'No model of this router is currently available.' } }],
+    ] as const)('returns a provider-shaped 503 for %s when every model is excluded by policies', async (protocol, body) => {
+      routeRequestMock.mockRejectedValue(new Error('all_models_excluded_by_policies'))
+      const { container, events, pipeline } = harness()
+      await routingModule.register({ container, events })
+      const proc = pipeline.orderedFor('routing.prepare').find((p) => p.id === 'routing.prepare')!
+      const ctx = baseCtx({ protocol })
+      await proc.run(ctx)
+      expect(ctx.result).toEqual({ kind: 'block', status: 503, body })
+    })
+
+    it('returns the remembered upstream 401 instead of a 503 when every model is excluded', async () => {
+      routeRequestMock.mockRejectedValue(new Error('all_models_excluded_by_policies'))
+      const { container, events, pipeline } = harness()
+      await routingModule.register({ container, events })
+      const proc = pipeline.orderedFor('routing.prepare').find((p) => p.id === 'routing.prepare')!
+      const ctx = baseCtx({ protocol: 'anthropic' })
+      rememberUpstreamError(ctx.router.id, 401, { error: { message: 'Incorrect API key' } })
+      await proc.run(ctx)
+      expect(ctx.result).toEqual({ kind: 'block', status: 401, body: { type: 'error', error: { type: 'authentication_error', message: 'Incorrect API key' } } })
+      forgetUpstreamError(ctx.router.id)
+    })
+
+    it.each([
+      ['openai', { error: { message: 'No model of this router is currently available.', type: 'server_error' } }],
+      ['anthropic', { type: 'error', error: { type: 'overloaded_error', message: 'No model of this router is currently available.' } }],
+    ] as const)('returns a provider-shaped 503 when the router has no models (%s)', async (protocol, body) => {
+      routeRequestMock.mockRejectedValue(new Error('no_models_available: router has no resolvable models'))
+      const { container, events, pipeline } = harness()
+      await routingModule.register({ container, events })
+      const proc = pipeline.orderedFor('routing.prepare').find((p) => p.id === 'routing.prepare')!
+      const ctx = baseCtx({ protocol })
+      await proc.run(ctx)
+      expect(ctx.result).toEqual({ kind: 'block', status: 503, body })
+    })
+
+    it('rethrows other routing errors', async () => {
+      routeRequestMock.mockRejectedValue(new Error('boom'))
+      const { container, events, pipeline } = harness()
+      await routingModule.register({ container, events })
+      const proc = pipeline.orderedFor('routing.prepare').find((p) => p.id === 'routing.prepare')!
+      await expect(proc.run(baseCtx())).rejects.toThrow('boom')
     })
   })
 

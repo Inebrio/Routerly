@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "主题: {{theme}}"
     },
+    "language": {
+      "label": "语言",
+      "saveError": "无法保存您的语言。已恢复到之前的语言。"
+    },
     "sidebar": {
       "expand": "展开侧栏",
       "collapse": "折叠侧栏"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "某些配置文件具有宽松的访问权限 ({{files}})。启动和请求仍然有效。从设置 → 安全中进行修复，或在方便时从主机文件系统中进行修复.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "关闭",
       "updateAvailable": "Routerly v{{latest}} 已发布。您当前使用的是 v{{current}}。",
       "updateLink": "在设置中更新",
@@ -40,9 +45,6 @@
       "telemetryLink": "发送了什么？",
       "telemetryYes": "是的，帮助我们",
       "telemetryNo": "不，谢谢"
-    },
-    "language": {
-      "label": "语言"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "会话令牌",
       "awsSessionTokenOptionalHint": "(可选，用于临时凭证)",
       "awsSessionTokenPlaceholder": "AQoDYXdz...",
-      "gcpRouterId": "GCP路由器ID",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "位置",
       "gcpLocationDefaultHint": "(默认: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "访问令牌",
         "sessionTokenLabel": "会话令牌",
         "accessTokenPlaceholder": "eyJ...",
-        "sessionTokenPlaceholder": "粘贴sessionKey cookie值(sk-ant-sid01-...)",
-        "openaiInstructions": "登录ChatGPT时，在新标签页中打开 <code>https://chatgpt.com/api/auth/session</code>。复制 <code>accessToken</code> 字段的值(以 <code>eyJ</code> 开头)。令牌每 ~24 小时过期一次。为了可靠访问，还应填充下面的 <strong>cf_clearance</strong> 字段。",
-        "anthropicInstructions": "<strong>如何获取您的会话密钥:</strong> 登录Claude时，打开DevTools (F12) → Application → Cookies → <code>claude.ai</code> → 复制 <code>sessionKey</code> cookie的值(以 <code>sk-ant-sid01-</code> 开头)。密钥在您登出前一直有效。"
+        "sessionTokenPlaceholder": "粘贴 sessionKey Cookie 的值 (sk-ant-sid…)",
+        "openaiInstructions": "登录ChatGPT时，在新标签页中打开 <code>https://chatgpt.com/api/auth/session</code>。复制 <code>accessToken</code> 字段的值(以 <code>eyJ</code> 开头)。令牌有效期约 10 天；当测试开始因 401 失败时，请粘贴新的令牌。为了可靠访问，还应填充下面的 <strong>cf_clearance</strong> 字段。",
+        "anthropicInstructions": "<strong>如何获取会话密钥:</strong>登录 <code>https://claude.ai</code> 后,按 F12 打开 DevTools。Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>。Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>。复制 <code>sessionKey</code> Cookie 的 <strong>Value</strong>(以 <code>sk-ant-sid</code> 开头,例如 <code>sk-ant-sid02-</code>)。这是 HttpOnly Cookie,因此在页面控制台中不可见。在您退出登录或其过期之前一直有效;如果测试开始失败,请粘贴新的密钥。"
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "订阅OAuth令牌",
@@ -417,7 +419,8 @@
       "status": "状态",
       "encoding": "编码",
       "frames": "帧",
-      "bytes": "字节"
+      "bytes": "字节",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "语言",
       "description": "选择显示仪表板的语言。",
       "languageLabel": "语言",
-      "saved": "语言偏好已保存。"
+      "saved": "语言偏好已保存。",
+      "saveError": "无法保存您的语言偏好设置。已恢复到之前的偏好设置。"
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "保存中...",
         "enable": "启用",
         "disable": "禁用"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "预算 - 已重置",
         "systemStartup": "系统 - 启动",
         "systemShutdown": "系统 - 关闭",
-        "systemUpdateAvailable": "系统 - 更新可用"
+        "systemUpdateAvailable": "系统 - 更新可用",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "删除频道",
       "removeChannelConfirm": "删除频道？",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} 个权限",
         "userCount": "{{count}} 个用户",
         "userCount_other": "{{count}} 个用户",
-        "everyone": "所有人"
+        "everyone": "所有人",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "未能加载"
@@ -831,6 +838,9 @@
         },
         "optional": "(可选)",
         "keepCurrentPlaceholder": "留空以保持当前",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "留空以接收所有路由器的事件。",
           "cooldownHeading": "冷却",
           "cooldownSuffix": "秒(0 = 无冷却)",
-          "cooldownHint": "此频道再次触发相同事件前的最小间隔。"
+          "cooldownHint": "此频道再次触发相同事件前的最小间隔。",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "收件人 / 目标",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "搜索频道...",
         "noResults": "无结果",
         "emptyTitle": "尚未配置任何通知频道。",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "没有频道与活跃过滤器匹配。",
         "nameInlinePlaceholder": "标签(可选)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "删除集成",
       "saving": "保存中...",
       "save": "保存",
-      "addButton": "添加集成"
+      "addButton": "添加集成",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "最后检查"
       },
       "noCheckPerformed": "尚未执行更新检查。",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "检查更新",
       "checking": "检查中...",
       "updateTo": "更新到 v{{version}}",
@@ -1121,7 +1137,8 @@
         "checkFailed": "检查失败",
         "updateFailed": "更新失败"
       },
-      "channel": "频道"
+      "channel": "频道",
+      "channelNote": "current 跟随每个新的稳定版本；stable 仅在某个版本被提升时才会移动，因此两者可能不同。"
     },
     "security": {
       "authentication": "认证",
@@ -1156,6 +1173,8 @@
       "count": "1个路由器",
       "count_other": "{{count}} 个路由器",
       "newRouter": "新建路由器",
+      "newOrchestrator": "新的编排器",
+      "newPassthrough": "新的直通",
       "empty": "还没有路由器。",
       "emptyFiltered": "没有此类型的路由器。",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "删除此路由器？",
       "errors": {
         "deleteFailed": "删除路由器出错"
-      },
-      "newOrchestrator": "新的编排器",
-      "newPassthrough": "新的直通"
+      }
     },
     "layout": {
       "notFound": "未找到路由器",
@@ -1191,10 +1208,10 @@
       "backToRouters": "返回路由器",
       "backToRoutersTitle": "返回路由器",
       "newRouter": "新建路由器",
+      "newKind": "新的{{kind}}",
       "loading": "加载中...",
       "routerId": "路由器ID:",
-      "saveFirstHint": "先保存路由器以解锁此标签页",
-      "newKind": "新的{{kind}}"
+      "saveFirstHint": "先保存路由器以解锁此标签页"
     },
     "dashboard": {
       "period": "周期",
@@ -1212,7 +1229,9 @@
         "ttft": "首次令牌时间",
         "notMeasured": "未在这些调用中测量",
         "reliability": "可靠性",
-        "errorsAndBlocked": "{{errors}} 个错误 · {{blocked}} 个已阻止"
+        "errorsAndBlocked": "{{errors}} 个错误 · {{blocked}} 个已阻止",
+        "errorsAndBlocked_one": "{{errors}} 个错误 · {{blocked}} 个已阻止",
+        "errorsAndBlocked_other": "{{errors}} 个错误 · {{blocked}} 个已阻止"
       },
       "tokens": {
         "input": "输入令牌:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "基础URL <code>{{baseUrl}}</code>，不包括 <code>/v1</code>: SDK会添加它。",
         "curl": "curl",
-        "curlHint": "在不安装任何东西的情况下检查接线，然后在 <usageLink>使用</usageLink> 中查找调用。"
+        "curlHint": "在不安装任何东西的情况下检查接线，然后在 <usageLink>使用</usageLink> 中查找调用。",
+        "passthrough": {
+          "heading": "如何连接",
+          "intro": "Passthrough 转发每个未修改的请求 — 使用<strong>您自己的</strong>上游提供商密钥作为 API 密钥，永远不要使用 Routerly 令牌。Routerly 不为此路由器存储或发放凭证；客户端发送的任何内容都直接转到提供商。",
+          "noLimits": "预算和限制不适用于此路由器：Passthrough 流量的成本未知，因此永远不会根据任何支出限制进行检查或计数。",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — 没有 <code>/v1</code> 后缀，SDK 仍会像对真实 OpenAI API 那样追加其自己的路径。",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK 仍会自己追加 <code>/v1/messages</code>，就像对真实 Anthropic API 那样。"
+        }
       },
       "form": {
         "kind": "类型",
         "kindFixedHint": "路由器创建后固定。",
         "routerName": "路由器名称",
         "routerNamePlaceholder": "我的应用",
+        "passthroughPath": "路径",
+        "passthroughPathHint": "成为客户端调用的 URL 的一部分: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "高级设置",
         "ttftTimeout": "TTFT超时(毫秒)",
         "ttftTimeoutHint": "如果模型在此时间内未发送第一个响应字节，Routerly会中止它并尝试下一个候选。不限制总响应持续时间。设置为0以等待提供商需要的时间。",
         "traceContent": "跟踪内容",
         "traceContentHint": "跟踪总是记录元数据(模型、分数、令牌、成本、延迟)。启用此选项也可以记录发送的提示和接收的答案。它们与使用记录一起存储，对任何可以读取报告的人可见。",
         "capturePromptsAndAnswers": "捕获提示和答案",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "保存更改",
         "createRouter": "创建路由器",
-        "passthroughPath": "路径",
-        "passthroughPathHint": "成为客户端调用的 URL 的一部分: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "创建编排器",
         "createPassthrough": "创建直通"
       }
@@ -1384,6 +1414,7 @@
       "saving": "保存中...",
       "saved": "已保存",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "预览令牌节省",
         "description": "在提示上运行当前(未保存)管道，查看每个步骤删除的内容及其成本。选择其中一个示例对话或键入您自己的提示。",
         "promptLabel": "提示",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "还没有发送请求。",
       "turnTraceLog": "轮 #{{turn}} 跟踪日志 · {{count}} 个事件",
       "turnTraceLog_other": "轮 #{{turn}} 跟踪日志 · {{count}} 个事件"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "模型",
       "subtitle": "注册到Routerly的LLM提供商",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "模型",
         "health": "健康"
@@ -2242,7 +2284,8 @@
       "next": "下一个",
       "page": "第 {{page}} / {{totalPages}} 页",
       "total": "({{count}} 总计)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "全部",
         "success": "成功",
         "blocked": "已阻止",
-        "error": "错误"
+        "error": "错误",
+        "sessionId": "会话 ID",
+        "endUser": "终端用户",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "任意会话",
+        "endUserPlaceholder": "任意终端用户",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "全部",
@@ -2383,7 +2432,10 @@
         "timestamp": "时间戳",
         "guardrailTriggered": "防护栏已触发",
         "blockedBy": "被...阻止",
-        "piiRedacted": "个人身份信息已编辑"
+        "piiRedacted": "个人身份信息已编辑",
+        "sessionId": "会话 ID",
+        "endUser": "终端用户",
+        "tags": "Tags"
       },
       "errorMessage": "错误消息",
       "eventCount": "{{count}} 个事件",
@@ -2457,7 +2509,8 @@
       "show": "显示调试",
       "empty": "还没有调试数据。",
       "emptyHint": "发送消息以查看路由详情。",
-      "turnTraceLog": "轮 #{{turn}} 跟踪日志"
+      "turnTraceLog": "轮 #{{turn}} 跟踪日志",
+      "resize": "调整调试面板大小"
     },
     "compare": {
       "modelLabel": "模型 {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "未能更新角色",
       "createFailed": "未能创建角色",
       "deleteFailed": "未能删除角色"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2665,7 +2719,7 @@
       "newProfileTitle": "新建 {{kind}} 配置文件",
       "editProfileTitle": "编辑 {{label}}",
       "builtinHint": "内置配置文件无法编辑。克隆一个以定制它。",
-      "assignHint": "A {{kind}} 配置文件可以分配到任何数量的路由器。",
+      "assignHint": "{{article}} {{kind}} 配置文件可以分配给任意数量的路由器。",
       "noPermission": "您没有权限查看配置文件。",
       "label": "标签",
       "optimizers": "优化器",
@@ -2690,7 +2744,6 @@
     "backToConnect": "返回连接",
     "title": "连接",
     "docs": "文档",
-    "notEnabledPrefix": "客户端配置器未启用。请管理员用以下方式启用它",
     "noClientPrefix": "没有名为以下的客户端",
     "errors": {
       "loadFailed": "未能加载客户端: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "路由该客户端模型流量通过Routerly。",
     "mcpLabel": "MCP",
     "mcpDescription": "将Routerly加载为其内的工具服务器。",
-    "notEnabledPrefix": "客户端配置器未启用。请管理员用以下方式启用它",
     "errors": {
       "loadFailed": "未能加载客户端: {{error}}"
     },

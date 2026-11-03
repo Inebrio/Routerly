@@ -58,6 +58,20 @@ and a `released on @<channel>` label — this already runs, nothing to
 configure. A commit that fixes something without a tracked issue needs
 nothing extra.
 
+## Stamping a branch
+
+The publish job does not commit the bumped version back, so the
+`package.json` files in git go stale and any build from a branch (review
+instance, UAT) reports that stale number in Settings → About. When cutting
+`release/X.Y.Z`, stamp it once:
+
+```bash
+npm version X.Y.Z --allow-same-version --workspaces --include-workspace-root --no-git-tag-version --ignore-scripts
+node scripts/sync-module-versions.mjs
+```
+
+Commit as `chore: stamp version X.Y.Z`. The publish job overwrites it with the computed version.
+
 ## Module manifests carry the product version, not their own
 
 Every module under `packages/service/src/modules/` declares a
@@ -130,19 +144,33 @@ semantic-release actually computed on `main` under this pipeline was
 from RC-1's dry run, not a hypothetical.
 
 **Channel names.** The CLI, the config, the management API and the
-installers accept exactly four values: `latest`, `current`, `next`,
-`develop`, or a version tag such as `v0.4.0`. There are no aliases: every
-value is validated and persisted verbatim.
+installers accept exactly five values: `latest`, `current`, `next`,
+`stable`, `develop`, or a version tag such as `v0.4.0`. There are no
+aliases: every value is validated and persisted verbatim.
 
 :::warning Breaking change
-`stable` and `develop` used to be accepted as deprecated aliases for
-`current` and `next`. Both are retired: `stable` is now rejected outright
-(400 from the management API, non-zero exit from the CLI and installers),
-and `develop` is now a real channel in its own right — the bleeding-edge
-line — not an alias for `next`. An instance that had `"develop"` persisted
-under the old meaning now tracks the bleeding-edge line instead of `next`
-the next time it checks for updates.
+`develop` used to be accepted as a deprecated alias for `next`. It is now a
+real channel in its own right, the bleeding-edge line. An instance that had
+`"develop"` persisted under the old meaning now tracks the bleeding-edge
+line instead of `next` the next time it checks for updates.
 :::
+
+**The `stable` channel.** `stable` is a permanent channel with its own
+release pointer, independent from `current`/`latest`. It is served like
+`next` and `develop`: a rolling `channel-stable` prerelease whose title
+`Routerly stable (→ vX.Y.Z)` carries the version. Rule:
+
+- `current` follows every new stable release automatically.
+- `stable` moves only on explicit promotion, `rtr release promote-stable
+  X.Y.Z`, which dispatches the `stable-pointer` workflow
+  (`.github/workflows/stable-pointer.yml`).
+- Promotion refuses a release that is not already `current` or that has
+  open regressions attributed to it. There is no age limit. It needs
+  Carlo's approval and the `--conferma` flag.
+- Until the first promotion (0.6.0, last step of ROUT-540) `channel-stable`
+  does not exist: the update checker reports an error for `stable` and the
+  installers fail with "Could not fetch channel 'stable'". There is no
+  silent fallback to `current`.
 
 The documentation site's own versioning is unrelated to the three update
 channels above, and keeps only two live states, not three:
@@ -238,6 +266,12 @@ a hotfix committed straight to `main`, outside the normal
 open and merge the fix backward by hand, covering **both** gaps it
 creates: `main` → `next`, then `next` → `develop`. Nothing in the pipeline
 automates either hop, and nothing detects a missed one.
+
+The same applies to the active `release/X.Y.Z` branch: a hotfix that lands on
+`main` must also reach it, otherwise the next feature merged into the release
+branch can reintroduce the regression. A quick check:
+`git merge-base --is-ancestor origin/main origin/release/X.Y.Z` exits non-zero
+when `main` holds commits the release branch lacks.
 
 Forgetting either back-merge means the fix never reaches the branch it
 skipped, and it **resurfaces as a regression the next time that branch is
@@ -529,3 +563,12 @@ fails the run with:
 
 and pushes nothing. There is no partial state to clean up: the tag decision
 and the build both happen after this check passes.
+
+## Site `install.sh` and the `Latest` flag
+
+`https://www.routerly.ai/install.sh` redirects to
+`releases/latest/download/install.sh`, i.e. the script attached to the release
+flagged **Latest**. Every 0.3+ release is a GitHub pre-release, so that flag is
+only moved by the `addChannelCmd` promotion (`gh release edit <tag> --latest`).
+Until a release carrying the current `scripts/install.sh` is promoted, the site
+serves the older script attached to the previously flagged release.

@@ -5,7 +5,7 @@ vi.mock('../config/loader.js', () => ({ readConfig: (t: string) => mockReadConfi
 
 const { loadInboxScope, isVisibleToUser, requiredPermission } = await import('./inbox-access.js')
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const item = (over: Record<string, unknown> = {}): any => ({
   id: 'n1', event: 'provider.error', severity: 'critical',
   timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [], ...over,
@@ -26,6 +26,7 @@ describe('requiredPermission', () => {
     expect(requiredPermission('config.model_added')).toBe('model:read')
     expect(requiredPermission('config.router_deleted')).toBe('router:read')
     expect(requiredPermission('system.startup')).toBe('settings:read')
+    expect(requiredPermission('system.permissions_unsafe')).toBe('settings:write')
   })
 
   it('leaves operational events ungated', () => {

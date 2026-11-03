@@ -8,6 +8,7 @@
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --scope=system
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=current
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=next
+#   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=stable
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=develop
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --version=v0.2.0
 #
@@ -21,7 +22,7 @@ GITHUB_REPO="Routerly"
 REQUIRED_NODE_MAJOR=20
 
 # ── Channel / version defaults ────────────────────────────────────────────────
-INSTALL_CHANNEL="current"  # latest | current | next | develop
+INSTALL_CHANNEL="current"  # latest | current | next | stable | develop
 INSTALL_VERSION=""         # e.g. v0.2.0 — overrides INSTALL_CHANNEL when set
 
 # ── Colors ────────────────────────────────────────────────────────────────────
@@ -65,6 +66,15 @@ need_cmd() {
     return 1
   fi
   return 0
+}
+
+# Fail early, naming the missing package, instead of dying later with exit 127.
+need_cmd curl || need_cmd wget || die "Neither 'curl' nor 'wget' found. Install one (e.g. apt-get install curl) and retry."
+need_cmd tar || die "'tar' not found. Install it (e.g. apt-get install tar) and retry."
+
+# Download URL to stdout with curl, or wget when curl is missing.
+fetch() {
+  if need_cmd curl; then curl -fsSL "$1"; else wget -qO- "$1"; fi
 }
 
 # ── Try to load Node.js from known locations ──────────────────────────────────
@@ -135,7 +145,7 @@ install_node() {
   local methods=()   # internal keys
 
   # nvm is always offered (works on both macOS and Linux, no root needed)
-  options+=("nvm  (Node Version Manager — recommended, no sudo needed)")
+  options+=("nvm  (Node Version Manager — recommended, no sudo needed; requires curl or wget)")
   methods+=("nvm")
 
   if [ "$PLATFORM" = "macos" ]; then
@@ -193,7 +203,7 @@ install_node() {
 
     nvm)
       info "Installing nvm and Node.js ${REQUIRED_NODE_MAJOR}..."
-      curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+      fetch https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
       export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
       # shellcheck disable=SC1091
       [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
@@ -208,7 +218,7 @@ install_node() {
 
     brew-install)
       info "Installing Homebrew first..."
-      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      /bin/bash -c "$(fetch https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       # Add brew to PATH for this session (Apple Silicon vs Intel)
       if [ -x "/opt/homebrew/bin/brew" ]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -221,13 +231,13 @@ install_node() {
 
     apt)
       info "Installing Node.js ${REQUIRED_NODE_MAJOR} via apt..."
-      curl -fsSL "https://deb.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo -E bash -
+      fetch "https://deb.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo -E bash -
       sudo apt-get install -y nodejs
       ;;
 
     dnf)
       info "Installing Node.js ${REQUIRED_NODE_MAJOR} via dnf..."
-      curl -fsSL "https://rpm.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo bash -
+      fetch "https://rpm.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo bash -
       sudo dnf install -y nodejs
       ;;
 
@@ -283,51 +293,66 @@ while [ $_i -lt ${#_ORIG_ARGS[@]} ]; do
 done
 
 # ── Resolve download URL from channel or version ──────────────────────────────
+# GET a URL and print the body (empty on any failure).
+http_get() {
+  if need_cmd curl; then curl -fsSL "$1" 2>/dev/null || true
+  elif need_cmd wget; then wget -qO- "$1" 2>/dev/null || true
+  else die "Neither 'curl' nor 'wget' found. Please install one and retry."
+  fi
+}
+
 resolve_download_url() {
   local api_base="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases"
-  local api_url release_json
+  local release_json=""
 
   if [ -n "$INSTALL_VERSION" ]; then
     info "Resolving version ${BOLD}${INSTALL_VERSION}${RESET}..."
-    api_url="${api_base}/tags/${INSTALL_VERSION}"
+    release_json="$(http_get "${api_base}/tags/${INSTALL_VERSION}")"
   else
     case "$INSTALL_CHANNEL" in
       latest|current)
         info "Resolving channel ${BOLD}${INSTALL_CHANNEL}${RESET}..."
-        api_url="${api_base}/latest"
+        # /releases/latest skips pre-releases, which hides every 0.3+ build, so
+        # pick the highest plain vX.Y.Z tag from the release list instead.
+        local newest
+        newest="$(http_get "${api_base}?per_page=100" | \
+          grep -o '"tag_name": *"v[0-9]*\.[0-9]*\.[0-9]*"' | \
+          sed 's/.*"\(v[^"]*\)"$/\1/' | sort -V | tail -1 || true)"
+        if [ -n "$newest" ]; then
+          release_json="$(http_get "${api_base}/tags/${newest}")"
+        else
+          release_json="$(http_get "${api_base}/latest")"
+        fi
         ;;
-      next)
-        info "Resolving channel ${BOLD}next${RESET}..."
-        api_url="${api_base}/tags/channel-next"
-        ;;
-      develop)
-        info "Resolving channel ${BOLD}develop${RESET}..."
-        api_url="${api_base}/tags/channel-develop"
+      next|stable|develop)
+        info "Resolving channel ${BOLD}${INSTALL_CHANNEL}${RESET}..."
+        release_json="$(http_get "${api_base}/tags/channel-${INSTALL_CHANNEL}")"
+        # Releases published before the pointer tags were renamed use the bare name.
+        [ -n "$release_json" ] || release_json="$(http_get "${api_base}/tags/${INSTALL_CHANNEL}")"
         ;;
       *)
-        die "Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next, develop"
+        die "Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next, stable, develop"
         ;;
     esac
   fi
 
-  release_json=""
-  if need_cmd curl; then
-    release_json="$(curl -fsSL "$api_url" 2>/dev/null || true)"
-  elif need_cmd wget; then
-    release_json="$(wget -qO- "$api_url" 2>/dev/null || true)"
-  else
-    die "Neither 'curl' nor 'wget' found. Please install one and retry."
-  fi
-
+  # The pointer releases (channel-next/stable/develop) carry no tag of their own: the
+  # real version is in the title "Routerly next (→ vX.Y.Z)".
   RELEASE_TAG=""
   if [ -n "$release_json" ]; then
-    RELEASE_TAG="$(echo "$release_json" | \
-      grep -o '"tag_name": *"[^"]*"' | head -1 | \
-      sed 's/"tag_name": *"//' | sed 's/"$//')"
+    RELEASE_TAG="$(echo "$release_json" | grep -o '"name": *"Routerly [a-z]* (→ v[^)"]*)"' | head -1 | \
+      sed 's/.*→ \(v[^)]*\)).*/\1/' || true)"
+    [ -n "$RELEASE_TAG" ] || RELEASE_TAG="$(echo "$release_json" | \
+      grep -o '"tag_name": *"[^"]*"' | head -1 | sed 's/"tag_name": *"//;s/"$//')"
   fi
 
   if [ -n "$RELEASE_TAG" ]; then
-    TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
+    # The attached routerly-X.Y.Z.tar.gz carries the stamped package versions
+    # (/health, --version); the git archive of the tag is un-stamped.
+    TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/${RELEASE_TAG}/routerly-${RELEASE_TAG#v}.tar.gz"
+    if ! http_head_ok "$TARBALL_URL"; then
+      TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
+    fi
   else
     if [ -n "$INSTALL_VERSION" ]; then
       die "Could not find release '${INSTALL_VERSION}' on GitHub. Check the version tag and retry."
@@ -337,6 +362,12 @@ resolve_download_url() {
     fi
     warn "Could not fetch release from GitHub API. Falling back to main branch..."
     TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/heads/main.tar.gz"
+  fi
+}
+
+http_head_ok() {
+  if need_cmd curl; then curl -fsSLI -o /dev/null "$1" 2>/dev/null
+  else wget -q --spider "$1" 2>/dev/null
   fi
 }
 
@@ -374,4 +405,4 @@ echo
 # Forward filtered arguments (--channel and --version already consumed above)
 # plus the source directory so it knows where files are.
 # Pass --version with the resolved tag so install.mjs can show it in the banner.
-exec node "$INSTALLER" "--source-dir=${EXTRACT_DIR}" ${RELEASE_TAG:+"--version=${RELEASE_TAG}"} "--channel=${INSTALL_CHANNEL}" "${FORWARD_ARGS[@]+${FORWARD_ARGS[@]}}"
+exec node "$INSTALLER" "--source-dir=${EXTRACT_DIR}" ${RELEASE_TAG:+"--version=${RELEASE_TAG}"} ${INSTALL_VERSION:+"--pinned"} "--channel=${INSTALL_CHANNEL}" "${FORWARD_ARGS[@]+${FORWARD_ARGS[@]}}"

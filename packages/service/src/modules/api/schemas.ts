@@ -82,7 +82,7 @@ const RATIO_THRESHOLD_IDS = new Set(['relevance', 'llmlingua-2']);
 export const optimizerStepSchema = z.object({
   id: optimizerIdEnum,
   enabled: z.boolean(),
-  threshold: z.number().positive().optional(),
+  threshold: z.number().nonnegative().optional(),
   // Only llmlingua-2 runs on a checkpoint, and only one of the curated keys:
   // a free-text repo id would be fetched in full before anything could tell
   // whether it is even the right kind of model.
@@ -90,6 +90,11 @@ export const optimizerStepSchema = z.object({
 }).superRefine((step, ctx) => {
   if (step.threshold !== undefined && RATIO_THRESHOLD_IDS.has(step.id) && step.threshold > 1) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${step.id}: threshold must be between 0 and 1`, path: ['threshold'] });
+  }
+  // The lower bound is the catalog's, so a step the dashboard offers (relevance 0) is never refused here.
+  const min = OPTIMIZER_CATALOG[step.id].threshold?.min
+  if (step.threshold !== undefined && min !== undefined && step.threshold < min) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${step.id}: threshold must be at least ${min}`, path: ['threshold'] });
   }
   if (step.model !== undefined && step.id !== 'llmlingua-2') {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${step.id}: this optimizer runs on no model`, path: ['model'] });

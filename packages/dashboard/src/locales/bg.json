@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Тема: {{theme}}"
     },
+    "language": {
+      "label": "Език",
+      "saveError": "Не можа да се запази вашия език. Върнахме се към предишния."
+    },
     "sidebar": {
       "expand": "Разгъване на страничната лента",
       "collapse": "Свиване на страничната лента"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Някои конфигурационни файлове имат разрешителни достъп ({{files}}). Стартирането и заявките все още работят. Оправете го от Настройки → Сигурност, или от хостовата файлова система, когато е удобно.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Отхвърляне",
       "updateAvailable": "Наличен е Routerly v{{latest}}. Използвате v{{current}}.",
       "updateLink": "Актуализация в Настройки",
@@ -40,9 +45,6 @@
       "telemetryLink": "Какво се изпраща?",
       "telemetryYes": "Да, помагам",
       "telemetryNo": "Не, благодаря"
-    },
-    "language": {
-      "label": "Език"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "Токен на сесията",
       "awsSessionTokenOptionalHint": "(по избор, за временни идентификационни данни)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "GCP Router ID",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Местоположение",
       "gcpLocationDefaultHint": "(по подразбиране: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "Токен за достъп",
         "sessionTokenLabel": "Токен на сесията",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Поставете стойността на бисквитката sessionKey (sk-ant-sid01-…)",
-        "openaiInstructions": "Докато сте влезли в ChatGPT, отворете <code>https://chatgpt.com/api/auth/session</code> в нов раздел. Копирайте стойността на полето <code>accessToken</code> (започва с <code>eyJ</code>). Токенът изтича на всеки ~24 часа. За надежден достъп попълнете и полето <strong>cf_clearance</strong> по-долу.",
-        "anthropicInstructions": "<strong>Как да получите ключа на сесията си:</strong> Докато сте влезли в Claude, отворете DevTools (F12) → Application → Cookies → <code>claude.ai</code> → копирайте стойността на бисквитката <code>sessionKey</code> (започва с <code>sk-ant-sid01-</code>). Ключът остава валиден, докато не излезете."
+        "sessionTokenPlaceholder": "Поставете стойността на бисквитката sessionKey (sk-ant-sid…)",
+        "openaiInstructions": "Докато сте влезли в ChatGPT, отворете <code>https://chatgpt.com/api/auth/session</code> в нов раздел. Копирайте стойността на полето <code>accessToken</code> (започва с <code>eyJ</code>). Токенът е валиден около 10 дни; поставете нов, когато тестът започне да се проваля с 401. За надежден достъп попълнете и полето <strong>cf_clearance</strong> по-долу.",
+        "anthropicInstructions": "<strong>Как да получите ключа на сесията:</strong> Докато сте влезли в <code>https://claude.ai</code>, натиснете F12, за да отворите DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Копирайте <strong>Value</strong> на бисквитката <code>sessionKey</code> (започва с <code>sk-ant-sid</code>, например <code>sk-ant-sid02-</code>). Това е HttpOnly бисквитка, затова не се вижда от конзолата на страницата. Остава валидна, докато не излезете или не изтече; поставете нова, ако Тестът започне да се проваля."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "OAuth токен за абонамент",
@@ -417,7 +419,8 @@
       "status": "статус",
       "encoding": "кодиране",
       "frames": "кадри",
-      "bytes": "байтове"
+      "bytes": "байтове",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "Език",
       "description": "Изберете езика, на който се показва таблото.",
       "languageLabel": "Език",
-      "saved": "Езиковото предпочитание е запазено."
+      "saved": "Езиковото предпочитание е запазено.",
+      "saveError": "Не можа да се запази вашето предпочитание за език. Върнахме се към предишното."
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "Запазване…",
         "enable": "Активиране",
         "disable": "Деактивиране"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "Бюджет – Нулиран",
         "systemStartup": "Система – Стартиране",
         "systemShutdown": "Система – Спиране",
-        "systemUpdateAvailable": "Система – Налична актуализация"
+        "systemUpdateAvailable": "Система – Налична актуализация",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Премахване на канал",
       "removeChannelConfirm": "Премахване на канала?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} права",
         "userCount": "{{count}} потребител",
         "userCount_other": "{{count}} потребители",
-        "everyone": "Всички"
+        "everyone": "Всички",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Зареждането е неуспешно"
@@ -831,6 +838,9 @@
         },
         "optional": "(по избор)",
         "keepCurrentPlaceholder": "Оставете празно, за да запазите текущата стойност",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "Оставете празно за получаване на събития от всички рутери.",
           "cooldownHeading": "Изчакване",
           "cooldownSuffix": "секунди (0 = без изчакване)",
-          "cooldownHint": "Минимален интервал, преди този канал да може отново да се задейства за същото събитие."
+          "cooldownHint": "Минимален интервал, преди този канал да може отново да се задейства за същото събитие.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Получатели / Цели",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "Търсене на канали…",
         "noResults": "Няма резултати",
         "emptyTitle": "Все още няма конфигурирани канали за известия.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Няма канали, отговарящи на активните филтри.",
         "nameInlinePlaceholder": "Етикет (по избор)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "Премахване на интеграция",
       "saving": "Запазване…",
       "save": "Запазване",
-      "addButton": "Добавяне на интеграция"
+      "addButton": "Добавяне на интеграция",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "Последна проверка"
       },
       "noCheckPerformed": "Все още не е извършена проверка за актуализации.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Проверка за актуализации",
       "checking": "Проверка…",
       "updateTo": "Актуализиране до v{{version}}",
@@ -1121,7 +1137,8 @@
         "checkFailed": "Проверката е неуспешна",
         "updateFailed": "Актуализацията е неуспешна"
       },
-      "channel": "Канал"
+      "channel": "Канал",
+      "channelNote": "current следва всяко ново стабилно издание; stable се премества само при повишаване на издание, затова двата могат да се различават."
     },
     "security": {
       "authentication": "Автентикация",
@@ -1156,6 +1173,8 @@
       "count": "1 рутер",
       "count_other": "{{count}} рутера",
       "newRouter": "Нов рутер",
+      "newOrchestrator": "Нов оркестратор",
+      "newPassthrough": "Нов пропускащ",
       "empty": "Все още няма рутери.",
       "emptyFiltered": "Няма маршрутизатори от този тип.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "Изтриване на този рутер?",
       "errors": {
         "deleteFailed": "Грешка при изтриване на рутера"
-      },
-      "newOrchestrator": "Нов оркестратор",
-      "newPassthrough": "Нов пропускащ"
+      }
     },
     "layout": {
       "notFound": "Рутерът не е намерен",
@@ -1191,10 +1208,10 @@
       "backToRouters": "Назад към Рутери",
       "backToRoutersTitle": "Назад към рутерите",
       "newRouter": "Нов рутер",
+      "newKind": "Нов {{kind}}",
       "loading": "Зареждане...",
       "routerId": "ID на рутера:",
-      "saveFirstHint": "Запазете рутера първо, за да отключите този раздел",
-      "newKind": "Нов {{kind}}"
+      "saveFirstHint": "Запазете рутера първо, за да отключите този раздел"
     },
     "dashboard": {
       "period": "Период",
@@ -1212,7 +1229,9 @@
         "ttft": "Време до първи токен",
         "notMeasured": "не е измерено при тези заявки",
         "reliability": "Надеждност",
-        "errorsAndBlocked": "{{errors}} грешки · {{blocked}} блокирани"
+        "errorsAndBlocked": "{{errors}} грешки · {{blocked}} блокирани",
+        "errorsAndBlocked_one": "{{errors}} грешка · {{blocked}} блокирани",
+        "errorsAndBlocked_other": "{{errors}} грешки · {{blocked}} блокирани"
       },
       "tokens": {
         "input": "Входни токени:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Базов URL <code>{{baseUrl}}</code>, без <code>/v1</code>: SDK-то го добавя.",
         "curl": "curl",
-        "curlHint": "Проверете свързването без да инсталирате нищо, след което потърсете заявката в <usageLink>Използване</usageLink>."
+        "curlHint": "Проверете свързването без да инсталирате нищо, след което потърсете заявката в <usageLink>Използване</usageLink>.",
+        "passthrough": {
+          "heading": "Как се свързать",
+          "intro": "Passthrough препраща всяко заявление без промяна — използвайте <strong>собствения си</strong> ключ на доставчика като API ключ, никога не използвайте Routerly токен. Routerly не съхранява и не издава фиксиране за този маршрутизатор; всичко, което клиентът изпраща, отива директно към доставчика.",
+          "noLimits": "Бюджетите и лимитите не се прилагат за този маршрутизатор: цената на Passthrough трафика е неизвестна, така че никога не се проверява или не се брои към никой лимит на разходите.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Базов URL <code>{{url}}</code> — няма суфикс <code>/v1</code>, SDK все още добавя собствения си път точно както е при реалния OpenAI API.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Базов URL <code>{{url}}</code> — SDK все още добавя <code>/v1/messages</code> сам, точно както е при реалния Anthropic API."
+        }
       },
       "form": {
         "kind": "Вид",
         "kindFixedHint": "Фиксиран след създаването на рутера.",
         "routerName": "Име на рутера",
         "routerNamePlaceholder": "Моето приложение",
+        "passthroughPath": "Пътека",
+        "passthroughPathHint": "Става част от URL адреса, който клиентите викат: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Разширени настройки",
         "ttftTimeout": "TTFT изчакване (ms)",
         "ttftTimeoutHint": "Ако модел не изпрати първия байт от отговора в рамките на това време, Routerly прекъсва и опитва следващия кандидат. Не ограничава общата продължителност на отговора. Задайте 0, за да изчакате, колкото е нужно доставчику.",
         "traceContent": "Съдържание на трасето",
         "traceContentHint": "Трасетата винаги записват метаданни (модели, оценки, токени, разходи, латентност). Активирайте това, за да записвате и изпратените промптове и получените отговори. Съхраняват се със записа за използване и са видими за всеки, който може да прочете отчетите.",
         "capturePromptsAndAnswers": "Записване на промптове и отговори",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Запазване на промените",
         "createRouter": "Създаване на рутер",
-        "passthroughPath": "Пътека",
-        "passthroughPathHint": "Става част от URL адреса, който клиентите викат: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Създай оркестратор",
         "createPassthrough": "Създай пропускащ"
       }
@@ -1384,6 +1414,7 @@
       "saving": "Запазване...",
       "saved": "Запазено",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Преглед на спестените токени",
         "description": "Изпълнете текущия (незапазен) процес върху промпт, за да видите какво премахва всяка стъпка и колко струва. Изберете един от примерните разговори или напишете свой промпт.",
         "promptLabel": "Промпт",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "Все още не е изпратена заявка.",
       "turnTraceLog": "Дневник на трасето на реда №{{turn}} · {{count}} събитие",
       "turnTraceLog_other": "Дневник на трасето на реда №{{turn}} · {{count}} събития"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "Модели",
       "subtitle": "LLM доставчици, регистрирани в Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Модели",
         "health": "Здраве"
@@ -2242,7 +2284,8 @@
       "next": "Следваща",
       "page": "Страница {{page}} от {{totalPages}}",
       "total": "({{count}} общо)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "Всички",
         "success": "Успех",
         "blocked": "Блокирано",
-        "error": "Грешка"
+        "error": "Грешка",
+        "sessionId": "ID на сесията",
+        "endUser": "Краен потребител",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Всяка сесия",
+        "endUserPlaceholder": "Всеки краен потребител",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Всички",
@@ -2383,7 +2432,10 @@
         "timestamp": "Времева отметка",
         "guardrailTriggered": "Ограничител активиран",
         "blockedBy": "Блокирано от",
-        "piiRedacted": "Лични данни редактирани"
+        "piiRedacted": "Лични данни редактирани",
+        "sessionId": "ID на сесията",
+        "endUser": "Краен потребител",
+        "tags": "Tags"
       },
       "errorMessage": "Съобщение за грешка",
       "eventCount": "{{count}} събитие",
@@ -2457,7 +2509,8 @@
       "show": "Показване на отстраняването на грешки",
       "empty": "Все още няма данни за отстраняване на грешки.",
       "emptyHint": "Изпратете съобщение, за да видите детайли за маршрутизирането.",
-      "turnTraceLog": "Дневник на трасето на реда №{{turn}}"
+      "turnTraceLog": "Дневник на трасето на реда №{{turn}}",
+      "resize": "Преоразмеряване на панела за отстраняване на грешки"
     },
     "compare": {
       "modelLabel": "Модел {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "Актуализирането на ролята е неуспешно",
       "createFailed": "Създаването на ролята е неуспешно",
       "deleteFailed": "Изтриването на ролята е неуспешно"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "Назад към Свързване",
     "title": "Свързване",
     "docs": "Документация",
-    "notEnabledPrefix": "Конфигураторът на клиенти не е активиран. Попитайте администратор да го активира с",
     "noClientPrefix": "Няма клиент с име",
     "errors": {
       "loadFailed": "Зареждането на клиентите е неуспешно: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "насочва трафика на модела на този клиент през Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "зарежда Routerly като сървър на инструменти в него.",
-    "notEnabledPrefix": "Конфигураторът на клиенти не е активиран. Попитайте администратор да го активира с",
     "errors": {
       "loadFailed": "Зареждането на клиентите е неуспешно: {{error}}"
     },

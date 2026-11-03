@@ -27,7 +27,7 @@ vi.mock('./modules/api/api.js', () => ({ apiRoutes: vi.fn(async () => {}) }))
 vi.mock('./modules/telemetry/telemetry.js', () => ({ pingTelemetry: vi.fn().mockResolvedValue(true) }))
 vi.mock('./modules/notifications/emitter.js', () => ({ emitEvent: vi.fn(async () => {}) }))
 vi.mock('./modules/update-checker/update-checker.js', () => ({
-  updateChecker: { start: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
+  updateChecker: { start: vi.fn(), configure: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
 
 import { startServer } from './server.js'

@@ -68,7 +68,7 @@ const sampleEntries = [
 
 describe('routerly audit list', () => {
   it('renders a table with audit entries', async () => {
-    mockApi.mockResolvedValue(sampleEntries);
+    mockApi.mockResolvedValue({ entries: sampleEntries });
     const { lines, spy } = captureConsole();
 
     await run('list');
@@ -81,7 +81,7 @@ describe('routerly audit list', () => {
   });
 
   it('outputs raw JSON with --json flag', async () => {
-    mockApi.mockResolvedValue(sampleEntries);
+    mockApi.mockResolvedValue({ entries: sampleEntries });
     const { lines, spy } = captureConsole();
 
     await run('list', '--json');
@@ -103,7 +103,7 @@ describe('routerly audit list', () => {
   });
 
   it('shows empty message when no entries returned', async () => {
-    mockApi.mockResolvedValue([]);
+    mockApi.mockResolvedValue({ entries: [] });
     const { lines, spy } = captureConsole();
 
     await run('list');
@@ -133,12 +133,12 @@ describe('routerly audit list', () => {
     expect(url).toContain('action=model%3Acreate');
     expect(url).toContain('from=2026-01-01');
     expect(url).toContain('to=2026-12-31');
-    expect(url).toContain('limit=10');
+    expect(url).toContain('pageSize=10');
   });
 
   it('falls back to userId when email is empty', async () => {
     const entryNoEmail = { ...sampleEntries[0]!, email: '' };
-    mockApi.mockResolvedValue([entryNoEmail]);
+    mockApi.mockResolvedValue({ entries: [entryNoEmail] });
     const { lines, spy } = captureConsole();
 
     await run('list');
@@ -149,7 +149,7 @@ describe('routerly audit list', () => {
 
   it('uses unknown result color (chalk.white) for unrecognised result value', async () => {
     const entryUnknown = { ...sampleEntries[0]!, result: 'unknown' as 'success' };
-    mockApi.mockResolvedValue([entryUnknown]);
+    mockApi.mockResolvedValue({ entries: [entryUnknown] });
     const { lines, spy } = captureConsole();
 
     await run('list');
@@ -161,7 +161,7 @@ describe('routerly audit list', () => {
 
   it('renders the forbidden result with yellow color (no crash)', async () => {
     const entry = { ...sampleEntries[0]!, result: 'forbidden' as const };
-    mockApi.mockResolvedValue([entry]);
+    mockApi.mockResolvedValue({ entries: [entry] });
     const { lines, spy } = captureConsole();
 
     await run('list');

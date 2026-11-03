@@ -139,14 +139,16 @@ export async function enforceStartupGuard(): Promise<void> {
     console.error(`  ${u.path} (mode ${u.mode}) — group/other must have no access. Required action: chmod 600 (or stricter) on this file.`);
   }
 
+  const recovery = `chmod 600 ${secretUnsafe.map(u => u.path).join(' ')}`;
+
   if (!process.stdin.isTTY) {
-    console.error('[permission-guard] stdin is not a TTY (headless/container) — cannot prompt. Startup refused. Fix permissions manually and restart, or run with the confirm-and-fix prompt from an interactive terminal.');
+    console.error(`[permission-guard] stdin is not a TTY (headless/container) — cannot prompt. Startup refused. Recover with: ${recovery} — then restart (\`routerly permissions fix\` needs the running service).`);
     process.exit(1);
   }
 
   const confirmed = await promptYesNo('[permission-guard] Fix these permissions now? (y/N) ');
   if (!confirmed) {
-    console.error('[permission-guard] Fix declined — startup refused. No changes were made.');
+    console.error(`[permission-guard] Fix declined — startup refused. No changes were made. Recover with: ${recovery}`);
     process.exit(1);
   }
 

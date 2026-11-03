@@ -2,7 +2,6 @@ import type { ProviderConnection } from '@routerly/shared';
 import { OpenAIAdapter } from './openai.js';
 import { decryptCredential, encryptCredential } from '../../lib/crypto-cred.js';
 import { readConfig, writeConfig } from '../config/loader.js';
-import { isModuleEnabled } from '../../core/modules/registry.js';
 
 export class OpenAIOAuthAdapter extends OpenAIAdapter {}
 
@@ -58,10 +57,6 @@ export async function refreshOpenAIOAuthToken(refreshToken: string): Promise<Ope
  * openaiOAuthForward.ts's resolveCodexToken.
  */
 export async function resolveOpenAIOAuthCredential(connection: ProviderConnection): Promise<string> {
-  const records = await readConfig('modules');
-  if (!isModuleEnabled(records, 'provider-oauth')) {
-    throw new Error("openai-oauth: 'provider-oauth' module is disabled");
-  }
   const creds = connection.credentials as { oauthEnc?: string; refreshEnc?: string; expiresAt?: number; apiKey?: string };
   if (!creds.oauthEnc || !creds.refreshEnc || typeof creds.expiresAt !== 'number') {
     // No refreshable oauth pair. Fall back to a static bearer stored in apiKey (legacy/migrated

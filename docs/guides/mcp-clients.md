@@ -200,7 +200,7 @@ HTTP:
 openclaw mcp add routerly \
   --url http://localhost:3000/mcp \
   --transport streamable-http \
-  --header "Authorization: Bearer sk-rt-mcp-YOUR_TOKEN"
+  --header "Authorization=Bearer sk-rt-mcp-YOUR_TOKEN"
 ```
 
 `--transport streamable-http` is required: OpenClaw defaults to `sse`, which

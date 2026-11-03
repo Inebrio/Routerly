@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { RouterTestTab } from './RouterTestTab';
@@ -462,9 +462,9 @@ describe('RouterTestTab — error handling', () => {
 describe('RouterTestTab — stop generation', () => {
   it('shows Stop button while loading', async () => {
     // Stream that hangs
-    let resolveRead!: () => void;
+    let _resolveRead!: () => void;
     const hangingBody = new ReadableStream({
-      start(controller) {
+      start(_controller) {
         // Enqueue nothing — stays open
       },
     });
@@ -616,7 +616,7 @@ describe('RouterTestTab — image attachment', () => {
     });
 
     // Click the × button on the attachment preview
-    const removeBtn = document.querySelector('img[alt="Attachment"]')?.closest('div')?.parentElement?.querySelector('button')!;
+    const removeBtn = document.querySelector('img[alt="Attachment"]')?.closest('div')?.parentElement?.querySelector('button') as HTMLElement;
     if (removeBtn) await userEvent.click(removeBtn);
 
     await waitFor(() => expect(document.querySelector('img[alt="Attachment"]')).toBeNull());

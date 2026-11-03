@@ -8,7 +8,6 @@ vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undef
 import { readConfig, writeConfig } from '../config/loader.js'
 import { ServiceContainer, type Token } from '../../core/index.js'
 import {
-  MCP_TOOLS,
   CATALOG,
   ROUTER,
   USAGE_TRACKER,

@@ -28,6 +28,7 @@ import type {
   ResilienceFault,
 } from '@routerly/shared';
 import { getProviderAdapter } from '../provider/registry.js';
+import { estimateTokens } from '../optimizers/messages.js';
 import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../budget/budget.js';
 import { trackUsage } from '../usage/tracker.js';
 import { calculateCost } from '../../lib/cost.js';
@@ -43,6 +44,7 @@ import type { TraceEntry } from '@routerly/shared';
 import type { TracePanel } from '../trace/store.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { resilienceKeys } from '../resilience/keys.js';
+import type { CallOptions } from '../provider/passthrough.js';
 import { recordFault } from '../resilience/record.js';
 import { classifyUpstreamError, type UpstreamResponse } from '../resilience/classifier.js';
 
@@ -83,6 +85,10 @@ export interface LLMCallContext {
   experiment?: { id: string; variantId: string };
   /** Set when this call was forwarded through an Orchestrator (RTR-02) — the Orchestrator's own id. */
   orchestratorId?: string;
+  /** Client request headers to forward to the provider (OpenAI lane; already filtered). */
+  forwardHeaders?: Record<string, string>;
+  /** Receives the provider's response headers for the call that answered. */
+  onUpstreamHeaders?: (headers: Record<string, string>) => void;
 }
 
 /**
@@ -101,6 +107,16 @@ export class BudgetExceededError extends Error {
 
 // ─── In-memory notification state ────────────────────────────────────────────
 
+const WEB_PROVIDERS = new Set<string>(['openai-web', 'anthropic-web']);
+const WEB_PROVIDER_MIN_TTFT_MS = 30_000;
+
+function callOptions(ctx: LLMCallContext): CallOptions {
+  return {
+    ...(ctx.forwardHeaders ? { headers: ctx.forwardHeaders } : {}),
+    ...(ctx.onUpstreamHeaders ? { onResponseHeaders: ctx.onUpstreamHeaders } : {}),
+  };
+}
+
 // Provider health tracking: keyed by model.id
 const providerFailCounts = new Map<string, number>(); // consecutive failures
 const providerDegraded   = new Set<string>();          // currently degraded model IDs
@@ -108,6 +124,11 @@ const providerDegraded   = new Set<string>();          // currently degraded mod
 // Budget notification deduplication
 const budgetExceededKeys = new Set<string>(); // "${routerId}:${modelId}" — awaiting reset
 const thresholdFiredKeys = new Set<string>(); // "${routerId}:${modelId}:${window}" — threshold already fired
+
+/** True for the SDK's own request-timeout error (model `timeout` elapsed, APIConnectionTimeoutError). */
+function isUpstreamTimeout(err: unknown): boolean {
+  return err instanceof Error && (err.name === 'APIConnectionTimeoutError' || err.name === 'TimeoutError' || /^request timed out/i.test(err.message));
+}
 
 function isRateLimitError(err: unknown): boolean {
   return /429|rate.?limit|too many/i.test(err instanceof Error ? err.message : String(err));
@@ -123,8 +144,21 @@ function isRateLimitError(err: unknown): boolean {
  */
 export function upstreamResponseFromError(err: unknown): UpstreamResponse | undefined {
   if (!err || typeof err !== 'object') return undefined;
-  const e = err as { status?: unknown; headers?: unknown; error?: unknown };
-  if (typeof e.status !== 'number') return undefined;
+  const e = err as { status?: unknown; headers?: unknown; error?: unknown; $metadata?: { httpStatusCode?: unknown }; message?: unknown };
+  // AWS SDK errors (Bedrock) carry the HTTP status in `$metadata` and no parsed `error` body.
+  const awsStatus = e.$metadata?.httpStatusCode;
+  if (typeof e.status !== 'number' && typeof awsStatus === 'number') {
+    return { status: awsStatus, ...(typeof e.message === 'string' ? { body: { error: { message: e.message } } } : {}) };
+  }
+  if (typeof e.status !== 'number') {
+    // Plain-Error adapters (web, Bedrock "Bedrock error 403: {json}", Vertex "token exchange failed 401: ...") embed the status in the message: recover status and body.
+    const m = typeof e.message === 'string' ? /\b(?:HTTP|error|failed) (\d{3})\b/.exec(e.message) : null;
+    if (!m) return undefined;
+    const msg = e.message as string;
+    let body: unknown;
+    try { body = JSON.parse(msg.slice(msg.indexOf('{', m.index))); } catch { body = { error: { message: msg } }; }
+    return { status: Number(m[1]), body };
+  }
   const headers = e.headers && typeof e.headers === 'object' ? (e.headers as Record<string, string>) : undefined;
   return { status: e.status, ...(headers ? { headers } : {}), ...(e.error !== undefined ? { body: e.error } : {}) };
 }
@@ -183,7 +217,8 @@ export async function loadEffectiveModel(id: string): Promise<EffectiveModel | u
     const connection = connections.find((c) => c.id === instance.connectionId);
     if (connection) {
       const supportLevel = getProviderDescriptor(connection.providerId)?.supportLevel;
-      if (supportLevel === 'oauth') {
+      // openai-oauth resolves its own credential (authFilePath / token pair) in lanes/openaiOAuthForward.ts.
+      if (supportLevel === 'oauth' && connection.providerId !== 'openai-oauth') {
         const liveToken = connection.providerId === 'anthropic-oauth'
           ? await resolveAnthropicOAuthCredential(connection)
           : await resolveOpenAIOAuthCredential(connection);
@@ -343,7 +378,7 @@ export async function llmChat(
   });
 
   try {
-    const response = await adapter.chatCompletion(request, model);
+    const response = await adapter.chatCompletion(request, model, callOptions(ctx));
     const latencyMs = Date.now() - t0;
     const responseText = isRouting
       ? (response.choices?.[0]?.message?.content ?? undefined)
@@ -356,6 +391,7 @@ export async function llmChat(
     const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
 
     // Calculate costs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const cacheCreationTokens = (response.usage as any)?.prompt_tokens_details?.cache_creation_tokens ?? 0;
     const plainInput = inputTokens - cachedTokens - cacheCreationTokens;
     // ponytail: input/output splits below are display-only for the trace panel; the
@@ -437,7 +473,7 @@ export async function llmChat(
       inputTokens: 0,
       outputTokens: 0,
       latencyMs,
-      outcome: 'error',
+      outcome: isUpstreamTimeout(err) ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
@@ -483,6 +519,7 @@ export async function llmStream(
   request: ChatCompletionRequest,
   model: ModelConfig,
   ctx: LLMCallContext,
+  opts: { injectUsage?: boolean } = {},
 ): Promise<StreamResult> {
   const { routerId, callType, traceId, emit, log } = ctx;
   const { req, res } = getPanels(callType);
@@ -508,15 +545,20 @@ export async function llmStream(
     },
   });
 
-  // Inietta stream_options per ricevere i token usage nel chunk finale
-  const streamRequest: ChatCompletionRequest = {
-    ...request,
-    stream_options: { include_usage: true },
-  };
+  // Inietta stream_options per ricevere i token usage nel chunk finale, solo quando il body
+  // upstream non è quello del client (lane Anthropic). La lane OpenAI lo inoltra intatto.
+  const streamRequest: ChatCompletionRequest = opts.injectUsage === false
+    ? request
+    : { ...request, stream_options: { include_usage: true } };
 
-  const iter = adapter.streamCompletion(streamRequest, model)[Symbol.asyncIterator]();
+  const iter = adapter.streamCompletion(streamRequest, model, callOptions(ctx))[Symbol.asyncIterator]();
 
-  const ttftTimeoutMs = callType === 'completion' ? ctx.router.timeoutMs : undefined;
+  const routerTtftMs = callType === 'completion' ? ctx.router.timeoutMs : undefined;
+  // Web providers run a multi-request handshake (sentinel/PoW, org + conversation setup) before
+  // the first chunk (~4 s), so the router default would always time out. 0 stays "disabled".
+  const ttftTimeoutMs = routerTtftMs && WEB_PROVIDERS.has(model.provider)
+    ? Math.max(routerTtftMs, WEB_PROVIDER_MIN_TTFT_MS)
+    : routerTtftMs;
 
   // Attende il primo chunk per poter misurare il TTFT.
   // Se fallisce qui il chiamante può tentare il candidato successivo.
@@ -544,7 +586,7 @@ export async function llmStream(
     handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), routerId, log);
     await trackUsage({
       routerId, model, inputTokens: 0, outputTokens: 0, latencyMs,
-      outcome: isTtftTimeout ? 'timeout' : 'error',
+      outcome: isTtftTimeout || isUpstreamTimeout(err) ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
       ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
@@ -565,6 +607,7 @@ export async function llmStream(
     let thinkingAccum = '';
     let thinkingEmitted = false;
     let contentAccum = '';
+    let usageSeen = false;
     let outcome: 'success' | 'error' = 'success';
     let errorMessage: string | undefined;
 
@@ -572,6 +615,7 @@ export async function llmStream(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const u = (chunk as any).usage;
       if (u) {
+        usageSeen = true;
         inputTokens = u.prompt_tokens ?? inputTokens;
         outputTokens = u.completion_tokens ?? outputTokens;
         cachedInputTokens = u.prompt_tokens_details?.cached_tokens ?? cachedInputTokens;
@@ -634,6 +678,11 @@ export async function llmStream(
       throw err;
     } finally {
       const latencyMs = Date.now() - t0;
+      // ponytail: chars/4 estimate when the provider sent no usage (client did not ask for it)
+      if (outcome === 'success' && !usageSeen) {
+        inputTokens = estimateTokens(JSON.stringify(request.messages ?? []));
+        outputTokens = estimateTokens(contentAccum + thinkingAccum);
+      }
       if (outcome === 'success') {
         const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
 
@@ -673,6 +722,7 @@ export async function llmStream(
         ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
         ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
         ...(ctx.tags ? { tags: ctx.tags } : {}),
+        ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
         ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
       }).catch(() => {});
     }
@@ -797,7 +847,7 @@ export async function llmMessages(
       inputTokens: 0,
       outputTokens: 0,
       latencyMs,
-      outcome: 'error',
+      outcome: isUpstreamTimeout(err) ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
       ...(traceId !== undefined ? { traceId } : {}),

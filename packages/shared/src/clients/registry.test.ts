@@ -119,7 +119,7 @@ describe('buildSnippet', () => {
 
     expect(parsed.models.providers.routerly.baseUrl).toBe(`${BASE_URL}/v1`);
     expect(parsed.models.providers.routerly.apiKey).toBe(TOKEN);
-    expect(parsed.models.providers.routerly.models).toEqual([{ id: 'ada' }]);
+    expect(parsed.models.providers.routerly.models).toEqual([{ id: 'ada', name: 'ada' }]);
     // "<provider>/<model id>" reference, which lands on Routerly's own sentinel.
     expect(parsed.agents.defaults.model.primary).toBe('routerly/ada');
   });
@@ -217,6 +217,7 @@ describe('buildMcpSnippet', () => {
     expect(snippet).toContain('openclaw mcp add routerly');
     expect(snippet).toContain('--transport streamable-http');
     expect(snippet).toContain(`--url ${BASE_URL}/mcp`);
+    expect(snippet).toContain(`--header "Authorization=Bearer ${MCP_TOKEN}"`);
   });
 
   it('cursor: mcpServers entry with url and the Authorization header', () => {

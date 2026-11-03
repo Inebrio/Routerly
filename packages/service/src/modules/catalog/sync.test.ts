@@ -87,21 +87,15 @@ describe('syncModelsFromCatalog', () => {
       expect(changed).toBe(true);
     });
 
-    // connections-cutover (A3/A2): migrate-connections.ts (not touched by A3) sets
-    // instance.upstreamModelId = model.upstreamModelId ?? model.id — i.e. always the full,
-    // provider-prefixed id when no explicit upstreamModelId was configured. Since
-    // resolveEffectiveModel always copies instance.upstreamModelId onto the effective
-    // model, sync.ts's `model.upstreamModelId ?? <strip-provider-prefix>` fallback branch
-    // is now unreachable: model.upstreamModelId is never undefined post-cutover, so the
-    // id-stripping fallback never runs and catalog lookups for migrated models without an
-    // explicit upstreamModelId now use the unstripped, prefixed id and MISS the catalog
-    // entry. Flagged as a concern in task-A3-report.md (real regression, not test noise).
-    it('does NOT strip provider prefix from id when no upstreamModelId was configured (id-stripping fallback is unreachable post-cutover)', async () => {
+    // resolveEffectiveModel (ROUT-275/283) maps an instance whose upstreamModelId equals its
+    // full registry id back to the stripped default, so the provider prefix is still removed
+    // for catalog lookups.
+    it('strips provider prefix from id when no upstreamModelId was configured', async () => {
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 15 }]));
       const { upstreamModelId: _unused, ...noUpstream } = makeModel({ id: 'openai/gpt-4' });
       mockModels([noUpstream as ModelConfig]);
       const changed = await syncModelsFromCatalog('0.3.0');
-      expect(changed).toBe(false);
+      expect(changed).toBe(true);
     });
 
     it('uses id as-is when no slash present', async () => {
@@ -111,12 +105,12 @@ describe('syncModelsFromCatalog', () => {
       expect(changed).toBe(true);
     });
 
-    it('does NOT strip multi-segment id to its last segment when no upstreamModelId was configured (id-stripping fallback is unreachable post-cutover)', async () => {
+    it('strips only the provider segment of a multi-segment id when no upstreamModelId was configured', async () => {
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'org/gpt-4', input: 5, output: 15 }]));
       const { upstreamModelId: _unused, ...noUpstream } = makeModel({ id: 'openai/org/gpt-4' });
       mockModels([noUpstream as ModelConfig]);
       const changed = await syncModelsFromCatalog('0.3.0');
-      expect(changed).toBe(false);
+      expect(changed).toBe(true);
     });
 
     it('passes pkgVersion to catalogFetcher.get', async () => {

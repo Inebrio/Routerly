@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Språk",
+      "saveError": "Det gick inte att spara ditt språk. Återgick till det tidigare."
+    },
     "sidebar": {
       "expand": "Expandera sidofält",
       "collapse": "Dölj sidofält"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Vissa konfigurationsfiler har tillåtande åtkomst ({{files}}). Start och förfrågningar fungerar fortfarande. Åtgärda det från Inställningar → Säkerhet, eller från värdfilsystemet när det passar.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Stäng",
       "updateAvailable": "Routerly v{{latest}} är tillgänglig. Du är på v{{current}}.",
       "updateLink": "Uppdatera i Inställningar",
@@ -40,9 +45,6 @@
       "telemetryLink": "Vad skickas?",
       "telemetryYes": "Ja, hjälp gärna",
       "telemetryNo": "Nej tack"
-    },
-    "language": {
-      "label": "Språk"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "Session Token",
       "awsSessionTokenOptionalHint": "(valfritt, för tillfälliga autentiseringsuppgifter)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "GCP Router ID",
-      "gcpRouterIdPlaceholder": "min-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Plats",
       "gcpLocationDefaultHint": "(standard: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "Åtkomsttoken",
         "sessionTokenLabel": "Session Token",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Klistra in sessionKey-cookievärde (sk-ant-sid01-…)",
-        "openaiInstructions": "Medan du är inloggad på ChatGPT öppnar du <code>https://chatgpt.com/api/auth/session</code> i en ny flik. Kopiera värdet för fältet <code>accessToken</code> (börjar med <code>eyJ</code>). Denna token upphör att gälla varje ~24 timmar. För tillförlitlig åtkomst fyller du också i fältet <strong>cf_clearance</strong> nedan.",
-        "anthropicInstructions": "<strong>Hur du får din sessionsnyckel:</strong> Medan du är inloggad på Claude öppnar du DevTools (F12) → Tillämpning → Cookies → <code>claude.ai</code> → kopiera värdet för sessionKey-cookien (börjar med <code>sk-ant-sid01-</code>). Nyckeln förblir giltig tills du loggar ut."
+        "sessionTokenPlaceholder": "Klistra in värdet för cookien sessionKey (sk-ant-sid…)",
+        "openaiInstructions": "Medan du är inloggad på ChatGPT öppnar du <code>https://chatgpt.com/api/auth/session</code> i en ny flik. Kopiera värdet för fältet <code>accessToken</code> (börjar med <code>eyJ</code>). Denna token är giltig i ungefär 10 dagar; klistra in en ny när testet börjar misslyckas med 401. För tillförlitlig åtkomst fyller du också i fältet <strong>cf_clearance</strong> nedan.",
+        "anthropicInstructions": "<strong>Så får du tag i din sessionsnyckel:</strong> När du är inloggad på <code>https://claude.ai</code>, tryck på F12 för att öppna DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Kopiera <strong>Value</strong> för cookien <code>sessionKey</code> (börjar med <code>sk-ant-sid</code>, till exempel <code>sk-ant-sid02-</code>). Det är en HttpOnly-cookie, så den syns inte i sidans konsol. Den är giltig tills du loggar ut eller den går ut; klistra in en ny om testet börjar misslyckas."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Prenumerations-OAuth Token",
@@ -417,7 +419,8 @@
       "status": "status",
       "encoding": "kodning",
       "frames": "bildrutor",
-      "bytes": "byte"
+      "bytes": "byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "Språk",
       "description": "Välj språket som instrumentpanelen visas på.",
       "languageLabel": "Språk",
-      "saved": "Språkinställning sparad."
+      "saved": "Språkinställning sparad.",
+      "saveError": "Det gick inte att spara dina språkinställningar. Återgick till det tidigare."
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "Sparar…",
         "enable": "Aktivera",
         "disable": "Inaktivera"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "Budget – Återställd",
         "systemStartup": "System – Start",
         "systemShutdown": "System – Avstängning",
-        "systemUpdateAvailable": "System – Uppdatering tillgänglig"
+        "systemUpdateAvailable": "System – Uppdatering tillgänglig",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Ta bort kanal",
       "removeChannelConfirm": "Ta bort kanal?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} behörigheter",
         "userCount": "{{count}} användare",
         "userCount_other": "{{count}} användare",
-        "everyone": "Alla"
+        "everyone": "Alla",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Misslyckades att ladda"
@@ -831,6 +838,9 @@
         },
         "optional": "(valfritt)",
         "keepCurrentPlaceholder": "Lämna tomt för att behålla aktuell",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "Lämna tomt för att ta emot händelser från alla routrar.",
           "cooldownHeading": "Nedkylning",
           "cooldownSuffix": "sekunder (0 = ingen nedkylning)",
-          "cooldownHint": "Minimalt intervall innan denna kanal kan aktiveras igen för samma händelse."
+          "cooldownHint": "Minimalt intervall innan denna kanal kan aktiveras igen för samma händelse.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Mottagare / Mål",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "Sök kanaler…",
         "noResults": "Inga resultat",
         "emptyTitle": "Inga aviseringskanaler konfigurerade ännu.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Inga kanaler matchar de aktiva filtren.",
         "nameInlinePlaceholder": "Etikett (valfritt)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "Ta bort integrering",
       "saving": "Sparar…",
       "save": "Spara",
-      "addButton": "Lägg till integrering"
+      "addButton": "Lägg till integrering",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "Senast kontrollerad"
       },
       "noCheckPerformed": "Ingen uppdateringskontroll utförd ännu.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Sök efter uppdateringar",
       "checking": "Kontrollerar…",
       "updateTo": "Uppdatera till v{{version}}",
@@ -1121,7 +1137,8 @@
         "checkFailed": "Kontrollen misslyckades",
         "updateFailed": "Uppdateringen misslyckades"
       },
-      "channel": "Kanal"
+      "channel": "Kanal",
+      "channelNote": "current följer varje ny stabil version; stable flyttas bara när en version befordras, så de två kan skilja sig åt."
     },
     "security": {
       "authentication": "Autentisering",
@@ -1156,6 +1173,8 @@
       "count": "1 router",
       "count_other": "{{count}} routrar",
       "newRouter": "Ny router",
+      "newOrchestrator": "Ny orkestrator",
+      "newPassthrough": "Ny passthrough",
       "empty": "Inga routrar ännu.",
       "emptyFiltered": "Inga routrar av denna typ.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "Ta bort denna router?",
       "errors": {
         "deleteFailed": "Fel vid borttagning av router"
-      },
-      "newOrchestrator": "Ny orkestrator",
-      "newPassthrough": "Ny passthrough"
+      }
     },
     "layout": {
       "notFound": "Router hittades inte",
@@ -1191,10 +1208,10 @@
       "backToRouters": "Tillbaka till routrar",
       "backToRoutersTitle": "Tillbaka till routrar",
       "newRouter": "Ny router",
+      "newKind": "Ny {{kind}}",
       "loading": "Laddar...",
       "routerId": "Router-ID:",
-      "saveFirstHint": "Spara routern först för att låsa upp denna flik",
-      "newKind": "Ny {{kind}}"
+      "saveFirstHint": "Spara routern först för att låsa upp denna flik"
     },
     "dashboard": {
       "period": "Period",
@@ -1212,7 +1229,9 @@
         "ttft": "Tid till första token",
         "notMeasured": "inte mätt på dessa samtal",
         "reliability": "Tillförlitlighet",
-        "errorsAndBlocked": "{{errors}} fel · {{blocked}} blockerad"
+        "errorsAndBlocked": "{{errors}} fel · {{blocked}} blockerad",
+        "errorsAndBlocked_one": "{{errors}} fel · {{blocked}} blockerad",
+        "errorsAndBlocked_other": "{{errors}} fel · {{blocked}} blockerad"
       },
       "tokens": {
         "input": "Inmatningstoken:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Bas-URL <code>{{baseUrl}}</code>, utan <code>/v1</code>: SDK lägger till den.",
         "curl": "curl",
-        "curlHint": "Kontrollera ledningen utan att installera något, titta sedan efter samtalet i <usageLink>Användning</usageLink>."
+        "curlHint": "Kontrollera ledningen utan att installera något, titta sedan efter samtalet i <usageLink>Användning</usageLink>.",
+        "passthrough": {
+          "heading": "Hur man ansluter",
+          "intro": "Passthrough skickar vidare varje begäran oförändrad — använd <strong>din egen</strong> upstream-leverantörnyckel som API-nyckel, aldrig en Routerly-token. Routerly lagrar eller utfärdar ingen autentiseringsuppgift för denna router; vad klienten skickar går direkt till leverantören.",
+          "noLimits": "Budgets och gränser gäller inte för denna router: kostnad är okänd för Passthrough-trafik, så den kontrolleras aldrig mot eller räknas mot någon utgiftsgräns.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — ingen <code>/v1</code> suffix, SDK:n lägger fortfarande till sin egen sökväg exakt som den skulle göra mot det verkliga OpenAI API:et.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK:n lägger fortfarande till <code>/v1/messages</code> själv, exakt som det skulle göra mot det verkliga Anthropic API:et."
+        }
       },
       "form": {
         "kind": "Typ",
         "kindFixedHint": "Fixerad när routern är skapad.",
         "routerName": "Routernamn",
         "routerNamePlaceholder": "Min app",
+        "passthroughPath": "Sökväg",
+        "passthroughPathHint": "Blir del av URL:en som klienter anropar: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Avancerade inställningar",
         "ttftTimeout": "TTFT-timeout (ms)",
         "ttftTimeoutHint": "Om en modell inte skickar den första svarsbyte inom denna tid avbryter Routerly den och försöker nästa kandidat. Begränsar inte total svarslängd. Ställ på 0 för att vänta så länge providern tar.",
         "traceContent": "Spårinnehål",
         "traceContentHint": "Spår registrerar alltid metadata (modeller, poäng, tokens, kostnad, latens). Slå på detta för att också registrera instruktionerna som skickats och svar som mottagits. De lagras med användningsposten och är synliga för alla som kan läsa rapporter.",
         "capturePromptsAndAnswers": "Fånga instruktioner och svar",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Spara ändringar",
         "createRouter": "Skapa router",
-        "passthroughPath": "Sökväg",
-        "passthroughPathHint": "Blir del av URL:en som klienter anropar: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Skapa orkestrator",
         "createPassthrough": "Skapa passthrough"
       }
@@ -1384,6 +1414,7 @@
       "saving": "Sparar…",
       "saved": "Sparad",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Förhandsvisning av tokensparingar",
         "description": "Kör nuvarande (osparad) pipeline över en instruktion för att se vad varje steg tar bort och vad det kostar. Välj en av exempelsamtalen eller skriv din egen instruktion.",
         "promptLabel": "Instruktion",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "Ingen förfrågan skickad ännu.",
       "turnTraceLog": "Svars-#{{turn}} spårlogg · {{count}} händelse",
       "turnTraceLog_other": "Svars-#{{turn}} spårlogg · {{count}} händelser"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "Modeller",
       "subtitle": "LLM-leverantörer registrerade med Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modeller",
         "health": "Hälsa"
@@ -2242,7 +2284,8 @@
       "next": "Nästa",
       "page": "Sida {{page}} av {{totalPages}}",
       "total": "({{count}} totalt)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "Alla",
         "success": "Framgång",
         "blocked": "Blockerad",
-        "error": "Fel"
+        "error": "Fel",
+        "sessionId": "Sessions-ID",
+        "endUser": "Slutanvändare",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Valfri session",
+        "endUserPlaceholder": "Valfri slutanvändare",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Alla",
@@ -2383,7 +2432,10 @@
         "timestamp": "Tidsstämpel",
         "guardrailTriggered": "Skyddskontroll utlöst",
         "blockedBy": "Blockerad av",
-        "piiRedacted": "PII redigerad"
+        "piiRedacted": "PII redigerad",
+        "sessionId": "Sessions-ID",
+        "endUser": "Slutanvändare",
+        "tags": "Tags"
       },
       "errorMessage": "Felmeddelande",
       "eventCount": "{{count}} händelse",
@@ -2457,7 +2509,8 @@
       "show": "Visa felsökning",
       "empty": "Ingen felsökningsdata ännu.",
       "emptyHint": "Skicka ett meddelande för att se routningsdetaljer.",
-      "turnTraceLog": "Svars-#{{turn}} spårlogg"
+      "turnTraceLog": "Svars-#{{turn}} spårlogg",
+      "resize": "Ändra storlek på felsökningspanelen"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "Misslyckades att uppdatera roll",
       "createFailed": "Misslyckades att skapa roll",
       "deleteFailed": "Misslyckades att ta bort roll"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "Tillbaka till anslutning",
     "title": "Anslut",
     "docs": "Dokumentation",
-    "notEnabledPrefix": "Klientconfiguratorn är inte aktiverad. Be en administratör aktivera den med",
     "noClientPrefix": "Ingen klient namngiven",
     "errors": {
       "loadFailed": "Misslyckades att ladda klienter: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "routar denna klientmodelltrafik genom Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "laddar Routerly som en verktygsserver inuti den.",
-    "notEnabledPrefix": "Klientconfiguratorn är inte aktiverad. Be en administratör aktivera den med",
     "errors": {
       "loadFailed": "Misslyckades att ladda klienter: {{error}}"
     },

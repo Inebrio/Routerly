@@ -33,8 +33,8 @@ describe('provider module', () => {
     expect(typeof adapter.chatCompletion).toBe('function');
     expect(typeof adapter.streamCompletion).toBe('function');
 
-    // Provider in the union but with no adapter entry -> still throws today.
-    expect(() => registry.getProviderAdapter(model('mistral'))).toThrow(
+    // Provider with no adapter entry -> throws.
+    expect(() => registry.getProviderAdapter(model('no-such-provider'))).toThrow(
       /Unknown provider/,
     );
   });

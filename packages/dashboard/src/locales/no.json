@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Språk",
+      "saveError": "Kunne ikke lagre språket ditt. Tilbakestilt til forrige."
+    },
     "sidebar": {
       "expand": "Utvid sidestolpe",
       "collapse": "Slå sammen sidestolpe"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Noen konfigurasjonsfiler har tillatende tilgang ({{files}}). Oppstart og forespørsler fungerer fortsatt. Fiks det fra Innstillinger → Sikkerhet, eller fra vertsfilsystemet når det passer.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Avvis",
       "updateAvailable": "Routerly v{{latest}} er tilgjengelig. Du bruker v{{current}}.",
       "updateLink": "Oppdater i Innstillinger",
@@ -40,9 +45,6 @@
       "telemetryLink": "Hva sendes?",
       "telemetryYes": "Ja, hjelp til",
       "telemetryNo": "Nei takk"
-    },
-    "language": {
-      "label": "Språk"
     }
   },
   "common": {
@@ -102,8 +104,8 @@
       "metric": {
         "cost": "Kostnad",
         "calls": "Anrop",
-        "input_tokens": "Input tokens",
-        "output_tokens": "Output tokens",
+        "input_tokens": "Innskrevne tokens",
+        "output_tokens": "Utskrevne tokens",
         "total_tokens": "Totalt antall tokens"
       },
       "period": {
@@ -127,8 +129,8 @@
       },
       "fmt": {
         "requests": "{{value}} forespørsler",
-        "inputTokens": "{{value}} input tokens",
-        "outputTokens": "{{value}} output tokens",
+        "inputTokens": "{{value}} innskrevne tokens",
+        "outputTokens": "{{value}} utskrevne tokens",
         "totalTokens": "{{value}} totalt antall tokens",
         "everyRolling": "{{metric}} hver {{amount}} {{unit}}",
         "perPeriod": "{{metric}} per {{period}}"
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "Sesjontoken",
       "awsSessionTokenOptionalHint": "(valgfritt, for midlertidig legitimasjon)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "GCP-ruter-ID",
-      "gcpRouterIdPlaceholder": "min-gcp-ruter",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Plassering",
       "gcpLocationDefaultHint": "(standard: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "Tilgangstoken",
         "sessionTokenLabel": "Sesjontoken",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Lim inn sessionKey-cookieverdien (sk-ant-sid01-…)",
-        "openaiInstructions": "Mens du er logget inn på ChatGPT, åpner du <code>https://chatgpt.com/api/auth/session</code> i en ny fane. Kopier verdien for <code>accessToken</code>-feltet (starter med <code>eyJ</code>). Tokenet utløper hvert ~24. timer. For pålitelig tilgang, fyll også <strong>cf_clearance</strong>-feltet nedenfor.",
-        "anthropicInstructions": "<strong>Slik får du sessionsnøkkelen:</strong> Mens du er logget inn på Claude, åpner du DevTools (F12) → Application → Cookies → <code>claude.ai</code> → kopier verdien for <code>sessionKey</code>-cookien (starter med <code>sk-ant-sid01-</code>). Nøkkelen forblir gyldig inntil du logger ut."
+        "sessionTokenPlaceholder": "Lim inn verdien til sessionKey-informasjonskapselen (sk-ant-sid…)",
+        "openaiInstructions": "Mens du er logget inn på ChatGPT, åpner du <code>https://chatgpt.com/api/auth/session</code> i en ny fane. Kopier verdien for <code>accessToken</code>-feltet (starter med <code>eyJ</code>). Tokenet er gyldig i omtrent 10 dager; lim inn et nytt når testen begynner å feile med 401. For pålitelig tilgang, fyll også <strong>cf_clearance</strong>-feltet nedenfor.",
+        "anthropicInstructions": "<strong>Slik får du tak i øktnøkkelen din:</strong> Mens du er logget inn på <code>https://claude.ai</code>, trykk F12 for å åpne DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Kopier <strong>Value</strong> til informasjonskapselen <code>sessionKey</code> (starter med <code>sk-ant-sid</code>, for eksempel <code>sk-ant-sid02-</code>). Det er en HttpOnly-informasjonskapsel, så den er ikke synlig fra sidens konsoll. Den er gyldig til du logger ut eller den utløper; lim inn en ny hvis testen begynner å feile."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Abonnements-OAuth-token",
@@ -417,7 +419,8 @@
       "status": "status",
       "encoding": "koding",
       "frames": "rammer",
-      "bytes": "byte"
+      "bytes": "byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "Språk",
       "description": "Velg språket dashbordet vises i.",
       "languageLabel": "Språk",
-      "saved": "Språkpreferanse lagret."
+      "saved": "Språkpreferanse lagret.",
+      "saveError": "Kunne ikke lagre språkinnstillingene dine. Tilbakestilt til forrige."
     }
   },
   "settings": {
@@ -665,7 +669,7 @@
         "defaultLanguageHint": "Dashboardspråk for brukere som ikke har valgt sitt eget språk ennå. Overstyrer ikke brukerens personlige valg."
       },
       "telemetry": {
-        "heading": "Anonymous Metrics",
+        "heading": "Anonyme måledata",
         "neverAutomatic": "Routerly sender aldri data automatisk.",
         "noChoice": "Du har ikke gjort et valg ennå.",
         "enabledStatus": "Anonymous installasjonsmålinger er aktivert.",
@@ -676,7 +680,8 @@
         "saving": "Lagrer…",
         "enable": "Aktiver",
         "disable": "Deaktiver"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "Budsjett - Tilbakestill",
         "systemStartup": "System - Oppstart",
         "systemShutdown": "System - Avslutning",
-        "systemUpdateAvailable": "System - Oppdatering tilgjengelig"
+        "systemUpdateAvailable": "System - Oppdatering tilgjengelig",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Fjern kanal",
       "removeChannelConfirm": "Fjern kanal?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} tillatelser",
         "userCount": "{{count}} bruker",
         "userCount_other": "{{count}} brukere",
-        "everyone": "Alle"
+        "everyone": "Alle",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Kunne ikke laste"
@@ -831,6 +838,9 @@
         },
         "optional": "(valgfritt)",
         "keepCurrentPlaceholder": "La stå tomt for å beholde gjeldende",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "La stå tomt for å motta hendelser fra alle rutere.",
           "cooldownHeading": "Avkjøling",
           "cooldownSuffix": "sekunder (0 = ingen avkjøling)",
-          "cooldownHint": "Minimumintervall før denne kanalen kan utløses igjen for samme hendelse."
+          "cooldownHint": "Minimumintervall før denne kanalen kan utløses igjen for samme hendelse.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Mottakere / mål",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "Søk kanaler…",
         "noResults": "Ingen resultater",
         "emptyTitle": "Ingen varselkanaler konfigurert ennå.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Ingen kanaler samsvarer med de aktive filtrene.",
         "nameInlinePlaceholder": "Etikett (valgfritt)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "Fjern integrasjon",
       "saving": "Lagrer…",
       "save": "Lagre",
-      "addButton": "Legg til integrasjon"
+      "addButton": "Legg til integrasjon",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "Sist sjekket"
       },
       "noCheckPerformed": "Ingen oppdateringssjekk gjennomført ennå.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Se etter oppdateringer",
       "checking": "Sjekker…",
       "updateTo": "Oppdater til v{{version}}",
@@ -1121,7 +1137,8 @@
         "checkFailed": "Sjekk mislyktes",
         "updateFailed": "Oppdatering mislyktes"
       },
-      "channel": "Kanal"
+      "channel": "Kanal",
+      "channelNote": "current følger hver nye stabile utgivelse; stable flyttes bare når en utgivelse forfremmes, så de to kan avvike."
     },
     "security": {
       "authentication": "Autentisering",
@@ -1156,6 +1173,8 @@
       "count": "1 ruter",
       "count_other": "{{count}} rutere",
       "newRouter": "Ny ruter",
+      "newOrchestrator": "Ny orkestrator",
+      "newPassthrough": "Ny passthrough",
       "empty": "Ingen rutere ennå.",
       "emptyFiltered": "Ingen rutere av denne typen.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "Slett denne ruteren?",
       "errors": {
         "deleteFailed": "Feil ved sletting av ruter"
-      },
-      "newOrchestrator": "Ny orkestrator",
-      "newPassthrough": "Ny passthrough"
+      }
     },
     "layout": {
       "notFound": "Ruter ikke funnet",
@@ -1191,10 +1208,10 @@
       "backToRouters": "Tilbake til rutere",
       "backToRoutersTitle": "Tilbake til rutere",
       "newRouter": "Ny ruter",
+      "newKind": "Ny {{kind}}",
       "loading": "Laster...",
       "routerId": "Ruter-ID:",
-      "saveFirstHint": "Lagre ruteren først for å låse opp denne fanen",
-      "newKind": "Ny {{kind}}"
+      "saveFirstHint": "Lagre ruteren først for å låse opp denne fanen"
     },
     "dashboard": {
       "period": "Periode",
@@ -1212,11 +1229,13 @@
         "ttft": "Tid til første token",
         "notMeasured": "ikke målt på disse anropene",
         "reliability": "Pålitelighet",
-        "errorsAndBlocked": "{{errors}} feil · {{blocked}} blokkert"
+        "errorsAndBlocked": "{{errors}} feil · {{blocked}} blokkert",
+        "errorsAndBlocked_one": "{{errors}} feil · {{blocked}} blokkert",
+        "errorsAndBlocked_other": "{{errors}} feil · {{blocked}} blokkert"
       },
       "tokens": {
-        "input": "Input tokens:",
-        "output": "Output tokens:",
+        "input": "Innskrevne tokens:",
+        "output": "Utskrevne tokens:",
         "fromCache": "Fra hurtiglager:",
         "cacheSaved": "({{amount}} sparet)"
       },
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Base-URL <code>{{baseUrl}}</code>, uten <code>/v1</code>: SDK-en legger det til.",
         "curl": "curl",
-        "curlHint": "Sjekk ledningen uten å installere noe, og se deretter etter anropet i <usageLink>Bruk</usageLink>."
+        "curlHint": "Sjekk ledningen uten å installere noe, og se deretter etter anropet i <usageLink>Bruk</usageLink>.",
+        "passthrough": {
+          "heading": "Hvordan koble til",
+          "intro": "Passthrough videresender alle forespørsler uendret — bruk <strong>din egen</strong> oppstrøms-leverandørnøkkel som API-nøkkel, aldri en Routerly-token. Routerly lagrer eller utsteder ikke en legitimasjon for denne routeren; hva klienten sender går rett til leverandøren.",
+          "noLimits": "Budsjetter og grenser gjelder ikke denne routeren: kostnaden er ukjent for Passthrough-trafikk, så den blir aldri sjekket mot eller talt mot noen utgiftsbegrensning.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — ingen <code>/v1</code> suffiks, SDK legger fortsatt til sin egen sti akkurat som den ville gjort mot det virkelige OpenAI-API-et.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK legger fortsatt til <code>/v1/messages</code> selv, akkurat som det ville gjort mot det virkelige Anthropic-API-et."
+        }
       },
       "form": {
         "kind": "Type",
         "kindFixedHint": "Fast når ruteren er opprettet.",
         "routerName": "Ruter-navn",
         "routerNamePlaceholder": "Min app",
+        "passthroughPath": "Sti",
+        "passthroughPathHint": "Blir del av URL-en som klienter kaller: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Avanserte innstillinger",
         "ttftTimeout": "TTFT tidsavbrudd (ms)",
         "ttftTimeoutHint": "Hvis en modell ikke sender den første svarbyten innen denne tiden, avbryter Routerly den og prøver neste kandidat. Begrenser ikke total responsvarighet. Sett det til 0 for å vente så lenge leverandøren tar.",
         "traceContent": "Sporinnhold",
         "traceContentHint": "Spor registrerer alltid metadata (modeller, poengsum, tokens, kostnad, latens). Slå dette på for å også registrere meldingene som sendes og svarene som mottas. De er lagret med brukerposten og synlig for alle som kan lese rapporter.",
         "capturePromptsAndAnswers": "Fang meldinger og svar",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Lagre endringer",
         "createRouter": "Opprett ruter",
-        "passthroughPath": "Sti",
-        "passthroughPathHint": "Blir del av URL-en som klienter kaller: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Opprett orkestrator",
         "createPassthrough": "Opprett passthrough"
       }
@@ -1384,6 +1414,7 @@
       "saving": "Lagrer...",
       "saved": "Lagret",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Forhåndsvis token-besparelser",
         "description": "Kjør gjeldende (ulagret) rørledning over en melding for å se hva hvert trinn fjerner og hva det koster. Velg en av eksempelkonversasjonene, eller skriv din egen melding.",
         "promptLabel": "Melding",
@@ -1493,8 +1524,8 @@
         "limitMetric": {
           "cost": "Kostnad (USD)",
           "calls": "Forespørsler",
-          "input_tokens": "Input tokens",
-          "output_tokens": "Output tokens",
+          "input_tokens": "Innskrevne tokens",
+          "output_tokens": "Utskrevne tokens",
           "total_tokens": "Totalt antall tokens"
         },
         "period": {
@@ -1659,8 +1690,18 @@
       "debugLog": "Feilsøkingslogg",
       "clear": "Slett",
       "noRequestSent": "Ingen forespørsel sendt ennå.",
-      "turnTraceLog": "Vendespor logg · {{count}} hendelse",
-      "turnTraceLog_other": "Vendespor logg · {{count}} hendelser"
+      "turnTraceLog": "Tur #{{turn}} sporingslogg · {{count}} hendelse",
+      "turnTraceLog_other": "Tur #{{turn}} sporingslogg · {{count}} hendelser"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "Modeller",
       "subtitle": "LLM-leverandører registrert med Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modeller",
         "health": "Helse"
@@ -2242,7 +2284,8 @@
       "next": "Neste",
       "page": "Side {{page}} av {{totalPages}}",
       "total": "({{count}} totalt)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "Alle",
         "success": "Suksess",
         "blocked": "Blokkert",
-        "error": "Feil"
+        "error": "Feil",
+        "sessionId": "Økt-ID",
+        "endUser": "Sluttbruker",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Hvilken som helst økt",
+        "endUserPlaceholder": "Hvilken som helst sluttbruker",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Alle",
@@ -2316,8 +2365,8 @@
         "successRate": "Suksessrate",
         "avgLatency": "Gjennomsnittlig latens",
         "p95Latency": "P95 latens",
-        "inputTokens": "Input tokens",
-        "outputTokens": "Output tokens",
+        "inputTokens": "Innskrevne tokens",
+        "outputTokens": "Utskrevne tokens",
         "costPer1k": "Kostnad / 1K",
         "cost": "Kostnad (USD)",
         "bestCostPerformance": "Beste kostnads-ytelse"
@@ -2383,7 +2432,10 @@
         "timestamp": "Tidsstempel",
         "guardrailTriggered": "Sikring utløst",
         "blockedBy": "Blokkert av",
-        "piiRedacted": "PII redigért"
+        "piiRedacted": "PII redigért",
+        "sessionId": "Økt-ID",
+        "endUser": "Sluttbruker",
+        "tags": "Tags"
       },
       "errorMessage": "Feilmelding",
       "eventCount": "{{count}} hendelse",
@@ -2457,7 +2509,8 @@
       "show": "Vis feilsøking",
       "empty": "Ingen feilsøkingsdata ennå.",
       "emptyHint": "Send en melding for å se rutingdetaljer.",
-      "turnTraceLog": "Vendespor logg"
+      "turnTraceLog": "Tur #{{turn}} sporingslogg",
+      "resize": "Endre størrelsen på feilsøkingspanelet"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "Kunne ikke oppdatere rolle",
       "createFailed": "Kunne ikke opprette rolle",
       "deleteFailed": "Kunne ikke slette rolle"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,7 +2744,6 @@
     "backToConnect": "Tilbake til Koble til",
     "title": "Koble til",
     "docs": "Dokumenter",
-    "notEnabledPrefix": "Klientkonfiguratoren er ikke aktivert. Be en administrator om å aktivere den med",
     "noClientPrefix": "Ingen klient navngitt",
     "errors": {
       "loadFailed": "Kunne ikke laste klienter: {{error}}"
@@ -2735,7 +2788,6 @@
     "llmDescription": "ruterer klientmodelltrafikken gjennom Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "laster Routerly som et verktøyserver innside det.",
-    "notEnabledPrefix": "Klientkonfiguratoren er ikke aktivert. Be en administrator om å aktivere den med",
     "errors": {
       "loadFailed": "Kunne ikke laste klienter: {{error}}"
     },

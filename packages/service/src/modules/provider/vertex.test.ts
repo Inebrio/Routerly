@@ -248,7 +248,7 @@ describe('VertexAdapter — streamCompletion', () => {
 
   it('strips provider prefix in stream mode', async () => {
     let capturedModel = '';
-    async function* fakeStream() {}
+    async function* fakeStream() { /* drain */ }
     mockCreate.mockImplementationOnce(async (opts: { model: string }) => {
       capturedModel = opts.model;
       return fakeStream();
@@ -257,13 +257,13 @@ describe('VertexAdapter — streamCompletion', () => {
     for await (const _ of new VertexAdapter().streamCompletion(
       { messages: [{ role: 'user' as const, content: 'Hi' }] } as any,
       baseModel,
-    )) {}
+    )) { /* drain */ }
     expect(capturedModel).toBe('gemini-1.5-pro');
   });
 
   it('uses model id directly when no slash (line 96 false branch)', async () => {
     let capturedModel = '';
-    async function* fakeStream() {}
+    async function* fakeStream() { /* drain */ }
     mockCreate.mockImplementationOnce(async (opts: { model: string }) => {
       capturedModel = opts.model;
       return fakeStream();
@@ -273,7 +273,7 @@ describe('VertexAdapter — streamCompletion', () => {
     for await (const _ of new VertexAdapter().streamCompletion(
       { messages: [{ role: 'user' as const, content: 'Hi' }] } as any,
       noSlashModel,
-    )) {}
+    )) { /* drain */ }
     expect(capturedModel).toBe('gemini-2.0-flash');
   });
 });

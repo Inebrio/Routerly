@@ -121,10 +121,11 @@ describe('ConnectClientPage', () => {
     await waitFor(() => expect(screen.getByText(/No client named/)).toBeTruthy());
   });
 
-  it('shows a "feature not enabled" empty state on a 404', async () => {
+  it('shows the load error on a 404 and never mentions modules', async () => {
     mockGetClients.mockRejectedValue(apiError('Not found', 404));
     renderPage('codex');
-    await waitFor(() => expect(screen.getByText(/not enabled/i)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/Not found/)).toBeTruthy());
+    expect(screen.queryByText(/module/i)).toBeNull();
   });
 
   it('shows a generic error state on a non-404 failure', async () => {

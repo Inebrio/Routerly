@@ -3,10 +3,14 @@ import { homedir } from 'node:os';
 import type { FastifyBaseLogger } from 'fastify';
 import type { ServerResponse } from 'node:http';
 import type {
-  ChatCompletionResponse, ChoiceDelta, ModelConfig, PiiConfig, StreamChoice, StreamChunk,
+  ChatCompletionResponse, ChoiceDelta, ModelConfig, PiiConfig, StreamChoice, StreamChunk, TraceEntry,
 } from '@routerly/shared';
 import { mergePolicies, StreamingScrubber } from '../../pii/piiScrubber.js';
 import { trackUsage } from '../../usage/tracker.js';
+import { calculateCost } from '../../../lib/cost.js';
+import { readConfig } from '../../config/loader.js';
+import { decryptCredential } from '../../../lib/crypto-cred.js';
+import { resolveOpenAIOAuthCredential } from '../../provider/openai-oauth.js';
 
 const CHATGPT_BASE = 'https://chatgpt.com';
 const CODEX_PATH = '/backend-api/codex/responses';
@@ -90,6 +94,41 @@ export async function resolveCodexToken(
   }
 
   return { accessToken: tokens.access_token, accountId: tokens.account_id };
+}
+
+function accountIdFromJwt(token: string): string {
+  try {
+    const raw = Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf-8');
+    const auth = (JSON.parse(raw) as Record<string, Record<string, unknown> | undefined>)['https://api.openai.com/auth'];
+    return String(auth?.['chatgpt_account_id'] ?? '');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * The one credential source for openai-oauth, shared by the chat lanes and the model Test:
+ * connection `authFilePath` → stored token pair (refreshed) → stored static JWT → default auth file.
+ * A non-JWT `oauthEnc` is a file path saved by the old form (it used to land in the token slot).
+ */
+export async function resolveOpenAICodexAuth(
+  model: ModelConfig,
+  log: FastifyBaseLogger,
+): Promise<{ accessToken: string; accountId: string }> {
+  const c = model as unknown as { authFilePath?: string; oauthEnc?: string; refreshEnc?: string; connectionId?: string };
+  if (c.authFilePath) return resolveCodexToken(c.authFilePath, log);
+  if (c.oauthEnc) {
+    if (c.refreshEnc) {
+      const connection = ((await readConfig('connections')) ?? []).find((x) => x.id === c.connectionId);
+      if (!connection) throw new Error('openai-oauth: connection not found');
+      const accessToken = await resolveOpenAIOAuthCredential(connection);
+      return { accessToken, accountId: accountIdFromJwt(accessToken) };
+    }
+    const stored = decryptCredential(c.oauthEnc);
+    if (stored.split('.').length === 3) return { accessToken: stored, accountId: accountIdFromJwt(stored) };
+    return resolveCodexToken(stored, log);
+  }
+  return resolveCodexToken(DEFAULT_AUTH_PATH, log);
 }
 
 /** Renders chat message content (plain string or OpenAI part list) as text. */
@@ -236,7 +275,7 @@ export async function* streamOpenAIOAuthChunks(
   body: Record<string, unknown>,
   model: ModelConfig,
   log: FastifyBaseLogger,
-  opts: { traceId: string; routerId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined },
+  opts: { traceId: string; routerId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined; emit?: ((entry: TraceEntry) => void) | undefined },
 ): AsyncGenerator<StreamChunk> {
   const startMs = Date.now();
   const modelId = model.id.includes('/') ? model.id.split('/').slice(1).join('/') : model.id;
@@ -249,6 +288,14 @@ export async function* streamOpenAIOAuthChunks(
   let outcome: 'success' | 'error' = 'error';
   let inputTokens = 0;
   let outputTokens = 0;
+  let errorMessage = 'openai-oauth stream ended without a result';
+
+  // Same trace entries llmStream emits, so the recap reports this provider too.
+  opts.emit?.({
+    panel: 'request',
+    message: 'model:request',
+    details: { modelId: model.id, provider: model.provider, stream: true, messageCount: Array.isArray(body.messages) ? body.messages.length : 0 },
+  });
 
   const chunk = (
     delta: ChoiceDelta,
@@ -264,7 +311,7 @@ export async function* streamOpenAIOAuthChunks(
   }) as StreamChunk;
 
   try {
-    const { accessToken, accountId } = await resolveCodexToken(model.apiKey || DEFAULT_AUTH_PATH, log);
+    const { accessToken, accountId } = await resolveOpenAICodexAuth(model, log);
     const endpoint = (model.endpoint?.replace(/\/$/, '') ?? CHATGPT_BASE) + CODEX_PATH;
     const upstream = await fetch(endpoint, {
       method: 'POST',
@@ -379,7 +426,24 @@ export async function* streamOpenAIOAuthChunks(
     }
     yield chunk({}, sawTool ? 'tool_calls' : 'stop', { prompt_tokens: inputTokens, completion_tokens: outputTokens });
     outcome = 'success';
+  } catch (err) {
+    errorMessage = err instanceof Error ? err.message : String(err);
+    throw err;
   } finally {
+    const latencyMs = Date.now() - startMs;
+    if (outcome === 'success') {
+      const totalCostUsd = calculateCost(inputTokens, outputTokens, model, 0, 0);
+      opts.emit?.({
+        panel: 'response',
+        message: 'model:success',
+        details: {
+          modelId: model.id, inputTokens, outputTokens, latencyMs, totalCostUsd,
+          tokensPerSec: latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0,
+        },
+      });
+    } else {
+      opts.emit?.({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: errorMessage, latencyMs } });
+    }
     if (opts.routerId) {
       void trackUsage({
         routerId: opts.routerId, model, inputTokens, outputTokens,

@@ -8,6 +8,7 @@ import type {
   MessagesResponse,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { developerAsSystem } from './passthrough.js';
 import { openAIToAnthropicResponse } from './messages-compat.js';
 
 // ── AWS Signature V4 ──────────────────────────────────────────────────────────
@@ -70,10 +71,11 @@ export function signRequest(opts: {
 
 interface BedrockMessage { role: string; content: Array<{ type: string; text: string }> }
 
-function toBedrockMessages(messages: ChatCompletionRequest['messages']): {
+function toBedrockMessages(input: ChatCompletionRequest['messages']): {
   system: Array<{ text: string }> | undefined;
   messages: BedrockMessage[];
 } {
+  const messages = developerAsSystem(input);
   const systemParts = messages.filter(m => m.role === 'system');
   const system = systemParts.length
     ? systemParts.map(m => ({ text: typeof m.content === 'string' ? m.content : JSON.stringify(m.content) }))
@@ -90,6 +92,7 @@ function toBedrockMessages(messages: ChatCompletionRequest['messages']): {
 }
 
 function getUpstreamModelId(model: ModelConfig): string {
+  if (model.upstreamModelId) return model.upstreamModelId;
   // e.g. 'bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0' → the part after first slash
   if (model.id.includes('/')) return model.id.split('/').slice(1).join('/');
   return model.id;
@@ -102,7 +105,8 @@ export class BedrockAdapter implements ProviderAdapter {
     const region  = model.awsRegion ?? 'us-east-1';
     const modelId = getUpstreamModelId(model);
     const suffix  = stream ? 'converse-stream' : 'converse';
-    return `https://bedrock-runtime.${region}.amazonaws.com/model/${encodeURIComponent(modelId)}/${suffix}`;
+    const base    = model.endpoint?.replace(/\/$/, '') || `https://bedrock-runtime.${region}.amazonaws.com`;
+    return `${base}/model/${encodeURIComponent(modelId)}/${suffix}`;
   }
 
   private auth(model: ModelConfig, url: string, body: string): Record<string, string> {
@@ -129,16 +133,19 @@ export class BedrockAdapter implements ProviderAdapter {
     const url     = this.buildUrl(model, false);
     const headers = this.auth(model, url, bodyStr);
 
-    const resp = await fetch(url, { method: 'POST', headers, body: bodyStr });
+    const resp = await fetch(url, { method: 'POST', headers, body: bodyStr, signal: AbortSignal.timeout(model.timeout ?? 60000) });
     if (!resp.ok) {
       const text = await resp.text().catch(() => resp.statusText);
       throw new Error(`Bedrock error ${resp.status}: ${text}`);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const data = await resp.json() as any;
 
     // Converse API response → OpenAI format
     const text = (data.output?.message?.content ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       .filter((b: any) => b.type === 'text' || b.text)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       .map((b: any) => b.text ?? '')
       .join('');
 

@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "థీమ్: {{theme}}"
     },
+    "language": {
+      "label": "భాష",
+      "saveError": "మీ భాషను సేవ్ చేయలేము. గతమైనదానికి చేరుకుంది."
+    },
     "sidebar": {
       "expand": "సైడ్‌బార్‌ను విస్తరించండి",
       "collapse": "సైడ్‌బార్‌ను కుదించండి"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "కొన్ని కాన్ఫిగరేషన్ ఫైలులకు అనుమతితో కూడిన యాక్సెస్ ఉంది ({{files}})। ప్రారంభం మరియు అభ్యర్థనలు ఇప్పటికీ పనిచేస్తాయి. సెట్టింగ్‌లు → భద్రత నుండి దీన్ని సరిదిద్దండి, లేదా సుబిధకరమైనప్పుడు హోస్ట్ ఫైల్‌సిస్టమ్ నుండి సరిదిద్దండి.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "విస్మరించండి",
       "updateAvailable": "Routerly v{{latest}} అందుబాటులో ఉంది. మీరు v{{current}}లో ఉన్నారు.",
       "updateLink": "సెట్టింగ్‌లలో నవీకరించండి",
@@ -40,9 +45,6 @@
       "telemetryLink": "ఏ చేయించారు?",
       "telemetryYes": "అవును, సహాయం చేయండి",
       "telemetryNo": "వద్దు, ధన్యవాదాలు"
-    },
-    "language": {
-      "label": "భాష"
     }
   },
   "common": {
@@ -275,8 +277,8 @@
       "awsSessionTokenLabel": "సెషన్ టోకెన్",
       "awsSessionTokenOptionalHint": "(ఐచ్ఛికం, తాత్కాలిక నిమ్నాభిలాష కోసం)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "GCP రౌటర్ ID",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "స్థానం",
       "gcpLocationDefaultHint": "(డిఫాల్ట్: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -290,9 +292,9 @@
         "accessTokenLabel": "ప్రాప్యత టోకెన్",
         "sessionTokenLabel": "సెషన్ టోకెన్",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "సెషన్ కీ కుకీ విలువను పేస్ట్ చేయండి (sk-ant-sid01-…)",
-        "openaiInstructions": "ChatGPT లో సైన్ చేసిన సమయంలో, <code>https://chatgpt.com/api/auth/session</code> కొత్త ట్యాబ్‌లో తెరవండి. <code>accessToken</code> ఫీల్డ్ విలువ (ఎలక్ట్రాన్ అందాలు <code>eyJ</code>) కాపీ చేయండి. టోకెన్ ప్రతి ~24 గంటలకు గడువు ముగుస్తుంది. విశ్వసనీయ ప్రాప్యత కోసం, కింద <strong>cf_clearance</strong> ఫీల్డ్ కూడా నింపండి.",
-        "anthropicInstructions": "<strong>మీ సెషన్ కీ పొందడానికి:</strong> Claude లో సైన్ చేసిన సమయంలో, DevTools (F12) → అప్లికేషన్ → కుకీలు → <code>claude.ai</code> → <code>sessionKey</code> కుకీ విలువ (ఇది <code>sk-ant-sid01-</code> నుండి ప్రారంభం) కాపీ చేయండి. మీరు సైన్ అవుట్ చేసే వరకు కీ చెల్లుబాటులో ఉంటుంది."
+        "sessionTokenPlaceholder": "sessionKey కుకీ విలువను అతికించండి (sk-ant-sid…)",
+        "openaiInstructions": "ChatGPT లో సైన్ చేసిన సమయంలో, <code>https://chatgpt.com/api/auth/session</code> కొత్త ట్యాబ్‌లో తెరవండి. <code>accessToken</code> ఫీల్డ్ విలువ (<code>eyJ</code> తో మొదలవుతుంది) కాపీ చేయండి. టోకెన్ సుమారు 10 రోజులు చెల్లుతుంది; టెస్ట్ 401తో విఫలం కావడం ప్రారంభమైనప్పుడు కొత్తదాన్ని పేస్ట్ చేయండి. విశ్వసనీయ ప్రాప్యత కోసం, కింద <strong>cf_clearance</strong> ఫీల్డ్ కూడా నింపండి.",
+        "anthropicInstructions": "<strong>మీ సెషన్ కీని ఎలా పొందాలి:</strong> <code>https://claude.ai</code> లో లాగిన్ అయి ఉండగా, DevTools తెరవడానికి F12 నొక్కండి. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. <code>sessionKey</code> కుకీ యొక్క <strong>Value</strong> ను కాపీ చేయండి (<code>sk-ant-sid</code> తో ప్రారంభమవుతుంది, ఉదాహరణకు <code>sk-ant-sid02-</code>). ఇది HttpOnly కుకీ, కాబట్టి పేజీ కన్సోల్ నుండి కనిపించదు. మీరు లాగ్ అవుట్ అయ్యే వరకు లేదా గడువు ముగిసే వరకు చెల్లుబాటులో ఉంటుంది; పరీక్ష విఫలమవడం ప్రారంభిస్తే కొత్తదాన్ని అతికించండి."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "సబ్‌స్క్రిప్షన్ OAuth టోకెన్",
@@ -417,7 +419,8 @@
       "status": "స్థితి",
       "encoding": "ఎన్‌కోడింగ్",
       "frames": "ఫ్రేమ్‌లు",
-      "bytes": "బైట్‌లు"
+      "bytes": "బైట్‌లు",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -619,7 +622,8 @@
       "heading": "భాష",
       "description": "డ్యాష్‌బోర్డ్ ప్రదర్శించిన భాష ఎంచుకోండి.",
       "languageLabel": "భాష",
-      "saved": "భాష ఆదరణ సేవ్ చేసారు."
+      "saved": "భాష ఆదరణ సేవ్ చేసారు.",
+      "saveError": "మీ భాష ప్రాధాన్యతను సేవ్ చేయలేము. గతమైనదానికి చేరుకుంది."
     }
   },
   "settings": {
@@ -676,7 +680,8 @@
         "saving": "సేవ చేస్తోంది…",
         "enable": "ప్రారంభం చేయండి",
         "disable": "నిష్క్రియం చేయండి"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -743,7 +748,8 @@
         "budgetReset": "బడ్జెట్ – రీసెట్ చేసారు",
         "systemStartup": "సిస్టమ్ – ప్రారంభం చేసారు",
         "systemShutdown": "సిస్టమ్ – నిష్క్రియం చేసారు",
-        "systemUpdateAvailable": "సిస్టమ్ – నవీకరణ అందుబాటులో ఉంది"
+        "systemUpdateAvailable": "సిస్టమ్ – నవీకరణ అందుబాటులో ఉంది",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "సరిభాగం తీసివేయండి",
       "removeChannelConfirm": "సరిభాగం తీసివేయండి?",
@@ -792,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} ఆర్డర",
         "userCount_other": "{{count}} ఆర్డర",
-        "everyone": "అందరూ"
+        "everyone": "అందరూ",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "లోడ్ చేయడం విఫలమైంది"
@@ -831,6 +838,9 @@
         },
         "optional": "(ఐచ్ఛికం)",
         "keepCurrentPlaceholder": "ప్రస్తుత ఆర్డర చేయుటకు",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -856,7 +866,9 @@
           "routersHint": "సమూహ ఈవెంట్‌లను చేరుకోవడానికి ఖాళీ వదిలివేయండి.",
           "cooldownHeading": "కూల్‌డౌన్",
           "cooldownSuffix": "సెకన్లు (0 = కూల్‌డౌన్ లేదు)",
-          "cooldownHint": "ఆ సరిభాగం తిరిగి కాల్ చేయుటకు ముందు కనీస విరామం।"
+          "cooldownHint": "ఆ సరిభాగం తిరిగి కాల్ చేయుటకు ముందు కనీస విరామం।",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "గ్రహీత / లక్ష్య",
@@ -895,6 +907,7 @@
         "addSearchPlaceholder": "సరిభాగాలను శోధించండి…",
         "noResults": "ఫలితాలు లేవు",
         "emptyTitle": "ఇంకా నోటిఫికేషన్ సరిభాగాలు ఆర్డర చేయబడలేదు.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "క్రియాశీల ఫిల్టర్‌లకు సరిభాగాలు సరిపోవు.",
         "nameInlinePlaceholder": "లేబుల్ (ఐచ్ఛికం)",
         "columns": {
@@ -1053,7 +1066,8 @@
       "removeTooltip": "సమన్వయం తీసివేయండి",
       "saving": "సేవ చేస్తోంది…",
       "save": "సేవ చేయండి",
-      "addButton": "సమన్వయం జోడించండి"
+      "addButton": "సమన్వయం జోడించండి",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1108,6 +1122,8 @@
         "lastChecked": "చివరిసారి తనిఖీ చేసారు"
       },
       "noCheckPerformed": "ఇంకా నవీకరణ తనిఖీ చేయబడలేదు.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "నవీకరణల కోసం తనిఖీ చేయండి",
       "checking": "తనిఖీ చేస్తోంది…",
       "updateTo": "v{{version}}కు నవీకరించండి",
@@ -1121,7 +1137,8 @@
         "checkFailed": "తనిఖీ విఫలమైంది",
         "updateFailed": "నవీకరణ విఫలమైంది"
       },
-      "channel": "సరిభాగం"
+      "channel": "సరిభాగం",
+      "channelNote": "current ప్రతి కొత్త స్థిర విడుదలను అనుసరిస్తుంది; stable ఒక విడుదల ప్రమోట్ అయినప్పుడు మాత్రమే మారుతుంది, కాబట్టి ఇవి భిన్నంగా ఉండవచ్చు."
     },
     "security": {
       "authentication": "ప్రమాణీకరణ",
@@ -1156,6 +1173,8 @@
       "count": "1 రౌటర్",
       "count_other": "{{count}} రౌటర్‌లు",
       "newRouter": "నవీన రౌటర్",
+      "newOrchestrator": "కొత్త ఆర్కెస్ట్రేటర్",
+      "newPassthrough": "కొత్త పాస్‌థ్రూ",
       "empty": "ఇంకా రౌటర్‌లు లేవు.",
       "emptyFiltered": "ఈ రకమైన రూటర్ లేదు.",
       "columns": {
@@ -1171,9 +1190,7 @@
       "deleteConfirm": "ఈ రౌటర్‌ను తొలగించండి?",
       "errors": {
         "deleteFailed": "రౌటర్‌ను తొలగించటంలో ఉద్దాటన"
-      },
-      "newOrchestrator": "కొత్త ఆర్కెస్ట్రేటర్",
-      "newPassthrough": "కొత్త పాస్‌థ్రూ"
+      }
     },
     "layout": {
       "notFound": "రౌటర్ కనుగొనబడలేదు",
@@ -1191,10 +1208,10 @@
       "backToRouters": "రౌటర్‌లకు వెనుకకు",
       "backToRoutersTitle": "రౌటర్‌లకు వెనుకకు",
       "newRouter": "నవీన రౌటర్",
+      "newKind": "కొత్త {{kind}}",
       "loading": "లోడ్ చేస్తోంది...",
       "routerId": "రౌటర్ ID:",
-      "saveFirstHint": "ఈ ట్యాబ్‌ను అన్‌లాక్ చేయుటకు ముందు రౌటర్‌ను సేవ చేయండి",
-      "newKind": "కొత్త {{kind}}"
+      "saveFirstHint": "ఈ ట్యాబ్‌ను అన్‌లాక్ చేయుటకు ముందు రౌటర్‌ను సేవ చేయండి"
     },
     "dashboard": {
       "period": "కాలం",
@@ -1212,7 +1229,9 @@
         "ttft": "మొదటి టోకెన్ కు సమయం",
         "notMeasured": "ఈ కాల్‌లలో కొలparís సరిపోవు",
         "reliability": "విశ్వసనీయత",
-        "errorsAndBlocked": "{{errors}} ఉద్దాటనలు · {{blocked}} బ్లాక్ చేసారు"
+        "errorsAndBlocked": "{{errors}} ఉద్దాటనలు · {{blocked}} బ్లాక్ చేసారు",
+        "errorsAndBlocked_one": "{{errors}} ఉద్దాటనలు · {{blocked}} బ్లాక్ చేసారు",
+        "errorsAndBlocked_other": "{{errors}} ఉద్దాటనలు · {{blocked}} బ్లాక్ చేసారు"
       },
       "tokens": {
         "input": "ఇన్‌పుట్ టోకెన్‌లు:",
@@ -1287,23 +1306,34 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "బేస్ URL <code>{{baseUrl}}</code>, <code>/v1</code> లేకుండా: SDK దానిని జోడిస్తుంది.",
         "curl": "curl",
-        "curlHint": "ఈ కేబిల్ చేయడం చూడండి ఇన్‌స్టాల్ చేయకుండా, ఆ <usageLink>ఉపయోగం</usageLink>లో కాల్‌ను చూడండి."
+        "curlHint": "ఈ కేబిల్ చేయడం చూడండి ఇన్‌స్టాల్ చేయకుండా, ఆ <usageLink>ఉపయోగం</usageLink>లో కాల్‌ను చూడండి.",
+        "passthrough": {
+          "heading": "సంయోగం ఎలా చేయాలి",
+          "intro": "Passthrough ప్రతిటి అభ్యర్థనను మార్చనిది ఫార్వార్డ్ చేస్తుంది — మీ <strong>స్వంత</strong> అప్‌స్ట్రీమ్ ప్రొవైడర్ కీని API కీగా ఉపయోగించండి, Routerly టోకన్ నిండా కాదు. Routerly ఈ రూటర్ కోసం ఎటువంటి ఆధారాధాని ఆకృతిని నిల్వ చేయదు; క్లయింట్ పంపినది నేరుగా ప్రొవైడర్‌కు చేరుకుంటుంది.",
+          "noLimits": "బడ్జెట్ మరియు పరిమితులు ఈ రూటర్‌కు వర్తించవు: Passthrough ట్రాఫిక్‌కు ఖర్చు తెలియదు, కాబట్టి ఇది ఎటువంటి ఖర్చు పరిమితికి వ్యతిరేకంగా తనిఖీ చేయబడదు లేదా లెక్కించబడదు.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — <code>/v1</code> suffix లేకుండా, SDK ఇప్పటికీ సరిగ్గా OpenAI API కు వ్యతిరేకంగా చేస్తుంది తన మార్గం జోడిస్తుంది.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK ఇప్పటికీ <code>/v1/messages</code> తాను జోడిస్తుంది, సరిగ్గా Anthropic API కు వ్యతిరేకంగా చేస్తుంది."
+        }
       },
       "form": {
         "kind": "రకం",
         "kindFixedHint": "రౌటర్ సృష్టించిన తర్వాత స్థిరం.",
         "routerName": "రౌటర్ నామం",
         "routerNamePlaceholder": "నా యాప్",
+        "passthroughPath": "పాత",
+        "passthroughPathHint": "క్లైంట్‌లు పిలిచే URL యొక్క భాగం చేస్తుంది: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "ఆధునిక సెట్టింగ్‌లు",
         "ttftTimeout": "TTFT సమయపాలన (ms)",
         "ttftTimeoutHint": "ఒక మోడల్ ఈ సమయంలో మొదటి ప్రతిస్పందన బైట్‌ను పంపకపోతే, Routerly ఆ రద్దు చేస్తుంది మరియు తదుపరి అభ్యర్థిని ప్రయత్నిస్తుంది. సంపూర్ణ ప్రతిస్పందన వ్యవధిని సీమితం చేయదు. ఇది 0 కు సెట్ చేయండి ప్రదాత తీసుకోవడానికి సమయానికి చేరుకోవటానికి.",
         "traceContent": "ట్రేస్ కంటెంట్",
         "traceContentHint": "ట్రేస్‌లు ఎప్పుడూ సమాచారం రికార్డ్ చేస్తాయి (మోడల్‌లు, స్కోర్‌లు, టోకెన్‌లు, ధర, లేటెన్సీ). ఈ ప్రాంప్ట్‌లను పంపిన మరియు చేరుకున్న ప్రతిస్పందనలను రికార్డ్ చేయుటకు దీనిని ఆన్ చేయండి. ఉపయోగ రికార్డ్ తో నిల్లబడవు మరియు నివేదనలను చదువుటకు అనుమతిచేసిన అందరికి చూపబడుతుంది.",
         "capturePromptsAndAnswers": "ప్రాంప్ట్‌లు మరియు చేరుకున్న సందేశాలను సంగ్రహించండి",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "మార్పులను సేవ చేయండి",
         "createRouter": "రౌటర్ సృష్టించండి",
-        "passthroughPath": "పాత",
-        "passthroughPathHint": "క్లైంట్‌లు పిలిచే URL యొక్క భాగం చేస్తుంది: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "ఆర్కెస్ట్రేటర్ సృష్టించండి",
         "createPassthrough": "పాస్‌థ్రూ సృష్టించండి"
       }
@@ -1384,6 +1414,7 @@
       "saving": "సేవ చేస్తోంది...",
       "saved": "సేవ చేసారు",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "టోకెన్ బ్యాకపు సూచన చూడండి",
         "description": "ప్రస్తుత (సేవ చేయని) పైపు ప్రాంప్ట్‌పై నడుపండి ప్రతిదీ దశ తీసివేస్తుందో మరియు ఇది ఖర్చు చేస్తుందో చూడటానికి. నమూనా సంభాషణలలో ఒకటి ఎంచుకోండి, లేదా మీ తన ప్రాంప్ట్ వర్ణించండి.",
         "promptLabel": "ప్రాంప్ట్",
@@ -1661,6 +1692,16 @@
       "noRequestSent": "ఇంకా అభ్యర్థన పంపబడలేదు.",
       "turnTraceLog": "పరిమితి #{{turn}} ట్రేస్ లాగ్ · {{count}} ఈవెంట్",
       "turnTraceLog_other": "పరిమితి #{{turn}} ట్రేస్ లాగ్ · {{count}} ఈవెంట్‌లు"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1747,7 +1788,7 @@
       "free": "ఉచితం",
       "add": "జోడించండి",
       "addAgain": "మళ్ళీ జోడించండి",
-      "loadFailed": "కేటలాగ్ లోడ్ విఫలమైంది",
+      "loadFailed": "కేటలాగ్ లోడ్ చేయడం విఫలమైంది: {{error}}",
       "filters": {
         "search": "శోధించండి",
         "searchPlaceholder": "ID లేదా నామం...",
@@ -1904,6 +1945,7 @@
     "page": {
       "title": "మోడల్‌లు",
       "subtitle": "Routerly తో నమోదు చేసిన LLM ప్రదాతలు",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "మోడల్‌లు",
         "health": "ఆరోగ్య"
@@ -2096,12 +2138,12 @@
       "callsMeasured": "{{count}} కాల్ కొలుస్తారు",
       "callsMeasured_other": "{{count}} కాల్‌లు",
       "empty": "ఈ విండోలో ఇంకా కాల్‌లు లేవు.",
-      "notConclusive": "ఇంకా నిశ్చితం కాలేదు.",
+      "notConclusive": "ఇంకా నిశ్చితమైనది కాదు: ప్రతిటి వేరియంట్‌కు ఈ విండోలో కనీసం {{minSamples}} కాల్‌లు అవసరం.",
       "explanation": "ప్రతిదీ జత యొక్క ఉత్తమం నిర్ధారించబడుతుంది.",
       "lowSample": "తక్కువ నమూనా",
-      "lowSampleTitle": "ఈ విండోలో కంటే కనీసం కాల్‌ల క్రిందకు",
-      "judgedCallsTitle": "సమాధానం స్కోర్ చేసారు",
-      "judgedCallsTitle_other": "సమాధానాలు స్కోర్ చేసారు",
+      "lowSampleTitle": "ఈ విండోలో {{minSamples}} కాల్‌ల కంటే తక్కువ",
+      "judgedCallsTitle": "ప్రయోగం ప్రారంభమైనప్పటి నుండి న్యాయాధిపతి స్కోర్ చేసిన {{count}} సమాధానం",
+      "judgedCallsTitle_other": "ప్రయోగం ప్రారంభమైనప్పటి నుండి న్యాయాధిపతి స్కోర్ చేసిన {{count}} సమాధానాలు",
       "errors": {
         "loadFailed": "మెట్రిక్‌లు లోడ్ విఫలమైంది"
       },
@@ -2127,7 +2169,7 @@
       "copied": "కాపీ చేసారు!",
       "newToken": "నవీన టోకెన్",
       "empty": "టోకెన్‌లు లేవు.",
-      "revokeConfirm": "టోకెన్ రిభోక్ చేయండి?",
+      "revokeConfirm": "\"{{snippet}}...\" టోకన్‌ను ఉద్ఘాటించాలా? దానిని ఉపయోగించే ఖాతాలు వెంటనే పనిచేయటం ఆపివేస్తాయి.",
       "revokeTitle": "రిభోక్ చేయండి",
       "errors": {
         "createFailed": "సృష్టించడం విఫలమైంది",
@@ -2242,7 +2284,8 @@
       "next": "తదుపరి",
       "page": "పేజీ {{page}} / {{totalPages}}",
       "total": "({{count}} మొత్తం)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2280,7 +2323,13 @@
         "all": "అంతటా",
         "success": "విజయం",
         "blocked": "బ్లాక్ చేసారు",
-        "error": "ఉద్దాటన"
+        "error": "ఉద్దాటన",
+        "sessionId": "సెషన్ ID",
+        "endUser": "తుది వినియోగదారు",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "ఏ సెషన్ అయినా",
+        "endUserPlaceholder": "ఏ తుది వినియోగదారు అయినా",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "అంతటా",
@@ -2383,7 +2432,10 @@
         "timestamp": "సమయపాలన",
         "guardrailTriggered": "గార్డ్‌రెయిల్ ట్రిగర్ చేసారు",
         "blockedBy": "ఆ ద్వారా బ్లాక్ చేసారు",
-        "piiRedacted": "PII నిరాకరణ చేసారు"
+        "piiRedacted": "PII నిరాకరణ చేసారు",
+        "sessionId": "సెషన్ ID",
+        "endUser": "తుది వినియోగదారు",
+        "tags": "Tags"
       },
       "errorMessage": "ఉద్దాటన సందేశం",
       "eventCount": "{{count}} ఈవెంట్",
@@ -2457,7 +2509,8 @@
       "show": "చెప్పుటకు చూపండు",
       "empty": "ఇంకా చెప్పుటకు డేటా లేవు.",
       "emptyHint": "రూటింగ్ వివరాలు చూడటానికి సందేశం పంపండు.",
-      "turnTraceLog": "పరిమితి #{{turn}} ట్రేస్ లాగ్"
+      "turnTraceLog": "పరిమితి #{{turn}} ట్రేస్ లాగ్",
+      "resize": "డీబగ్ ప్యానెల్ పరిమాణాన్ని మార్చండి"
     },
     "compare": {
       "modelLabel": "మోడల్ {{label}}:",
@@ -2628,7 +2681,8 @@
       "updateFailed": "పాత్ర నవీకరించడం విఫలమైంది",
       "createFailed": "పాత్ర సృష్టించడం విఫలమైంది",
       "deleteFailed": "పాత్ర తొలగించడం విఫలమైంది"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2690,14 +2744,13 @@
     "backToConnect": "కనెక్ట్‌కు వెనుకకు",
     "title": "కనెక్ట్ చేయండి",
     "docs": "డాక్‌లు",
-    "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
     "noClientPrefix": "పేరు గల క్లయింట్ లేదు",
     "errors": {
-      "loadFailed": "క్లయింట్‌లను లోడ్ చేయడం విఫలమైంది"
+      "loadFailed": "ఖాతాలను లోడ్ చేయడం విఫలమైంది: {{error}}"
     },
     "oneCommand": {
       "title": "వేగవంతమైన: ఒక కమాండ్",
-      "description": "{{client}} ఇన్‌స్టాల్ చేసిన యంత్రంలో దీన్ని నడుపండి."
+      "description": "{{client}} ఇన్‌స్టాల్ చేయబడిన మెషీన్‌లో దీనిని చేయండి. ఇది {{configPath}} ను వ్రాస్తుంది, మీరు చేయగలిగే ఒక బ్యాకప్‌ను ఉంచుతుంది."
     },
     "byHand": {
       "titleAlt": "లేదా ఖాళీచేయండి",
@@ -2710,7 +2763,7 @@
       "createOne": "ఒకటి సృష్టించండి",
       "onRoutersPage": "రౌటర్‌ల పేజీలో.",
       "modelLabel": "మోడల్:",
-      "modelHint": "Routerly ను ఎంపిక చేయడానికి సాధ్యం చేస్తుంది, {{modelsLink}} నుండి ఏదైనా మోడల్ id కూడా పనిచేస్తుంది.",
+      "modelHint": "ఎంపిక Routerly కు అందిస్తుంది, ఏదైనా మోడల్ id నుండి",
       "modelsLink": "మోడల్‌లు",
       "worksToo": "కూడా పనిచేస్తుంది.",
       "openaiCompatHint": "బేస్ URL, కీ మరియు మోడల్ OpenAI సారూప్య ఆఫర్ చేసే ఏదైనా క్లయింట్‌కు సరిపోతాయి."
@@ -2723,7 +2776,7 @@
     },
     "checkItWorked": {
       "title": "ఇది పనిచేసిందని చెక్ చేయండి",
-      "restart": "{{client}} రీస్టార్ట్ చేయండి, ప్రాంప్ట్ పంపండి, ఆ {{usageLink}}లో కాల్‌ను చూడండి.",
+      "restart": "{{client}} పునః ప్రారంభించండి, దానికి సూచన పంపండి, ఆపై కాల్‌ను చూడండి",
       "usageLink": "ఉపయోగం",
       "cliReports": "అదే యంత్రం నుండి, CLI నివేదించింది:"
     }
@@ -2735,9 +2788,8 @@
     "llmDescription": "ఆ క్లయింట్ మోడల్ ట్రాఫిక్‌ను Routerly ద్వారా రూట్ చేస్తుంది.",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly ను టూల్ సర్వర్‌గా లోడ్ చేస్తుంది.",
-    "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
     "errors": {
-      "loadFailed": "క్లయింట్‌లను లోడ్ చేయడం విఫలమైంది"
+      "loadFailed": "ఖాతాలను లోడ్ చేయడం విఫలమైంది: {{error}}"
     },
     "oneCommand": {
       "title": "ఒక కమాండ్",

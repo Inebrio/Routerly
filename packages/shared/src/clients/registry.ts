@@ -216,12 +216,13 @@ export function buildSnippet(meta: ClientMeta, baseUrl: string, token: string): 
       // openclaw.json: custom providers live under models.providers.<id>, and
       // an agent selects one with the "<provider>/<model id>" reference. The
       // model id is `ada`, so the reference reads `routerly/ada`, Routerly's
-      // own auto-routing sentinel.
+      // own auto-routing sentinel. OpenClaw's schema requires `name` on every
+      // model entry and rejects the whole config without it.
       return JSON.stringify(
         {
           models: {
             providers: {
-              routerly: { baseUrl: v1, apiKey: token, models: [{ id: 'ada' }] },
+              routerly: { baseUrl: v1, apiKey: token, models: [{ id: 'ada', name: 'ada' }] },
             },
           },
           agents: { defaults: { model: { primary: 'routerly/ada' } } },
@@ -353,8 +354,9 @@ export function buildMcpSnippet(meta: ClientMeta, baseUrl: string, mcpToken: str
       );
     }
     case 'openclaw': {
-      // OpenClaw defaults to the sse transport, which Routerly does not serve.
-      return `openclaw mcp add routerly \\\n  --url ${endpoint} \\\n  --transport streamable-http \\\n  --header "Authorization: Bearer ${mcpToken}"`;
+      // OpenClaw defaults to the sse transport, which Routerly does not serve;
+      // --header takes KEY=VALUE.
+      return `openclaw mcp add routerly \\\n  --url ${endpoint} \\\n  --transport streamable-http \\\n  --header "Authorization=Bearer ${mcpToken}"`;
     }
     case 'cursor': {
       // ~/.cursor/mcp.json (or .cursor/mcp.json in a project). A `url` entry is

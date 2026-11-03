@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 
 const { mockApi } = vi.hoisted(() => ({
   mockApi: vi.fn(),
@@ -24,7 +24,7 @@ function stripAnsi(value: string): string {
 
 afterEach(() => vi.clearAllMocks());
 
-function setup() {
+function _setup() {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
@@ -44,6 +44,11 @@ async function run(...args: string[]): Promise<{ out: string[]; err: string[] }>
     if (e instanceof Error && e.message !== 'exit') throw e;
   }
   return { out, err };
+}
+
+const routersFixture = [{ id: 'r-id-1', name: 'my-proj' }];
+function mockWithRouters(data: unknown) {
+  mockApi.mockImplementation(async (_m: string, url: string) => (url === '/api/routers' ? routersFixture : data));
 }
 
 const usageFixture = {
@@ -133,9 +138,23 @@ describe('report usage', () => {
   });
 
   it('appends --router filter to URL', async () => {
-    mockApi.mockResolvedValue(usageFixture);
+    mockWithRouters(usageFixture);
     await run('usage', '--router', 'my-proj');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=my-proj'));
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=r-id-1'));
+  });
+
+  it('accepts a router ID as well', async () => {
+    mockWithRouters(usageFixture);
+    await run('usage', '--router', 'r-id-1');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=r-id-1'));
+  });
+
+  it('fails with an error for an unknown router', async () => {
+    mockWithRouters(usageFixture);
+    const { err } = await run('usage', '--router', 'nope');
+    expect(err.join('\n')).toContain('Router "nope" not found');
+    expect(process.exit).toHaveBeenCalledWith(1);
+    expect(mockApi).not.toHaveBeenCalledWith('GET', expect.stringContaining('/api/usage'));
   });
 
   it('appends --session-id filter to URL', async () => {
@@ -261,6 +280,13 @@ describe('report calls', () => {
     expect(out.join('\n')).toMatch(/gpt-4o/);
   });
 
+  it('shows - for records without a cost', async () => {
+    mockApi.mockResolvedValue({ ...usageFixture, records: [{ ...usageFixture.records[0], cost: null }] });
+    const { out, err } = await run('calls');
+    expect(err).toEqual([]);
+    expect(stripAnsi(out.join('\n'))).toContain('-');
+  });
+
   it('limits output to --limit rows', async () => {
     const many = Array.from({ length: 30 }, (_, i) => ({
       ...usageFixture.records[0],
@@ -279,9 +305,9 @@ describe('report calls', () => {
   });
 
   it('appends --router filter', async () => {
-    mockApi.mockResolvedValue(usageFixture);
-    await run('calls', '--router', 'p1');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=p1'));
+    mockWithRouters(usageFixture);
+    await run('calls', '--router', 'my-proj');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=r-id-1'));
   });
 
   it('exits 1 on API error', async () => {
@@ -398,9 +424,9 @@ describe('report leaderboard', () => {
   });
 
   it('appends --router filter', async () => {
-    mockApi.mockResolvedValue(leaderboardFixture);
-    await run('leaderboard', '--router', 'p1');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=p1'));
+    mockWithRouters(leaderboardFixture);
+    await run('leaderboard', '--router', 'my-proj');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=r-id-1'));
   });
 
   it('exits 1 on API error', async () => {
@@ -412,9 +438,10 @@ describe('report leaderboard', () => {
 
 // ── report sessions ──────────────────────────────────────────────────────────
 
-const sessionsFixture = [
-  { sessionId: 'sess-aabbccddeeff1122', routerId: 'proj-abc123456789', requests: 5, totalCost: 0.01, startedAt: '2026-01-01T00:00:00Z' },
+const sessionsList = [
+  { sessionId: 'sess-aabbccddeeff1122', routerId: 'proj-abc123456789', requests: 5, totalCost: 0.01, firstSeen: '2026-01-01T00:00:00Z', lastSeen: '2026-01-01T00:05:00Z' },
 ];
+const sessionsFixture = { sessions: sessionsList };
 
 describe('report sessions', () => {
   it('prints sessions table', async () => {
@@ -428,19 +455,26 @@ describe('report sessions', () => {
     mockApi.mockResolvedValue(sessionsFixture);
     const { out } = await run('sessions', '--json');
     const parsed = JSON.parse(out.join('\n'));
-    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed).toEqual(sessionsList);
+  });
+
+  it('prints a valid start date and a hint when nextCursor is set', async () => {
+    mockApi.mockResolvedValue({ ...sessionsFixture, nextCursor: 'sess-x' });
+    const { out } = await run('sessions');
+    expect(out.join('\n')).not.toContain('Invalid Date');
+    expect(out.join('\n')).toContain('More sessions');
   });
 
   it('prints empty message when no data', async () => {
-    mockApi.mockResolvedValue([]);
+    mockApi.mockResolvedValue({ sessions: [] });
     const { out } = await run('sessions');
     expect(out.join('\n')).toContain('No sessions');
   });
 
   it('appends --router filter', async () => {
-    mockApi.mockResolvedValue(sessionsFixture);
-    await run('sessions', '--router', 'p1');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=p1'));
+    mockWithRouters(sessionsFixture);
+    await run('sessions', '--router', 'my-proj');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=r-id-1'));
   });
 
   it('exits 1 on API error', async () => {
@@ -495,6 +529,12 @@ describe('report savings', () => {
     expect(text).toContain('Compared calls: 9');
     expect(text).toContain('$0.003000');
     expect(text).toContain('$0.000900 saved');
+  });
+
+  it('prints a zero cache saving when the service reports a null cost', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, cache: { inputTokens: 400, cost: null } } });
+    const { out } = await run('savings');
+    expect(out.join('\n')).toContain('$0.000000 saved');
   });
 
   it('lists one counterfactual per target, priced and never timed', async () => {
@@ -592,10 +632,10 @@ describe('report savings', () => {
   });
 
   it('passes --router and --type through as filters', async () => {
-    mockApi.mockResolvedValue(savingsFixture);
-    await run('savings', '--router', 'p1', '--type', 'embedding');
-    const url = String(mockApi.mock.calls[0]![1]);
-    expect(url).toContain('routerId=p1');
+    mockWithRouters(savingsFixture);
+    await run('savings', '--router', 'my-proj', '--type', 'embedding');
+    const url = String(mockApi.mock.calls[1]![1]);
+    expect(url).toContain('routerId=r-id-1');
     expect(url).toContain('requestType=embedding');
   });
 

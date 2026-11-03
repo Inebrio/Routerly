@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "المظهر: {{theme}}"
     },
+    "language": {
+      "label": "اللغة",
+      "saveError": "تعذر حفظ لغتك. تم الرجوع إلى اللغة السابقة."
+    },
     "sidebar": {
       "expand": "توسيع الشريط الجانبي",
       "collapse": "طيّ الشريط الجانبي"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "بعض ملفات الإعدادات لها صلاحيات سماحة ({{files}}). يعمل بدء التشغيل والطلبات بشكل طبيعي. إصلاحه من الإعدادات → الأمان، أو من نظام الملفات على المضيف عند الحاجة.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "تجاهل",
       "updateAvailable": "الإصدار Routerly v{{latest}} متاح. أنت تستخدم v{{current}}.",
       "updateLink": "التحديث من الإعدادات",
@@ -40,9 +45,382 @@
       "telemetryLink": "ما الذي يتم إرساله؟",
       "telemetryYes": "نعم، أوافق على المساعدة",
       "telemetryNo": "لا، شكرًا"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "منذ {{count}} ثانية",
+      "secondsAgo_other": "منذ {{count}} ثوانٍ",
+      "minutesAgo": "منذ {{count}} دقيقة",
+      "minutesAgo_other": "منذ {{count}} دقائق",
+      "hoursAgo": "منذ {{count}} ساعة",
+      "hoursAgo_other": "منذ {{count}} ساعات",
+      "daysAgo": "منذ {{count}} يوم",
+      "daysAgo_other": "منذ {{count}} أيام"
     },
-    "language": {
-      "label": "اللغة"
+    "confirm": "تأكيد",
+    "cancel": "إلغاء",
+    "remove": "إزالة",
+    "select": "اختر...",
+    "search": "بحث...",
+    "noResults": "لا توجد نتائج",
+    "noRemainingOptions": "لا توجد خيارات متبقية",
+    "apply": "تطبيق",
+    "saved": "تم الحفظ",
+    "showLess": "عرض أقل",
+    "roles": "الأدوار",
+    "permissions": "الصلاحيات",
+    "notifications": {
+      "title": "الإشعارات",
+      "markAllRead": "وضع علامة مقروء على الكل",
+      "empty": "لا توجد إشعارات",
+      "viewAll": "عرض كل الإشعارات"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "اختر الفترة",
+      "recent": "الأخيرة",
+      "ranges": "النطاقات",
+      "from": "من",
+      "to": "إلى"
+    },
+    "permissionGuard": {
+      "fixFailed": "تعذّر إصلاح الصلاحيات",
+      "title": "صلاحيات ملفات غير آمنة",
+      "defaultMessage": "بعض الملفات لديها صلاحيات غير آمنة.",
+      "fixing": "جارٍ الإصلاح…",
+      "fixNow": "إصلاح الآن"
+    },
+    "limitRows": {
+      "noLimits": "لا توجد حدود معيّنة.",
+      "metricLabel": "المقياس",
+      "typeLabel": "النوع",
+      "periodLabel": "الفترة",
+      "everyLabel": "كل",
+      "maxCost": "الحد الأقصى للتكلفة",
+      "maxCount": "الحد الأقصى للعدد",
+      "maxTokens": "الحد الأقصى للرموز",
+      "allCombosSet": "جميع تركيبات المقياس/الفترة معيّنة بالفعل",
+      "addLimit": "إضافة حد",
+      "metric": {
+        "cost": "التكلفة",
+        "calls": "الطلبات",
+        "input_tokens": "رموز الإدخال",
+        "output_tokens": "رموز الإخراج",
+        "total_tokens": "إجمالي الرموز"
+      },
+      "period": {
+        "hourly": "كل ساعة",
+        "daily": "يوميًا",
+        "weekly": "أسبوعيًا",
+        "monthly": "شهريًا",
+        "yearly": "سنويًا"
+      },
+      "rollingUnit": {
+        "second": "ثانية",
+        "minute": "دقيقة",
+        "hour": "ساعة",
+        "day": "يوم",
+        "week": "أسبوع",
+        "month": "شهر"
+      },
+      "windowType": {
+        "period": "فترة",
+        "rolling": "متحرّكة"
+      },
+      "fmt": {
+        "requests": "{{value}} طلب",
+        "inputTokens": "{{value}} رمز-إدخال",
+        "outputTokens": "{{value}} رمز-إخراج",
+        "totalTokens": "{{value}} رمز",
+        "everyRolling": "{{metric}} / كل {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} / {{period}}"
+      }
+    },
+    "savings": {
+      "title": "ما وفّره التوجيه",
+      "input": "الإدخال",
+      "output": "الإخراج",
+      "actual": "الفعلي",
+      "clientCalls": "{{count}} طلب من العميل",
+      "clientCalls_other": "{{count}} طلبات من العميل",
+      "comparedAgainst": "، مقارنة بإرساله إلى كل من",
+      "comparedAgainst_other": "، مقارنة بإرسالها جميعًا إلى كل من",
+      "paidModelsInPlay": "{{count}} نموذج مدفوع قيد الاستخدام",
+      "paidModelsInPlay_other": "{{count}} نماذج مدفوعة قيد الاستخدام",
+      "metricCost": "التكلفة",
+      "metricTokens": "الرموز",
+      "totalCost": "إجمالي التكلفة",
+      "routed": "تم توجيهه: {{value}}",
+      "saved": "تم توفيره: {{value}}",
+      "usdThisPeriod": "دولار في هذه الفترة",
+      "savedVsAlways": "تم توفير {{value}} ({{percent}}%) مقابل استخدام {{model}} دائمًا",
+      "tokens": "الرموز",
+      "in": "إدخال: {{value}}",
+      "out": "إخراج: {{value}}",
+      "tokenSubWithCache": "{{in}} إدخال · {{out}} إخراج · {{cached}} من الذاكرة المؤقتة",
+      "tokenSub": "{{in}} إدخال · {{out}} إخراج",
+      "cutByOptimizers": "تم تقليل {{value}} بواسطة المحسّنات",
+      "fewerThanAlways": "أقل بمقدار {{value}} من استخدام {{model}} دائمًا، بشكل تقديري"
+    },
+    "optimizerSteps": {
+      "downloaded": "تم التنزيل",
+      "thisStepRunsOn": "تعمل هذه الخطوة على",
+      "defaultCheckpoint": "نقطة التحقق الافتراضية"
+    },
+    "routingPolicies": {
+      "title": "سياسات التوجيه",
+      "subtitle": "تحدد السياسات كيفية توجيه الطلبات. تُنفَّذ بالترتيب من الأعلى إلى الأسفل.",
+      "removePolicy": "إزالة السياسة",
+      "removeIntent": "إزالة النية",
+      "removeExample": "إزالة المثال",
+      "routingModels": "نماذج التوجيه",
+      "embeddingModels": "نماذج التضمين",
+      "maxCompletionTokens": "الحد الأقصى لرموز الإكمال",
+      "maxPromptChars": "الحد الأقصى لأحرف المطالبة",
+      "similarityThreshold": "عتبة التشابه",
+      "previousMessages": "الرسائل السابقة",
+      "intents": "النوايا",
+      "confidenceThreshold": "عتبة الثقة",
+      "ambiguityMargin": "هامش الغموض",
+      "maxCallsPerWindow": "الحد الأقصى للطلبات لكل نافذة",
+      "addFallbackModel": "إضافة نموذج احتياطي",
+      "autoRoutingLabel": "التوجيه التلقائي",
+      "autoRoutingHint": "عند التفعيل، يوزَّع الحركة بدون موجّهات مخصصة. عند التعطيل، يمكنك كتابة موجّهات محددة تُرشد الذكاء الاصطناعي إلى اختيار كل نموذج مستهدف.",
+      "additionalPromptInfoLabel": "معلومات إضافية للموجّه",
+      "additionalPromptInfoPlaceholder": "تعليمات إضافية لتضمينها في موجّه التوجيه...",
+      "addExamplePlaceholder": "أضف مثالًا واضغط Enter…",
+      "addIntentPlaceholder": "أضف نية واضغط Enter…",
+      "addPolicyPlaceholder": "إضافة سياسة...",
+      "labels": {
+        "llm": "سياسة التوجيه بالذكاء الاصطناعي",
+        "rate-limit": "سياسة تقييد المعدل",
+        "budget-remaining": "سياسة الميزانية المتبقية",
+        "semantic-intent": "سياسة النية الدلالية",
+        "health": "سياسة الحالة",
+        "context": "سياسة السياق",
+        "capability": "سياسة القدرة",
+        "performance": "سياسة الأداء",
+        "fairness": "سياسة العدالة",
+        "cheapest": "سياسة الأقل تكلفة",
+        "model-preference": "سياسة تفضيل النموذج"
+      },
+      "descriptions": {
+        "context": "تُقيّم النماذج بناءً على نافذة السياق المتاحة. تمنح 0 للنماذج التي تكون نافذة سياقها أصغر من طول الطلب المقدَّر، مما يمنع أخطاء الاقتطاع.",
+        "cheapest": "تُقيّم النماذج بشكل عكسي مع تكلفة الرمز. يحصل الأرخص على 1.0 والأغلى على 0.0، مما يساعد في تقليل الإنفاق على واجهة برمجة التطبيقات.",
+        "health": "تُقيّم النماذج بناءً على معدل الخطأ الأخير باستخدام تلاشٍ أُسّي (الأخطاء الأحدث لها وزن أكبر). تطبّق قاطع دائرة يضبط الدرجة على 0 عندما يتجاوز معدل الخطأ المرجَّح عتبة حرجة.",
+        "performance": "تُقيّم النماذج بناءً على متوسط زمن الاستجابة الأخير باستخدام تلاشٍ أُسّي. يحصل الأسرع على 1.0 والأبطأ على 0.0. النماذج بلا بيانات حديثة تفترض 1.0.",
+        "llm": "تستخدم نموذج ذكاء اصطناعي لتقييم المرشحين بناءً على المحتوى الدلالي للطلب. تدعم مطالبات توجيه لكل نموذج وتأخذ في الاعتبار هامش الميزانية عند إعداد الحدود.",
+        "capability": "مرشِّح صارم: يمنح 0 للنماذج التي تفتقر صراحةً لميزة يتطلبها الطلب (الرؤية، استدعاء الدوال، وضع JSON). النماذج التي لا تصرّح بقدراتها لا تُعاقَب.",
+        "rate-limit": "تعاقب النماذج ذات التكرار العالي للطلبات مؤخرًا لتقليل خطر بلوغ حدود معدل المزوّد (HTTP 429). تدعم عتبة صارمة قابلة للتهيئة تفرض الدرجة 0.",
+        "fairness": "توزّع حركة المرور بالتساوي عبر معاقبة النماذج التي استلمت طلبات ناجحة أكثر مؤخرًا. تعمل كتناوب دوري ناعم لمنع تركّز الحمل على نموذج واحد.",
+        "budget-remaining": "تُقيّم النماذج بناءً على هامش الميزانية المتبقي عبر كل الحدود المُعدّة. تفضّل النماذج ذات الهامش الأكبر قبل بلوغ عتباتها، موزّعة الاستهلاك بشكل استباقي.",
+        "semantic-intent": "تصنّف الطلب حسب النية الدلالية باستخدام التضمينات، ثم تقيّد مجموعة المرشحين بالنماذج المرتبطة بتلك النية. المطابقات الواثقة تُصفّي المجموعة بشكل صارم؛ المطابقات الغامضة تدمج أفضل مجموعتين؛ الطلبات غير المعروفة تمرّر جميع المرشحين.",
+        "model-preference": "عندما يطلب العميل نموذجًا محددًا (وليس routerly/ada)، تمنح مكافأة قابلة للتهيئة لذلك النموذج. عندما لا يُعبَّر عن تفضيل، تمتنع السياسة. يتحكم الموضع في القائمة بمدى وزن التفضيل مقابل السياسات الأخرى."
+      },
+      "selectModel": "اختر نموذجًا"
+    },
+    "securityRules": {
+      "applyTo": "تطبيق على",
+      "streamingBufferSize": "حجم مخزن البث المؤقت (أحرف)",
+      "entityTypes": "أنواع الكيانات",
+      "target": "الهدف",
+      "embeddingModel": "نموذج التضمين",
+      "judgeModel": "نموذج الحَكَم",
+      "contentGuardrails": "حواجز المحتوى الأمنية",
+      "piiPolicies": "سياسات PII",
+      "addSecurityPolicyPlaceholder": "إضافة سياسة أمنية...",
+      "removePolicyTooltip": "إزالة السياسة",
+      "deleteRuleAriaLabel": "حذف القاعدة",
+      "embeddingModelPlaceholder": "اختر نموذج التضمين...",
+      "fallbackModelsLabel": "نماذج احتياطية (اختياري، تُجرَّب بالترتيب)",
+      "fallbackModelsPlaceholder": "لا توجد نماذج احتياطية...",
+      "exampleTextsLabel": "نصوص مثال يجب حظرها (واحد في كل سطر)",
+      "exampleTextsPlaceholder": "كيف أخترق...\n...",
+      "similarityThresholdLabel": "حد التشابه:",
+      "judgeModelPlaceholder": "اختر نموذج التقييم...",
+      "allowedTopicsLabel": "المواضيع المسموح بها (بلغة طبيعية)",
+      "allowedTopicsPlaceholder": "دعم فني لمنتجات البرمجيات. حل المشكلات التقنية. استفسارات الفوترة.",
+      "onTopicThresholdLabel": "حظر إذا كانت درجة الصلة بالموضوع أقل من:",
+      "harmThresholdLabel": "حظر إذا كانت درجة الضرر أعلى من:",
+      "customInstructionsLabel": "تعليمات مخصصة",
+      "customInstructionsPlaceholder": "أنت مصنِّف لسلامة المحتوى. قيّم النص التالي بحثاً عن محتوى ضار.\nالفئات: خطاب الكراهية، العنف، المحتوى الجنسي، إيذاء النفس.\nأجب فقط بكائن JSON: {\"score\": <رقم بين 0 و1>}",
+      "customInstructionsRequired": "التعليمات المخصصة مطلوبة.",
+      "enabledLabel": "مفعّل",
+      "contentGuardrailsHint": "فحص الطلبات والردود وفق القواعد المُهيَّأة. يكون نشطاً عند تهيئة قاعدة واحدة على الأقل.",
+      "securityPoliciesHeading": "سياسات الأمان",
+      "noSecurityPolicies": "لا توجد سياسات أمان مُهيَّأة.",
+      "piiPoliciesHint": "اكتشاف البيانات الشخصية وحجبها. تستهدف كل سياسة إدخال الطلب أو رد النموذج أو كلاهما، وتتحكم في مجموعة الكيانات الخاصة بها.",
+      "noPiiPolicies": "لا توجد سياسات بيانات شخصية مُهيَّأة.",
+      "addPolicyButton": "+ إضافة سياسة",
+      "injectionWarningTitle": "تم تعديل حمولة الطلب عبر الحقن",
+      "injectionWarningBody": "تحقن قاعدة واحدة أو أكثر تعليماتها في موجّه النظام الخاص بالطلب الصادر، لذا يتم تعديل الحمولة المرسلة إلى المزوّد. لا يتم إجراء أي استدعاء نموذج إضافي ولا يُحظر أي شيء؛ النموذج الذي يخدم الطلب يفرض التعليمة ذاتياً.",
+      "streamingDisabledWarningTitle": "البث معطّل لهذا الموجِّه",
+      "streamingDisabledWarningBody": "تم تهيئة قاعدة واحدة أو أكثر لحظر الردود (الهدف: الرد أو كلاهما). ولأنه يجب فحص الرد بالكامل قبل اتخاذ قرار الحظر، تحتفظ Routerly بالرد كاملاً قبل إعادته إلى العميل. البث غير متاح أثناء تفعيل قاعدة حظر تستهدف الرد؛ سيستلم العملاء الرد الكامل دفعة واحدة بدلاً من أجزاء تدريجية."
+    },
+    "connectionFields": {
+      "azureResourceName": "اسم مورد Azure",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "اسم مورد Azure OpenAI (من بوابة Azure).",
+      "deploymentId": "معرّف النشر",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "اسم النشر الذي أنشأته في Azure OpenAI Studio.",
+      "azureApiVersionLabel": "إصدار API",
+      "azureApiVersionDefaultHint": "(الافتراضي: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "منطقة AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "معرّف مفتاح وصول AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "مفتاح الوصول السري لـ AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "اتركه فارغًا للاحتفاظ بالمفتاح الحالي",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "رمز الجلسة",
+      "awsSessionTokenOptionalHint": "(اختياري، لبيانات الاعتماد المؤقتة)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
+      "gcpLocationLabel": "الموقع",
+      "gcpLocationDefaultHint": "(الافتراضي: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "مفتاح حساب الخدمة",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "رابط النقطة النهائية",
+      "optional": "(اختياري)",
+      "webProvider": {
+        "unofficialWarningTitle": "مزوّد غير رسمي — استخدمه على مسؤوليتك الخاصة.",
+        "unofficialWarningBody": "يعتمد هذا التكامل على واجهة برمجة تطبيقات داخلية غير موثقة قد تتغير أو تتوقف عن العمل دون إشعار. قد يخالف شروط خدمة المزوّد وقد يؤدي إلى تعليق الحساب.",
+        "accessTokenLabel": "رمز الوصول",
+        "sessionTokenLabel": "رمز الجلسة",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "الصق قيمة ملف تعريف الارتباط sessionKey (sk-ant-sid…)",
+        "openaiInstructions": "أثناء تسجيل الدخول إلى ChatGPT، افتح <code>https://chatgpt.com/api/auth/session</code> في علامة تبويب جديدة. انسخ قيمة الحقل <code>accessToken</code> (يبدأ بـ <code>eyJ</code>). الرمز صالح لنحو 10 أيام؛ الصق رمزًا جديدًا عندما يبدأ الاختبار بالفشل مع الخطأ 401. للوصول الموثوق، املأ أيضًا حقل <strong>cf_clearance</strong> أدناه.",
+        "anthropicInstructions": "<strong>كيفية الحصول على مفتاح الجلسة:</strong> أثناء تسجيل الدخول إلى <code>https://claude.ai</code>، اضغط F12 لفتح DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. انسخ <strong>Value</strong> لملف تعريف الارتباط <code>sessionKey</code> (يبدأ بـ <code>sk-ant-sid</code>، على سبيل المثال <code>sk-ant-sid02-</code>). إنه ملف تعريف ارتباط HttpOnly، لذلك لا يظهر في وحدة تحكم الصفحة. يبقى صالحًا حتى تسجّل الخروج أو تنتهي صلاحيته؛ الصق مفتاحًا جديدًا إذا بدأ الاختبار يفشل."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "رمز OAuth للاشتراك",
+        "authFilePathLabel": "مسار ملف المصادقة",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (الافتراضي)",
+        "anthropicTitle": "استخدم اشتراكك في Claude Pro/Max.",
+        "anthropicRunCommandStep": "شغّل هذا الأمر وانسخ الرمز الذي يطبعه:",
+        "anthropicPasteTokenStep": "الصق الرمز في حقل <em>رمز OAuth للاشتراك</em> أدناه.",
+        "termsNote": "أعد إنشاءه عند انتهاء صلاحيته. قد يخالف استخدام الاشتراك عبر بوابة شروط المزوّد.",
+        "openaiTitle": "استخدم اشتراكك في ChatGPT Plus/Pro عبر تطبيق Codex.",
+        "openaiLoginStep": "سجّل الدخول إلى تطبيق Codex لسطح المكتب بحساب ChatGPT Plus/Pro الخاص بك.",
+        "openaiAutoRefreshStep": "تقرأ Routerly رمز الوصول الخاص بك من <code>~/.codex/auth.json</code> وتجدده تلقائيًا. لا حاجة للنسخ واللصق يدويًا.",
+        "openaiAuthFilePathStep": "اترك حقل <em>مسار ملف المصادقة</em> فارغًا لاستخدام الإعداد الافتراضي، أو أدخل مسارًا مخصصًا إذا كان تطبيق Codex يخزّن المصادقة في مكان آخر.",
+        "openaiTermsNote": "قد يخالف استخدام الاشتراك عبر بوابة شروط المزوّد."
+      },
+      "copyCode": {
+        "copiedTooltip": "تم النسخ!",
+        "copyTooltip": "نسخ إلى الحافظة",
+        "copiedLabel": "تم النسخ",
+        "copyLabel": "نسخ"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "نسخ",
+      "copiedLabel": "تم النسخ!",
+      "copyErrorHint": "فشل النسخ، حدد النص وانسخه يدويًا."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "عميل MCP",
+      "hints": {
+        "claudeCode": "شغّل هذا مرة واحدة، من أي مكان. يخزّن Claude Code الخادم في <code>~/.claude.json</code>.",
+        "claudeDesktop": "ضع هذا في <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (على ويندوز، <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>)، ثم أعد تشغيل التطبيق. يشغّل الأمر CLI، لذا يجب أن يكون <code>routerly</code> ضمن PATH.",
+        "codex": "ضع هذا في <code>~/.codex/config.toml</code>. يقرأ Codex الرمز من البيئة، لذا صدّره في الصدفة التي تبدأ منها Codex.",
+        "opencode": "ضع هذا في <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "شغّل هذا مرة واحدة. يستخدم OpenClaw افتراضيًا نقل sse، وهو ما لا يقدمه Routerly، لذا يتم تحديد النقل صراحةً.",
+        "cursor": "ضع هذا في <code>~/.cursor/mcp.json</code>، أو في <code>.cursor/mcp.json</code> لتخصيصه بمشروع واحد.",
+        "cline": "ضع هذا في <code>~/.cline/mcp.json</code>، أو ألصقه في Configure MCP Servers ضمن لوحة Cline.",
+        "zed": "ضع هذا في ملف <code>settings.json</code> الخاص بـ Zed، بجانب أي context server آخر."
+      }
+    },
+    "unsavedChanges": {
+      "title": "تغييرات غير محفوظة",
+      "message": "لديك تغييرات غير محفوظة. إذا غادرت الآن، ستفقد تغييراتك.",
+      "stay": "البقاء",
+      "leaveAnyway": "المغادرة على أي حال"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "الحواجز الأمنية",
+        "pii": "PII",
+        "optimizers": "المحسّنات",
+        "routerOverhead": "النفقات العامة للموجّه"
+      },
+      "policyType": {
+        "llm": "التوجيه بالذكاء الاصطناعي",
+        "rateLimit": "تقييد المعدل",
+        "budgetRemaining": "الميزانية المتبقية",
+        "semanticIntent": "النية الدلالية",
+        "modelPreference": "تفضيل النموذج"
+      },
+      "rawDetails": "تفاصيل خام",
+      "technicalDetails": "تفاصيل تقنية",
+      "systemPrompt": "مطالبة النظام",
+      "responseText": "نص الاستجابة",
+      "responseJson": "JSON الاستجابة",
+      "cacheEmbeddingCall": "طلب تضمين من الذاكرة المؤقتة",
+      "fallbackAttempt": "احتياطي رقم {{attempt}}",
+      "embeddingModel": "نموذج التضمين",
+      "upstreamModel": "النموذج المصدر",
+      "provider": "المزوّد",
+      "source": "المصدر",
+      "endpoint": "نقطة النهاية",
+      "cacheHit": "إصابة الذاكرة المؤقتة",
+      "ttlExtended": "تم تمديد TTL",
+      "model": "النموذج",
+      "similarity": "التشابه",
+      "embedding": "التضمين",
+      "cacheMiss": "فوات الذاكرة المؤقتة",
+      "details": "التفاصيل",
+      "excludedByLimits": "مستبعد بسبب الحدود",
+      "finalRanking": "الترتيب النهائي",
+      "noRankingData": "لا توجد بيانات ترتيب (قد يكون السجل تالفًا أو من إصدار أقدم)",
+      "policyScores": "درجات السياسة",
+      "weight": "الوزن {{value}}",
+      "allScores": "كل الدرجات",
+      "noPolicyData": "لا توجد بيانات سياسة (قد يكون السجل تالفًا أو من إصدار أقدم)",
+      "requestGuardrailBlocked": "تم حظر الطلب بواسطة الحاجز الأمني",
+      "requestGuardrailTriggered": "تم تفعيل الحاجز الأمني للطلب",
+      "responseGuardrailBlocked": "تم حظر الاستجابة بواسطة الحاجز الأمني",
+      "responseGuardrailTriggered": "تم تفعيل الحاجز الأمني للاستجابة",
+      "rule": "القاعدة",
+      "action": "الإجراء",
+      "guardrailsEvaluated": "الحواجز الأمنية المُقيَّمة ({{target}})",
+      "ruleCount": "{{count}} قاعدة",
+      "ruleCount_other": "{{count}} قواعد",
+      "promptInjection": "حقن المطالبة",
+      "injects": "يحقن",
+      "judgeResponse": "استجابة الحَكَم",
+      "piiScrubbed": "تم إخفاء PII",
+      "piiScanned": "تم فحص PII ({{target}})",
+      "policies": "السياسات",
+      "entityTypes": "أنواع الكيانات",
+      "customPatterns": "الأنماط المخصصة",
+      "scanned": "تم الفحص",
+      "redacted": "تم الإخفاء",
+      "took": "استغرق",
+      "ms": "{{value}} مللي ثانية",
+      "entityTypesScanned": "أنواع الكيانات المفحوصة",
+      "guardrailInjection": "حقن الحاجز الأمني",
+      "rules": "القواعد",
+      "chars": "أحرف",
+      "injectedText": "النص المحقون",
+      "optimizer": "المحسّن {{id}}",
+      "tokens": "الرموز",
+      "saved": "تم التوفير",
+      "tok": "{{value}} رمز",
+      "reason": "السبب",
+      "budgetBlocked": "تم الحظر بسبب الميزانية",
+      "budgetOk": "الميزانية متاحة",
+      "egressSent": "تم إرسال الخروج",
+      "status": "الحالة",
+      "encoding": "الترميز",
+      "frames": "الإطارات",
+      "bytes": "بايت",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -244,7 +622,8 @@
       "heading": "اللغة",
       "description": "اختر اللغة التي تُعرض بها لوحة التحكم.",
       "languageLabel": "اللغة",
-      "saved": "تم حفظ تفضيل اللغة."
+      "saved": "تم حفظ تفضيل اللغة.",
+      "saveError": "تعذر حفظ تفضيل اللغة. تم الرجوع إلى التفضيل السابق."
     }
   },
   "settings": {
@@ -301,7 +680,8 @@
         "saving": "جارٍ الحفظ…",
         "enable": "تفعيل",
         "disable": "تعطيل"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -368,7 +748,8 @@
         "budgetReset": "الميزانية – تمت إعادة التعيين",
         "systemStartup": "النظام – بدء التشغيل",
         "systemShutdown": "النظام – إيقاف التشغيل",
-        "systemUpdateAvailable": "النظام – تحديث متاح"
+        "systemUpdateAvailable": "النظام – تحديث متاح",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "إزالة القناة",
       "removeChannelConfirm": "إزالة القناة؟",
@@ -417,7 +798,8 @@
         "permCount_other": "{{count}} صلاحيات",
         "userCount": "{{count}} مستخدم",
         "userCount_other": "{{count}} مستخدمين",
-        "everyone": "الجميع"
+        "everyone": "الجميع",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "فشل التحميل"
@@ -456,6 +838,9 @@
         },
         "optional": "(اختياري)",
         "keepCurrentPlaceholder": "اتركه فارغًا للاحتفاظ بالقيمة الحالية",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -481,7 +866,9 @@
           "routersHint": "اتركه فارغًا لاستلام أحداث من كل الموجّهات.",
           "cooldownHeading": "فترة التهدئة",
           "cooldownSuffix": "ثوانٍ (0 = بدون تهدئة)",
-          "cooldownHint": "أقل فاصل زمني قبل أن تتمكن هذه القناة من الإطلاق مجددًا لنفس الحدث."
+          "cooldownHint": "أقل فاصل زمني قبل أن تتمكن هذه القناة من الإطلاق مجددًا لنفس الحدث.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "المستلمون / الوجهات",
@@ -520,8 +907,9 @@
         "addSearchPlaceholder": "بحث في القنوات…",
         "noResults": "لا توجد نتائج",
         "emptyTitle": "لا توجد قنوات إشعار مُعدّة بعد.",
-        "nameInlinePlaceholder": "التسمية (اختياري)",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "لا توجد قناة مطابقة للمرشحات النشطة.",
+        "nameInlinePlaceholder": "التسمية (اختياري)",
         "columns": {
           "name": "الاسم",
           "type": "النوع",
@@ -678,7 +1066,8 @@
       "removeTooltip": "إزالة التكامل",
       "saving": "جارٍ الحفظ…",
       "save": "حفظ",
-      "addButton": "إضافة تكامل"
+      "addButton": "إضافة تكامل",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -733,6 +1122,8 @@
         "lastChecked": "آخر فحص"
       },
       "noCheckPerformed": "لم يتم إجراء أي فحص للتحديثات بعد.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "التحقق من التحديثات",
       "checking": "جارٍ التحقق…",
       "updateTo": "التحديث إلى v{{version}}",
@@ -746,7 +1137,8 @@
         "checkFailed": "فشل الفحص",
         "updateFailed": "فشل التحديث"
       },
-      "channel": "القناة"
+      "channel": "القناة",
+      "channelNote": "يتبع current كل إصدار مستقر جديد؛ أما stable فلا يتحرك إلا عند ترقية إصدار، لذا قد يختلف الاثنان."
     },
     "security": {
       "authentication": "المصادقة",
@@ -781,6 +1173,8 @@
       "count": "موجّه واحد",
       "count_other": "{{count}} موجّهات",
       "newRouter": "موجّه جديد",
+      "newOrchestrator": "منسّق جديد",
+      "newPassthrough": "تمرير مباشر جديد",
       "empty": "لا توجد موجّهات بعد.",
       "emptyFiltered": "لا توجد أجهزة توجيه من هذا النوع.",
       "columns": {
@@ -796,9 +1190,7 @@
       "deleteConfirm": "هل تريد حذف هذا الموجّه؟",
       "errors": {
         "deleteFailed": "خطأ في حذف الموجّه"
-      },
-      "newOrchestrator": "منسّق جديد",
-      "newPassthrough": "تمرير مباشر جديد"
+      }
     },
     "layout": {
       "notFound": "الموجّه غير موجود",
@@ -816,10 +1208,10 @@
       "backToRouters": "العودة إلى الموجّهات",
       "backToRoutersTitle": "العودة إلى الموجّهات",
       "newRouter": "موجّه جديد",
+      "newKind": "جديد {{kind}}",
       "loading": "جارٍ التحميل...",
       "routerId": "معرّف الموجّه:",
-      "saveFirstHint": "احفظ الموجّه أولًا لإلغاء قفل هذا التبويب",
-      "newKind": "جديد {{kind}}"
+      "saveFirstHint": "احفظ الموجّه أولًا لإلغاء قفل هذا التبويب"
     },
     "dashboard": {
       "period": "الفترة",
@@ -837,7 +1229,9 @@
         "ttft": "الزمن حتى أول رمز",
         "notMeasured": "غير مقاس في هذه الطلبات",
         "reliability": "الموثوقية",
-        "errorsAndBlocked": "{{errors}} أخطاء · {{blocked}} محظورة"
+        "errorsAndBlocked": "{{errors}} أخطاء · {{blocked}} محظورة",
+        "errorsAndBlocked_one": "{{errors}} أخطاء · {{blocked}} محظورة",
+        "errorsAndBlocked_other": "{{errors}} أخطاء · {{blocked}} محظورة"
       },
       "tokens": {
         "input": "رموز الإدخال:",
@@ -912,23 +1306,34 @@
         "anthropicSdk": "حزمة تطوير Anthropic",
         "anthropicBaseUrlHint": "عنوان URL الأساسي <code>{{baseUrl}}</code>، بدون <code>/v1</code>: تضيفه الحزمة تلقائيًا.",
         "curl": "curl",
-        "curlHint": "تحقق من الاتصال دون تثبيت أي شيء، ثم ابحث عن الطلب في <usageLink>الاستخدام</usageLink>."
+        "curlHint": "تحقق من الاتصال دون تثبيت أي شيء، ثم ابحث عن الطلب في <usageLink>الاستخدام</usageLink>.",
+        "passthrough": {
+          "heading": "كيفية الاتصال",
+          "intro": "يقوم Passthrough بإعادة توجيه كل طلب بدون تعديل — استخدم <strong>مفتاح مزودك الخاص</strong> كمفتاح API، لا تستخدم رمز Routerly أبدًا. لا يقوم Routerly بتخزين أو إصدار بيانات اعتماد لهذا الموجه؛ كل ما يرسله العميل ينتقل مباشرة إلى المزود.",
+          "noLimits": "لا تنطبق الميزانيات والحدود على هذا الموجه: التكلفة غير معروفة لحركة Passthrough، لذلك لا يتم التحقق منها أبدًا أو احسابها ضمن أي حد إنفاق.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "عنوان URL الأساسي <code>{{url}}</code> — لا توجد لاحقة <code>/v1</code>، لا يزال SDK يضيف مساره الخاص تماماً كما يفعل مع OpenAI API الفعلي.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "عنوان URL الأساسي <code>{{url}}</code> — لا يزال SDK يضيف <code>/v1/messages</code> نفسه، تماماً كما يفعل مع Anthropic API الفعلي."
+        }
       },
       "form": {
         "kind": "النوع",
         "kindFixedHint": "ثابت بمجرد إنشاء الموجّه.",
         "routerName": "اسم الموجّه",
         "routerNamePlaceholder": "تطبيقي",
+        "passthroughPath": "المسار",
+        "passthroughPathHint": "يصبح جزءًا من عنوان URL الذي يستدعيه العملاء: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "إعدادات متقدمة",
         "ttftTimeout": "مهلة TTFT (مللي ثانية)",
         "ttftTimeoutHint": "إذا لم يرسل النموذج أول بايت من الاستجابة خلال هذا الوقت، يُلغي Routerly الطلب ويجرّب المرشح التالي. لا يحدّ من إجمالي مدة الاستجابة. اضبطه على 0 للانتظار طالما احتاج المزوّد.",
         "traceContent": "محتوى التتبّع",
         "traceContentHint": "تسجّل التتبّعات دائمًا البيانات الوصفية (النماذج، الدرجات، الرموز، التكلفة، زمن الاستجابة). فعّل هذا لتسجيل المطالبات المُرسلة والإجابات المُستلمة أيضًا. تُخزَّن مع سجل الاستخدام وتكون مرئية لأي شخص يمكنه قراءة التقارير.",
         "capturePromptsAndAnswers": "التقاط المطالبات والإجابات",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "حفظ التغييرات",
         "createRouter": "إنشاء موجّه",
-        "passthroughPath": "المسار",
-        "passthroughPathHint": "يصبح جزءًا من عنوان URL الذي يستدعيه العملاء: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "إنشاء منسّق",
         "createPassthrough": "إنشاء تمرير مباشر"
       }
@@ -1009,6 +1414,7 @@
       "saving": "جارٍ الحفظ...",
       "saved": "تم الحفظ",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "معاينة توفير الرموز",
         "description": "شغّل خط الأنابيب الحالي (غير المحفوظ) على مطالبة لرؤية ما تزيله كل خطوة وما تكلّفه. اختر إحدى المحادثات النموذجية، أو اكتب مطالبتك الخاصة.",
         "promptLabel": "المطالبة",
@@ -1286,6 +1692,16 @@
       "noRequestSent": "لم يتم إرسال أي طلب بعد.",
       "turnTraceLog": "سجل تتبّع الدور رقم {{turn}} · {{count}} حدث",
       "turnTraceLog_other": "سجل تتبّع الدور رقم {{turn}} · {{count}} أحداث"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1529,6 +1945,7 @@
     "page": {
       "title": "النماذج",
       "subtitle": "مزوّدو LLM المسجّلون في Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "النماذج",
         "health": "الحالة"
@@ -1867,7 +2284,8 @@
       "next": "التالي",
       "page": "صفحة {{page}} من {{totalPages}}",
       "total": "(الإجمالي {{count}})"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -1905,7 +2323,13 @@
         "all": "الكل",
         "success": "نجاح",
         "blocked": "محظور",
-        "error": "خطأ"
+        "error": "خطأ",
+        "sessionId": "معرّف الجلسة",
+        "endUser": "المستخدم النهائي",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "أي جلسة",
+        "endUserPlaceholder": "أي مستخدم نهائي",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "الكل",
@@ -2008,7 +2432,10 @@
         "timestamp": "الطابع الزمني",
         "guardrailTriggered": "تم تفعيل الحاجز الأمني",
         "blockedBy": "تم الحظر بواسطة",
-        "piiRedacted": "تم إخفاء PII"
+        "piiRedacted": "تم إخفاء PII",
+        "sessionId": "معرّف الجلسة",
+        "endUser": "المستخدم النهائي",
+        "tags": "Tags"
       },
       "errorMessage": "رسالة الخطأ",
       "eventCount": "{{count}} حدث",
@@ -2082,7 +2509,8 @@
       "show": "إظهار التصحيح",
       "empty": "لا توجد بيانات تصحيح بعد.",
       "emptyHint": "أرسل رسالة لرؤية تفاصيل التوجيه.",
-      "turnTraceLog": "سجل تتبّع الدور رقم {{turn}}"
+      "turnTraceLog": "سجل تتبّع الدور رقم {{turn}}",
+      "resize": "تغيير حجم لوحة التصحيح"
     },
     "compare": {
       "modelLabel": "النموذج {{label}}:",
@@ -2253,7 +2681,8 @@
       "updateFailed": "تعذّر تحديث الدور",
       "createFailed": "تعذّر إنشاء الدور",
       "deleteFailed": "تعذّر حذف الدور"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2315,7 +2744,6 @@
     "backToConnect": "العودة إلى الاتصال",
     "title": "الاتصال",
     "docs": "التوثيق",
-    "notEnabledPrefix": "مُعدّ العملاء غير مفعّل. اطلب من مسؤول تفعيله باستخدام",
     "noClientPrefix": "لا يوجد عميل باسم",
     "errors": {
       "loadFailed": "تعذّر تحميل العملاء: {{error}}"
@@ -2360,7 +2788,6 @@
     "llmDescription": "يوجّه حركة مرور نموذج ذلك العميل عبر Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "يحمّل Routerly كخادم أدوات داخله.",
-    "notEnabledPrefix": "مُعدّ العملاء غير مفعّل. اطلب من مسؤول تفعيله باستخدام",
     "errors": {
       "loadFailed": "تعذّر تحميل العملاء: {{error}}"
     },
@@ -2386,381 +2813,6 @@
       "modelDescription": "يترك الاختيار لـ Routerly. يعمل أيضًا أي معرّف نموذج من صفحة",
       "modelsLink": "النماذج",
       "worksToo": "."
-    }
-  },
-  "common": {
-    "time": {
-      "secondsAgo": "منذ {{count}} ثانية",
-      "secondsAgo_other": "منذ {{count}} ثوانٍ",
-      "minutesAgo": "منذ {{count}} دقيقة",
-      "minutesAgo_other": "منذ {{count}} دقائق",
-      "hoursAgo": "منذ {{count}} ساعة",
-      "hoursAgo_other": "منذ {{count}} ساعات",
-      "daysAgo": "منذ {{count}} يوم",
-      "daysAgo_other": "منذ {{count}} أيام"
-    },
-    "confirm": "تأكيد",
-    "cancel": "إلغاء",
-    "remove": "إزالة",
-    "select": "اختر...",
-    "search": "بحث...",
-    "noResults": "لا توجد نتائج",
-    "noRemainingOptions": "لا توجد خيارات متبقية",
-    "apply": "تطبيق",
-    "saved": "تم الحفظ",
-    "showLess": "عرض أقل",
-    "roles": "الأدوار",
-    "permissions": "الصلاحيات",
-    "notifications": {
-      "title": "الإشعارات",
-      "markAllRead": "وضع علامة مقروء على الكل",
-      "empty": "لا توجد إشعارات",
-      "viewAll": "عرض كل الإشعارات"
-    },
-    "dateRangePicker": {
-      "selectPeriod": "اختر الفترة",
-      "recent": "الأخيرة",
-      "ranges": "النطاقات",
-      "from": "من",
-      "to": "إلى"
-    },
-    "permissionGuard": {
-      "fixFailed": "تعذّر إصلاح الصلاحيات",
-      "title": "صلاحيات ملفات غير آمنة",
-      "defaultMessage": "بعض الملفات لديها صلاحيات غير آمنة.",
-      "fixing": "جارٍ الإصلاح…",
-      "fixNow": "إصلاح الآن"
-    },
-    "limitRows": {
-      "noLimits": "لا توجد حدود معيّنة.",
-      "metricLabel": "المقياس",
-      "typeLabel": "النوع",
-      "periodLabel": "الفترة",
-      "everyLabel": "كل",
-      "maxCost": "الحد الأقصى للتكلفة",
-      "maxCount": "الحد الأقصى للعدد",
-      "maxTokens": "الحد الأقصى للرموز",
-      "allCombosSet": "جميع تركيبات المقياس/الفترة معيّنة بالفعل",
-      "addLimit": "إضافة حد",
-      "metric": {
-        "cost": "التكلفة",
-        "calls": "الطلبات",
-        "input_tokens": "رموز الإدخال",
-        "output_tokens": "رموز الإخراج",
-        "total_tokens": "إجمالي الرموز"
-      },
-      "period": {
-        "hourly": "كل ساعة",
-        "daily": "يوميًا",
-        "weekly": "أسبوعيًا",
-        "monthly": "شهريًا",
-        "yearly": "سنويًا"
-      },
-      "rollingUnit": {
-        "second": "ثانية",
-        "minute": "دقيقة",
-        "hour": "ساعة",
-        "day": "يوم",
-        "week": "أسبوع",
-        "month": "شهر"
-      },
-      "windowType": {
-        "period": "فترة",
-        "rolling": "متحرّكة"
-      },
-      "fmt": {
-        "requests": "{{value}} طلب",
-        "inputTokens": "{{value}} رمز-إدخال",
-        "outputTokens": "{{value}} رمز-إخراج",
-        "totalTokens": "{{value}} رمز",
-        "everyRolling": "{{metric}} / كل {{amount}} {{unit}}",
-        "perPeriod": "{{metric}} / {{period}}"
-      }
-    },
-    "savings": {
-      "title": "ما وفّره التوجيه",
-      "input": "الإدخال",
-      "output": "الإخراج",
-      "actual": "الفعلي",
-      "clientCalls": "{{count}} طلب من العميل",
-      "clientCalls_other": "{{count}} طلبات من العميل",
-      "comparedAgainst": "، مقارنة بإرساله إلى كل من",
-      "comparedAgainst_other": "، مقارنة بإرسالها جميعًا إلى كل من",
-      "paidModelsInPlay": "{{count}} نموذج مدفوع قيد الاستخدام",
-      "paidModelsInPlay_other": "{{count}} نماذج مدفوعة قيد الاستخدام",
-      "metricCost": "التكلفة",
-      "metricTokens": "الرموز",
-      "totalCost": "إجمالي التكلفة",
-      "routed": "تم توجيهه: {{value}}",
-      "saved": "تم توفيره: {{value}}",
-      "usdThisPeriod": "دولار في هذه الفترة",
-      "savedVsAlways": "تم توفير {{value}} ({{percent}}%) مقابل استخدام {{model}} دائمًا",
-      "tokens": "الرموز",
-      "in": "إدخال: {{value}}",
-      "out": "إخراج: {{value}}",
-      "tokenSubWithCache": "{{in}} إدخال · {{out}} إخراج · {{cached}} من الذاكرة المؤقتة",
-      "tokenSub": "{{in}} إدخال · {{out}} إخراج",
-      "cutByOptimizers": "تم تقليل {{value}} بواسطة المحسّنات",
-      "fewerThanAlways": "أقل بمقدار {{value}} من استخدام {{model}} دائمًا، بشكل تقديري"
-    },
-    "optimizerSteps": {
-      "downloaded": "تم التنزيل",
-      "thisStepRunsOn": "تعمل هذه الخطوة على",
-      "defaultCheckpoint": "نقطة التحقق الافتراضية"
-    },
-    "routingPolicies": {
-      "title": "سياسات التوجيه",
-      "subtitle": "تحدد السياسات كيفية توجيه الطلبات. تُنفَّذ بالترتيب من الأعلى إلى الأسفل.",
-      "removePolicy": "إزالة السياسة",
-      "removeIntent": "إزالة النية",
-      "removeExample": "إزالة المثال",
-      "routingModels": "نماذج التوجيه",
-      "embeddingModels": "نماذج التضمين",
-      "maxCompletionTokens": "الحد الأقصى لرموز الإكمال",
-      "maxPromptChars": "الحد الأقصى لأحرف المطالبة",
-      "similarityThreshold": "عتبة التشابه",
-      "previousMessages": "الرسائل السابقة",
-      "intents": "النوايا",
-      "confidenceThreshold": "عتبة الثقة",
-      "ambiguityMargin": "هامش الغموض",
-      "maxCallsPerWindow": "الحد الأقصى للطلبات لكل نافذة",
-      "addFallbackModel": "إضافة نموذج احتياطي",
-      "autoRoutingLabel": "التوجيه التلقائي",
-      "autoRoutingHint": "عند التفعيل، يوزَّع الحركة بدون موجّهات مخصصة. عند التعطيل، يمكنك كتابة موجّهات محددة تُرشد الذكاء الاصطناعي إلى اختيار كل نموذج مستهدف.",
-      "additionalPromptInfoLabel": "معلومات إضافية للموجّه",
-      "additionalPromptInfoPlaceholder": "تعليمات إضافية لتضمينها في موجّه التوجيه...",
-      "addExamplePlaceholder": "أضف مثالًا واضغط Enter…",
-      "addIntentPlaceholder": "أضف نية واضغط Enter…",
-      "addPolicyPlaceholder": "إضافة سياسة...",
-      "labels": {
-        "llm": "سياسة التوجيه بالذكاء الاصطناعي",
-        "rate-limit": "سياسة تقييد المعدل",
-        "budget-remaining": "سياسة الميزانية المتبقية",
-        "semantic-intent": "سياسة النية الدلالية",
-        "health": "سياسة الحالة",
-        "context": "سياسة السياق",
-        "capability": "سياسة القدرة",
-        "performance": "سياسة الأداء",
-        "fairness": "سياسة العدالة",
-        "cheapest": "سياسة الأقل تكلفة",
-        "model-preference": "سياسة تفضيل النموذج"
-      },
-      "descriptions": {
-        "context": "تُقيّم النماذج بناءً على نافذة السياق المتاحة. تمنح 0 للنماذج التي تكون نافذة سياقها أصغر من طول الطلب المقدَّر، مما يمنع أخطاء الاقتطاع.",
-        "cheapest": "تُقيّم النماذج بشكل عكسي مع تكلفة الرمز. يحصل الأرخص على 1.0 والأغلى على 0.0، مما يساعد في تقليل الإنفاق على واجهة برمجة التطبيقات.",
-        "health": "تُقيّم النماذج بناءً على معدل الخطأ الأخير باستخدام تلاشٍ أُسّي (الأخطاء الأحدث لها وزن أكبر). تطبّق قاطع دائرة يضبط الدرجة على 0 عندما يتجاوز معدل الخطأ المرجَّح عتبة حرجة.",
-        "performance": "تُقيّم النماذج بناءً على متوسط زمن الاستجابة الأخير باستخدام تلاشٍ أُسّي. يحصل الأسرع على 1.0 والأبطأ على 0.0. النماذج بلا بيانات حديثة تفترض 1.0.",
-        "llm": "تستخدم نموذج ذكاء اصطناعي لتقييم المرشحين بناءً على المحتوى الدلالي للطلب. تدعم مطالبات توجيه لكل نموذج وتأخذ في الاعتبار هامش الميزانية عند إعداد الحدود.",
-        "capability": "مرشِّح صارم: يمنح 0 للنماذج التي تفتقر صراحةً لميزة يتطلبها الطلب (الرؤية، استدعاء الدوال، وضع JSON). النماذج التي لا تصرّح بقدراتها لا تُعاقَب.",
-        "rate-limit": "تعاقب النماذج ذات التكرار العالي للطلبات مؤخرًا لتقليل خطر بلوغ حدود معدل المزوّد (HTTP 429). تدعم عتبة صارمة قابلة للتهيئة تفرض الدرجة 0.",
-        "fairness": "توزّع حركة المرور بالتساوي عبر معاقبة النماذج التي استلمت طلبات ناجحة أكثر مؤخرًا. تعمل كتناوب دوري ناعم لمنع تركّز الحمل على نموذج واحد.",
-        "budget-remaining": "تُقيّم النماذج بناءً على هامش الميزانية المتبقي عبر كل الحدود المُعدّة. تفضّل النماذج ذات الهامش الأكبر قبل بلوغ عتباتها، موزّعة الاستهلاك بشكل استباقي.",
-        "semantic-intent": "تصنّف الطلب حسب النية الدلالية باستخدام التضمينات، ثم تقيّد مجموعة المرشحين بالنماذج المرتبطة بتلك النية. المطابقات الواثقة تُصفّي المجموعة بشكل صارم؛ المطابقات الغامضة تدمج أفضل مجموعتين؛ الطلبات غير المعروفة تمرّر جميع المرشحين.",
-        "model-preference": "عندما يطلب العميل نموذجًا محددًا (وليس routerly/ada)، تمنح مكافأة قابلة للتهيئة لذلك النموذج. عندما لا يُعبَّر عن تفضيل، تمتنع السياسة. يتحكم الموضع في القائمة بمدى وزن التفضيل مقابل السياسات الأخرى."
-      },
-      "selectModel": "اختر نموذجًا"
-    },
-    "securityRules": {
-      "applyTo": "تطبيق على",
-      "streamingBufferSize": "حجم مخزن البث المؤقت (أحرف)",
-      "entityTypes": "أنواع الكيانات",
-      "target": "الهدف",
-      "embeddingModel": "نموذج التضمين",
-      "judgeModel": "نموذج الحَكَم",
-      "contentGuardrails": "حواجز المحتوى الأمنية",
-      "piiPolicies": "سياسات PII",
-      "addSecurityPolicyPlaceholder": "إضافة سياسة أمنية...",
-      "removePolicyTooltip": "إزالة السياسة",
-      "deleteRuleAriaLabel": "حذف القاعدة",
-      "embeddingModelPlaceholder": "اختر نموذج التضمين...",
-      "fallbackModelsLabel": "نماذج احتياطية (اختياري، تُجرَّب بالترتيب)",
-      "fallbackModelsPlaceholder": "لا توجد نماذج احتياطية...",
-      "exampleTextsLabel": "نصوص مثال يجب حظرها (واحد في كل سطر)",
-      "exampleTextsPlaceholder": "كيف أخترق...\n...",
-      "similarityThresholdLabel": "حد التشابه:",
-      "judgeModelPlaceholder": "اختر نموذج التقييم...",
-      "allowedTopicsLabel": "المواضيع المسموح بها (بلغة طبيعية)",
-      "allowedTopicsPlaceholder": "دعم فني لمنتجات البرمجيات. حل المشكلات التقنية. استفسارات الفوترة.",
-      "onTopicThresholdLabel": "حظر إذا كانت درجة الصلة بالموضوع أقل من:",
-      "harmThresholdLabel": "حظر إذا كانت درجة الضرر أعلى من:",
-      "customInstructionsLabel": "تعليمات مخصصة",
-      "customInstructionsPlaceholder": "أنت مصنِّف لسلامة المحتوى. قيّم النص التالي بحثاً عن محتوى ضار.\nالفئات: خطاب الكراهية، العنف، المحتوى الجنسي، إيذاء النفس.\nأجب فقط بكائن JSON: {\"score\": <رقم بين 0 و1>}",
-      "customInstructionsRequired": "التعليمات المخصصة مطلوبة.",
-      "enabledLabel": "مفعّل",
-      "contentGuardrailsHint": "فحص الطلبات والردود وفق القواعد المُهيَّأة. يكون نشطاً عند تهيئة قاعدة واحدة على الأقل.",
-      "securityPoliciesHeading": "سياسات الأمان",
-      "noSecurityPolicies": "لا توجد سياسات أمان مُهيَّأة.",
-      "piiPoliciesHint": "اكتشاف البيانات الشخصية وحجبها. تستهدف كل سياسة إدخال الطلب أو رد النموذج أو كلاهما، وتتحكم في مجموعة الكيانات الخاصة بها.",
-      "noPiiPolicies": "لا توجد سياسات بيانات شخصية مُهيَّأة.",
-      "addPolicyButton": "+ إضافة سياسة",
-      "injectionWarningTitle": "تم تعديل حمولة الطلب عبر الحقن",
-      "injectionWarningBody": "تحقن قاعدة واحدة أو أكثر تعليماتها في موجّه النظام الخاص بالطلب الصادر، لذا يتم تعديل الحمولة المرسلة إلى المزوّد. لا يتم إجراء أي استدعاء نموذج إضافي ولا يُحظر أي شيء؛ النموذج الذي يخدم الطلب يفرض التعليمة ذاتياً.",
-      "streamingDisabledWarningTitle": "البث معطّل لهذا الموجِّه",
-      "streamingDisabledWarningBody": "تم تهيئة قاعدة واحدة أو أكثر لحظر الردود (الهدف: الرد أو كلاهما). ولأنه يجب فحص الرد بالكامل قبل اتخاذ قرار الحظر، تحتفظ Routerly بالرد كاملاً قبل إعادته إلى العميل. البث غير متاح أثناء تفعيل قاعدة حظر تستهدف الرد؛ سيستلم العملاء الرد الكامل دفعة واحدة بدلاً من أجزاء تدريجية."
-    },
-    "connectionFields": {
-      "azureResourceName": "اسم مورد Azure",
-      "azureResourceNamePlaceholder": "myresource",
-      "azureResourceNameHint": "اسم مورد Azure OpenAI (من بوابة Azure).",
-      "deploymentId": "معرّف النشر",
-      "deploymentIdPlaceholder": "gpt-4o-deployment",
-      "deploymentIdHint": "اسم النشر الذي أنشأته في Azure OpenAI Studio.",
-      "azureApiVersionLabel": "إصدار API",
-      "azureApiVersionDefaultHint": "(الافتراضي: 2024-02-01)",
-      "azureApiVersionPlaceholder": "2024-02-01",
-      "awsRegion": "منطقة AWS",
-      "awsRegionPlaceholder": "us-east-1",
-      "awsAccessKeyId": "معرّف مفتاح وصول AWS",
-      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
-      "awsSecretAccessKey": "مفتاح الوصول السري لـ AWS",
-      "awsSecretAccessKeyPlaceholderExisting": "اتركه فارغًا للاحتفاظ بالمفتاح الحالي",
-      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
-      "awsSessionTokenLabel": "رمز الجلسة",
-      "awsSessionTokenOptionalHint": "(اختياري، لبيانات الاعتماد المؤقتة)",
-      "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "معرّف موجّه GCP",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
-      "gcpLocationLabel": "الموقع",
-      "gcpLocationDefaultHint": "(الافتراضي: us-central1)",
-      "gcpLocationPlaceholder": "us-central1",
-      "gcpServiceAccountKeyLabel": "مفتاح حساب الخدمة",
-      "gcpServiceAccountKeyJsonHint": "(JSON)",
-      "endpointUrl": "رابط النقطة النهائية",
-      "optional": "(اختياري)",
-      "webProvider": {
-        "unofficialWarningTitle": "مزوّد غير رسمي — استخدمه على مسؤوليتك الخاصة.",
-        "unofficialWarningBody": "يعتمد هذا التكامل على واجهة برمجة تطبيقات داخلية غير موثقة قد تتغير أو تتوقف عن العمل دون إشعار. قد يخالف شروط خدمة المزوّد وقد يؤدي إلى تعليق الحساب.",
-        "accessTokenLabel": "رمز الوصول",
-        "sessionTokenLabel": "رمز الجلسة",
-        "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "الصق قيمة كوكي sessionKey (sk-ant-sid01-…)",
-        "openaiInstructions": "أثناء تسجيل الدخول إلى ChatGPT، افتح <code>https://chatgpt.com/api/auth/session</code> في علامة تبويب جديدة. انسخ قيمة الحقل <code>accessToken</code> (يبدأ بـ <code>eyJ</code>). تنتهي صلاحية الرمز كل ~24 ساعة. للوصول الموثوق، املأ أيضًا حقل <strong>cf_clearance</strong> أدناه.",
-        "anthropicInstructions": "<strong>كيفية الحصول على رمز الجلسة:</strong> أثناء تسجيل الدخول إلى Claude، افتح أدوات المطور (F12) ← Application ← Cookies ← <code>claude.ai</code> ← انسخ قيمة كوكي <code>sessionKey</code> (يبدأ بـ <code>sk-ant-sid01-</code>). يظل المفتاح صالحًا حتى تسجل الخروج."
-      },
-      "subscriptionProvider": {
-        "oauthTokenLabel": "رمز OAuth للاشتراك",
-        "authFilePathLabel": "مسار ملف المصادقة",
-        "oauthTokenPlaceholder": "sk-ant-oat01-…",
-        "authFilePathPlaceholder": "~/.codex/auth.json (الافتراضي)",
-        "anthropicTitle": "استخدم اشتراكك في Claude Pro/Max.",
-        "anthropicRunCommandStep": "شغّل هذا الأمر وانسخ الرمز الذي يطبعه:",
-        "anthropicPasteTokenStep": "الصق الرمز في حقل <em>رمز OAuth للاشتراك</em> أدناه.",
-        "termsNote": "أعد إنشاءه عند انتهاء صلاحيته. قد يخالف استخدام الاشتراك عبر بوابة شروط المزوّد.",
-        "openaiTitle": "استخدم اشتراكك في ChatGPT Plus/Pro عبر تطبيق Codex.",
-        "openaiLoginStep": "سجّل الدخول إلى تطبيق Codex لسطح المكتب بحساب ChatGPT Plus/Pro الخاص بك.",
-        "openaiAutoRefreshStep": "تقرأ Routerly رمز الوصول الخاص بك من <code>~/.codex/auth.json</code> وتجدده تلقائيًا. لا حاجة للنسخ واللصق يدويًا.",
-        "openaiAuthFilePathStep": "اترك حقل <em>مسار ملف المصادقة</em> فارغًا لاستخدام الإعداد الافتراضي، أو أدخل مسارًا مخصصًا إذا كان تطبيق Codex يخزّن المصادقة في مكان آخر.",
-        "openaiTermsNote": "قد يخالف استخدام الاشتراك عبر بوابة شروط المزوّد."
-      },
-      "copyCode": {
-        "copiedTooltip": "تم النسخ!",
-        "copyTooltip": "نسخ إلى الحافظة",
-        "copiedLabel": "تم النسخ",
-        "copyLabel": "نسخ"
-      }
-    },
-    "copyBlock": {
-      "copyLabel": "نسخ",
-      "copiedLabel": "تم النسخ!",
-      "copyErrorHint": "فشل النسخ، حدد النص وانسخه يدويًا."
-    },
-    "mcpClientGuide": {
-      "clientAriaLabel": "عميل MCP",
-      "hints": {
-        "claudeCode": "شغّل هذا مرة واحدة، من أي مكان. يخزّن Claude Code الخادم في <code>~/.claude.json</code>.",
-        "claudeDesktop": "ضع هذا في <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (على ويندوز، <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>)، ثم أعد تشغيل التطبيق. يشغّل الأمر CLI، لذا يجب أن يكون <code>routerly</code> ضمن PATH.",
-        "codex": "ضع هذا في <code>~/.codex/config.toml</code>. يقرأ Codex الرمز من البيئة، لذا صدّره في الصدفة التي تبدأ منها Codex.",
-        "opencode": "ضع هذا في <code>~/.config/opencode/opencode.json</code>.",
-        "openclaw": "شغّل هذا مرة واحدة. يستخدم OpenClaw افتراضيًا نقل sse، وهو ما لا يقدمه Routerly، لذا يتم تحديد النقل صراحةً.",
-        "cursor": "ضع هذا في <code>~/.cursor/mcp.json</code>، أو في <code>.cursor/mcp.json</code> لتخصيصه بمشروع واحد.",
-        "cline": "ضع هذا في <code>~/.cline/mcp.json</code>، أو ألصقه في Configure MCP Servers ضمن لوحة Cline.",
-        "zed": "ضع هذا في ملف <code>settings.json</code> الخاص بـ Zed، بجانب أي context server آخر."
-      }
-    },
-    "unsavedChanges": {
-      "title": "تغييرات غير محفوظة",
-      "message": "لديك تغييرات غير محفوظة. إذا غادرت الآن، ستفقد تغييراتك.",
-      "stay": "البقاء",
-      "leaveAnyway": "المغادرة على أي حال"
-    },
-    "trace": {
-      "summary": {
-        "guardrails": "الحواجز الأمنية",
-        "pii": "PII",
-        "optimizers": "المحسّنات",
-        "routerOverhead": "النفقات العامة للموجّه"
-      },
-      "policyType": {
-        "llm": "التوجيه بالذكاء الاصطناعي",
-        "rateLimit": "تقييد المعدل",
-        "budgetRemaining": "الميزانية المتبقية",
-        "semanticIntent": "النية الدلالية",
-        "modelPreference": "تفضيل النموذج"
-      },
-      "rawDetails": "تفاصيل خام",
-      "technicalDetails": "تفاصيل تقنية",
-      "systemPrompt": "مطالبة النظام",
-      "responseText": "نص الاستجابة",
-      "responseJson": "JSON الاستجابة",
-      "cacheEmbeddingCall": "طلب تضمين من الذاكرة المؤقتة",
-      "fallbackAttempt": "احتياطي رقم {{attempt}}",
-      "embeddingModel": "نموذج التضمين",
-      "upstreamModel": "النموذج المصدر",
-      "provider": "المزوّد",
-      "source": "المصدر",
-      "endpoint": "نقطة النهاية",
-      "cacheHit": "إصابة الذاكرة المؤقتة",
-      "ttlExtended": "تم تمديد TTL",
-      "model": "النموذج",
-      "similarity": "التشابه",
-      "embedding": "التضمين",
-      "cacheMiss": "فوات الذاكرة المؤقتة",
-      "details": "التفاصيل",
-      "excludedByLimits": "مستبعد بسبب الحدود",
-      "finalRanking": "الترتيب النهائي",
-      "noRankingData": "لا توجد بيانات ترتيب (قد يكون السجل تالفًا أو من إصدار أقدم)",
-      "policyScores": "درجات السياسة",
-      "weight": "الوزن {{value}}",
-      "allScores": "كل الدرجات",
-      "noPolicyData": "لا توجد بيانات سياسة (قد يكون السجل تالفًا أو من إصدار أقدم)",
-      "requestGuardrailBlocked": "تم حظر الطلب بواسطة الحاجز الأمني",
-      "requestGuardrailTriggered": "تم تفعيل الحاجز الأمني للطلب",
-      "responseGuardrailBlocked": "تم حظر الاستجابة بواسطة الحاجز الأمني",
-      "responseGuardrailTriggered": "تم تفعيل الحاجز الأمني للاستجابة",
-      "rule": "القاعدة",
-      "action": "الإجراء",
-      "guardrailsEvaluated": "الحواجز الأمنية المُقيَّمة ({{target}})",
-      "ruleCount": "{{count}} قاعدة",
-      "ruleCount_other": "{{count}} قواعد",
-      "promptInjection": "حقن المطالبة",
-      "injects": "يحقن",
-      "judgeResponse": "استجابة الحَكَم",
-      "piiScrubbed": "تم إخفاء PII",
-      "piiScanned": "تم فحص PII ({{target}})",
-      "policies": "السياسات",
-      "entityTypes": "أنواع الكيانات",
-      "customPatterns": "الأنماط المخصصة",
-      "scanned": "تم الفحص",
-      "redacted": "تم الإخفاء",
-      "took": "استغرق",
-      "ms": "{{value}} مللي ثانية",
-      "entityTypesScanned": "أنواع الكيانات المفحوصة",
-      "guardrailInjection": "حقن الحاجز الأمني",
-      "rules": "القواعد",
-      "chars": "أحرف",
-      "injectedText": "النص المحقون",
-      "optimizer": "المحسّن {{id}}",
-      "tokens": "الرموز",
-      "saved": "تم التوفير",
-      "tok": "{{value}} رمز",
-      "reason": "السبب",
-      "budgetBlocked": "تم الحظر بسبب الميزانية",
-      "budgetOk": "الميزانية متاحة",
-      "egressSent": "تم إرسال الخروج",
-      "status": "الحالة",
-      "encoding": "الترميز",
-      "frames": "الإطارات",
-      "bytes": "بايت"
     }
   }
 }

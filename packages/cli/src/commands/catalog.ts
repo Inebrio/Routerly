@@ -50,6 +50,12 @@ export function makeCatalogCommand(): Command {
     .option('--channel <channel>', 'Release channel (e.g. stable, latest)')
     .action(async (url: string, opts: { channel?: string }) => {
       try {
+        let protocol = '';
+        try { protocol = new URL(url).protocol; } catch { /* invalid URL, rejected below */ }
+        if (protocol !== 'http:' && protocol !== 'https:') {
+          console.error(chalk.red(`Invalid repository URL (http or https required): ${url}`));
+          process.exit(1);
+        }
         const list = await getRepos();
         if (list.some(r => r.url === url)) {
           console.error(chalk.red(`Repository already exists: ${url}`));

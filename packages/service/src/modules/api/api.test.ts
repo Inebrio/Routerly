@@ -24,7 +24,8 @@ vi.mock('../config/loader.js', () => {
     if (next !== current) await writeConfig(key, next);
     return next;
   });
-  return { readConfig, writeConfig, updateConfig, ConfigUpdateAbort, getOrCreateSecret: vi.fn() };
+  const effectivePort = (settings: { port: number }) => settings.port;
+  return { readConfig, writeConfig, updateConfig, ConfigUpdateAbort, getOrCreateSecret: vi.fn(), effectivePort };
 })
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => ({ unref: vi.fn() })),
@@ -38,6 +39,10 @@ vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
 vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn() }))
 vi.mock('../trace/store.js', () => ({ getTrace: vi.fn() }))
 const mockChatCompletion = vi.fn()
+const mockEmbed = vi.fn()
+vi.mock('../embeddings/dispatch.js', () => ({
+  getEmbeddingProvider: vi.fn(() => ({ embed: mockEmbed })),
+}))
 vi.mock('../provider/registry.js', () => ({
   getProviderAdapter: vi.fn(() => ({ chatCompletion: mockChatCompletion })),
 }))
@@ -66,7 +71,7 @@ vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
 }))
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid-1234') }))
-vi.mock('../reverse-proxy/lanes/openaiOAuthForward.js', () => ({ resolveCodexToken: vi.fn(), forwardOpenAIOAuthSSE: vi.fn() }))
+vi.mock('../reverse-proxy/lanes/openaiOAuthForward.js', async (importOriginal) => ({ ...(await importOriginal<typeof import('../reverse-proxy/lanes/openaiOAuthForward.js')>()), resolveCodexToken: vi.fn(), forwardOpenAIOAuthSSE: vi.fn() }))
 vi.mock('../auth/totp.js', () => ({
   verifyTotp: vi.fn(() => true),
   generateTotpSecret: vi.fn(() => 'MOCK_SECRET_BASE32'),
@@ -90,7 +95,7 @@ vi.mock('../catalog/fetcher.js', () => ({
 import { apiRoutes, listeningAddresses } from './api.js'
 import authPlugin from '../auth/auth.js'
 import { readConfig, writeConfig, updateConfig, getOrCreateSecret } from '../config/loader.js'
-import { loadCredentialKey, decryptCredential } from '../../lib/crypto-cred.js'
+import { loadCredentialKey } from '../../lib/crypto-cred.js'
 import { resolveOpenAIWebCredential } from '../provider/openai-web.js'
 import { createSessionToken, verifyToken } from '../auth/jwt.js'
 import { sendTestNotification } from '../notifications/sender.js'
@@ -110,15 +115,15 @@ import { checkPermissions, fixPermissions, isBypassActive } from '../config/perm
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
 const mockWriteConfig = vi.mocked(writeConfig as (key: string, value: any) => Promise<void>)
-const mockUpdateConfig = vi.mocked(updateConfig as (key: string, mutate: (current: any) => any) => Promise<any>)
+const _mockUpdateConfig = vi.mocked(updateConfig as (key: string, mutate: (current: any) => any) => Promise<any>)
 const mockVerifyToken = vi.mocked(verifyToken)
 const mockCreateSessionToken = vi.mocked(createSessionToken)
 const mockGetTrace = vi.mocked(getTrace)
 const mockSendTestNotification = vi.mocked(sendTestNotification)
 const mockResolveCodexToken = vi.mocked(resolveCodexToken)
 const mockVerifyTotp = vi.mocked(verifyTotp)
-const mockGenerateTotpSecret = vi.mocked(generateTotpSecret)
-const mockGenerateBackupCodes = vi.mocked(generateBackupCodes)
+const _mockGenerateTotpSecret = vi.mocked(generateTotpSecret)
+const _mockGenerateBackupCodes = vi.mocked(generateBackupCodes)
 const mockHashBackupCode = vi.mocked(hashBackupCode)
 const mockCheckPermissions = vi.mocked(checkPermissions)
 const mockFixPermissions = vi.mocked(fixPermissions)
@@ -911,7 +916,7 @@ describe('GET /api/system/info', () => {
     expect(typeof body.nodeVersion).toBe('string')
   })
 
-  it('reports a stored, now-retired alias verbatim with no silent correction (RMT-2 EC1)', async () => {
+  it('reports a persisted stable channel verbatim and never rewrites the config', async () => {
     mockReadConfig.mockResolvedValue({ channel: 'stable' } as any)
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/system/info' })
@@ -920,6 +925,7 @@ describe('GET /api/system/info', () => {
     const body = JSON.parse(res.body)
     expect(body.channel).toBe('stable')
     expect(body.rawChannel).toBe('stable')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 
   it('reports channel and rawChannel identically for a stored canonical channel (RC-4 AC2)', async () => {
@@ -1089,6 +1095,47 @@ describe('GET /api/models', () => {
 })
 
 describe('POST /api/models', () => {
+  it('rejects an empty body with 400 naming the missing field', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [adminUser] : []))
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: '{}',
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toMatch(/^id:/)
+  })
+
+  it('persists timeout and rejects a non-numeric one with 400', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'instances') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const post = (timeout: unknown) => app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'timeout-model', provider: 'openai', endpoint: 'https://api.openai.com/v1',
+        inputPerMillion: 5, outputPerMillion: 15, timeout,
+      }),
+    })
+    const app = await buildApp()
+    const ok = await post(5000)
+    const bad = await post('abc')
+    const neg = await post(-1)
+    await app.close()
+    expect(ok.statusCode).toBe(201)
+    expect(ok.json().timeout).toBe(5000)
+    expect(bad.statusCode).toBe(400)
+    expect(neg.statusCode).toBe(400)
+  })
+
   it('creates a new model', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -1145,6 +1192,29 @@ describe('POST /api/models', () => {
     expect(saved.catalogDefaults).toEqual({ inputPerMillion: 3, outputPerMillion: 10 })
   })
 
+  it('POST pins explicit prices when the body has no fieldOverrides, so catalog sync keeps them (ROUT-485)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'priced-model', provider: 'openai', endpoint: 'https://api.openai.com/v1',
+        inputPerMillion: 1, outputPerMillion: 2,
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const saved = (mockWriteConfig.mock.calls.find((c) => c[0] === 'instances')?.[1] as any[])?.find((i) => i.id === 'priced-model')
+    expect(saved.fieldOverrides).toEqual({ inputPerMillion: true, outputPerMillion: true })
+  })
+
   it('returns 409 when model ID already exists', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -1194,6 +1264,27 @@ describe('POST /api/models', () => {
     expect(instancesCall?.[1].find((i: { id: string }) => i.id === 'shared-1')?.connectionId).toBe('c1')
     // No connection write — no credential copy
     expect(mockWriteConfig.mock.calls.some(c => c[0] === 'connections')).toBe(false)
+  })
+
+  it('defaults upstreamModelId to the id without provider prefix (ROUT-283)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'instances') return []
+      if (t === 'connections') return [{ id: 'c1', providerId: 'openai', label: 'x', credentials: {}, enabled: true }]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ id: 'openai/gpt-4.1-nano', provider: 'openai', endpoint: '', connectionId: 'c1', inputPerMillion: 1, outputPerMillion: 2, contextWindow: 8000 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const call = mockWriteConfig.mock.calls.find(c => c[0] === 'instances')
+    expect(call?.[1].find((i: { id: string }) => i.id === 'openai/gpt-4.1-nano')?.upstreamModelId).toBe('gpt-4.1-nano')
   })
 
   it('with connectionId returns 404 when the connection does not exist', async () => {
@@ -1271,6 +1362,32 @@ describe('POST /api/models', () => {
     expect(conn).toBeTruthy()
     const instancesCall = mockWriteConfig.mock.calls.find(c => c[0] === 'instances')
     expect(instancesCall?.[1].find((i: { id: string }) => i.id === 'custom-1')?.connectionId).toBe('conn-for-custom-1')
+  })
+
+  it('re-adding a model replaces an orphaned conn-for-<id> instead of duplicating it (ROUT-504)', async () => {
+    setupAdminAuth()
+    const orphan = { id: 'conn-for-custom-1', providerId: 'openai', label: 'old', credentials: {}, enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'connections') return [orphan]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'custom-1', provider: 'openai', endpoint: 'https://api.openai.com/v1', apiKey: 'sk-x',
+        inputPerMillion: 1, outputPerMillion: 2, contextWindow: 8000,
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')?.[1] as { id: string; label: string }[]
+    expect(written.filter(c => c.id === 'conn-for-custom-1')).toHaveLength(1)
+    expect(written.find(c => c.id === 'conn-for-custom-1')?.label).toBe('custom-1')
   })
 
   it('custom branch persists bedrock cloud credential fields on the dedicated connection (regression)', async () => {
@@ -1372,6 +1489,25 @@ describe('DELETE /api/models/:id', () => {
     expect(mockWriteConfig.mock.calls.some(c => c[0] === 'connections')).toBe(false)
   })
 
+  it('returns 409 and does not delete a model referenced by a router', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [{ id: 'in-use', connectionId: 'c', upstreamModelId: 'in-use', cost: {}, contextWindow: 0 }]
+      if (t === 'routers') return [{ id: 'r1', name: 'My Router', models: [{ modelId: 'in-use' }], tokens: [] }]
+      return []
+    })
+    mockWriteConfig.mockClear()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/models/in-use', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+    expect(res.json().error).toContain('My Router')
+    expect(res.json().usedBy).toEqual(['r1'])
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
   it('returns 404 for nonexistent model', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -1407,6 +1543,27 @@ describe('GET /api/routers', () => {
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
     expect(body[0].tokens[0].token).toBeUndefined()
+  })
+
+  it('lists every router to a viewer who is not a member: router:read is global by design (ROUT-220)', async () => {
+    const viewer = { id: 'viewer-id', email: 'v@example.com', passwordHash: 'x', roleId: 'viewer', routerIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    const routers = [
+      { id: 'r1', name: 'One', tokens: [], members: [{ userId: 'admin-id', role: 'admin' }], models: [] },
+      { id: 'r2', name: 'Two', tokens: [], members: [], models: [] },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser, viewer]
+      if (t === 'roles') return []
+      if (t === 'routers') return routers
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).map((r: any) => r.id)).toEqual(['r1', 'r2'])
   })
 
   it('resolves an orchestrator\'s candidates to {routerId,name,limits}, stripping the target Router\'s own policy/model config, and reports kind for every router (AC7 wire-level)', async () => {
@@ -1940,6 +2097,89 @@ describe('POST /api/routers — passthrough kind (RTR-03)', () => {
   })
 })
 
+describe('router models not in the registry (ROUT-276)', () => {
+  const setup = (routers: unknown[]) => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'routers') return routers
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+  const hdr = () => ({ ...adminAuthHeaders(), 'content-type': 'application/json' })
+
+  it('POST returns 201 with a warning naming the unknown model', async () => {
+    setup([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/routers', headers: hdr(), payload: JSON.stringify({ name: 'R', models: [{ modelId: 'nope/does-not-exist' }] }) })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect(res.json().warnings).toEqual(['Model "nope/does-not-exist" is not in the model registry'])
+  })
+
+  it('PUT returns 200 with a warning naming the unknown model', async () => {
+    setup([{ id: 'r1', name: 'R', tokens: [], members: [], models: [] }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PUT', url: '/api/routers/r1', headers: hdr(), payload: JSON.stringify({ name: 'R', models: [{ modelId: 'typo/x' }] }) })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().warnings).toEqual(['Model "typo/x" is not in the model registry'])
+  })
+
+  it('omits warnings when no model is listed', async () => {
+    setup([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/routers', headers: hdr(), payload: JSON.stringify({ name: 'R' }) })
+    await app.close()
+    expect(res.json().warnings).toBeUndefined()
+  })
+})
+
+describe('PUT /api/routers/:id — per-model prompts (ROUT-294)', () => {
+  const policy = (autoRouting: boolean) => ({ type: 'llm', enabled: true, config: { autoRouting } })
+  const stored = () => ({
+    id: 'r1', name: 'R', tokens: [], members: [], policies: [policy(false)],
+    models: [{ modelId: 'a/1', prompt: 'P1' }, { modelId: 'a/2', prompt: 'P2' }, { modelId: 'a/3', prompt: 'P3' }],
+  })
+  const put = async (payload: unknown) => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'routers') return [stored()]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PUT', url: '/api/routers/r1', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify(payload) })
+    await app.close()
+    return res
+  }
+
+  it('keeps every prompt when models are re-sent and policies change', async () => {
+    const res = await put({ name: 'R2', models: stored().models, policies: [policy(false), { type: 'health', enabled: true }] })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().models.map((m: { prompt: string }) => m.prompt)).toEqual(['P1', 'P2', 'P3'])
+}, 30000)
+
+  it('keeps prompts untouched when models is omitted', async () => {
+    const res = await put({ name: 'R2' })
+    expect(res.json().models.map((m: { prompt: string }) => m.prompt)).toEqual(['P1', 'P2', 'P3'])
+  })
+
+  it('removing one model drops only its prompt', async () => {
+    const res = await put({ models: [{ modelId: 'a/1', prompt: 'P1' }, { modelId: 'a/3', prompt: 'P3' }] })
+    expect(res.json().models).toEqual([{ modelId: 'a/1', prompt: 'P1' }, { modelId: 'a/3', prompt: 'P3' }])
+  })
+
+  it('toggling autoRouting does not touch the stored prompts', async () => {
+    const res = await put({ policies: [policy(true)] })
+    expect(res.json().models.map((m: { prompt: string }) => m.prompt)).toEqual(['P1', 'P2', 'P3'])
+    const back = await put({ policies: [policy(false)], models: stored().models })
+    expect(back.json().models.map((m: { prompt: string }) => m.prompt)).toEqual(['P1', 'P2', 'P3'])
+  })
+})
+
 describe('PUT /api/routers/:id — passthrough kind (RTR-03)', () => {
   it('leaves the slug unchanged on rename — slug is computed once at creation, never re-derived (see suggestRouterSlug)', async () => {
     setupAdminAuth()
@@ -2037,7 +2277,7 @@ describe('PUT /api/routers/:id — passthrough kind (RTR-03)', () => {
     })
     await authApp.close()
     expect(authRes.statusCode).toBe(401)
-    expect(authRes.json()).toEqual({ error: 'unauthorized', message: 'Invalid router token.' })
+    expect(authRes.json()).toEqual({ error: { message: 'Invalid router token.', type: 'invalid_request_error', param: null, code: 'invalid_api_key' } })
   })
 })
 
@@ -2391,6 +2631,26 @@ describe('GET /api/usage', () => {
     const body = JSON.parse(res.body)
     expect(body.summary.totalCalls).toBe(1)
     expect(body.records).toHaveLength(1)
+  })
+
+  it('tolerates records without token fields (ROUT-442)', async () => {
+    setupAdminAuth()
+    const records = [
+      { id: 'x1', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', model: 'm1', promptTokens: 3, outcome: 'success', callType: 'completion', latencyMs: 10 },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return records
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const m = JSON.parse(res.body).byModel.m1
+    expect(m.inputTokens).toBe(0)
+    expect(m.outputTokens).toBe(0)
   })
 
   it('aggregates guardrail callType as a distinct sub-activity (BUG-5)', async () => {
@@ -3159,6 +3419,18 @@ describe('GET /api/users', () => {
     const users = JSON.parse(res.body)
     expect(users[0].passwordHash).toBeUndefined()
   })
+
+  it('strips refreshTokenHash, totpSecret, backupCodes and mcpTokens', async () => {
+    setupAdminAuth()
+    const full = { ...adminUser, refreshTokenHash: 'rh', totpSecret: 'ts', totpEnabled: true, backupCodes: ['bc'], mcpTokens: [{ id: 't', name: 'n', tokenHash: 'th', tokenSnippet: 's', createdAt: '' }] }
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [full] : []))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/users', headers: adminAuthHeaders() })
+    await app.close()
+    const u = JSON.parse(res.body)[0]
+    for (const k of ['passwordHash', 'refreshTokenHash', 'totpSecret', 'backupCodes', 'mcpTokens']) expect(u[k]).toBeUndefined()
+    expect(u.totpEnabled).toBe(true)
+  })
 })
 
 describe('POST /api/users', () => {
@@ -3267,6 +3539,68 @@ describe('GET /api/settings', () => {
   })
 })
 
+describe('settings secret redaction (ROUT-236)', () => {
+  const stored = {
+    logLevel: 'info',
+    prometheusAuthToken: 'prom-secret',
+    notifications: { channels: [{ id: 'c1', provider: 'smtp', name: 't', host: 'h', port: 587, user: 'u', password: 'S3greto!' }] },
+  }
+  const setup = () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return JSON.parse(JSON.stringify(stored))
+      return []
+    })
+  }
+
+  it('GET masks channel secrets and prometheusAuthToken', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.body).not.toContain('S3greto!')
+    expect(res.body).not.toContain('prom-secret')
+    expect(res.json().notifications.channels[0].password).toBe('********')
+    expect(res.json().prometheusAuthToken).toBe('********')
+  })
+
+  it('PUT keeps stored secret when the marker is echoed back, and masks the response', async () => {
+    setup()
+    let written: any = {}
+    mockWriteConfig.mockImplementation(async (_t: string, v: unknown) => { written = v })
+    const app = await buildApp()
+    const get = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ logLevel: 'debug', notifications: get.json().notifications }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(written.notifications.channels[0].password).toBe('S3greto!')
+    expect(res.body).not.toContain('S3greto!')
+    // same shape as GET: the dashboard replaces its settings with this response
+    expect(res.json().listeningAddresses).toEqual(get.json().listeningAddresses)
+    expect(res.json().localAddresses).toEqual(get.json().localAddresses)
+  })
+
+  it('PUT replaces the secret when a new value is sent', async () => {
+    setup()
+    let written: any = {}
+    mockWriteConfig.mockImplementation(async (_t: string, v: unknown) => { written = v })
+    const app = await buildApp()
+    await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ notifications: { channels: [{ ...stored.notifications.channels[0], password: 'new-pw' }] } }),
+    })
+    await app.close()
+    expect(written.notifications.channels[0].password).toBe('new-pw')
+  })
+})
+
 describe('listeningAddresses', () => {
   it('reports only the bound host when it is not a wildcard', () => {
     expect(listeningAddresses('192.168.1.5', 3000)).toEqual(['http://192.168.1.5:3000'])
@@ -3286,6 +3620,77 @@ describe('listeningAddresses', () => {
 })
 
 describe('PUT /api/settings', () => {
+  async function putSettings(current: Record<string, unknown>, body: unknown) {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return current
+      return []
+    })
+    let written: Record<string, any> = {}
+    mockWriteConfig.mockImplementation(async (_t: string, v: unknown) => { written = v as Record<string, any> })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify(body),
+    })
+    const level = app.log.level
+    await app.close()
+    return { res, written, level }
+  }
+
+  it.each(['verbose', '', 5, null])('rejects invalid logLevel %j with 400 and writes nothing (ROUT-354)', async (bad) => {
+    const { res } = await putSettings({ logLevel: 'info' }, { logLevel: bad })
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toMatch(/logLevel/)
+    expect(mockWriteConfig).not.toHaveBeenCalledWith('settings', expect.anything())
+  })
+
+  it.each(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])('accepts logLevel %s (ROUT-354)', async (lvl) => {
+    const { res, written } = await putSettings({ logLevel: 'info' }, { logLevel: lvl })
+    expect(res.statusCode).toBe(200)
+    expect(written.logLevel).toBe(lvl)
+  })
+
+  it('applies logLevel to the running logger without restart (ROUT-356)', async () => {
+    const { res, level } = await putSettings({ logLevel: 'info' }, { logLevel: 'warn' })
+    expect(res.statusCode).toBe(200)
+    expect(level).toBe('warn')
+  })
+
+  it('persists metricsEnabled, prometheusAuthToken, port, host (ROUT-213)', async () => {
+    const { res, written } = await putSettings({ logLevel: 'info' }, { metricsEnabled: false, prometheusAuthToken: 'x', port: 4000, host: '127.0.0.1' })
+    expect(res.statusCode).toBe(200)
+    expect(written).toMatchObject({ metricsEnabled: false, prometheusAuthToken: 'x', port: 4000, host: '127.0.0.1' })
+  })
+
+  it('keeps prometheusAuthToken and integration token when the masked marker is echoed back (ROUT-279)', async () => {
+    const { res, written } = await putSettings(
+      { prometheusAuthToken: 'tok', integrations: [{ id: 'p', type: 'prometheus', enabled: true, authToken: 'tok' }] },
+      { prometheusAuthToken: '********', logLevel: 'info' },
+    )
+    expect(res.statusCode).toBe(200)
+    expect(written['prometheusAuthToken']).toBe('tok')
+    expect(written['integrations'][0].authToken).toBe('tok')
+  })
+
+  it('removes prometheusAuthToken on empty string and syncs the prometheus integration', async () => {
+    const { res, written } = await putSettings(
+      { prometheusAuthToken: 'old', integrations: [{ id: 'p', type: 'prometheus', enabled: true, authToken: 'old' }] },
+      { prometheusAuthToken: '', metricsEnabled: false },
+    )
+    expect(res.statusCode).toBe(200)
+    expect(written['prometheusAuthToken']).toBeUndefined()
+    expect(written['integrations'][0]).toEqual({ id: 'p', type: 'prometheus', enabled: false })
+  })
+
+  it.each([{ port: 99999 }, { port: 0 }, { port: 1.5 }, { host: '' }, { metricsEnabled: 'no' }])('rejects invalid %j with 400', async (body) => {
+    const { res } = await putSettings({}, body)
+    expect(res.statusCode).toBe(400)
+  })
+
   it('updates settings', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -3326,6 +3731,60 @@ describe('PUT /api/settings', () => {
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(written['requireMfa']).toBe(true)
+  })
+
+  describe('requireMfa enforcement', () => {
+    const run = async (url: string, totpEnabled: boolean, requireMfa = true) => {
+      setupAdminAuth()
+      mockReadConfig.mockImplementation(async (t: string) => {
+        if (t === 'users') return [{ ...adminUser, totpEnabled }]
+        if (t === 'roles') return []
+        if (t === 'settings') return { requireMfa }
+        return []
+      })
+      const app = await buildApp()
+      const res = await app.inject({ method: 'GET', url, headers: adminAuthHeaders() })
+      await app.close()
+      return res
+    }
+
+    it.each(['/api/settings', '/api/routers'])('refuses %s with 403 mfa_required when user has no 2FA', async (url) => {
+      const res = await run(url, false)
+      expect(res.statusCode).toBe(403)
+      expect(res.json().error).toBe('mfa_required')
+    })
+
+    it('allows /api/me without 2FA (whitelist)', async () => {
+      expect((await run('/api/me', false)).statusCode).toBe(200)
+    })
+
+    it('allows management calls when user has 2FA', async () => {
+      expect((await run('/api/routers', true)).statusCode).toBe(200)
+    })
+
+    it('allows management calls when requireMfa is off', async () => {
+      expect((await run('/api/routers', false, false)).statusCode).toBe(200)
+    })
+  })
+
+  it.each([{ requireMfa: 'yes' }, { requireMfa: 1 }, { dashboardEnabled: 'no' }])('rejects non-boolean %j with 400 and does not write', async (body) => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { logLevel: 'info' }
+      return []
+    })
+    mockWriteConfig.mockClear()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify(body),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 
   it('persists defaultLanguage', async () => {
@@ -3414,33 +3873,8 @@ describe('PUT /api/settings', () => {
     expect(written.telemetry.enabled).toBe(false)
   })
 
-  it('rejects the retired "stable" alias with 400, persisting nothing (RMT-2 AC2/EC1)', async () => {
-    setupAdminAuth()
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [adminUser]
-      if (t === 'roles') return []
-      if (t === 'settings') return { channel: 'latest' }
-      return []
-    })
-    mockWriteConfig.mockResolvedValue(undefined)
-
-    const { updateChecker } = await import('../update-checker/update-checker.js')
-    vi.mocked(updateChecker.updateChannel).mockClear()
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'PUT', url: '/api/settings',
-      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ channel: 'stable' }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(400)
-    expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.' })
-    expect(mockWriteConfig).not.toHaveBeenCalled()
-    expect(vi.mocked(updateChecker.updateChannel)).not.toHaveBeenCalled()
-  })
-
   describe('channel validation', () => {
-    for (const value of ['latest', 'current', 'next', 'develop', 'v0.4.0']) {
+    for (const value of ['latest', 'current', 'next', 'stable', 'develop', 'v0.4.0']) {
       it(`accepts "${value}" with no deprecation warning`, async () => {
         setupAdminAuth()
         mockReadConfig.mockImplementation(async (t: string) => {
@@ -3470,32 +3904,6 @@ describe('PUT /api/settings', () => {
       })
     }
 
-    it('rejects the retired "stable" alias with 400 (RMT-2 AC2)', async () => {
-      setupAdminAuth()
-      mockReadConfig.mockImplementation(async (t: string) => {
-        if (t === 'users') return [adminUser]
-        if (t === 'roles') return []
-        if (t === 'settings') return { channel: 'latest' }
-        return []
-      })
-      mockWriteConfig.mockResolvedValue(undefined)
-      const { updateChecker } = await import('../update-checker/update-checker.js')
-      vi.mocked(updateChecker.updateChannel).mockClear()
-
-      const app = await buildApp()
-      const res = await app.inject({
-        method: 'PUT', url: '/api/settings',
-        headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-        payload: JSON.stringify({ channel: 'stable' }),
-      })
-      await app.close()
-
-      expect(res.statusCode).toBe(400)
-      expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.' })
-      expect(mockWriteConfig).not.toHaveBeenCalled()
-      expect(vi.mocked(updateChecker.updateChannel)).not.toHaveBeenCalled()
-    })
-
     it('rejects an invalid channel with 400 and the exact error message, without persisting or calling updateChannel', async () => {
       setupAdminAuth()
       mockReadConfig.mockImplementation(async (t: string) => {
@@ -3517,7 +3925,7 @@ describe('PUT /api/settings', () => {
       await app.close()
 
       expect(res.statusCode).toBe(400)
-      expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.' })
+      expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, stable, develop, or a version tag such as v0.4.0.' })
       expect(mockWriteConfig).not.toHaveBeenCalled()
       expect(vi.mocked(updateChecker.updateChannel)).not.toHaveBeenCalled()
     })
@@ -3620,6 +4028,44 @@ describe('Permission hard-block hook (RTR-04)', () => {
       message: expect.stringContaining('users'),
       files: ['users'],
     })
+  })
+
+  it('keeps the notification inbox reachable while a secrets file is unsafe', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [adminUser] : []))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(mockCheckPermissions).not.toHaveBeenCalled()
+  })
+
+  it('announces an unsafe state once, and again after it was safe in between', async () => {
+    const { emitEvent } = await import('../notifications/emitter.js')
+    const mockEmit = vi.mocked(emitEvent)
+    mockEmit.mockClear()
+    setupAdminAuth()
+    const unsafe = {
+      blocked: true, bypassActive: false,
+      unsafe: [{ file: 'users', path: '/x/users.json', mode: '644', severity: 'secret' }],
+    }
+    const safe = { blocked: false, bypassActive: false, unsafe: [] }
+    const app = await buildApp()
+    const get = () => app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    mockCheckPermissions.mockResolvedValueOnce(safe as any)
+    await get()
+    mockCheckPermissions.mockResolvedValueOnce(unsafe as any)
+    mockCheckPermissions.mockResolvedValueOnce(unsafe as any)
+    await get()
+    await get()
+    expect(mockEmit).toHaveBeenCalledTimes(1)
+    expect(mockEmit).toHaveBeenCalledWith('system.permissions_unsafe', 'critical', { files: ['users'] }, expect.anything())
+    mockCheckPermissions.mockResolvedValueOnce(safe as any)
+    mockCheckPermissions.mockResolvedValueOnce(unsafe as any)
+    await get()
+    await get()
+    await app.close()
+    expect(mockEmit).toHaveBeenCalledTimes(2)
   })
 
   it('lets the request through with no hard-block check when the bypass env var is set', async () => {
@@ -3789,6 +4235,7 @@ describe('GET /api/me', () => {
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body).email).toBe('admin@example.com')
     expect(JSON.parse(res.body).language).toBeUndefined()
+    expect(JSON.parse(res.body).permissions).toEqual(expect.any(Array))
   })
 })
 
@@ -4086,6 +4533,31 @@ describe('PUT /api/models/:id', () => {
     expect(res.statusCode).toBe(200)
   })
 
+  it('keeps connection providerId/endpoint when the body omits provider and endpoint', async () => {
+    setupAdminAuth()
+    const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/models/gpt4',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ inputPerMillion: 10, outputPerMillion: 30 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')?.[1] as Array<{ providerId: string; endpoint: string }>
+    expect(written[0]).toMatchObject({ providerId: 'openai', endpoint: 'https://api.openai.com/v1' })
+  })
+
   it('preserves existing fieldOverrides/catalogDefaults when the body omits them', async () => {
     setupAdminAuth()
     const existingInstance = {
@@ -4114,8 +4586,70 @@ describe('PUT /api/models/:id', () => {
     expect(res.statusCode).toBe(200)
     const instancesCall = mockWriteConfig.mock.calls.find((c) => c[0] === 'instances')
     const saved = (instancesCall?.[1] as any[])?.find((i) => i.id === 'gpt4')
-    expect(saved.fieldOverrides).toEqual({ inputPerMillion: true })
+    // output price changed with no fieldOverrides in the body: pinned on top of the stored pins (ROUT-485)
+    expect(saved.fieldOverrides).toEqual({ inputPerMillion: true, outputPerMillion: true })
     expect(saved.catalogDefaults).toEqual({ inputPerMillion: 3, outputPerMillion: 10 })
+  })
+
+  it('PUT pins only the price fields that changed when the body has no fieldOverrides (ROUT-485)', async () => {
+    setupAdminAuth()
+    const existingInstance = {
+      id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4',
+      cost: { inputPerMillion: 5, outputPerMillion: 15, cachePerMillion: 1 }, contextWindow: 0,
+    }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/models/gpt4',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ inputPerMillion: 3, outputPerMillion: 15, cachePerMillion: 1 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const saved = (mockWriteConfig.mock.calls.find((c) => c[0] === 'instances')?.[1] as any[])?.find((i) => i.id === 'gpt4')
+    expect(saved.fieldOverrides).toEqual({ inputPerMillion: true })
+  })
+
+  it('partial body merges: keeps stored cost, limits, connection (ROUT-257 AC1)', async () => {
+    setupAdminAuth()
+    const limits = [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }]
+    const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15, cachePerMillion: 1 }, contextWindow: 1000, limits }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: { apiKey: 'enc' }, endpoint: 'https://api.openai.com/v1', enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/models/gpt4',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ contextWindow: 2000 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const saved = (mockWriteConfig.mock.calls.find((c) => c[0] === 'instances')?.[1] as any[])[0]
+    expect(saved.cost).toEqual({ inputPerMillion: 5, outputPerMillion: 15, cachePerMillion: 1 })
+    expect(saved.limits).toEqual(limits)
+    expect(saved.contextWindow).toBe(2000)
+    const conns = mockWriteConfig.mock.calls.find((c) => c[0] === 'connections')?.[1] as any[] | undefined
+    const conn = conns?.[0] ?? existingConnection
+    expect(conn.providerId).toBe('openai')
+    expect(conn.endpoint).toBe('https://api.openai.com/v1')
+    expect(conn.credentials.apiKey).toBe('enc')
   })
 
   it('returns 404 for unknown model', async () => {
@@ -4264,6 +4798,35 @@ describe('GET /api/models/:id/apikey', () => {
 // ─── Router sub-resources ────────────────────────────────────────────────────
 
 describe('PUT /api/routers/:id', () => {
+  it('partial body without models/name keeps them, no 500 (ROUT-257 AC2)', async () => {
+    setupAdminAuth()
+    const target = { id: 'r1', name: 'R', slug: 'r', tokens: [], members: [], models: [{ modelId: 'm1' }] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [target]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/r1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ timeoutMs: 5000 }),
+    })
+    const bad = await app.inject({
+      method: 'PUT', url: '/api/routers/r1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ models: 'x' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().name).toBe('R')
+    expect(res.json().models).toEqual([{ modelId: 'm1' }])
+    expect(bad.statusCode).toBe(400)
+  })
+
   it('updates router', async () => {
     setupAdminAuth()
     const router = { id: 'p1', name: 'Old Name', tokens: [], members: [], models: [] }
@@ -4823,6 +5386,22 @@ describe('GET /api/clients', () => {
     }
   })
 
+  it('uses the configured publicUrl (trailing slash stripped) as baseUrl (ROUT-459)', async () => {
+    setClientConfiguratorEnabled(true)
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { logLevel: 'info', publicUrl: 'https://gw.example.test/' }
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/clients', headers: { ...adminAuthHeaders(), host: 'localhost:3000' } })
+    await app.close()
+    const body = res.json() as { clients: Array<Record<string, unknown>> }
+    for (const client of body.clients) expect(client['baseUrl']).toBe('https://gw.example.test')
+  })
+
   it('honors x-forwarded-proto/host when present (behind a reverse proxy)', async () => {
     setClientConfiguratorEnabled(true)
     setupAdminAuth()
@@ -5010,6 +5589,24 @@ describe('DELETE /api/roles/:id', () => {
     const res = await app.inject({ method: 'DELETE', url: '/api/roles/dev', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(204)
+  })
+
+  it('returns 409 when the role is assigned to a user', async () => {
+    setupAdminAuth()
+    const user: any = { id: 'u1', email: 'dev@example.com', passwordHash: 'x', roleId: 'dev', routerIds: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser, user]
+      if (t === 'roles') return [{ id: 'dev', name: 'Developer', permissions: [] }]
+      return []
+    })
+    mockWriteConfig.mockClear()
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/roles/dev', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+    expect(res.json().error).toContain('dev@example.com')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 
   it('returns 403 when trying to delete a built-in role', async () => {
@@ -6307,6 +6904,10 @@ describe('POST /api/auth/login — bcrypt hash coverage', () => {
 
 // ─── POST /api/routers — optional routing fields ────────────────────────────
 
+const registered = (ids: string[]) => splitModelsIntoInstancesConnections(ids.map(id => ({
+  id, name: id, provider: 'openai', endpoint: 'https://api.openai.com/v1', cost: { inputPerMillion: 1, outputPerMillion: 1 },
+})))
+
 describe('POST /api/routers — optional routing fields', () => {
   it('creates router with routingModelId, policies, fallbackRoutingModelIds, timeoutMs', async () => {
     setupAdminAuth()
@@ -6314,6 +6915,8 @@ describe('POST /api/routers — optional routing fields', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'routers') return []
+      if (t === 'instances') return registered(['gpt4', 'gpt3']).instances
+      if (t === 'connections') return registered(['gpt4', 'gpt3']).connections
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -6375,6 +6978,71 @@ describe('POST /api/routers — optional routing fields', () => {
   })
 })
 
+describe('router write — unknown routing model (ROUT-434)', () => {
+  const stored = {
+    id: 'p1', name: 'Test', tokens: [], members: [], models: [],
+    policies: [{ type: 'llm', enabled: true, config: { routingModelId: 'legacy-gone' } }],
+  }
+  const seed = (extra: Record<string, unknown> = {}) => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [stored]
+      if (t === 'instances') return registered(['known']).instances
+      if (t === 'connections') return registered(['known']).connections
+      return (extra[t] ?? []) as never
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+  const send = async (method: 'POST' | 'PUT', url: string, body: unknown, headers = adminAuthHeaders()) => {
+    const app = await buildApp()
+    const res = await app.inject({ method, url, headers: { ...headers, 'content-type': 'application/json' }, payload: JSON.stringify(body) })
+    await app.close()
+    return res
+  }
+  const llm = (config: unknown) => [{ type: 'llm', enabled: true, config }]
+
+  it('POST rejects an unregistered llm policy routing model with 400 naming the id', async () => {
+    seed()
+    const res = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'rout388-bad' }) })
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toContain('rout388-bad')
+  })
+
+  it('POST rejects an unregistered policy fallback and router-level fallback id', async () => {
+    seed()
+    const a = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'known', fallbackModelIds: ['nope'] }) })
+    expect(a.statusCode).toBe(400)
+    const b = await send('POST', '/api/routers', { name: 'N', models: [], fallbackRoutingModelIds: ['nope2'] })
+    expect(b.statusCode).toBe(400)
+    expect(b.json().error).toContain('nope2')
+  })
+
+  it('POST accepts a registered routing model', async () => {
+    seed()
+    const res = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'known' }) })
+    expect(res.statusCode).toBe(201)
+  })
+
+  it('PUT rejects a newly added unknown id but accepts the unchanged legacy one', async () => {
+    seed()
+    const bad = await send('PUT', '/api/routers/p1', { name: 'Test', policies: llm({ routingModelId: 'brand-new-bad' }) })
+    expect(bad.statusCode).toBe(400)
+    const same = await send('PUT', '/api/routers/p1', { name: 'Test2', policies: llm({ routingModelId: 'legacy-gone' }) })
+    expect(same.statusCode).toBe(200)
+  })
+
+  it('a caller without router:write gets 403 before validation', async () => {
+    seed()
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users'
+      ? [{ id: 'viewer-id', email: 'v@example.com', passwordHash: 'h', roleId: 'viewer', routerIds: [] }] : []) as never)
+    const res = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'rout388-bad' }) })
+    expect(res.statusCode).toBe(403)
+  })
+})
+
 // ─── PUT /api/routers/:id — optional routing fields ──────────────────────────
 
 describe('PUT /api/routers/:id — optional routing fields', () => {
@@ -6385,6 +7053,8 @@ describe('PUT /api/routers/:id — optional routing fields', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'routers') return [router]
+      if (t === 'instances') return registered(['new-model', 'backup']).instances
+      if (t === 'connections') return registered(['new-model', 'backup']).connections
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -7938,7 +8608,7 @@ describe('PUT /api/settings — channel null (line 917)', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(400)
-    expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.' })
+    expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, stable, develop, or a version tag such as v0.4.0.' })
     expect(mockWriteConfig).not.toHaveBeenCalled()
     expect(vi.mocked(updateChecker.updateChannel)).not.toHaveBeenCalled()
   })
@@ -9223,6 +9893,33 @@ describe('POST /api/notifications/channels (U5 validation)', () => {
     expect(body.id).toBeDefined()
   })
 
+  it.each([
+    ['teams', 'webhookUrl'], ['discord', 'webhookUrl'], ['webhook', 'url'],
+  ])('rejects a %s channel targeting a private IP with 400', async (provider, field) => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider, [field]: 'http://192.168.1.1/x' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).error).toContain('private or loopback')
+  })
+
+  it('accepts a teams channel with a public URL', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'teams', webhookUrl: 'https://outlook.office.com/webhook/x' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+  })
+
   it('rejects an unknown provider', async () => {
     setup()
     const app = await buildApp()
@@ -9900,6 +10597,8 @@ describe('PUT /api/settings — usageRetention', () => {
     ['negative maxAgeDays', { maxAgeDays: -5 }],
     ['zero maxSizeMb', { maxSizeMb: 0 }],
     ['non-numeric maxAgeDays', { maxAgeDays: 'thirty' }],
+    ['fractional maxAgeDays', { maxAgeDays: 1.5 }],
+    ['fractional maxSizeMb', { maxSizeMb: 0.5 }],
   ])('rejects %s with 400', async (_label, usageRetention) => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(readConfigStub())
@@ -9913,6 +10612,41 @@ describe('PUT /api/settings — usageRetention', () => {
     await app.close()
     expect(res.statusCode).toBe(400)
     expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+})
+
+// ── PUT /api/settings — publicUrl validation (ROUT-355) ───────────────────────
+
+describe('PUT /api/settings — publicUrl', () => {
+  const put = async (payload: unknown, headers: Record<string, string> = adminAuthHeaders()) => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...headers, 'content-type': 'application/json' },
+      payload: JSON.stringify(payload),
+    })
+    await app.close()
+    return res
+  }
+  const stub = () => mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [adminUser] : t === 'settings' ? {} : []))
+
+  it.each(['not a url', 'ftp://x', 'javascript:alert(1)', 'http://', 42])('rejects %j with 400 and writes nothing', async (publicUrl) => {
+    setupAdminAuth(); stub()
+    const res = await put({ publicUrl })
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['https://gw.example.com', 'https://gw.example.com'],
+    ['http://h:3000/', 'http://h:3000'],
+    ['', ''],
+  ])('accepts %j and stores %j', async (publicUrl, stored) => {
+    setupAdminAuth(); stub()
+    mockWriteConfig.mockResolvedValue(undefined)
+    const res = await put({ publicUrl })
+    expect(res.statusCode).toBe(200)
+    expect(mockWriteConfig).toHaveBeenCalledWith('settings', expect.objectContaining({ publicUrl: stored }))
   })
 })
 
@@ -9945,6 +10679,26 @@ describe('GET /api/audit', () => {
     expect(body.entries[0]!.id).toBe('e2')
     expect(body.entries[1]!.id).toBe('e1')
     expect(body.pagination.totalRecords).toBe(2)
+  })
+
+  it('date-only `to` includes that whole day (UTC)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'audit') return sampleEntries
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/audit?from=2026-01-02&to=2026-01-02',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+
+    const body = res.json() as { entries: Array<{ id: string }> }
+    expect(body.entries.map(e => e.id)).toEqual(['e2'])
   })
 
   it('returns 403 for roles without audit:read', async () => {
@@ -10229,6 +10983,52 @@ describe('PATCH /api/notifications/channels/:id', () => {
     const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
     const storedChannels = (written![1] as any).notifications.channels as Array<Record<string, unknown>>
     expect(storedChannels[0]!['password']).toBe('supersecret')
+  })
+
+  it('null on an optional secret removes it', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-smtp',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ password: null }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).not.toHaveProperty('password')
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const storedChannels = (written![1] as any).notifications.channels as Array<Record<string, unknown>>
+    expect(storedChannels[0]).not.toHaveProperty('password')
+  })
+
+  it('null on a required secret returns 400', async () => {
+    setupChannels([{ id: 'ch-slack', provider: 'slack', botToken: 'xoxb-1' }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-slack',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ botToken: null }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('null on an optional field removes it instead of storing null', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-smtp',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ targets: null, username: null }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const stored = (written![1] as any).notifications.channels[0] as Record<string, unknown>
+    expect('targets' in stored).toBe(false)
+    expect('username' in stored).toBe(false)
+    expect(JSON.stringify(res.json())).not.toContain('null')
   })
 
   it('rejects provider change', async () => {
@@ -10931,6 +11731,55 @@ function setupIntegrations(integrations: unknown[] = [prometheusIntegration]) {
   mockWriteConfig.mockResolvedValue(undefined)
 }
 
+describe('integration URL validation (ROUT-328)', () => {
+  const bodies = [
+    { type: 'webhook', url: 'not-a-url' },
+    { type: 'webhook', url: 'ftp://example.com' },
+    { type: 'grafana', url: 'nope', username: 'u', apiKey: 'k' },
+    { type: 'influxdb', url: 'nope', token: 't', org: 'o', bucket: 'b' },
+    { type: 'otel', endpoint: 'localhost4318', protocol: 'http' },
+  ]
+  for (const body of bodies) {
+    it(`POST ${body.type} with invalid URL → 400`, async () => {
+      setupIntegrations([])
+    const app = await buildApp()
+      const res = await app.inject({ method: 'POST', url: '/api/integrations', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify(body) })
+      await app.close()
+      expect(res.statusCode).toBe(400)
+      expect(res.json().error).toContain('http(s) URL')
+      expect(mockWriteConfig).not.toHaveBeenCalled()
+    })
+  }
+
+  it('POST webhook with https URL → 201', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify({ type: 'webhook', url: 'https://example.com/hook' }) })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+  })
+
+  it('PATCH with no body → 400 (ROUT-459)', async () => {
+    const app = await buildApp()
+    setupIntegrations([{ id: 'w1', type: 'webhook', enabled: true, url: 'https://example.com/hook' }])
+    const res = await app.inject({ method: 'PATCH', url: '/api/integrations/w1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('PATCH with invalid url/endpoint → 400, valid → 200', async () => {
+    const app = await buildApp()
+    setupIntegrations([{ id: 'w1', type: 'webhook', enabled: true, url: 'https://example.com/hook' }])
+    const bad = await app.inject({ method: 'PATCH', url: '/api/integrations/w1', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify({ url: 'not-a-url' }) })
+    expect(bad.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+    const ok = await app.inject({ method: 'PATCH', url: '/api/integrations/w1', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify({ url: 'http://example.com/x' }) })
+    await app.close()
+    expect(ok.statusCode).toBe(200)
+  })
+})
+
 describe('GET /api/integrations', () => {
   it('returns empty array when no integrations', async () => {
     setupIntegrations([])
@@ -11411,15 +12260,33 @@ describe('POST /api/integrations/:id/test', () => {
     expect(res.json()).toMatchObject({ ok: false, message: 'Invalid Datadog API key.' })
   })
 
-  it('influxdb: health pass → ok: true', async () => {
+  const influxCase = (name: string, status: number, expected: Record<string, unknown>) =>
+    it(`influxdb: write ${name}`, async () => {
+      const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
+      setupIntegrations([influx])
+      mockFetch.mockResolvedValue({ ok: status >= 200 && status < 300, status })
+      const app = await buildApp()
+      const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
+      await app.close()
+      expect(res.statusCode).toBe(200)
+      expect(res.json()).toMatchObject(expected)
+      expect(mockFetch).toHaveBeenCalledWith('http://influx:8086/api/v2/write?org=o&bucket=b&precision=s', expect.objectContaining({ method: 'POST', headers: expect.objectContaining({ Authorization: 'Token t' }) }))
+    })
+  influxCase('204 → ok: true', 204, { ok: true })
+  influxCase('401 (bad token) → ok: false', 401, { ok: false, message: expect.stringContaining('Invalid InfluxDB token') })
+  influxCase('403 (no write permission) → ok: false', 403, { ok: false, message: expect.stringContaining('no write permission') })
+  influxCase('404 (bad org/bucket) → ok: false', 404, { ok: false, message: expect.stringContaining('not found') })
+  influxCase('503 → ok: false', 503, { ok: false, message: 'InfluxDB write returned HTTP 503' })
+
+  it('influxdb: fetch throws → ok: false', async () => {
     const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
     setupIntegrations([influx])
-    mockFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ status: 'pass' }) })
+    mockFetch.mockRejectedValue(new Error('influx down'))
     const app = await buildApp()
     const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: true })
+    expect(res.json()).toMatchObject({ ok: false, message: 'influx down' })
   })
 
   it('webhook: fetch 200 → ok: true', async () => {
@@ -11477,10 +12344,10 @@ describe('POST /api/integrations/:id/test', () => {
     const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-grafana/test', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: true, message: 'Grafana remote_write endpoint is reachable.' })
+    expect(res.json()).toMatchObject({ ok: true, message: 'Grafana remote_write endpoint accepted a test write.' })
   })
 
-  it('grafana: 400 → still reachable (ok: true)', async () => {
+  it('grafana: 400 → ok: false', async () => {
     const grafana = { id: 'intg-grafana', type: 'grafana', enabled: true, url: 'http://grafana:3000/push', username: 'admin', apiKey: 'grafkey' }
     setupIntegrations([grafana])
     mockFetch.mockResolvedValue({ ok: false, status: 400 })
@@ -11488,7 +12355,7 @@ describe('POST /api/integrations/:id/test', () => {
     const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-grafana/test', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: true })
+    expect(res.json()).toMatchObject({ ok: false })
   })
 
   it('grafana: 503 → ok: false', async () => {
@@ -11511,51 +12378,6 @@ describe('POST /api/integrations/:id/test', () => {
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(res.json()).toMatchObject({ ok: false, message: 'grafana unreachable' })
-  })
-
-  it('influxdb: health not-pass status → ok: false', async () => {
-    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
-    setupIntegrations([influx])
-    mockFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ status: 'fail' }) })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: false, message: 'InfluxDB health status: fail' })
-  })
-
-  it('influxdb: health status absent → ok: false with "unknown" (line 2146 ?? branch=1)', async () => {
-    // body.status is undefined → ?? 'unknown' fires (branch=1)
-    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
-    setupIntegrations([influx])
-    mockFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({}) })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: false, message: 'InfluxDB health status: unknown' })
-  })
-
-  it('influxdb: health non-ok HTTP → ok: false', async () => {
-    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
-    setupIntegrations([influx])
-    mockFetch.mockResolvedValue({ ok: false, status: 503 })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: false, message: 'InfluxDB health check returned HTTP 503' })
-  })
-
-  it('influxdb: fetch throws → ok: false', async () => {
-    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
-    setupIntegrations([influx])
-    mockFetch.mockRejectedValue(new Error('influx down'))
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: false, message: 'influx down' })
   })
 
   it('datadog: non-200/non-403 status → generic error message', async () => {
@@ -12222,6 +13044,21 @@ describe('redactChannel edge cases (lines 83-90)', () => {
 // ─── GET /api/models/catalog — 403 (line 673 if branch=0) ────────────────────
 
 describe('GET /api/models/catalog — permission checks', () => {
+  it('returns 200 with model:read only, without settings:read (ROUT-423)', async () => {
+    const role = { id: 'model-only', name: 'ModelOnly', permissions: ['model:read'] }
+    const user = { id: 'mo-id', email: 'mo@mo.com', passwordHash: '$2b$12$h', roleId: 'model-only', routerIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'mo-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [user]
+      if (t === 'roles') return [role]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
   it('returns 403 when user lacks model:read permission (line 673 if branch=0)', async () => {
     const noModelRole = { id: 'no-model', name: 'NoModel', permissions: ['router:read'] }
     const noModelUser = { id: 'nm-id', email: 'nm@nm.com', passwordHash: '$2b$12$h', roleId: 'no-model', routerIds: [] }
@@ -12836,6 +13673,30 @@ describe('GET /api/notifications/inbox — invalid to date (line 1574 if branch=
 // ─── POST /api/models/:id/test ────────────────────────────────────────────────
 
 describe('POST /api/models/:id/test', () => {
+  it('probes /embeddings, not chat, for an embedding model (ROUT-295)', async () => {
+    setupAdminAuth()
+    const instance = { id: 'custom/nomic-embed-text', connectionId: 'conn-emb', upstreamModelId: 'nomic-embed-text', capabilities: { embedding: true }, cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 2048 }
+    const connection = { id: 'conn-emb', providerId: 'custom', endpoint: 'http://llama:8080/v1', credentials: {} }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
+      return []
+    })
+    mockChatCompletion.mockClear()
+    mockEmbed.mockResolvedValue({ embeddings: [[0.1]], inputTokens: 1 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/custom%2Fnomic-embed-text/test', headers: adminAuthHeaders() })
+    expect(res.json().ok).toBe(true)
+    expect(mockEmbed).toHaveBeenCalledWith(['ping'], 'nomic-embed-text')
+    expect(mockChatCompletion).not.toHaveBeenCalled()
+    mockEmbed.mockRejectedValue(new Error('boom'))
+    const bad = await app.inject({ method: 'POST', url: '/api/models/custom%2Fnomic-embed-text/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(bad.json()).toMatchObject({ ok: false, error: 'boom' })
+  })
+
   it('returns ok:true when adapter succeeds', async () => {
     setupAdminAuth()
     const instance = { id: 'inst-ok-1', connectionId: 'conn-ok-1', upstreamModelId: 'gpt-4o', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 128000 }
@@ -12877,6 +13738,25 @@ describe('POST /api/models/:id/test', () => {
     expect(res.json().ok).toBe(true)
   })
 
+  it('sends the upstream model name (no provider prefix) to the adapter', async () => {
+    setupAdminAuth()
+    const instance = { id: 'uatollama/qwen3.5:2b-fast', connectionId: 'conn-c', upstreamModelId: 'qwen3.5:2b-fast', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 8000 }
+    const connection = { id: 'conn-c', providerId: 'custom', endpoint: 'http://x/v1', credentials: {} }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
+      return []
+    })
+    mockChatCompletion.mockResolvedValue({ choices: [{ message: { content: 'pong' } }] })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/' + encodeURIComponent(instance.id) + '/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.json().ok).toBe(true)
+    expect(mockChatCompletion.mock.calls.at(-1)![0].model).toBe('qwen3.5:2b-fast')
+  })
+
   it('returns ok:false with error when adapter throws', async () => {
     setupAdminAuth()
     const instance = { id: 'inst-err-1', connectionId: 'conn-err-1', upstreamModelId: 'gpt-4o', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 128000 }
@@ -12896,6 +13776,73 @@ describe('POST /api/models/:id/test', () => {
     expect(res.statusCode).toBe(200)
     expect(res.json().ok).toBe(false)
     expect(res.json().error).toBe('401 Unauthorized')
+  })
+
+  it('returns ok:false (not 500) when the oauth credential cannot be resolved', async () => {
+    setupAdminAuth()
+    const instance = { id: 'inst-oauth-1', connectionId: 'conn-oauth-1', upstreamModelId: 'claude-opus-5-5', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 200000 }
+    const connection = { id: 'conn-oauth-1', providerId: 'anthropic-oauth', credentials: {} }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/inst-oauth-1/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().ok).toBe(false)
+    expect(res.json().error).toMatch(/anthropic-oauth|oauth connection/)
+  })
+
+  describe('openai-oauth (same credential + backend as the chat lane)', () => {
+    const jwt = 'h.' + Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 7200 })).toString('base64url') + '.s'
+    const sse = 'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"pong"}\n\n' +
+      'event: response.completed\ndata: {"type":"response.completed","response":{"id":"r1","usage":{"input_tokens":1,"output_tokens":1}}}\n\n'
+    const setup = async (authFilePath: string) => {
+      setupAdminAuth()
+      mockReadConfig.mockImplementation(async (t: string) => {
+        if (t === 'users') return [adminUser]
+        if (t === 'roles') return []
+        if (t === 'instances') return [{ id: 'oa-1', connectionId: 'c-oa', upstreamModelId: 'gpt-5', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 1000 }]
+        if (t === 'connections') return [{ id: 'c-oa', providerId: 'openai-oauth', credentials: { authFilePath } }]
+        return []
+      })
+    }
+    const writeAuth = async () => {
+      const { mkdtemp, writeFile } = await import('node:fs/promises')
+      const { tmpdir } = await import('node:os')
+      const dir = await mkdtemp(`${tmpdir()}/oa-`)
+      const file = `${dir}/auth.json`
+      await writeFile(file, JSON.stringify({ tokens: { access_token: jwt, refresh_token: 'r', account_id: 'acct' } }))
+      return file
+    }
+
+    it('returns ok:true using the connection authFilePath', async () => {
+      await setup(await writeAuth())
+      const fetchMock = vi.fn().mockResolvedValue(new Response(sse, { status: 200 }))
+      vi.stubGlobal('fetch', fetchMock)
+      const app = await buildApp()
+      const res = await app.inject({ method: 'POST', url: '/api/models/oa-1/test', headers: adminAuthHeaders() })
+      await app.close()
+      vi.unstubAllGlobals()
+      expect(res.json().ok).toBe(true)
+      expect(String(fetchMock.mock.calls[0]![0])).toContain('chatgpt.com/backend-api/codex/responses')
+    })
+
+    it('returns ok:false with the upstream reason when the token is rejected', async () => {
+      await setup(await writeAuth())
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('invalid token', { status: 401 })))
+      const app = await buildApp()
+      const res = await app.inject({ method: 'POST', url: '/api/models/oa-1/test', headers: adminAuthHeaders() })
+      await app.close()
+      vi.unstubAllGlobals()
+      expect(res.json().ok).toBe(false)
+      expect(res.json().error).toMatch(/HTTP 401/)
+    })
   })
 
   it('returns 404 for unknown model', async () => {
@@ -13245,6 +14192,29 @@ describe('guardrailRuleSchema superRefine — uncovered validation branches', ()
 
 // ─── /api/modules ───────────────────────────────────────────────────────────
 describe('modules endpoints', () => {
+  it('GET /api/modules reports every module enabled even when a disabled record is stored', async () => {
+    setupAdminAuth()
+    const base = mockReadConfig.getMockImplementation()!
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'modules' ? [{ id: 'provider-web', enabled: false }] : base(t))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/modules', headers: adminAuthHeaders() })
+    await app.close()
+    const body = res.json() as Array<{ id: string; enabled: boolean }>
+    expect(body.length).toBeGreaterThan(0)
+    expect(body.every((m) => m.enabled)).toBe(true)
+  })
+
+  it('has no enable/disable routes (modules are always active)', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const dis = await app.inject({ method: 'POST', url: '/api/modules/provider-web/disable', headers: adminAuthHeaders() })
+    const en = await app.inject({ method: 'POST', url: '/api/modules/provider-web/enable', headers: adminAuthHeaders() })
+    await app.close()
+    expect(dis.statusCode).toBe(404)
+    expect(en.statusCode).toBe(404)
+  })
+
   it('GET /api/modules lists modules with 200 for a reader', async () => {
     setupAdminAuth()
     const app = await buildApp()
@@ -13270,36 +14240,6 @@ describe('modules endpoints', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('POST /api/modules/:id/disable disables a feature module (200, restartRequired)', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/disable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ id: 'guardrails', enabled: false, restartRequired: true })
-  })
-
-  it('POST /api/modules/:id/disable is 409 for an always-on module', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/config/disable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(409)
-  })
-
-  it('POST /api/modules/:id/enable is 403 without modules:manage', async () => {
-    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'no-perms-id' } as any)
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', routerIds: [] }]
-      if (t === 'roles') return [{ id: 'no-perms', name: 'No Perms', permissions: [] }]
-      return []
-    })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: { authorization: 'Bearer tok' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-  })
-
   // Permission separation: modules:read must not imply modules:manage. The
   // built-in 'viewer' role has modules:read only (see auth/roles.ts) — proves
   // GET is allowed while enable/disable are specifically gated on a
@@ -13315,49 +14255,6 @@ describe('modules endpoints', () => {
     const res = await app.inject({ method: 'GET', url: '/api/modules', headers: { authorization: 'Bearer tok' } })
     await app.close()
     expect(res.statusCode).toBe(200)
-  })
-
-  it('POST /api/modules/:id/enable is 403 for a modules:read-only role (viewer)', async () => {
-    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }]
-      if (t === 'roles') return []
-      return []
-    })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: { authorization: 'Bearer tok' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-  })
-
-  it('POST /api/modules/:id/disable is 403 for a modules:read-only role (viewer)', async () => {
-    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }]
-      if (t === 'roles') return []
-      return []
-    })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/disable', headers: { authorization: 'Bearer tok' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-  })
-
-  it('POST /api/modules/:id/enable is 409 for an unknown module', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/does-not-exist/enable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(409)
-  })
-
-  it('POST /api/modules/:id/enable enables a feature module (200, restartRequired)', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ id: 'guardrails', enabled: true, restartRequired: true })
   })
 })
 
@@ -13496,6 +14393,22 @@ describe('Optimizers API', () => {
     expect(res.statusCode).toBe(200)
   })
 
+  it('PUT /api/routers/:id accepts relevance threshold 0 and refuses one below the catalog minimum', async () => {
+    authAs(adminUser)
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const put = (steps: unknown[]) => app.inject({
+      method: 'PUT', url: '/api/routers/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], optimizers: { steps } }),
+    })
+    const zero = await put([{ id: 'relevance', enabled: true, threshold: 0 }])
+    const ccrZero = await put([{ id: 'ccr', enabled: true, threshold: 0 }])
+    await app.close()
+    expect(zero.statusCode).toBe(200)
+    expect(ccrZero.statusCode).toBe(400)
+  })
+
   it('POST /api/routers persists optimizers with optimizers:manage (201)', async () => {
     authAs(adminUser)
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -13556,6 +14469,51 @@ describe('Optimizers API', () => {
     const body = res.json() as { estimatedTokensBefore: number; estimatedTokensAfter: number; perStep: unknown[] }
     expect(body.estimatedTokensAfter).toBeLessThan(body.estimatedTokensBefore)
     expect(body.perStep).toHaveLength(1)
+  })
+
+  it('POST /api/optimizers/preview without steps runs the assigned profile, not the custom steps (ROUT-440)', async () => {
+    installFakeRegistry()
+    authAs(adminUser)
+    const base = mockReadConfig.getMockImplementation()!
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'routers' ? [{ id: 'pv', name: 'pv', models: [], optimizerProfileId: 'optimizer-safe', optimizers: { steps: [{ id: 'session-dedup', enabled: false }] } }] : base(t))
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ routerId: 'pv', sampleMessages: [{ role: 'user', content: 'hello there' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { perStep: { id: string }[]; pipeline: { kind: string; profileId: string } }
+    expect(body.perStep.map(s => s.id)).toContain('session-dedup')
+    expect(body.pipeline).toMatchObject({ kind: 'profile', profileId: 'optimizer-safe' })
+  })
+
+  it('POST /api/optimizers/preview without steps and without a profile runs the saved custom steps; explicit steps win', async () => {
+    installFakeRegistry()
+    authAs(adminUser)
+    const base = mockReadConfig.getMockImplementation()!
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'routers' ? [{ id: 'pc', name: 'pc', models: [], optimizers: { steps: [{ id: 'session-dedup', enabled: false }] } }] : base(t))
+    const app = await buildApp()
+    const call = (extra: object) => app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ routerId: 'pc', sampleMessages: [{ role: 'user', content: 'hello there' }], ...extra }),
+    })
+    const saved = (await call({})).json() as { perStep: { id: string }[]; pipeline: { kind: string } }
+    const explicit = (await call({ steps: [{ id: 'session-dedup', enabled: true }] })).json() as { perStep: { id: string }[] }
+    const noRouter = await app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ sampleMessages: [{ role: 'user', content: 'x' }] }),
+    })
+    await app.close()
+    expect(saved.perStep.map(s => s.id)).toEqual(['session-dedup'])
+    expect(saved.pipeline.kind).toBe('custom')
+    expect(explicit.perStep.map(s => s.id)).toEqual(['session-dedup'])
+    expect(noRouter.statusCode).toBe(400)
   })
 
   it('POST /api/optimizers/preview returns 400 for an empty sampleMessages', async () => {
@@ -13674,5 +14632,208 @@ describe('Optimizers API', () => {
     await app.close()
     expect(res.statusCode).toBe(403)
   })
+  })
+})
+
+describe('integration secret masking (ROUT-201)', () => {
+  const webhook = { id: 'intg-wh', type: 'webhook', enabled: true, url: 'http://x', secret: 'whsec', headers: { 'X-Api-Key': 'k-123', Authorization: 'Bearer t' } }
+  const json = (o: unknown) => JSON.stringify(o)
+
+  it('GET /api/settings masks integration secrets and header values', async () => {
+    setupIntegrations([{ ...prometheusIntegration }, { ...webhook }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.body).not.toMatch(/prom-secret|whsec|k-123|Bearer t/)
+    const wh = (res.json() as any).integrations[1]
+    expect(wh.secret).toBe('********')
+    expect(wh.headers).toEqual({ 'X-Api-Key': '********', Authorization: '********' })
+  })
+
+  it('GET /api/integrations/:id masks header values', async () => {
+    setupIntegrations([{ ...webhook }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations/intg-wh', headers: adminAuthHeaders() })
+    await app.close()
+    expect((res.json() as any).headers).toEqual({ 'X-Api-Key': '********', Authorization: '********' })
+  })
+
+  it('PATCH with masked values keeps stored secret and header values', async () => {
+    setupIntegrations([{ ...webhook }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/intg-wh',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: json({ secret: '********', headers: { 'X-Api-Key': '********', Authorization: 'new', Ghost: '********' } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const stored = (mockWriteConfig.mock.calls.find(c => c[0] === 'settings')![1] as any).integrations[0]
+    expect(stored.secret).toBe('whsec')
+    expect(stored.headers).toEqual({ 'X-Api-Key': 'k-123', Authorization: 'new' })
+  })
+})
+
+// ─── role:write / token:write / token:read enforcement (ROUT-345) ──────────────
+
+describe('role:write, token:write, token:read are enforced', { timeout: 30000 }, () => {
+  const user = (roleId: string) => ({ id: 'u1', email: 'u@example.com', passwordHash: 'x', roleId, routerIds: [] })
+  const router = { id: 'r1', name: 'R', tokens: [{ id: 't1', token: 'sk-rt-secret', tokenSnippet: 'sk-rt-secr', createdAt: '2026-01-01T00:00:00Z' }] }
+
+  function setup(permissions: string[]) {
+    mockVerifyToken.mockReturnValue({ sub: 'u1' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [user('custom')]
+      if (type === 'roles') return [{ id: 'custom', name: 'Custom', permissions }]
+      if (type === 'routers') return [router]
+      return []
+    })
+  }
+
+  it('POST /api/roles: role:write allows, unrelated permission gets 403', async () => {
+    setup(['router:read'])
+    const app = await buildApp()
+    const body = { id: 'new', name: 'New', permissions: [] }
+    setup(['role:write'])
+    expect((await app.inject({ method: 'POST', url: '/api/roles', headers: adminAuthHeaders(), payload: body })).statusCode).toBe(201)
+    setup(['router:read'])
+    expect((await app.inject({ method: 'POST', url: '/api/roles', headers: adminAuthHeaders(), payload: body })).statusCode).toBe(403)
+  })
+
+  it('POST /api/routers/:id/tokens: token:write allows, unrelated permission gets 403', async () => {
+    setup(['router:read'])
+    const app = await buildApp()
+    setup(['token:write'])
+    expect((await app.inject({ method: 'POST', url: '/api/routers/r1/tokens', headers: adminAuthHeaders(), payload: {} })).statusCode).toBe(200)
+    setup(['router:read'])
+    expect((await app.inject({ method: 'POST', url: '/api/routers/r1/tokens', headers: adminAuthHeaders(), payload: {} })).statusCode).toBe(403)
+  })
+
+  it('GET /api/routers lists tokens only with token:read (or a writer permission)', async () => {
+    setup(['router:read'])
+    const app = await buildApp()
+    setup(['token:read'])
+    let res = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
+    expect(res.json()[0].tokens).toHaveLength(1)
+    expect(res.json()[0].tokens[0].token).toBeUndefined()
+    setup(['router:read'])
+    res = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
+    expect(res.json()[0].tokens).toEqual([])
+  })
+})
+
+// ─── Anti-escalation (ROUT-348) ──────────────────────────────────────────────
+describe('user:write privilege escalation', () => {
+  const esc = { id: 'esc-id', email: 'esc@example.com', passwordHash: 'h', roleId: 'esc', routerIds: [] }
+  const adm = { id: 'adm-2', email: 'a2@example.com', passwordHash: 'h', roleId: 'admin', routerIds: [] }
+  const call = async (method: 'POST' | 'PUT' | 'DELETE', url: string, body?: unknown) => {
+    mockVerifyToken.mockReturnValue({ sub: 'esc-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [esc, adm, adminUser]
+      if (t === 'roles') return [{ id: 'esc', name: 'esc', permissions: ['user:write', 'user:read'] }, { id: 'low', name: 'low', permissions: ['user:read'] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method, url, headers: body ? { authorization: 'Bearer tok', 'content-type': 'application/json' } : { authorization: 'Bearer tok' }, ...(body ? { payload: JSON.stringify(body) } : {}) })
+    await app.close()
+    return res
+  }
+
+  it('403 creating an admin user', async () => {
+    expect((await call('POST', '/api/users', { email: 'x@e.com', password: 'pass1234', roleId: 'admin' })).statusCode).toBe(403)
+  })
+  it('201 creating a user with a role it fully holds', async () => {
+    expect((await call('POST', '/api/users', { email: 'x@e.com', password: 'pass1234', roleId: 'low' })).statusCode).toBe(201)
+  })
+  it('403 self-promotion to admin', async () => {
+    expect((await call('PUT', '/api/users/esc-id', { roleId: 'admin' })).statusCode).toBe(403)
+  })
+  it('403 resetting an admin password', async () => {
+    expect((await call('PUT', '/api/users/adm-2', { newPassword: 'newpass123' })).statusCode).toBe(403)
+  })
+  it('403 deleting an admin', async () => {
+    expect((await call('DELETE', '/api/users/adm-2')).statusCode).toBe(403)
+  })
+  it('403 adding unheld permissions to own role', async () => {
+    expect((await call('PUT', '/api/roles/esc', { permissions: ['user:write', 'role:write', 'settings:write'] })).statusCode).toBe(403)
+  })
+  it('403 creating a role with unheld permissions', async () => {
+    expect((await call('POST', '/api/roles', { id: 'r2', name: 'r2', permissions: ['model:write'] })).statusCode).toBe(403)
+  })
+  it('200 narrowing own role', async () => {
+    expect((await call('PUT', '/api/roles/esc', { permissions: ['user:write'] })).statusCode).toBe(200)
+  })
+})
+
+describe('PUT /api/routers/:id notifications override (ROUT-335)', () => {
+  const channels = [
+    { id: 'wh1', provider: 'webhook', name: 'wh' },
+    { id: 'dash1', provider: 'dashboard', name: 'inbox' },
+  ]
+  const baseRouter = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+  function setup(user: any, roles: any[] = [], router: any = baseRouter) {
+    mockVerifyToken.mockReturnValue({ sub: user.id } as any)
+    mockWriteConfig.mockResolvedValue(undefined)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [user]
+      if (t === 'roles') return roles
+      if (t === 'routers') return [router]
+      if (t === 'settings') return { notifications: { channels } }
+      return []
+    })
+  }
+  async function put(notifications?: unknown) {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], ...(notifications !== undefined ? { notifications } : {}) }),
+    })
+    await app.close()
+    return res
+  }
+
+  it('persists the override (200)', async () => {
+    setup(adminUser)
+    const res = await put({ channels: ['wh1', 'wh1'] })
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as any).notifications).toEqual({ channels: ['wh1'] })
+    expect(mockWriteConfig).toHaveBeenCalledWith('routers', expect.arrayContaining([
+      expect.objectContaining({ id: 'p1', notifications: { channels: ['wh1'] } }),
+    ]))
+  })
+
+  it('keeps a stored override when the field is omitted', async () => {
+    setup(adminUser, [], { ...baseRouter, notifications: { channels: ['wh1'] } })
+    const res = await put()
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as any).notifications).toEqual({ channels: ['wh1'] })
+  })
+
+  it('clears the override with null', async () => {
+    setup(adminUser, [], { ...baseRouter, notifications: { channels: ['wh1'] } })
+    const res = await put(null)
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as any).notifications).toBeUndefined()
+  })
+
+  it('returns 400 for an unknown or dashboard channel', async () => {
+    setup(adminUser)
+    expect((await put({ channels: ['nope'] })).statusCode).toBe(400)
+    expect((await put({ channels: ['dash1'] })).statusCode).toBe(400)
+  })
+
+  it('returns 403 with router:write but without notification:write', async () => {
+    const role = { id: 'rw', name: 'RW', permissions: ['router:write'] }
+    setup({ id: 'rw-id', email: 'rw@x.com', passwordHash: '$2b$12$h', roleId: 'rw', routerIds: [] }, [role])
+    expect((await put({ channels: ['wh1'] })).statusCode).toBe(403)
+    expect((await put()).statusCode).toBe(200)
+  })
+
+  it('returns 403 without router:write', async () => {
+    const role = { id: 'nw', name: 'NW', permissions: ['notification:write'] }
+    setup({ id: 'nw-id', email: 'nw@x.com', passwordHash: '$2b$12$h', roleId: 'nw', routerIds: [] }, [role])
+    expect((await put({ channels: ['wh1'] })).statusCode).toBe(403)
   })
 })

@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Idioma",
+      "saveError": "No se pudo guardar su idioma. Se revirtió al anterior."
+    },
     "sidebar": {
       "expand": "Expandir barra lateral",
       "collapse": "Contraer barra lateral"
@@ -29,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Algunos archivos de configuración tienen acceso permisivo ({{files}}). El inicio y las solicitudes siguen funcionando. Solucionarlo desde Configuración → Seguridad, o desde el sistema de archivos del host cuando sea conveniente.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Descartar",
       "updateAvailable": "Routerly v{{latest}} está disponible. Tienes la v{{current}}.",
       "updateLink": "Actualizar en Configuración",
@@ -40,9 +45,382 @@
       "telemetryLink": "¿Qué se envía?",
       "telemetryYes": "Sí, quiero ayudar",
       "telemetryNo": "No, gracias"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "hace {{count}} segundo",
+      "secondsAgo_other": "hace {{count}} segundos",
+      "minutesAgo": "hace {{count}} minuto",
+      "minutesAgo_other": "hace {{count}} minutos",
+      "hoursAgo": "hace {{count}} hora",
+      "hoursAgo_other": "hace {{count}} horas",
+      "daysAgo": "hace {{count}} día",
+      "daysAgo_other": "hace {{count}} días"
     },
-    "language": {
-      "label": "Idioma"
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "remove": "Eliminar",
+    "select": "Seleccionar...",
+    "search": "Buscar...",
+    "noResults": "Sin resultados",
+    "noRemainingOptions": "No quedan opciones",
+    "apply": "Aplicar",
+    "saved": "Guardado",
+    "showLess": "Mostrar menos",
+    "roles": "Roles",
+    "permissions": "Permisos",
+    "notifications": {
+      "title": "Notificaciones",
+      "markAllRead": "Marcar todo como leído",
+      "empty": "Sin notificaciones",
+      "viewAll": "Ver todas las notificaciones"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Seleccionar período",
+      "recent": "Reciente",
+      "ranges": "Rangos",
+      "from": "Desde",
+      "to": "Hasta"
+    },
+    "permissionGuard": {
+      "fixFailed": "No se pudieron corregir los permisos",
+      "title": "Permisos de archivo inseguros",
+      "defaultMessage": "Algunos archivos tienen permisos inseguros.",
+      "fixing": "Corrigiendo…",
+      "fixNow": "Corregir ahora"
+    },
+    "limitRows": {
+      "noLimits": "No hay límites establecidos.",
+      "metricLabel": "Métrica",
+      "typeLabel": "Tipo",
+      "periodLabel": "Período",
+      "everyLabel": "Cada",
+      "maxCost": "Costo máximo",
+      "maxCount": "Cantidad máxima",
+      "maxTokens": "Rombos máximos",
+      "allCombosSet": "Todas las combinaciones de métrica/período ya están establecidas",
+      "addLimit": "Añadir límite",
+      "metric": {
+        "cost": "Costo",
+        "calls": "Llamadas",
+        "input_tokens": "Rombos de entrada",
+        "output_tokens": "Rombos de salida",
+        "total_tokens": "Rombos totales"
+      },
+      "period": {
+        "hourly": "Cada hora",
+        "daily": "Diario",
+        "weekly": "Semanal",
+        "monthly": "Mensual",
+        "yearly": "Anual"
+      },
+      "rollingUnit": {
+        "second": "segundo",
+        "minute": "minuto",
+        "hour": "hora",
+        "day": "día",
+        "week": "semana",
+        "month": "mes"
+      },
+      "windowType": {
+        "period": "Período",
+        "rolling": "Móvil"
+      },
+      "fmt": {
+        "requests": "{{value}} solicitudes",
+        "inputTokens": "{{value}} rombos de entrada",
+        "outputTokens": "{{value}} rombos de salida",
+        "totalTokens": "{{value}} rombos totales",
+        "everyRolling": "{{metric}} cada {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} por {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Lo que ahorró el enrutamiento",
+      "input": "Entrada",
+      "output": "Salida",
+      "actual": "Real",
+      "clientCalls": "{{count}} llamada de cliente",
+      "clientCalls_other": "{{count}} llamadas de cliente",
+      "comparedAgainst": ", comparado con enviarla a cada uno de los",
+      "comparedAgainst_other": ", comparado con enviarlas todas a cada uno de los",
+      "paidModelsInPlay": "{{count}} modelo de pago en juego",
+      "paidModelsInPlay_other": "{{count}} modelos de pago en juego",
+      "metricCost": "Costo",
+      "metricTokens": "Rombos",
+      "totalCost": "Costo total",
+      "routed": "Enrutado: {{value}}",
+      "saved": "Ahorrado: {{value}}",
+      "usdThisPeriod": "USD en este período",
+      "savedVsAlways": "{{value}} ahorrado ({{percent}}%) frente a usar siempre {{model}}",
+      "tokens": "Rombos",
+      "in": "Entrada: {{value}}",
+      "out": "Salida: {{value}}",
+      "tokenSubWithCache": "{{in}} entrada · {{out}} salida · {{cached}} en caché",
+      "tokenSub": "{{in}} entrada · {{out}} salida",
+      "cutByOptimizers": "{{value}} reducido por los optimizadores",
+      "fewerThanAlways": "{{value}} menos que usar siempre {{model}}, estimado"
+    },
+    "optimizerSteps": {
+      "downloaded": "Descargado",
+      "thisStepRunsOn": "Este paso se ejecuta en",
+      "defaultCheckpoint": "Punto de control predeterminado"
+    },
+    "routingPolicies": {
+      "title": "Políticas de enrutamiento",
+      "subtitle": "Las políticas determinan cómo se enrutan las solicitudes. Se ejecutan en orden de arriba hacia abajo.",
+      "removePolicy": "Eliminar política",
+      "removeIntent": "Eliminar intención",
+      "removeExample": "Eliminar ejemplo",
+      "routingModels": "Modelos de enrutamiento",
+      "embeddingModels": "Modelos de incrustación",
+      "maxCompletionTokens": "Rombos máximos de finalización",
+      "maxPromptChars": "Caracteres máximos de la solicitud",
+      "similarityThreshold": "Umbral de similitud",
+      "previousMessages": "Mensajes anteriores",
+      "intents": "Intenciones",
+      "confidenceThreshold": "Umbral de confianza",
+      "ambiguityMargin": "Margen de ambigüedad",
+      "maxCallsPerWindow": "Llamadas máximas por ventana",
+      "addFallbackModel": "Añadir modelo de respaldo",
+      "autoRoutingLabel": "Enrutamiento automático",
+      "autoRoutingHint": "Si está habilitado, el tráfico se distribuye sin prompts personalizados. Si está deshabilitado, puedes escribir prompts específicos indicando a la IA cuándo seleccionar cada modelo objetivo.",
+      "additionalPromptInfoLabel": "Información adicional del prompt",
+      "additionalPromptInfoPlaceholder": "Instrucciones adicionales para incluir en el prompt de enrutamiento...",
+      "addExamplePlaceholder": "Añade un ejemplo y presiona Enter…",
+      "addIntentPlaceholder": "Añade una intención y presiona Enter…",
+      "addPolicyPlaceholder": "Añadir una política...",
+      "labels": {
+        "llm": "Política de enrutamiento por IA",
+        "rate-limit": "Política de límite de tasa",
+        "budget-remaining": "Política de presupuesto restante",
+        "semantic-intent": "Política de intención semántica",
+        "health": "Política de estado",
+        "context": "Política de contexto",
+        "capability": "Política de capacidad",
+        "performance": "Política de rendimiento",
+        "fairness": "Política de equidad",
+        "cheapest": "Política de menor costo",
+        "model-preference": "Política de preferencia de modelo"
+      },
+      "descriptions": {
+        "context": "Puntúa los modelos según la ventana de contexto disponible. Asigna 0 a los modelos cuya ventana de contexto es más pequeña que la longitud estimada de la solicitud, evitando errores de truncamiento.",
+        "cheapest": "Puntúa los modelos de forma inversamente proporcional a su costo por rombo. El modelo más barato obtiene 1.0, el más caro 0.0, ayudando a reducir el gasto en API.",
+        "health": "Puntúa los modelos según su tasa de error reciente usando decaimiento exponencial (los errores recientes pesan más). Aplica un disyuntor que fija la puntuación en 0 cuando la tasa de error ponderada supera un umbral crítico.",
+        "performance": "Puntúa los modelos según su latencia media reciente usando decaimiento exponencial. El más rápido obtiene 1.0, el más lento 0.0. Los modelos sin datos recientes usan 1.0 por defecto.",
+        "llm": "Usa un modelo de IA para puntuar candidatos según el contenido semántico de la solicitud. Admite instrucciones de enrutamiento por modelo y considera el margen de presupuesto cuando hay límites configurados.",
+        "capability": "Filtro estricto: asigna 0 a los modelos que explícitamente carecen de una característica requerida por la solicitud (visión, llamadas a funciones, modo JSON). Los modelos sin declaraciones explícitas de capacidad no son penalizados.",
+        "rate-limit": "Penaliza los modelos con una alta frecuencia reciente de llamadas para reducir el riesgo de alcanzar los límites de tasa del proveedor (HTTP 429). Admite un umbral estricto configurable que fuerza la puntuación a 0.",
+        "fairness": "Distribuye el tráfico de manera uniforme penalizando los modelos que recibieron más llamadas exitosas recientemente. Actúa como un round-robin suave para evitar que la carga se concentre en un solo modelo.",
+        "budget-remaining": "Puntúa los modelos según el margen de presupuesto restante en todos los límites configurados. Prefiere los modelos con más margen antes de alcanzar sus umbrales, distribuyendo el consumo de forma proactiva.",
+        "semantic-intent": "Clasifica la solicitud por intención semántica usando incrustaciones y luego restringe el grupo de candidatos a los modelos asignados a esa intención. Las coincidencias seguras filtran el grupo; las ambiguas combinan los dos mejores grupos; las desconocidas dejan pasar todos los candidatos.",
+        "model-preference": "Cuando el cliente solicita un modelo específico (no routerly/ada), otorga una bonificación configurable a ese modelo. Cuando no se expresa preferencia, la política se abstiene. La posición en la lista controla cuánto pesa la preferencia frente a otras políticas."
+      },
+      "selectModel": "Seleccionar modelo"
+    },
+    "securityRules": {
+      "applyTo": "Aplicar a",
+      "streamingBufferSize": "Tamaño del búfer de transmisión (caracteres)",
+      "entityTypes": "Tipos de entidad",
+      "target": "Objetivo",
+      "embeddingModel": "Modelo de incrustación",
+      "judgeModel": "Modelo evaluador",
+      "contentGuardrails": "Barreras de contenido",
+      "piiPolicies": "Políticas de PII",
+      "addSecurityPolicyPlaceholder": "Añadir una política de seguridad...",
+      "removePolicyTooltip": "Eliminar política",
+      "deleteRuleAriaLabel": "Eliminar regla",
+      "embeddingModelPlaceholder": "Seleccionar modelo de embedding...",
+      "fallbackModelsLabel": "Modelos de respaldo (opcional, se prueban en orden)",
+      "fallbackModelsPlaceholder": "Sin modelos de respaldo...",
+      "exampleTextsLabel": "Textos de ejemplo a bloquear (uno por línea)",
+      "exampleTextsPlaceholder": "Cómo hackear...\n...",
+      "similarityThresholdLabel": "Umbral de similitud:",
+      "judgeModelPlaceholder": "Seleccionar modelo evaluador...",
+      "allowedTopicsLabel": "Temas permitidos (lenguaje natural)",
+      "allowedTopicsPlaceholder": "Soporte técnico de productos de software. Resolución de problemas técnicos. Consultas de facturación.",
+      "onTopicThresholdLabel": "Bloquear si la puntuación de relevancia está por debajo de:",
+      "harmThresholdLabel": "Bloquear si la puntuación de daño está por encima de:",
+      "customInstructionsLabel": "Instrucciones personalizadas",
+      "customInstructionsPlaceholder": "Eres un clasificador de seguridad de contenido. Evalúa el siguiente texto en busca de contenido dañino.\nCategorías: discurso de odio, violencia, contenido sexual, autolesión.\nResponde SOLO con un objeto JSON: {\"score\": <número entre 0 y 1>}",
+      "customInstructionsRequired": "Las instrucciones personalizadas son obligatorias.",
+      "enabledLabel": "Habilitado",
+      "contentGuardrailsHint": "Inspecciona solicitudes y respuestas según las reglas configuradas. Activo cuando hay al menos una regla configurada.",
+      "securityPoliciesHeading": "Políticas de seguridad",
+      "noSecurityPolicies": "No hay políticas de seguridad configuradas.",
+      "piiPoliciesHint": "Detecta y redacta datos personales. Cada política se aplica a la entrada de la solicitud, la respuesta del modelo, o ambas, y controla su propio conjunto de entidades.",
+      "noPiiPolicies": "No hay políticas de PII configuradas.",
+      "addPolicyButton": "+ Añadir política",
+      "injectionWarningTitle": "Payload de la solicitud modificado por inyección",
+      "injectionWarningBody": "Una o más reglas inyectan su instrucción en el system prompt de la solicitud saliente, por lo que el payload enviado al proveedor se modifica. No se realiza ninguna llamada adicional al modelo y nada se bloquea; el modelo que atiende la solicitud aplica la instrucción por sí mismo.",
+      "streamingDisabledWarningTitle": "Streaming deshabilitado para este router",
+      "streamingDisabledWarningBody": "Una o más reglas están configuradas para bloquear respuestas (destino: respuesta o ambos). Como la respuesta completa debe inspeccionarse antes de poder tomar una decisión de bloqueo, Routerly retiene la respuesta completa antes de devolverla al cliente. El streaming no está disponible mientras haya una regla de bloqueo de respuesta activa; los clientes recibirán la respuesta completa de una sola vez en lugar de en fragmentos incrementales."
+    },
+    "connectionFields": {
+      "azureResourceName": "Nombre de recurso de Azure",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "El nombre del recurso de Azure OpenAI (desde el portal de Azure).",
+      "deploymentId": "ID de implementación",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "El nombre de implementación que creaste en Azure OpenAI Studio.",
+      "azureApiVersionLabel": "Versión de API",
+      "azureApiVersionDefaultHint": "(por defecto: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "Región de AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "ID de clave de acceso de AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "Clave de acceso secreta de AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "Deja en blanco para mantener la actual",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Token de sesión",
+      "awsSessionTokenOptionalHint": "(opcional, para credenciales temporales)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
+      "gcpLocationLabel": "Ubicación",
+      "gcpLocationDefaultHint": "(por defecto: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Clave de cuenta de servicio",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "URL del endpoint",
+      "optional": "(opcional)",
+      "webProvider": {
+        "unofficialWarningTitle": "Proveedor no oficial: úsalo bajo tu propio riesgo.",
+        "unofficialWarningBody": "Esta integración depende de una API interna no documentada que puede cambiar o dejar de funcionar sin previo aviso. Puede infringir las Condiciones del Servicio del proveedor y provocar la suspensión de la cuenta.",
+        "accessTokenLabel": "Token de acceso",
+        "sessionTokenLabel": "Token de sesión",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Pega el valor de la cookie sessionKey (sk-ant-sid…)",
+        "openaiInstructions": "Con la sesión iniciada en ChatGPT, abre <code>https://chatgpt.com/api/auth/session</code> en una pestaña nueva. Copia el valor del campo <code>accessToken</code> (empieza por <code>eyJ</code>). El token es válido durante unos 10 días; pega uno nuevo cuando la prueba empiece a fallar con 401. Para un acceso fiable, rellena también el campo <strong>cf_clearance</strong> a continuación.",
+        "anthropicInstructions": "<strong>Cómo obtener tu clave de sesión:</strong> Con la sesión iniciada en <code>https://claude.ai</code>, pulsa F12 para abrir DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Copia el <strong>Value</strong> de la cookie <code>sessionKey</code> (empieza por <code>sk-ant-sid</code>, por ejemplo <code>sk-ant-sid02-</code>). Es una cookie HttpOnly, por lo que no es visible desde la consola de la página. Sigue siendo válida hasta que cierres sesión o caduque; pega una nueva si la prueba empieza a fallar."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Token OAuth de suscripción",
+        "authFilePathLabel": "Ruta del archivo de autenticación",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (predeterminado)",
+        "anthropicTitle": "Usa tu suscripción de Claude Pro/Max.",
+        "anthropicRunCommandStep": "Ejecuta este comando y copia el token que muestra:",
+        "anthropicPasteTokenStep": "Pega el token en el campo <em>Token OAuth de suscripción</em> a continuación.",
+        "termsNote": "Vuelve a generarlo cuando caduque. El uso de la suscripción a través de una pasarela puede infringir las Condiciones del proveedor.",
+        "openaiTitle": "Usa tu suscripción a ChatGPT Plus/Pro a través de la app Codex.",
+        "openaiLoginStep": "Inicia sesión en la app de escritorio Codex con tu cuenta de ChatGPT Plus/Pro.",
+        "openaiAutoRefreshStep": "Routerly lee tu token de acceso desde <code>~/.codex/auth.json</code> y lo actualiza automáticamente. No es necesario copiar y pegar manualmente.",
+        "openaiAuthFilePathStep": "Deja el campo <em>Ruta del archivo de autenticación</em> en blanco para usar el valor predeterminado, o introduce una ruta personalizada si tu app Codex guarda la autenticación en otro lugar.",
+        "openaiTermsNote": "El uso de la suscripción a través de una pasarela puede infringir las Condiciones del proveedor."
+      },
+      "copyCode": {
+        "copiedTooltip": "¡Copiado!",
+        "copyTooltip": "Copiar al portapapeles",
+        "copiedLabel": "Copiado",
+        "copyLabel": "Copiar"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Copiar",
+      "copiedLabel": "¡Copiado!",
+      "copyErrorHint": "Error al copiar, selecciona y copia manualmente."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "Cliente MCP",
+      "hints": {
+        "claudeCode": "Ejecuta esto una vez, en cualquier lugar. Claude Code guarda el servidor en <code>~/.claude.json</code>.",
+        "claudeDesktop": "Colócalo en <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (en Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), luego reinicia la app. Ejecuta el CLI, así que <code>routerly</code> debe estar en tu PATH.",
+        "codex": "Colócalo en <code>~/.codex/config.toml</code>. Codex lee el token desde el entorno, así que exportalo en el shell desde el que inicies Codex.",
+        "opencode": "Colócalo en <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Ejecuta esto una vez. OpenClaw usa por defecto el transporte sse, que Routerly no ofrece, así que el transporte se fija explícitamente.",
+        "cursor": "Colócalo en <code>~/.cursor/mcp.json</code>, o en <code>.cursor/mcp.json</code> para limitarlo a un proyecto.",
+        "cline": "Colócalo en <code>~/.cline/mcp.json</code>, o pégalo en Configure MCP Servers en el panel de Cline.",
+        "zed": "Colócalo en tu <code>settings.json</code> de Zed, junto a cualquier otro context server."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Cambios sin guardar",
+      "message": "Tienes cambios sin guardar. Si sales ahora, se perderán.",
+      "stay": "Quedarme",
+      "leaveAnyway": "Salir de todos modos"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Barreras de seguridad",
+        "pii": "PII",
+        "optimizers": "Optimizadores",
+        "routerOverhead": "Sobrecarga del enrutador"
+      },
+      "policyType": {
+        "llm": "Enrutamiento por IA",
+        "rateLimit": "Límite de tasa",
+        "budgetRemaining": "Presupuesto restante",
+        "semanticIntent": "Intención semántica",
+        "modelPreference": "Preferencia de modelo"
+      },
+      "rawDetails": "detalles sin procesar",
+      "technicalDetails": "detalles técnicos",
+      "systemPrompt": "instrucción del sistema",
+      "responseText": "texto de la respuesta",
+      "responseJson": "JSON de la respuesta",
+      "cacheEmbeddingCall": "LLAMADA DE INCRUSTACIÓN EN CACHÉ",
+      "fallbackAttempt": "respaldo n.º{{attempt}}",
+      "embeddingModel": "Modelo de incrustación",
+      "upstreamModel": "Modelo de origen",
+      "provider": "Proveedor",
+      "source": "Fuente",
+      "endpoint": "Punto de conexión",
+      "cacheHit": "ACIERTO DE CACHÉ",
+      "ttlExtended": "TTL extendido",
+      "model": "Modelo",
+      "similarity": "Similitud",
+      "embedding": "Incrustación",
+      "cacheMiss": "FALLO DE CACHÉ",
+      "details": "detalles",
+      "excludedByLimits": "EXCLUIDO POR LÍMITES",
+      "finalRanking": "CLASIFICACIÓN FINAL",
+      "noRankingData": "No hay datos de clasificación (el registro puede estar corrupto o ser de una versión anterior)",
+      "policyScores": "PUNTUACIONES DE POLÍTICA",
+      "weight": "peso {{value}}",
+      "allScores": "todas las puntuaciones",
+      "noPolicyData": "No hay datos de política (el registro puede estar corrupto o ser de una versión anterior)",
+      "requestGuardrailBlocked": "SOLICITUD BLOQUEADA POR BARRERA DE SEGURIDAD",
+      "requestGuardrailTriggered": "BARRERA DE SEGURIDAD DE SOLICITUD ACTIVADA",
+      "responseGuardrailBlocked": "RESPUESTA BLOQUEADA POR BARRERA DE SEGURIDAD",
+      "responseGuardrailTriggered": "BARRERA DE SEGURIDAD DE RESPUESTA ACTIVADA",
+      "rule": "Regla",
+      "action": "Acción",
+      "guardrailsEvaluated": "BARRERAS DE SEGURIDAD EVALUADAS ({{target}})",
+      "ruleCount": "{{count}} regla",
+      "ruleCount_other": "{{count}} reglas",
+      "promptInjection": "Inyección de instrucciones",
+      "injects": "inyecta",
+      "judgeResponse": "Respuesta del evaluador",
+      "piiScrubbed": "PII ELIMINADA",
+      "piiScanned": "PII ESCANEADA ({{target}})",
+      "policies": "políticas",
+      "entityTypes": "tipos de entidad",
+      "customPatterns": "patrones personalizados",
+      "scanned": "escaneado",
+      "redacted": "redactado",
+      "took": "tardó",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "tipos de entidad escaneados",
+      "guardrailInjection": "INYECCIÓN DE BARRERA DE SEGURIDAD",
+      "rules": "reglas",
+      "chars": "caracteres",
+      "injectedText": "texto inyectado",
+      "optimizer": "OPTIMIZADOR {{id}}",
+      "tokens": "rombos",
+      "saved": "ahorrado",
+      "tok": "{{value}} rmb",
+      "reason": "razón",
+      "budgetBlocked": "PRESUPUESTO BLOQUEADO",
+      "budgetOk": "PRESUPUESTO OK",
+      "egressSent": "SALIDA ENVIADA",
+      "status": "estado",
+      "encoding": "codificación",
+      "frames": "fotogramas",
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -244,7 +622,8 @@
       "heading": "Idioma",
       "description": "Elige el idioma en que se muestra el panel.",
       "languageLabel": "Idioma",
-      "saved": "Preferencia de idioma guardada."
+      "saved": "Preferencia de idioma guardada.",
+      "saveError": "No se pudo guardar su preferencia de idioma. Se revirtió a la anterior."
     }
   },
   "settings": {
@@ -301,7 +680,8 @@
         "saving": "Guardando…",
         "enable": "Activar",
         "disable": "Desactivar"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -368,7 +748,8 @@
         "budgetReset": "Presupuesto – Reiniciado",
         "systemStartup": "Sistema – Arranque",
         "systemShutdown": "Sistema – Apagado",
-        "systemUpdateAvailable": "Sistema – Actualización disponible"
+        "systemUpdateAvailable": "Sistema – Actualización disponible",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Eliminar canal",
       "removeChannelConfirm": "¿Eliminar canal?",
@@ -417,7 +798,8 @@
         "permCount_other": "{{count}} permisos",
         "userCount": "{{count}} usuario",
         "userCount_other": "{{count}} usuarios",
-        "everyone": "Todos"
+        "everyone": "Todos",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Error al cargar"
@@ -456,6 +838,9 @@
         },
         "optional": "(opcional)",
         "keepCurrentPlaceholder": "Dejar en blanco para mantener el actual",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -481,7 +866,9 @@
           "routersHint": "Deja vacío para recibir eventos de todos los enrutadores.",
           "cooldownHeading": "Tiempo de espera",
           "cooldownSuffix": "segundos (0 = sin espera)",
-          "cooldownHint": "Intervalo mínimo antes de que este canal pueda dispararse de nuevo para el mismo evento."
+          "cooldownHint": "Intervalo mínimo antes de que este canal pueda dispararse de nuevo para el mismo evento.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Destinatarios / Objetivos",
@@ -520,8 +907,9 @@
         "addSearchPlaceholder": "Buscar canales…",
         "noResults": "Sin resultados",
         "emptyTitle": "Aún no hay canales de notificación configurados.",
-        "nameInlinePlaceholder": "Etiqueta (opcional)",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Ningún canal coincide con los filtros activos.",
+        "nameInlinePlaceholder": "Etiqueta (opcional)",
         "columns": {
           "name": "Nombre",
           "type": "Tipo",
@@ -678,7 +1066,8 @@
       "removeTooltip": "Eliminar integración",
       "saving": "Guardando…",
       "save": "Guardar",
-      "addButton": "Añadir integración"
+      "addButton": "Añadir integración",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -733,6 +1122,8 @@
         "lastChecked": "Última comprobación"
       },
       "noCheckPerformed": "Aún no se ha realizado ninguna comprobación de actualizaciones.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Buscar actualizaciones",
       "checking": "Comprobando…",
       "updateTo": "Actualizar a v{{version}}",
@@ -746,7 +1137,8 @@
         "checkFailed": "Error en la comprobación",
         "updateFailed": "Error en la actualización"
       },
-      "channel": "Canal"
+      "channel": "Canal",
+      "channelNote": "current sigue cada nueva versión estable; stable solo se mueve cuando se promueve una versión, así que pueden diferir."
     },
     "security": {
       "authentication": "Autenticación",
@@ -781,6 +1173,8 @@
       "count": "1 enrutador",
       "count_other": "{{count}} enrutadores",
       "newRouter": "Nuevo enrutador",
+      "newOrchestrator": "Nuevo orquestador",
+      "newPassthrough": "Nuevo passthrough",
       "empty": "Aún no hay enrutadores.",
       "emptyFiltered": "No hay routers de este tipo.",
       "columns": {
@@ -796,9 +1190,7 @@
       "deleteConfirm": "¿Eliminar este enrutador?",
       "errors": {
         "deleteFailed": "Error al eliminar el enrutador"
-      },
-      "newOrchestrator": "Nuevo orquestador",
-      "newPassthrough": "Nuevo passthrough"
+      }
     },
     "layout": {
       "notFound": "Enrutador no encontrado",
@@ -816,10 +1208,10 @@
       "backToRouters": "Volver a Enrutadores",
       "backToRoutersTitle": "Volver a enrutadores",
       "newRouter": "Nuevo enrutador",
+      "newKind": "Nuevo {{kind}}",
       "loading": "Cargando...",
       "routerId": "ID de enrutador:",
-      "saveFirstHint": "Guarda el enrutador primero para desbloquear esta pestaña",
-      "newKind": "Nuevo {{kind}}"
+      "saveFirstHint": "Guarda el enrutador primero para desbloquear esta pestaña"
     },
     "dashboard": {
       "period": "Periodo",
@@ -837,7 +1229,9 @@
         "ttft": "Tiempo hasta el primer token",
         "notMeasured": "no medido en estas llamadas",
         "reliability": "Fiabilidad",
-        "errorsAndBlocked": "{{errors}} errores · {{blocked}} bloqueadas"
+        "errorsAndBlocked": "{{errors}} errores · {{blocked}} bloqueadas",
+        "errorsAndBlocked_one": "{{errors}} error · {{blocked}} bloqueadas",
+        "errorsAndBlocked_other": "{{errors}} errores · {{blocked}} bloqueadas"
       },
       "tokens": {
         "input": "Tokens de entrada:",
@@ -912,23 +1306,34 @@
         "anthropicSdk": "SDK de Anthropic",
         "anthropicBaseUrlHint": "URL base <code>{{baseUrl}}</code>, sin el <code>/v1</code>: el SDK lo añade.",
         "curl": "curl",
-        "curlHint": "Comprueba la conexión sin instalar nada, luego busca la llamada en <usageLink>Uso</usageLink>."
+        "curlHint": "Comprueba la conexión sin instalar nada, luego busca la llamada en <usageLink>Uso</usageLink>.",
+        "passthrough": {
+          "heading": "Cómo conectar",
+          "intro": "Passthrough reenvía cada solicitud sin modificar — use <strong>su propia</strong> clave del proveedor ascendente como clave API, nunca un token Routerly. Routerly no almacena ni emite credenciales para este router; lo que envíe el cliente va directamente al proveedor.",
+          "noLimits": "Los presupuestos y límites no se aplican a este router: el costo del tráfico Passthrough es desconocido, por lo que nunca se verifica ni se cuenta para ningún límite de gasto.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "URL base <code>{{url}}</code> — sin sufijo <code>/v1</code>, el SDK sigue agregando su propia ruta exactamente como lo haría contra la API de OpenAI real.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "URL base <code>{{url}}</code> — el SDK aún agrega <code>/v1/messages</code> por sí solo, exactamente como lo haría contra la API de Anthropic real."
+        }
       },
       "form": {
         "kind": "Tipo",
         "kindFixedHint": "Fijo una vez creado el enrutador.",
         "routerName": "Nombre del enrutador",
         "routerNamePlaceholder": "Mi App",
+        "passthroughPath": "Ruta",
+        "passthroughPathHint": "Pasa a formar parte de la URL que llaman los clientes: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Configuración avanzada",
         "ttftTimeout": "Tiempo límite de TTFT (ms)",
         "ttftTimeoutHint": "Si un modelo no envía el primer byte de respuesta dentro de este tiempo, Routerly lo cancela e intenta con el siguiente candidato. No limita la duración total de la respuesta. Ponlo en 0 para esperar lo que el proveedor necesite.",
         "traceContent": "Contenido de la traza",
         "traceContentHint": "Las trazas siempre registran metadatos (modelos, puntuaciones, tokens, coste, latencia). Activa esto para registrar también los prompts enviados y las respuestas recibidas. Se almacenan junto con el registro de uso y son visibles para cualquiera que pueda leer los informes.",
         "capturePromptsAndAnswers": "Capturar prompts y respuestas",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Guardar cambios",
         "createRouter": "Crear enrutador",
-        "passthroughPath": "Ruta",
-        "passthroughPathHint": "Pasa a formar parte de la URL que llaman los clientes: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Crear orquestador",
         "createPassthrough": "Crear passthrough"
       }
@@ -1009,6 +1414,7 @@
       "saving": "Guardando...",
       "saved": "Guardado",
       "preview": {
+        "pipeline": "Pipeline ejecutado: {{name}}",
         "title": "Vista previa del ahorro de tokens",
         "description": "Ejecuta la canalización actual (sin guardar) sobre un prompt para ver qué elimina cada paso y qué cuesta. Elige una de las conversaciones de ejemplo, o escribe tu propio prompt.",
         "promptLabel": "Prompt",
@@ -1286,6 +1692,16 @@
       "noRequestSent": "Aún no se ha enviado ninguna solicitud.",
       "turnTraceLog": "Registro de traza del turno #{{turn}} · {{count}} evento",
       "turnTraceLog_other": "Registro de traza del turno #{{turn}} · {{count}} eventos"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1529,6 +1945,7 @@
     "page": {
       "title": "Modelos",
       "subtitle": "Proveedores LLM registrados en Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modelos",
         "health": "Estado"
@@ -1867,7 +2284,8 @@
       "next": "Siguiente",
       "page": "Página {{page}} de {{totalPages}}",
       "total": "({{count}} en total)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -1905,7 +2323,13 @@
         "all": "Todos",
         "success": "Éxito",
         "blocked": "Bloqueada",
-        "error": "Error"
+        "error": "Error",
+        "sessionId": "ID de sesión",
+        "endUser": "Usuario final",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Cualquier sesión",
+        "endUserPlaceholder": "Cualquier usuario final",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Todos",
@@ -2008,7 +2432,10 @@
         "timestamp": "Fecha y hora",
         "guardrailTriggered": "Guardrail activado",
         "blockedBy": "Bloqueado por",
-        "piiRedacted": "PII redactada"
+        "piiRedacted": "PII redactada",
+        "sessionId": "ID de sesión",
+        "endUser": "Usuario final",
+        "tags": "Tags"
       },
       "errorMessage": "Mensaje de error",
       "eventCount": "{{count}} evento",
@@ -2082,7 +2509,8 @@
       "show": "Mostrar depuración",
       "empty": "Aún no hay datos de depuración.",
       "emptyHint": "Envía un mensaje para ver los detalles de enrutamiento.",
-      "turnTraceLog": "Registro de traza del turno #{{turn}}"
+      "turnTraceLog": "Registro de traza del turno #{{turn}}",
+      "resize": "Cambiar el tamaño del panel de depuración"
     },
     "compare": {
       "modelLabel": "Modelo {{label}}:",
@@ -2253,7 +2681,8 @@
       "updateFailed": "No se pudo actualizar el rol",
       "createFailed": "No se pudo crear el rol",
       "deleteFailed": "No se pudo eliminar el rol"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2315,7 +2744,6 @@
     "backToConnect": "Volver a Conectar",
     "title": "Conectar",
     "docs": "Documentación",
-    "notEnabledPrefix": "El configurador de clientes no está activado. Pide a un administrador que lo active con",
     "noClientPrefix": "No existe ningún cliente llamado",
     "errors": {
       "loadFailed": "No se pudieron cargar los clientes: {{error}}"
@@ -2360,7 +2788,6 @@
     "llmDescription": "enruta el tráfico de modelo de ese cliente a través de Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "carga Routerly como servidor de herramientas dentro de él.",
-    "notEnabledPrefix": "El configurador de clientes no está activado. Pide a un administrador que lo active con",
     "errors": {
       "loadFailed": "No se pudieron cargar los clientes: {{error}}"
     },
@@ -2386,381 +2813,6 @@
       "modelDescription": "deja que Routerly elija. Cualquier ID de modelo de la página",
       "modelsLink": "Modelos",
       "worksToo": "también funciona."
-    }
-  },
-  "common": {
-    "time": {
-      "secondsAgo": "hace {{count}} segundo",
-      "secondsAgo_other": "hace {{count}} segundos",
-      "minutesAgo": "hace {{count}} minuto",
-      "minutesAgo_other": "hace {{count}} minutos",
-      "hoursAgo": "hace {{count}} hora",
-      "hoursAgo_other": "hace {{count}} horas",
-      "daysAgo": "hace {{count}} día",
-      "daysAgo_other": "hace {{count}} días"
-    },
-    "confirm": "Confirmar",
-    "cancel": "Cancelar",
-    "remove": "Eliminar",
-    "select": "Seleccionar...",
-    "search": "Buscar...",
-    "noResults": "Sin resultados",
-    "noRemainingOptions": "No quedan opciones",
-    "apply": "Aplicar",
-    "saved": "Guardado",
-    "showLess": "Mostrar menos",
-    "roles": "Roles",
-    "permissions": "Permisos",
-    "notifications": {
-      "title": "Notificaciones",
-      "markAllRead": "Marcar todo como leído",
-      "empty": "Sin notificaciones",
-      "viewAll": "Ver todas las notificaciones"
-    },
-    "dateRangePicker": {
-      "selectPeriod": "Seleccionar período",
-      "recent": "Reciente",
-      "ranges": "Rangos",
-      "from": "Desde",
-      "to": "Hasta"
-    },
-    "permissionGuard": {
-      "fixFailed": "No se pudieron corregir los permisos",
-      "title": "Permisos de archivo inseguros",
-      "defaultMessage": "Algunos archivos tienen permisos inseguros.",
-      "fixing": "Corrigiendo…",
-      "fixNow": "Corregir ahora"
-    },
-    "limitRows": {
-      "noLimits": "No hay límites establecidos.",
-      "metricLabel": "Métrica",
-      "typeLabel": "Tipo",
-      "periodLabel": "Período",
-      "everyLabel": "Cada",
-      "maxCost": "Costo máximo",
-      "maxCount": "Cantidad máxima",
-      "maxTokens": "Rombos máximos",
-      "allCombosSet": "Todas las combinaciones de métrica/período ya están establecidas",
-      "addLimit": "Añadir límite",
-      "metric": {
-        "cost": "Costo",
-        "calls": "Llamadas",
-        "input_tokens": "Rombos de entrada",
-        "output_tokens": "Rombos de salida",
-        "total_tokens": "Rombos totales"
-      },
-      "period": {
-        "hourly": "Cada hora",
-        "daily": "Diario",
-        "weekly": "Semanal",
-        "monthly": "Mensual",
-        "yearly": "Anual"
-      },
-      "rollingUnit": {
-        "second": "segundo",
-        "minute": "minuto",
-        "hour": "hora",
-        "day": "día",
-        "week": "semana",
-        "month": "mes"
-      },
-      "windowType": {
-        "period": "Período",
-        "rolling": "Móvil"
-      },
-      "fmt": {
-        "requests": "{{value}} solicitudes",
-        "inputTokens": "{{value}} rombos de entrada",
-        "outputTokens": "{{value}} rombos de salida",
-        "totalTokens": "{{value}} rombos totales",
-        "everyRolling": "{{metric}} cada {{amount}} {{unit}}",
-        "perPeriod": "{{metric}} por {{period}}"
-      }
-    },
-    "savings": {
-      "title": "Lo que ahorró el enrutamiento",
-      "input": "Entrada",
-      "output": "Salida",
-      "actual": "Real",
-      "clientCalls": "{{count}} llamada de cliente",
-      "clientCalls_other": "{{count}} llamadas de cliente",
-      "comparedAgainst": ", comparado con enviarla a cada uno de los",
-      "comparedAgainst_other": ", comparado con enviarlas todas a cada uno de los",
-      "paidModelsInPlay": "{{count}} modelo de pago en juego",
-      "paidModelsInPlay_other": "{{count}} modelos de pago en juego",
-      "metricCost": "Costo",
-      "metricTokens": "Rombos",
-      "totalCost": "Costo total",
-      "routed": "Enrutado: {{value}}",
-      "saved": "Ahorrado: {{value}}",
-      "usdThisPeriod": "USD en este período",
-      "savedVsAlways": "{{value}} ahorrado ({{percent}}%) frente a usar siempre {{model}}",
-      "tokens": "Rombos",
-      "in": "Entrada: {{value}}",
-      "out": "Salida: {{value}}",
-      "tokenSubWithCache": "{{in}} entrada · {{out}} salida · {{cached}} en caché",
-      "tokenSub": "{{in}} entrada · {{out}} salida",
-      "cutByOptimizers": "{{value}} reducido por los optimizadores",
-      "fewerThanAlways": "{{value}} menos que usar siempre {{model}}, estimado"
-    },
-    "optimizerSteps": {
-      "downloaded": "Descargado",
-      "thisStepRunsOn": "Este paso se ejecuta en",
-      "defaultCheckpoint": "Punto de control predeterminado"
-    },
-    "routingPolicies": {
-      "title": "Políticas de enrutamiento",
-      "subtitle": "Las políticas determinan cómo se enrutan las solicitudes. Se ejecutan en orden de arriba hacia abajo.",
-      "removePolicy": "Eliminar política",
-      "removeIntent": "Eliminar intención",
-      "removeExample": "Eliminar ejemplo",
-      "routingModels": "Modelos de enrutamiento",
-      "embeddingModels": "Modelos de incrustación",
-      "maxCompletionTokens": "Rombos máximos de finalización",
-      "maxPromptChars": "Caracteres máximos de la solicitud",
-      "similarityThreshold": "Umbral de similitud",
-      "previousMessages": "Mensajes anteriores",
-      "intents": "Intenciones",
-      "confidenceThreshold": "Umbral de confianza",
-      "ambiguityMargin": "Margen de ambigüedad",
-      "maxCallsPerWindow": "Llamadas máximas por ventana",
-      "addFallbackModel": "Añadir modelo de respaldo",
-      "autoRoutingLabel": "Enrutamiento automático",
-      "autoRoutingHint": "Si está habilitado, el tráfico se distribuye sin prompts personalizados. Si está deshabilitado, puedes escribir prompts específicos indicando a la IA cuándo seleccionar cada modelo objetivo.",
-      "additionalPromptInfoLabel": "Información adicional del prompt",
-      "additionalPromptInfoPlaceholder": "Instrucciones adicionales para incluir en el prompt de enrutamiento...",
-      "addExamplePlaceholder": "Añade un ejemplo y presiona Enter…",
-      "addIntentPlaceholder": "Añade una intención y presiona Enter…",
-      "addPolicyPlaceholder": "Añadir una política...",
-      "labels": {
-        "llm": "Política de enrutamiento por IA",
-        "rate-limit": "Política de límite de tasa",
-        "budget-remaining": "Política de presupuesto restante",
-        "semantic-intent": "Política de intención semántica",
-        "health": "Política de estado",
-        "context": "Política de contexto",
-        "capability": "Política de capacidad",
-        "performance": "Política de rendimiento",
-        "fairness": "Política de equidad",
-        "cheapest": "Política de menor costo",
-        "model-preference": "Política de preferencia de modelo"
-      },
-      "descriptions": {
-        "context": "Puntúa los modelos según la ventana de contexto disponible. Asigna 0 a los modelos cuya ventana de contexto es más pequeña que la longitud estimada de la solicitud, evitando errores de truncamiento.",
-        "cheapest": "Puntúa los modelos de forma inversamente proporcional a su costo por rombo. El modelo más barato obtiene 1.0, el más caro 0.0, ayudando a reducir el gasto en API.",
-        "health": "Puntúa los modelos según su tasa de error reciente usando decaimiento exponencial (los errores recientes pesan más). Aplica un disyuntor que fija la puntuación en 0 cuando la tasa de error ponderada supera un umbral crítico.",
-        "performance": "Puntúa los modelos según su latencia media reciente usando decaimiento exponencial. El más rápido obtiene 1.0, el más lento 0.0. Los modelos sin datos recientes usan 1.0 por defecto.",
-        "llm": "Usa un modelo de IA para puntuar candidatos según el contenido semántico de la solicitud. Admite instrucciones de enrutamiento por modelo y considera el margen de presupuesto cuando hay límites configurados.",
-        "capability": "Filtro estricto: asigna 0 a los modelos que explícitamente carecen de una característica requerida por la solicitud (visión, llamadas a funciones, modo JSON). Los modelos sin declaraciones explícitas de capacidad no son penalizados.",
-        "rate-limit": "Penaliza los modelos con una alta frecuencia reciente de llamadas para reducir el riesgo de alcanzar los límites de tasa del proveedor (HTTP 429). Admite un umbral estricto configurable que fuerza la puntuación a 0.",
-        "fairness": "Distribuye el tráfico de manera uniforme penalizando los modelos que recibieron más llamadas exitosas recientemente. Actúa como un round-robin suave para evitar que la carga se concentre en un solo modelo.",
-        "budget-remaining": "Puntúa los modelos según el margen de presupuesto restante en todos los límites configurados. Prefiere los modelos con más margen antes de alcanzar sus umbrales, distribuyendo el consumo de forma proactiva.",
-        "semantic-intent": "Clasifica la solicitud por intención semántica usando incrustaciones y luego restringe el grupo de candidatos a los modelos asignados a esa intención. Las coincidencias seguras filtran el grupo; las ambiguas combinan los dos mejores grupos; las desconocidas dejan pasar todos los candidatos.",
-        "model-preference": "Cuando el cliente solicita un modelo específico (no routerly/ada), otorga una bonificación configurable a ese modelo. Cuando no se expresa preferencia, la política se abstiene. La posición en la lista controla cuánto pesa la preferencia frente a otras políticas."
-      },
-      "selectModel": "Seleccionar modelo"
-    },
-    "securityRules": {
-      "applyTo": "Aplicar a",
-      "streamingBufferSize": "Tamaño del búfer de transmisión (caracteres)",
-      "entityTypes": "Tipos de entidad",
-      "target": "Objetivo",
-      "embeddingModel": "Modelo de incrustación",
-      "judgeModel": "Modelo evaluador",
-      "contentGuardrails": "Barreras de contenido",
-      "piiPolicies": "Políticas de PII",
-      "addSecurityPolicyPlaceholder": "Añadir una política de seguridad...",
-      "removePolicyTooltip": "Eliminar política",
-      "deleteRuleAriaLabel": "Eliminar regla",
-      "embeddingModelPlaceholder": "Seleccionar modelo de embedding...",
-      "fallbackModelsLabel": "Modelos de respaldo (opcional, se prueban en orden)",
-      "fallbackModelsPlaceholder": "Sin modelos de respaldo...",
-      "exampleTextsLabel": "Textos de ejemplo a bloquear (uno por línea)",
-      "exampleTextsPlaceholder": "Cómo hackear...\n...",
-      "similarityThresholdLabel": "Umbral de similitud:",
-      "judgeModelPlaceholder": "Seleccionar modelo evaluador...",
-      "allowedTopicsLabel": "Temas permitidos (lenguaje natural)",
-      "allowedTopicsPlaceholder": "Soporte técnico de productos de software. Resolución de problemas técnicos. Consultas de facturación.",
-      "onTopicThresholdLabel": "Bloquear si la puntuación de relevancia está por debajo de:",
-      "harmThresholdLabel": "Bloquear si la puntuación de daño está por encima de:",
-      "customInstructionsLabel": "Instrucciones personalizadas",
-      "customInstructionsPlaceholder": "Eres un clasificador de seguridad de contenido. Evalúa el siguiente texto en busca de contenido dañino.\nCategorías: discurso de odio, violencia, contenido sexual, autolesión.\nResponde SOLO con un objeto JSON: {\"score\": <número entre 0 y 1>}",
-      "customInstructionsRequired": "Las instrucciones personalizadas son obligatorias.",
-      "enabledLabel": "Habilitado",
-      "contentGuardrailsHint": "Inspecciona solicitudes y respuestas según las reglas configuradas. Activo cuando hay al menos una regla configurada.",
-      "securityPoliciesHeading": "Políticas de seguridad",
-      "noSecurityPolicies": "No hay políticas de seguridad configuradas.",
-      "piiPoliciesHint": "Detecta y redacta datos personales. Cada política se aplica a la entrada de la solicitud, la respuesta del modelo, o ambas, y controla su propio conjunto de entidades.",
-      "noPiiPolicies": "No hay políticas de PII configuradas.",
-      "addPolicyButton": "+ Añadir política",
-      "injectionWarningTitle": "Payload de la solicitud modificado por inyección",
-      "injectionWarningBody": "Una o más reglas inyectan su instrucción en el system prompt de la solicitud saliente, por lo que el payload enviado al proveedor se modifica. No se realiza ninguna llamada adicional al modelo y nada se bloquea; el modelo que atiende la solicitud aplica la instrucción por sí mismo.",
-      "streamingDisabledWarningTitle": "Streaming deshabilitado para este router",
-      "streamingDisabledWarningBody": "Una o más reglas están configuradas para bloquear respuestas (destino: respuesta o ambos). Como la respuesta completa debe inspeccionarse antes de poder tomar una decisión de bloqueo, Routerly retiene la respuesta completa antes de devolverla al cliente. El streaming no está disponible mientras haya una regla de bloqueo de respuesta activa; los clientes recibirán la respuesta completa de una sola vez en lugar de en fragmentos incrementales."
-    },
-    "connectionFields": {
-      "azureResourceName": "Nombre de recurso de Azure",
-      "azureResourceNamePlaceholder": "myresource",
-      "azureResourceNameHint": "El nombre del recurso de Azure OpenAI (desde el portal de Azure).",
-      "deploymentId": "ID de implementación",
-      "deploymentIdPlaceholder": "gpt-4o-deployment",
-      "deploymentIdHint": "El nombre de implementación que creaste en Azure OpenAI Studio.",
-      "azureApiVersionLabel": "Versión de API",
-      "azureApiVersionDefaultHint": "(por defecto: 2024-02-01)",
-      "azureApiVersionPlaceholder": "2024-02-01",
-      "awsRegion": "Región de AWS",
-      "awsRegionPlaceholder": "us-east-1",
-      "awsAccessKeyId": "ID de clave de acceso de AWS",
-      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
-      "awsSecretAccessKey": "Clave de acceso secreta de AWS",
-      "awsSecretAccessKeyPlaceholderExisting": "Deja en blanco para mantener la actual",
-      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
-      "awsSessionTokenLabel": "Token de sesión",
-      "awsSessionTokenOptionalHint": "(opcional, para credenciales temporales)",
-      "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "ID de enrutador de GCP",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
-      "gcpLocationLabel": "Ubicación",
-      "gcpLocationDefaultHint": "(por defecto: us-central1)",
-      "gcpLocationPlaceholder": "us-central1",
-      "gcpServiceAccountKeyLabel": "Clave de cuenta de servicio",
-      "gcpServiceAccountKeyJsonHint": "(JSON)",
-      "endpointUrl": "URL del endpoint",
-      "optional": "(opcional)",
-      "webProvider": {
-        "unofficialWarningTitle": "Proveedor no oficial: úsalo bajo tu propio riesgo.",
-        "unofficialWarningBody": "Esta integración depende de una API interna no documentada que puede cambiar o dejar de funcionar sin previo aviso. Puede infringir las Condiciones del Servicio del proveedor y provocar la suspensión de la cuenta.",
-        "accessTokenLabel": "Token de acceso",
-        "sessionTokenLabel": "Token de sesión",
-        "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Pega el valor de la cookie sessionKey (sk-ant-sid01-…)",
-        "openaiInstructions": "Con la sesión iniciada en ChatGPT, abre <code>https://chatgpt.com/api/auth/session</code> en una pestaña nueva. Copia el valor del campo <code>accessToken</code> (empieza por <code>eyJ</code>). El token caduca cada ~24 horas. Para un acceso fiable, rellena también el campo <strong>cf_clearance</strong> a continuación.",
-        "anthropicInstructions": "<strong>Cómo obtener tu token de sesión:</strong> con la sesión iniciada en Claude, abre las herramientas de desarrollo (F12) → Aplicación → Cookies → <code>claude.ai</code> → copia el valor de la cookie <code>sessionKey</code> (empieza por <code>sk-ant-sid01-</code>). El token sigue siendo válido hasta que cierres sesión."
-      },
-      "subscriptionProvider": {
-        "oauthTokenLabel": "Token OAuth de suscripción",
-        "authFilePathLabel": "Ruta del archivo de autenticación",
-        "oauthTokenPlaceholder": "sk-ant-oat01-…",
-        "authFilePathPlaceholder": "~/.codex/auth.json (predeterminado)",
-        "anthropicTitle": "Usa tu suscripción de Claude Pro/Max.",
-        "anthropicRunCommandStep": "Ejecuta este comando y copia el token que muestra:",
-        "anthropicPasteTokenStep": "Pega el token en el campo <em>Token OAuth de suscripción</em> a continuación.",
-        "termsNote": "Vuelve a generarlo cuando caduque. El uso de la suscripción a través de una pasarela puede infringir las Condiciones del proveedor.",
-        "openaiTitle": "Usa tu suscripción a ChatGPT Plus/Pro a través de la app Codex.",
-        "openaiLoginStep": "Inicia sesión en la app de escritorio Codex con tu cuenta de ChatGPT Plus/Pro.",
-        "openaiAutoRefreshStep": "Routerly lee tu token de acceso desde <code>~/.codex/auth.json</code> y lo actualiza automáticamente. No es necesario copiar y pegar manualmente.",
-        "openaiAuthFilePathStep": "Deja el campo <em>Ruta del archivo de autenticación</em> en blanco para usar el valor predeterminado, o introduce una ruta personalizada si tu app Codex guarda la autenticación en otro lugar.",
-        "openaiTermsNote": "El uso de la suscripción a través de una pasarela puede infringir las Condiciones del proveedor."
-      },
-      "copyCode": {
-        "copiedTooltip": "¡Copiado!",
-        "copyTooltip": "Copiar al portapapeles",
-        "copiedLabel": "Copiado",
-        "copyLabel": "Copiar"
-      }
-    },
-    "copyBlock": {
-      "copyLabel": "Copiar",
-      "copiedLabel": "¡Copiado!",
-      "copyErrorHint": "Error al copiar, selecciona y copia manualmente."
-    },
-    "mcpClientGuide": {
-      "clientAriaLabel": "Cliente MCP",
-      "hints": {
-        "claudeCode": "Ejecuta esto una vez, en cualquier lugar. Claude Code guarda el servidor en <code>~/.claude.json</code>.",
-        "claudeDesktop": "Colócalo en <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (en Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), luego reinicia la app. Ejecuta el CLI, así que <code>routerly</code> debe estar en tu PATH.",
-        "codex": "Colócalo en <code>~/.codex/config.toml</code>. Codex lee el token desde el entorno, así que exportalo en el shell desde el que inicies Codex.",
-        "opencode": "Colócalo en <code>~/.config/opencode/opencode.json</code>.",
-        "openclaw": "Ejecuta esto una vez. OpenClaw usa por defecto el transporte sse, que Routerly no ofrece, así que el transporte se fija explícitamente.",
-        "cursor": "Colócalo en <code>~/.cursor/mcp.json</code>, o en <code>.cursor/mcp.json</code> para limitarlo a un proyecto.",
-        "cline": "Colócalo en <code>~/.cline/mcp.json</code>, o pégalo en Configure MCP Servers en el panel de Cline.",
-        "zed": "Colócalo en tu <code>settings.json</code> de Zed, junto a cualquier otro context server."
-      }
-    },
-    "unsavedChanges": {
-      "title": "Cambios sin guardar",
-      "message": "Tienes cambios sin guardar. Si sales ahora, se perderán.",
-      "stay": "Quedarme",
-      "leaveAnyway": "Salir de todos modos"
-    },
-    "trace": {
-      "summary": {
-        "guardrails": "Barreras de seguridad",
-        "pii": "PII",
-        "optimizers": "Optimizadores",
-        "routerOverhead": "Sobrecarga del enrutador"
-      },
-      "policyType": {
-        "llm": "Enrutamiento por IA",
-        "rateLimit": "Límite de tasa",
-        "budgetRemaining": "Presupuesto restante",
-        "semanticIntent": "Intención semántica",
-        "modelPreference": "Preferencia de modelo"
-      },
-      "rawDetails": "detalles sin procesar",
-      "technicalDetails": "detalles técnicos",
-      "systemPrompt": "instrucción del sistema",
-      "responseText": "texto de la respuesta",
-      "responseJson": "JSON de la respuesta",
-      "cacheEmbeddingCall": "LLAMADA DE INCRUSTACIÓN EN CACHÉ",
-      "fallbackAttempt": "respaldo n.º{{attempt}}",
-      "embeddingModel": "Modelo de incrustación",
-      "upstreamModel": "Modelo de origen",
-      "provider": "Proveedor",
-      "source": "Fuente",
-      "endpoint": "Punto de conexión",
-      "cacheHit": "ACIERTO DE CACHÉ",
-      "ttlExtended": "TTL extendido",
-      "model": "Modelo",
-      "similarity": "Similitud",
-      "embedding": "Incrustación",
-      "cacheMiss": "FALLO DE CACHÉ",
-      "details": "detalles",
-      "excludedByLimits": "EXCLUIDO POR LÍMITES",
-      "finalRanking": "CLASIFICACIÓN FINAL",
-      "noRankingData": "No hay datos de clasificación (el registro puede estar corrupto o ser de una versión anterior)",
-      "policyScores": "PUNTUACIONES DE POLÍTICA",
-      "weight": "peso {{value}}",
-      "allScores": "todas las puntuaciones",
-      "noPolicyData": "No hay datos de política (el registro puede estar corrupto o ser de una versión anterior)",
-      "requestGuardrailBlocked": "SOLICITUD BLOQUEADA POR BARRERA DE SEGURIDAD",
-      "requestGuardrailTriggered": "BARRERA DE SEGURIDAD DE SOLICITUD ACTIVADA",
-      "responseGuardrailBlocked": "RESPUESTA BLOQUEADA POR BARRERA DE SEGURIDAD",
-      "responseGuardrailTriggered": "BARRERA DE SEGURIDAD DE RESPUESTA ACTIVADA",
-      "rule": "Regla",
-      "action": "Acción",
-      "guardrailsEvaluated": "BARRERAS DE SEGURIDAD EVALUADAS ({{target}})",
-      "ruleCount": "{{count}} regla",
-      "ruleCount_other": "{{count}} reglas",
-      "promptInjection": "Inyección de instrucciones",
-      "injects": "inyecta",
-      "judgeResponse": "Respuesta del evaluador",
-      "piiScrubbed": "PII ELIMINADA",
-      "piiScanned": "PII ESCANEADA ({{target}})",
-      "policies": "políticas",
-      "entityTypes": "tipos de entidad",
-      "customPatterns": "patrones personalizados",
-      "scanned": "escaneado",
-      "redacted": "redactado",
-      "took": "tardó",
-      "ms": "{{value}} ms",
-      "entityTypesScanned": "tipos de entidad escaneados",
-      "guardrailInjection": "INYECCIÓN DE BARRERA DE SEGURIDAD",
-      "rules": "reglas",
-      "chars": "caracteres",
-      "injectedText": "texto inyectado",
-      "optimizer": "OPTIMIZADOR {{id}}",
-      "tokens": "rombos",
-      "saved": "ahorrado",
-      "tok": "{{value}} rmb",
-      "reason": "razón",
-      "budgetBlocked": "PRESUPUESTO BLOQUEADO",
-      "budgetOk": "PRESUPUESTO OK",
-      "egressSent": "SALIDA ENVIADA",
-      "status": "estado",
-      "encoding": "codificación",
-      "frames": "fotogramas",
-      "bytes": "bytes"
     }
   }
 }

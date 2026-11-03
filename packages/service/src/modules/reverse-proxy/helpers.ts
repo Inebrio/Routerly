@@ -5,7 +5,9 @@ import type {
 import type { ProxyContext, ProxyResult } from './context.js'
 import { StreamingScrubber, scrubText } from '../pii/piiScrubber.js'
 import type { EffectivePii } from '../pii/piiScrubber.js'
+import { blocksResponseStreaming } from '@routerly/shared'
 import { checkGuardrails } from '../guardrails/guardrails.js'
+import { openAIChunksToAnthropicSSE } from '../provider/messages-compat.js'
 import { chatToResponsesObject, openAIChunksToResponsesSSE } from '../provider/responses-compat.js'
 import type { ResponsesRequest } from '../provider/responses-compat.js'
 
@@ -14,7 +16,9 @@ export function messageText(content: unknown): string {
   if (typeof content === 'string') return content
   if (Array.isArray(content)) {
     return content
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       .filter((p: any) => p?.type === 'text' && typeof p.text === 'string')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       .map((p: any) => p.text as string)
       .join('\n')
   }
@@ -96,6 +100,15 @@ export async function writeOpenAIStreamingBlock(ctx: ProxyContext): Promise<void
     ctx.result = { kind: 'block' }
     return
   }
+  if (ctx.protocol === 'anthropic') {
+    // Same block as an Anthropic event sequence: empty message, stop_reason refusal.
+    for await (const line of openAIChunksToAnthropicSSE((async function* () { yield blocked })(), `msg_${ctx.traceId}`, body.model ?? '')) {
+      reply.raw.write(line)
+    }
+    reply.raw.end()
+    ctx.result = { kind: 'block' }
+    return
+  }
   reply.raw.write(`data: ${JSON.stringify(blocked)}\n\n`)
   reply.raw.write('data: [DONE]\n\n')
   reply.raw.end()
@@ -105,7 +118,9 @@ export async function writeOpenAIStreamingBlock(ctx: ProxyContext): Promise<void
 /** Last user message text, the guardrail "request" primary text (openai.ts L151-152). */
 export function primaryText(request: Pick<ChatCompletionRequest, 'messages'>): string {
   const msgs = request.messages ?? []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   const lastUserMsg = [...msgs].reverse().find((m: any) => m?.role === 'user')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   return messageText((lastUserMsg as any)?.content)
 }
 
@@ -117,6 +132,7 @@ export function primaryText(request: Pick<ChatCompletionRequest, 'messages'>): s
  */
 export function conversationText(request: Pick<ChatCompletionRequest, 'messages'>): string {
   const msgs = request.messages ?? []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   return msgs.map((m: any) => `${m?.role ?? 'user'}: ${messageText(m?.content)}`).join('\n')
 }
 
@@ -147,6 +163,23 @@ export function applyResponseScrub(
   ctx: ProxyContext,
   effective: EffectivePii,
 ): { found: string[]; counts: Record<string, number>; scanned: boolean } {
+  if (ctx.protocol === 'anthropic') {
+    // Anthropic Messages body: scrub each text block in place.
+    const blocks = (ctx.result?.body as { content?: Array<{ type?: string; text?: unknown }> } | undefined)?.content
+    const found = new Set<string>()
+    const counts: Record<string, number> = {}
+    let scanned = false
+    for (const b of Array.isArray(blocks) ? blocks : []) {
+      if (b?.type !== 'text' || typeof b.text !== 'string') continue
+      scanned = true
+      const r = scrubText(b.text, effective)
+      if (r.found.length === 0) continue
+      b.text = r.text
+      for (const f of r.found) found.add(f)
+      for (const [k, n] of Object.entries(r.counts)) counts[k] = (counts[k] ?? 0) + n
+    }
+    return { found: [...found], counts, scanned }
+  }
   const response = ctx.result?.body as ChatCompletionResponse | undefined
   const content = response?.choices?.[0]?.message?.content
   if (typeof content !== 'string') return { found: [], counts: {}, scanned: false }
@@ -163,26 +196,37 @@ export function applyResponseScrub(
  * needs the trace. Flush chunk id/model come from ctx (roadmap sig lacked them).
  */
 export async function* wrapWithStreamingScrubber(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   iter: AsyncIterable<any>,
   effective: EffectivePii,
   ctx: ProxyContext,
 ): AsyncGenerator<unknown> {
   const scrubber = new StreamingScrubber(effective)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
+  let last: any
   for await (const chunk of iter) {
+    last = chunk
     let outChunk = chunk
-    const delta = chunk.choices?.[0]?.delta?.content
-    if (typeof delta === 'string' && delta.length > 0) {
-      const scrubbed = scrubber.push(delta)
-      const c0 = chunk.choices![0]!
-      outChunk = { ...chunk, choices: [{ index: c0.index, finish_reason: c0.finish_reason, delta: { ...c0.delta, content: scrubbed } }] }
+    const c0 = chunk.choices?.[0]
+    const delta = c0?.delta?.content
+    let content = typeof delta === 'string' && delta.length > 0 ? scrubber.push(delta) : undefined
+    // The held-back tail goes out merged into the finish_reason chunk, so the stream
+    // still ends on that chunk with constant id/model.
+    if (c0?.finish_reason) {
+      const tail = scrubber.flush()
+      if (tail) content = (content ?? '') + tail
+    }
+    if (content !== undefined) {
+      outChunk = { ...chunk, choices: [{ ...c0, delta: { ...c0.delta, content } }, ...chunk.choices.slice(1)] }
     }
     yield outChunk
   }
+  // Fallback for a stream that ended without a finish_reason chunk.
   const remaining = scrubber.flush()
   if (remaining) {
     yield {
-      id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk',
-      created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '',
+      id: last?.id ?? `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk',
+      created: last?.created ?? Math.floor(Date.now() / 1000), model: last?.model ?? ctx.request.model ?? '',
       choices: [{ index: 0, delta: { content: remaining }, finish_reason: null }],
     }
   }
@@ -216,15 +260,14 @@ export async function* wrapWithStreamingScrubber(
  * trackBlockedRequest). Receives already-PII-scrubbed chunks (pii.output wraps first).
  */
 export async function* wrapWithResponseGuardrail(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   iter: AsyncIterable<any>,
   router: RouterConfig,
   guardrailPctx: unknown,
   log: FastifyBaseLogger,
   ctx: ProxyContext,
 ): AsyncGenerator<unknown> {
-  const bufferForGuardrail = router.guardrails?.rules.some(
-    (r: any) => r.enabled !== false && r.block === true && (r.target === 'response' || r.target === 'both'),
-  ) ?? false
+  const bufferForGuardrail = blocksResponseStreaming(router.guardrails?.rules)
   const buffered: unknown[] = []
   let fullContent = ''
 
@@ -236,8 +279,15 @@ export async function* wrapWithResponseGuardrail(
   }
 
   if (router.guardrails && fullContent) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const result = await checkGuardrails('response', fullContent, router.guardrails, guardrailPctx as any, log)
     const hit = result.triggered ? { triggered: result.triggered } : null
+    if (result.evaluated.length > 0) {
+      ctx.emit?.({ panel: 'response', message: 'guardrail:evaluated', details: { target: 'response', rules: result.evaluated } })
+    }
+    if (hit) {
+      ctx.emit?.({ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', block: result.block, log: result.log, blockMessage: result.blockMessage ?? 'Response blocked by content guardrails.' } })
+    }
     if (hit && result.block) {
       ctx.blockedBy = hit.triggered
       yield {
