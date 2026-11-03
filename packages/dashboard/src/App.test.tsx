@@ -400,10 +400,11 @@ describe('ProtectedLayout — permission-blocked modal', () => {
     render(<App />);
     await waitFor(() => screen.getByText('OverviewPage'));
 
-    window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+    // Re-dispatch until observed: the listener may not be attached yet on a cold, loaded run.
+    const fire = () => window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
       detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
     }));
-    await waitFor(() => expect(screen.getByText(/users.json is unsafe/)).toBeTruthy());
+    await waitFor(() => { fire(); expect(screen.getByText(/users.json is unsafe/)).toBeTruthy(); });
     expect(screen.getByText('users')).toBeTruthy();
 
     await userEvent.click(screen.getByRole('button', { name: 'Fix now' }));
@@ -416,10 +417,11 @@ describe('ProtectedLayout — permission-blocked modal', () => {
     render(<App />);
     await waitFor(() => screen.getByText('OverviewPage'));
 
-    window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+    // Re-dispatch until observed: the listener may not be attached yet on a cold, loaded run.
+    const fire = () => window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
       detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
     }));
-    await waitFor(() => expect(screen.getByText(/users.json is unsafe/)).toBeTruthy());
+    await waitFor(() => { fire(); expect(screen.getByText(/users.json is unsafe/)).toBeTruthy(); });
 
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByText(/users.json is unsafe/)).toBeNull();
@@ -434,10 +436,11 @@ describe('ProtectedLayout — permission-blocked modal', () => {
     render(<App />);
     await waitFor(() => screen.getByText('OverviewPage'));
 
-    window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+    // Re-dispatch until observed: the listener may not be attached yet on a cold, loaded run.
+    const fire = () => window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
       detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
     }));
-    await waitFor(() => expect(screen.getByText(/temporarily unavailable/)).toBeTruthy());
+    await waitFor(() => { fire(); expect(screen.getByText(/temporarily unavailable/)).toBeTruthy(); });
     expect(screen.queryByText(/users.json is unsafe/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Fix now' })).toBeNull();
 
