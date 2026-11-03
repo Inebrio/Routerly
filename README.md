@@ -245,7 +245,7 @@ message = client.messages.create(
 
 ## Supported Providers
 
-OpenAI, Anthropic, Google Gemini, Mistral, Cohere, xAI (Grok), DeepSeek, Groq, Together, Perplexity, Azure OpenAI, Amazon Bedrock, Google Vertex AI, Ollama (local), and any OpenAI-compatible endpoint as a custom provider. Subscription-based logins are available for OpenAI and Anthropic (`openai-oauth`, `anthropic-oauth`, `openai-web`, `anthropic-web`; see the [guides](docs/guides/openai-subscription.md)). The model catalog is fetched at runtime, so models and prices update without a new release.
+OpenAI, Anthropic, Google Gemini, Mistral, Cohere, xAI (Grok), DeepSeek, Groq, Together, Perplexity, Fireworks, Cerebras, Azure OpenAI, Amazon Bedrock, Google Vertex AI, Ollama (local), and any OpenAI-compatible endpoint as a custom provider. Subscription logins are available for OpenAI and Anthropic (`openai-oauth`, `anthropic-oauth`; see the [guides](docs/guides/openai-subscription.md)); the unofficial session-cookie adapters (`openai-web`, `anthropic-web`) are configured as connections, see [ChatGPT web](docs/guides/chatgpt-web.md) and [Claude web](docs/guides/claude-web.md). The model catalog is fetched at runtime, so models and prices update without a new release.
 
 A single router can span cloud and local models. Details: [Providers](docs/concepts/providers.md).
 

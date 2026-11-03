@@ -289,7 +289,7 @@ Examples:
   routerly model add --id gpt-4o --provider openai --connection conn-abc123
 `)
     .requiredOption('--id <id>', 'Unique model ID (e.g. gpt-4o)')
-    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | gemini | ollama | custom | azure-openai | bedrock | vertex')
+    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | openai-oauth | gemini | mistral | cohere | xai | deepseek | groq | together | perplexity | fireworks | cerebras | ollama | custom | azure-openai | bedrock | vertex')
     .option('--connection <id|label>', 'Bind to an existing provider connection by id or label (see `routerly connections list`); omits inline credentials')
     .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)')
     .option('--api-key <key>', 'API key (stored plaintext; file permissions protect it)')
