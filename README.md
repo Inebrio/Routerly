@@ -4,8 +4,8 @@
   <p><strong>One gateway. Any AI model. Total control.</strong></p>
 
   <p>
-    Self-hosted LLM gateway with intelligent routing, cost tracking, and budget enforcement.<br>
-    Fully compatible with the OpenAI and Anthropic APIs, swap a URL, nothing else changes.
+    The self-hosted decision and control layer for your LLM providers: composable routing policies with explainable decisions, governance (roles, budgets, audit), and wire-format transparency.<br>
+    Compatible with the OpenAI and Anthropic APIs: change the base URL, nothing else.
   </p>
   <p>
     <a href="https://www.routerly.ai/">https://www.routerly.ai/</a>
@@ -31,13 +31,15 @@
 
 **macOS / Linux:**
 ```bash
-curl -fsSL https://www.routerly.ai/install.sh | bash
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.5.3
 ```
 
 **Windows (PowerShell):**
 ```powershell
-powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
+powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Version v0.5.3"
 ```
+
+The commands pin `v0.5.3` because the default channel and the Docker `latest` tag still resolve to an older release. See [Installation options](docs/getting-started/installation.md).
 
 **Docker:**
 ```bash
@@ -47,122 +49,121 @@ docker run -d \
   -v routerly_data:/data \
   -e ROUTERLY_HOME=/data \
   --restart unless-stopped \
-  inebrio/routerly:latest
+  inebrio/routerly:v0.5.3
 ```
+
+Then:
+
+1. Open `http://localhost:3000/dashboard` and create the admin account (first-run Setup screen).
+2. Log in from the CLI, register a model, create a router and attach the model:
 
 ```bash
-routerly model add --id gpt-4o --provider openai --api-key sk-YOUR_KEY
-routerly project add --name "My App" --slug my-app --models gpt-4o
-routerly start
+routerly auth login --url http://localhost:3000 --email you@example.com
+routerly model add --id gpt-5-mini --provider openai --api-key sk-YOUR_KEY
+routerly router create --name "My App"        # prints the router token (sk-rt-…), shown once
+routerly router model add "My App" gpt-5-mini
 ```
 
-Open `http://localhost:3000/dashboard` to manage models, projects, and monitor usage in real time.
-Your app connects to `http://localhost:3000` using the project token as the API key.
+3. Point your client at `http://localhost:3000/v1` (OpenAI format) or `http://localhost:3000` (Anthropic format) and use the router token as the API key.
 
-**Learn more:** [Dashboard guide](docs/dashboard/overview.md) — [CLI reference](docs/cli/commands.md) — [Installation options](docs/getting-started/installation.md)
+If the service is not running (for example after a source build), start it with `routerly start`.
+
+**Learn more:** [Quick Start tutorial](docs/getting-started/quick-start.md) — [Installation options and update channels](docs/getting-started/installation.md) — [Dashboard guide](docs/dashboard/overview.md) — [CLI reference](docs/cli/commands.md)
 
 ---
 
-<!-- ## Demo
+## What Routerly is
 
-![Routerly Demo](./docs/demo.gif)
+Routerly sits between your applications and your LLM providers. It is the layer that **decides** where each request goes and **controls** who may send what, while staying invisible to the client.
 
-> A request enters, the router picks the best model, costs update in real time.
+- **Decide**: composable routing policies score every candidate model, and every decision can be explained (routing trace, Playground, per-call usage records). Routing is one function of the layer, not the whole of it.
+- **Control**: roles and permissions, per-router and per-token budgets, guardrails, PII scrubbing, audit log, notifications.
+- **Stay transparent**: clients change only the base URL. Routerly adds no custom headers and no non-standard fields, and returns the provider's response as it received it. The only payload changes are the ones you switch on yourself (PII scrubbing, guardrail steering, token optimizers), each off unless configured.
 
---- -->
+No database and no Redis: configuration lives in JSON files.
 
-## Why Routerly?
+---
 
-- **Intelligent routing**: 9 configurable policies score every request in parallel — cheapest, fastest, healthiest, most capable, or LLM-native (uses an AI to decide which AI to use)
-- **Zero infrastructure**: no database, no Redis, no PostgreSQL — config lives in a JSON file
-- **Drop-in compatible**: swap the base URL in your client. Nothing else changes. Supports both OpenAI and Anthropic native formats
-- **Alerts you care about**: budget thresholds, provider errors, and rate-limit events delivered to Slack, email, webhooks, PagerDuty, and more
-- **Free forever**: self-hosted, AGPL-3.0, you pay only what your providers charge — zero markup
+## Capabilities
+
+- **Routers, orchestrators and passthrough.** A *router* scores models with routing policies. An *orchestrator* forwards to a priority-ordered list of other routers. A *passthrough* router forwards a client's own credential straight to OpenAI or Anthropic (optionally alongside real target models).
+- **11 routing policies**, combined into one ranking (table below), plus **routing profiles**: reusable presets for routing, optimizers and security. Four built-in routing profiles (`auto`, `cheap`, `fast`, `coding`), clonable.
+- **Budgets and cost tracking.** Every request is priced per token; hard limits (hourly, daily, weekly, monthly, yearly and rolling windows) at global, router and token level block overspending before the call.
+- **Guardrails and PII scrubbing.** Rule-based and judge-based content guardrails, and PII policies, on requests, responses, or both.
+- **8 token optimizers** (`session-dedup`, `ccr`, `rtk`, `headroom`, `json-table`, `relevance`, `caveman`, `llmlingua-2`), off by default, enabled per router.
+- **Experiments.** A/B test whole routers against each other (model sets, profiles, optimizer pipelines, guardrails) without any client change.
+- **Resilience.** Automatic fallback to the next candidate on provider errors or timeouts.
+- **Roles and permissions.** Custom roles over 26 granular permissions, per-user two-factor authentication, router members.
+- **Audit log** of management actions.
+- **Notifications** to the in-app inbox, email (SMTP, SES, SendGrid, Azure, Google) and webhooks (generic, Slack, Teams, PagerDuty, Discord).
+- **MCP server.** Personal MCP tokens let Claude Code, Cursor, Cline and other MCP clients inspect and adjust Routerly with your own permissions.
+- **Dashboard, CLI and API.** Every function is available in all three; the dashboard also has a Playground with routing trace and cost breakdown.
+- **Updates.** Built-in update check against GitHub Releases; channels `latest`, `current`, `next`, `develop`; update with `routerly update run` or from the dashboard.
+
+### Routing policies
+
+Policies run in order; each filters or scores the candidates, and the highest combined score wins. A failed call falls back to the next candidate.
+
+| Policy | What it does |
+|--------|-------------|
+| `llm` | Asks a language model to pick the best candidate given the request |
+| `semantic-intent` | Classifies the request intent with embeddings and prefers models suited to it |
+| `model-preference` | Prefers the model the client named; abstains when the client sends the virtual model `routerly/ada` |
+| `cheapest` | Minimises estimated cost |
+| `health` | Deprioritises models with recent errors |
+| `performance` | Favours models with lower observed latency |
+| `capability` | Matches models to task requirements (vision, tools, JSON mode, thinking) |
+| `context` | Filters models by context window versus prompt size |
+| `budget-remaining` | Excludes models that would push a router over its budget |
+| `rate-limit` | Steers traffic away from rate-limited providers |
+| `fairness` | Balances load across candidates |
 
 ---
 
 ## How Routerly compares
 
-> Routerly is the only gateway that combines self-hosting, native Anthropic support, and LLM-powered routing — with zero external dependencies.
+Last verified: 2026-10-21, against each project's public README and documentation at that date. "n/v" means not verifiable from public documentation.
 
-| | **Routerly** | **LiteLLM** | **OpenRouter** |
-|---|:---:|:---:|:---:|
-| Self-hosted | ✅ | ✅ | ❌ cloud-only |
-| OpenAI-compatible API | ✅ | ✅ | ✅ |
-| Native Anthropic API format | ✅ | ❌ | ❌ |
-| Local model support (Ollama) | ✅ | ✅ | ❌ |
-| BYOT (Bring Your Own Token) | ✅ | ✅ | ❌ |
-| LLM-powered smart routing | ✅ | ❌ | ❌ |
-| Built-in deterministic routing policies | ✅ | ⚠️ limited | ❌ |
-| Budget enforcement | ✅ | ✅ | ✅ |
-| Database required | ✅ none | ⚠️ SQLite/PostgreSQL | N/A |
-| External infrastructure (Redis, etc.) | ✅ none | ⚠️ optional | N/A |
-| Per-project token isolation | ✅ | ✅ | ✅ |
-| Web dashboard | ✅ built-in | ✅ | ✅ |
-| Admin CLI | ✅ | ✅ | ❌ |
-| Data privacy (stays on your infra) | ✅ | ✅ | ❌ |
-| Setup complexity | minimal | moderate | none (managed) |
-| Multi-channel notifications | ✅ | ⚠️ limited | ❌ |
-| SSO / LDAP login | 🔜 | ✅ | ❌ |
+| | **Routerly** (0.5.x) | **LiteLLM** proxy | **Bifrost** | **Portkey** OSS gateway | **OpenRouter** |
+|---|---|---|---|---|---|
+| Self-hosted | ✅ | ✅ | ✅ | ✅ | ❌ hosted service |
+| Open source | AGPL-3.0 | open core, enterprise features under a commercial license | Apache-2.0 (enterprise tier exists) | MIT (hosted/enterprise tier exists) | n/a |
+| OpenAI-compatible API | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Anthropic Messages API (`/v1/messages`) | ✅ | ✅ | ✅ (`/anthropic`) | n/v | n/v |
+| Database for core use | none (JSON files) | PostgreSQL recommended for production; virtual keys and spend tracking use it | n/v | n/v | n/a |
+| Routing | 11 composable policies, profiles, orchestrators | fallback, weighted, latency, cost, usage, least-busy strategies | routing rules, key/provider load balancing, fallbacks | fallbacks, retries, weighted load balancing | n/v |
+| LLM- or intent-based routing | ✅ (`llm`, `semantic-intent`) | n/v | n/v | n/v | n/v |
+| Budgets / spend control | ✅ global, router, token | ✅ spend tracking and limits per key/team/user | ✅ virtual keys, teams, customers | n/v | n/v |
+| Guardrails | ✅ built in (rules, judge, PII) | ✅ | enterprise tier | ✅ input/output checks (PII redaction listed as enterprise) | n/v |
+| Token optimizers | ✅ 8, opt-in | n/v | n/v | n/v | n/v |
+| MCP | management MCP server (not a tool gateway) | MCP gateway | MCP client and server | MCP gateway (separate product) | n/v |
+| Roles and permissions | ✅ custom roles, 26 permissions | n/v (SSO listed as enterprise) | enterprise tier | n/v | n/v |
+| SSO (OIDC/LDAP) | not yet | enterprise | enterprise | n/v | n/v |
+| Web UI | ✅ dashboard | ✅ admin UI | ✅ built-in | local log console | hosted dashboard |
 
-**Routerly is the only option where the gateway itself is intelligent.** LiteLLM and OpenRouter are proxies, they forward requests based on static rules you define upfront. Routerly uses a language model to dynamically evaluate every request in context and pick the best candidate in real time. That means smarter cost savings, better fallback decisions, and routing that adapts to your workload automatically. And if you don't want to involve an LLM, Routerly's built-in deterministic policies (cheapest, health, performance, capability, budget-remaining…) work entirely on their own, no external call needed.
-
-**BYOT, Bring Your Own Token.** With OpenRouter you pay through their platform at marked-up rates, effectively handing your spend and your usage data to a third party. Routerly uses your own API keys directly: every request goes straight from your server to the provider, at the provider's official price, with nobody in between.
-
-**Privacy-first by design.** With OpenRouter, your prompts transit a third-party cloud, full stop. LiteLLM is self-hosted but requires standing up and maintaining a database just to run. Routerly is self-hosted, zero-dependency, and your data never leaves your machine. No Postgres, no Redis, no infrastructure to secure.
-
-**The only gateway with native Anthropic format support.** If you're using the Anthropic SDK directly, not wrapped through OpenAI compatibility, only Routerly handles `/v1/messages` natively. LiteLLM and OpenRouter translate everything to OpenAI format, which means edge cases, subtle incompatibilities, and features like `top_k` or extended thinking that silently don't work.
-
-> **Routerly** is the right choice for the vast majority of teams: self-hosted, intelligent, zero-ops, BYOT, with native support for both OpenAI and Anthropic formats.
-> LiteLLM makes sense only if you specifically need one of its 100+ niche provider integrations and are prepared to run and maintain a database.
-> OpenRouter is a last resort when you have no server to deploy to and data privacy is not a concern.
+These gateways overlap with Routerly and are not mutually exclusive: several can sit behind Routerly as an upstream (anything that speaks the OpenAI or Anthropic API can be registered as a custom provider), and Routerly can sit in front of them.
 
 ---
 
 ## Use Cases
 
 ### SaaS with multiple tenants
-You run a product where different customers have different AI budgets. Create one Routerly project per tenant, assign a monthly spend cap, and let the routing engine automatically pick the cheapest model that fits the request, no code changes in your app, no risk of a single tenant blowing up your OpenAI bill.
+Create one router per tenant, give each its own token and monthly spend cap. A tenant cannot exceed its budget or see another's traffic, and your app code does not change.
 
 ### Local-first development
-Your team develops against Ollama locally and promotes to GPT-4o in production. Routerly handles both with the same API surface. Point `base_url` at Routerly in all environments and change only the project token, the routing policy handles the rest.
+Develop against Ollama locally and promote to a hosted model in production. Same API surface in every environment; only the router token changes.
 
 ### Cost optimisation without quality loss
-You have a mix of cheap fast models and expensive powerful ones. Configure a project with `cheapest` + `capability` + `context` policies: Routerly will automatically route simple short requests to the cheap model and fall back to the powerful one only when the task demands it. No changes to your application logic.
+Combine `cheapest`, `capability` and `context` (or the built-in `cheap` profile) to send simple requests to cheap models and fall back to a stronger model only when the task needs it. Token optimizers reduce the prompt on top.
 
-### Resilience and automatic failover
-Your production app can't afford downtime when a provider has an outage. Register the same logical capability across multiple providers (e.g. GPT-4o + Claude Sonnet + Gemini Pro) and enable the `health` policy. Routerly detects errors in real time and routes around failing endpoints, your app gets a 200 while the provider is down.
+### Resilience and failover
+Register equivalent models across several providers and enable `health`. Routerly routes around failing endpoints and tries the next candidate on error.
 
----
+### Governance for teams
+Roles and permissions decide who can change what, the audit log records changes, guardrails and PII policies apply to every request, and notifications report budget and provider events.
 
-
-
-### Intelligent Multi-Policy Routing
-Each request is scored against up to 9 pluggable routing policies, applied simultaneously and combined into a final ranking. Routerly picks the best candidate, and falls back automatically if a provider fails.
-
-| Policy | What it does |
-|--------|-------------|
-| `llm` | Asks a language model to pick the best candidate given request context |
-| `cheapest` | Minimises cost per token |
-| `health` | Deprioritises models with recent errors |
-| `performance` | Favours models with lower average latency |
-| `capability` | Matches models to task requirements (vision, tools, JSON mode…) |
-| `context` | Filters models by context window size relative to the prompt |
-| `budget-remaining` | Excludes models that would push a project over its budget |
-| `rate-limit` | Steers traffic away from rate-limited providers |
-| `fairness` | Balances load across candidates |
-
-### Real-Time Cost Tracking & Budgets
-Every request is priced at the token level using up-to-date pricing per model. Costs accumulate per project and per token, and you can set hard limits, hourly, daily, weekly, monthly, or per request, that block overspending before it happens.
-
-### Project Isolation
-Separate Bearer tokens per project. Each project has its own model list, routing policies, and budget envelope. Perfect for multi-tenant setups or separating dev/staging/production traffic.
-
-### Web Dashboard
-A built-in React dashboard gives you a live view of spending, call volume, error rates, and per-model breakdown, with real-time auto-refresh. No separate monitoring tool needed.
-
-### Admin CLI
-A full-featured command-line tool lets you manage models, projects, users, roles, and pull usage reports, scriptable and CI-friendly.
+### Comparing setups safely
+Run an experiment between two routers (for example a cheaper model set against the current one) and compare cost, latency and error rate in the dashboard.
 
 ---
 
@@ -170,71 +171,71 @@ A full-featured command-line tool lets you manage models, projects, users, roles
 
 ![Overview](docs/assets/screenshot-overview.png)
 
-*Overview dashboard: real-time cost breakdown by model and project*
+*Overview: cost, calls and what routing saved*
 
 ![Models](docs/assets/screenshot-models.png)
 
-*Model registry: configure providers, endpoints and pricing*
+*Models: providers, endpoints and pricing*
 
-![Projects](docs/assets/screenshot-projects.png)
+![Routers](docs/assets/screenshot-routers.png)
 
-*Project isolation: separate tokens, budgets and routing per tenant*
+*Routers: tokens, budgets and routing per tenant*
 
 ![Usage](docs/assets/screenshot-usage.png)
 
-*Usage breakdown: filter by time range, model and project*
+*Usage: filter by time range, model and router*
 
 ![Playground](docs/assets/screenshot-playground-trace.png)
 
-*Playground: test models directly in the browser, with routing trace and cost breakdown*
+*Playground: test in the browser, with routing trace and cost breakdown*
 
 ---
 
 ## Works with any OpenAI or Anthropic client
 
-Because Routerly is a wire-compatible proxy, every tool that speaks the OpenAI or Anthropic protocol works without modification.
+Routerly serves the OpenAI (`/v1/chat/completions`, `/v1/responses`) and Anthropic (`/v1/messages`) formats, so tools that speak either protocol work by changing the base URL.
 
 <div align="center">
 
 | Tool | Protocol | Notes |
 |------|----------|-------|
-| <img src="https://img.shields.io/badge/OpenAI%20SDK-412991?style=flat-square&logo=openai&logoColor=white" /> | OpenAI | Python, Node.js, .NET, Java, Go, all versions |
+| <img src="https://img.shields.io/badge/OpenAI%20SDK-412991?style=flat-square&logo=openai&logoColor=white" /> | OpenAI | Python, Node.js, .NET, Java, Go |
 | <img src="https://img.shields.io/badge/Anthropic%20SDK-CC785C?style=flat-square" /> | Anthropic | Python and Node.js SDKs, including streaming |
 | <img src="https://img.shields.io/badge/Open%20WebUI-1a1a2e?style=flat-square" /> | OpenAI | Set the API base URL in Settings → Connections |
-| <img src="https://img.shields.io/badge/OpenClaw-2d2d2d?style=flat-square" /> | Anthropic | Points to `http://localhost:3000` as a custom endpoint |
+| <img src="https://img.shields.io/badge/OpenClaw-2d2d2d?style=flat-square" /> | Anthropic / OpenAI | Custom endpoint pointing to Routerly |
 | <img src="https://img.shields.io/badge/LangChain-1c3c3c?style=flat-square" /> | OpenAI | Use `ChatOpenAI` with `base_url` override |
 | <img src="https://img.shields.io/badge/LlamaIndex-fbcfe8?style=flat-square" /> | OpenAI | `OpenAI(api_base=...)` constructor |
 | <img src="https://img.shields.io/badge/Cursor-black?style=flat-square" /> | OpenAI | Add a custom model via Settings → Models |
-| <img src="https://img.shields.io/badge/Continue.dev-1a73e8?style=flat-square" /> | OpenAI | `config.json`, set `apiBase` to Routerly URL |
+| <img src="https://img.shields.io/badge/Continue.dev-1a73e8?style=flat-square" /> | OpenAI | `config.json`, set `apiBase` to the Routerly URL |
 | <img src="https://img.shields.io/badge/LibreChat-orange?style=flat-square" /> | OpenAI | Configure as a custom OpenAI endpoint |
 | Any `fetch`/`curl` | OpenAI / Anthropic | Standard HTTP, no SDK needed |
 
 </div>
 
-**Python example (OpenAI SDK):**
+**Python (OpenAI SDK):**
 ```python
 from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:3000/v1",
-    api_key="your-project-token"       # token generated by `routerly project add`
+    api_key="sk-rt-YOUR_ROUTER_TOKEN"   # printed by `routerly router create`
 )
 response = client.chat.completions.create(
-    model="gpt-4o",
+    model="gpt-5-mini",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 ```
 
-**Python example (Anthropic SDK):**
+**Python (Anthropic SDK):**
 ```python
 import anthropic
 
 client = anthropic.Anthropic(
     base_url="http://localhost:3000",
-    api_key="your-project-token"
+    api_key="sk-rt-YOUR_ROUTER_TOKEN"
 )
 message = client.messages.create(
-    model="claude-opus-4-6",
+    model="claude-haiku-4-5",
     max_tokens=1024,
     messages=[{"role": "user", "content": "Hello!"}]
 )
@@ -244,76 +245,55 @@ message = client.messages.create(
 
 ## Supported Providers
 
-| Provider | Key required | OpenAI format | Anthropic format | Local |
-|----------|:------------:|:-------------:|:----------------:|:-----:|
-| **OpenAI** | ✓ | ✓ | - |, |
-| **Anthropic** | ✓ | - | ✓ | - |
-| **Google Gemini** | ✓ | ✓ | - |, |
-| **Ollama** | - | ✓ | - | ✓ |
-| **Mistral** | ✓ | ✓ | - |, |
-| **Cohere** | ✓ | ✓ | - |, |
-| **xAI (Grok)** | ✓ | ✓ | - |, |
-| **Custom HTTP** | optional | ✓ | - | optional |
+OpenAI, Anthropic, Google Gemini, Mistral, Cohere, xAI (Grok), DeepSeek, Groq, Together, Perplexity, Azure OpenAI, Amazon Bedrock, Google Vertex AI, Ollama (local), and any OpenAI-compatible endpoint as a custom provider. Subscription-based logins are available for OpenAI and Anthropic (`openai-oauth`, `anthropic-oauth`, `openai-web`, `anthropic-web`; see the [guides](docs/guides/openai-subscription.md)). The model catalog is fetched at runtime, so models and prices update without a new release.
 
-Mix and match freely. A single project can span cloud and local models simultaneously.
+A single router can span cloud and local models. Details: [Providers](docs/concepts/providers.md).
 
 ---
 
 ## Benchmarks
 
 Independent benchmarks are published in the **[routerly-benchmark](https://github.com/Inebrio/routerly-benchmark)** repository.
-Reproducible tests measure routing latency overhead, cost savings across workloads, and failover behaviour under simulated provider outages.
 
 ---
 
 ## Documentation
 
-Full documentation is available at **[https://docs.routerly.ai](https://docs.routerly.ai)**.
+Full documentation is available at **[https://doc.routerly.ai](https://doc.routerly.ai)**.
 
 | | |
 |---|---|
-| [Installation](docs/getting-started/installation.md) | One-line install, Docker Hub image, build from source |
-| [Quick Start](docs/getting-started/quick-start.md) | First model, project, and API call in 5 minutes |
-| [Configuration](docs/getting-started/configuration.md) | Settings file, environment variables, security |
-| [Architecture](docs/concepts/architecture.md) | How the gateway works end-to-end |
-| [Providers](docs/concepts/providers.md) | Supported providers and model catalogue |
-| [Routing](docs/concepts/routing.md) | All 9 routing policies explained |
-| [Budgets & Limits](docs/concepts/budgets-and-limits.md) | Cost caps, token limits, enforcement |
+| [Installation](docs/getting-started/installation.md) | One-line install, update channels, Docker, build from source |
+| [Quick Start](docs/getting-started/quick-start.md) | First model, router and API call in 5 minutes |
+| [Configuration](docs/getting-started/configuration.md) | Settings file, environment variables |
+| [Architecture](docs/concepts/architecture.md) | Routers, orchestrators, passthrough, request lifecycle, tracing |
+| [Routers](docs/concepts/routers.md) | Router configuration, tokens, members |
+| [Routing](docs/concepts/routing.md) | All 11 routing policies, profiles, selectors |
+| [Budgets & Limits](docs/concepts/budgets-and-limits.md) | Cost caps and enforcement |
+| [Security policies](docs/concepts/security.md) | Guardrails and PII scrubbing |
+| [Optimizers](docs/concepts/optimizers.md) | Token optimizers |
+| [Experiments](docs/concepts/experiments.md) | A/B tests between routers |
+| [MCP](docs/concepts/mcp.md) | MCP server and tokens |
+| [Notifications](docs/concepts/notifications.md) | Channels and events |
 | [Dashboard](docs/dashboard/overview.md) | Web UI walkthrough |
 | [CLI Reference](docs/cli/commands.md) | Every command with examples |
 | [API Reference](docs/api/overview.md) | LLM proxy and management API |
 | [Self-Hosting Guide](docs/guides/self-hosting.md) | Docker, systemd, nginx, production checklist |
-| [Service](docs/service/overview.md) | HTTP server internals, routing engine, provider adapters |
 | [Integrations](docs/integrations/overview.md) | Cursor, Open WebUI, LangChain, LibreChat, and more |
 
 ---
 
 ## Configuration
 
-All configuration lives in `~/.routerly/`, plain JSON, no database.
+All configuration lives in `~/.routerly/` (plain JSON files, no database). See [Config files](docs/reference/config-files.md) for the exact layout and [Environment variables](docs/reference/environment-variables.md) for overrides.
 
-```
-~/.routerly/
-├── config/
-│   ├── settings.json    # port, log level, dashboard toggle
-│   ├── models.json      # providers + AES-256 encrypted API keys
-│   ├── projects.json    # projects + encrypted tokens
-│   ├── users.json       # dashboard users
-│   └── roles.json       # RBAC roles and permissions
-└── data/
-    └── usage.json       # per-call usage records
-```
-
-Override the base path with `ROUTERLY_HOME=/custom/path`.
-
-**When running via Docker**, config and data are persisted in the `routerly_data` named volume, mounted at `/data` inside the container (`ROUTERLY_HOME=/data`). No extra setup needed: the directory is created automatically on first start.
+Override the base path with `ROUTERLY_HOME=/custom/path`. When running via Docker, configuration and data live in the `routerly_data` volume mounted at `/data`.
 
 ---
 
 ## Security
 
-Routerly is a pure TypeScript / Node.js project and has **no dependency on `litellm`** or any Python package.
-See [SECURITY.md](SECURITY.md) for vulnerability reporting, supply chain notes, and security practices.
+Routerly is a TypeScript / Node.js project with no Python dependency. API keys are stored encrypted, router and MCP tokens only as SHA-256 hashes, passwords with bcrypt. See [SECURITY.md](SECURITY.md) for vulnerability reporting and supply chain notes.
 
 ---
 
@@ -326,7 +306,7 @@ Contributions are welcome. See [Releasing](docs/contributing/releasing.md) for v
 ## Roadmap
 
 ### Enterprise SSO
-Log in to the dashboard with your existing identity provider, Google, Microsoft Entra ID, GitHub, Keycloak, any OAuth 2.0 / OIDC provider, or LDAP. No separate user management required: roles and permissions sync automatically from your directory. Purpose-built for corporate and enterprise environments where user accounts are already centrally managed.
+Log in to the dashboard with an existing identity provider (OAuth 2.0 / OIDC, LDAP). Not available yet: dashboard users are local accounts today.
 
 ---
 
@@ -334,4 +314,3 @@ Log in to the dashboard with your existing identity provider, Google, Microsoft 
 
 Routerly is licensed under [AGPL-3.0](LICENSE).
 For commercial licensing inquiries: carlo.satta@routerly.ai
-

@@ -97,9 +97,10 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
         ctx.candidates = models
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
-        if (message.startsWith('all_models_excluded_by_policies')) {
-          // Every model is out (e.g. circuit open after an upstream auth failure): a provider-shaped 503, not a bare 500.
-          const lastErr = recallUpstreamError(ctx.router.id)
+        const noModels = message.startsWith('no_models_available')
+        if (noModels || message.startsWith('all_models_excluded_by_policies')) {
+          // Every model is out (e.g. circuit open after an upstream auth failure) or the router has none: a provider-shaped 503, not a bare 500.
+          const lastErr = noModels ? undefined : recallUpstreamError(ctx.router.id)
           if (lastErr) {
             const protocol = ctx.protocol === 'anthropic' ? 'anthropic' : 'openai'
             ctx.result = { kind: 'block', status: lastErr.status, body: upstreamErrorBody(protocol, lastErr.status, lastErr.body) }
@@ -142,7 +143,7 @@ const memory: Processor<ProxyContext> = {
 }
 
 export const routingModule: RouterlyModule = defineModule({
-  manifest: { id: 'routing', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4', resilience: '^0.5.4' } },
+  manifest: { id: 'routing', version: '0.6.0', dependsOn: { 'reverse-proxy': '^0.6.0', resilience: '^0.6.0' } },
   async migrate() {
     const migrated = await migrateProfiles()
     if (migrated > 0) {

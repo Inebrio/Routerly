@@ -1,6 +1,11 @@
 import { defineConfig } from 'vitest/config'
+import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
+  resolve: {
+    // Worktrees have no shared/dist: test against the sibling package source.
+    alias: { '@routerly/shared': fileURLToPath(new URL('../shared/src/index.ts', import.meta.url)) },
+  },
   test: {
     include: ['src/**/*.test.ts'],
     setupFiles: ['./src/test-setup.ts'],

@@ -375,6 +375,15 @@ describe('llmStream', () => {
     expect(emitted.some(e => e.message === 'model:thinking')).toBe(true)
   })
 
+  it('records optimizerStats on the stream usage record', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'x' } }] })) } as any)
+    const optimizerStats = [{ id: 'headroom', tokensBefore: 20485, tokensAfter: 6835 }]
+    const result = await llmStream({ messages: [] } as any, makeModel(), makeCtx({ optimizerStats } as any))
+    for await (const _ of result.chunks) { /* consume */ }
+    expect(mockTrackUsage.mock.calls.at(-1)![0].optimizerStats).toEqual(optimizerStats)
+  })
+
   it('captures usage from stream chunk', async () => {
     mockIsAllowed.mockResolvedValue(true)
     async function* withUsage() {
@@ -455,6 +464,22 @@ describe('llmStream', () => {
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'timeout' }))
 
     resolveNever!()
+  })
+
+  it('web providers get a TTFT floor above the router timeout (ROUT-466)', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({
+      streamCompletion: vi.fn().mockReturnValue({
+        [Symbol.asyncIterator]: () => ({
+          next: () => new Promise(r => setTimeout(() => r({ value: { id: 'x', choices: [] }, done: false }), 150)),
+          return: vi.fn().mockResolvedValue({ value: undefined as any, done: true }),
+        }),
+      }),
+    } as any)
+
+    const ctxWithTimeout = makeCtx({ router: { ...makeRouter(), timeoutMs: 50 } })
+    const result = await llmStream({ messages: [] } as any, { ...makeModel(), provider: 'openai-web' } as any, ctxWithTimeout)
+    expect(typeof result.ttftMs).toBe('number')
   })
 })
 

@@ -181,7 +181,7 @@ describe('CatalogFetcher', () => {
   });
 
   describe('multi-repo merging', () => {
-    it('last repo wins when keys overlap', async () => {
+    it('first repo wins when keys overlap', async () => {
       const catalog1 = JSON.stringify({ openai: { endpoint: 'https://custom.example.com/v1', models: [] } });
       const catalog2 = JSON.stringify({ openai: { endpoint: 'https://api.openai.com/v1', models: [] } });
 
@@ -197,8 +197,8 @@ describe('CatalogFetcher', () => {
         { url: 'https://repo2.example.com/', enabled: true },
       ]);
       const result = await fetcher.get('0.2.0');
-      // Last repo (index 1) wins — it is applied last via Object.assign
-      expect((result as any).openai.endpoint).toBe('https://api.openai.com/v1');
+      // First repo (index 0) wins on conflict
+      expect((result as any).openai.endpoint).toBe('https://custom.example.com/v1');
     });
 
     it('skips disabled repos', async () => {

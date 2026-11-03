@@ -8,6 +8,7 @@ import type {
   MessagesResponse,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { forwardableResponseHeaders, developerAsSystem, type CallOptions } from './passthrough.js';
 
 export class AnthropicAdapter implements ProviderAdapter {
   protected getClient(model: ModelConfig): Anthropic {
@@ -185,12 +186,14 @@ export class AnthropicAdapter implements ProviderAdapter {
   async chatCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
+    opts?: CallOptions,
   ): Promise<ChatCompletionResponse> {
     const client = this.getClient(model);
 
     // Convert OpenAI message format to Anthropic format
-    const systemMessage = request.messages.find((m) => m.role === 'system');
-    const nonSystemMessages = request.messages.filter((m) => m.role !== 'system');
+    const messages = developerAsSystem(request.messages);
+    const systemMessage = messages.find((m) => m.role === 'system');
+    const nonSystemMessages = messages.filter((m) => m.role !== 'system');
 
     const upstreamModel = this.getUpstreamModelId(model);
 
@@ -213,7 +216,8 @@ export class AnthropicAdapter implements ProviderAdapter {
       if ((params.max_tokens as number) < 16000) params.max_tokens = 16000;
     }
 
-    const response = await client.messages.create(params);
+    const { data: response, response: raw } = await client.messages.create(params).withResponse();
+    opts?.onResponseHeaders?.(forwardableResponseHeaders(raw.headers as unknown as Headers));
 
     // Convert Anthropic response to OpenAI format
     const textContent = response.content.find((b) => b.type === 'text');
@@ -262,12 +266,14 @@ export class AnthropicAdapter implements ProviderAdapter {
   async *streamCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
+    opts?: CallOptions,
   ): AsyncIterable<StreamChunk> {
     const client = this.getClient(model);
     const upstreamModel = this.getUpstreamModelId(model);
 
-    const systemMessage = request.messages.find((m) => m.role === 'system');
-    const nonSystemMessages = request.messages.filter((m) => m.role !== 'system');
+    const messages = developerAsSystem(request.messages);
+    const systemMessage = messages.find((m) => m.role === 'system');
+    const nonSystemMessages = messages.filter((m) => m.role !== 'system');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const params: any = {
@@ -289,12 +295,14 @@ export class AnthropicAdapter implements ProviderAdapter {
       if ((params.max_tokens as number) < 16000) params.max_tokens = 16000;
     }
 
+    const { data, response: raw } = await (client.messages.create(params) as unknown as { withResponse(): Promise<{ data: unknown; response: Response }> }).withResponse();
+    opts?.onResponseHeaders?.(forwardableResponseHeaders(raw.headers));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
-    const stream = await client.messages.create(params) as unknown as AsyncIterable<any>;
+    const stream = data as AsyncIterable<any>;
 
     let id = `chatcmpl-${Math.random().toString(36).substring(2, 10)}`;
     const created = Math.floor(Date.now() / 1000);
-    const responseModel = upstreamModel;
+    let responseModel = upstreamModel;
     let inputTokens = 0;
     let cacheReadTokens = 0;
     let cacheCreationTokens = 0;
@@ -309,6 +317,7 @@ export class AnthropicAdapter implements ProviderAdapter {
     for await (const event of stream) {
       if (event.type === 'message_start') {
         id = event.message.id;
+        responseModel = event.message.model ?? upstreamModel;
         inputTokens = event.message.usage.input_tokens;
         cacheReadTokens = event.message.usage.cache_read_input_tokens ?? 0;
         cacheCreationTokens = event.message.usage.cache_creation_input_tokens ?? 0;

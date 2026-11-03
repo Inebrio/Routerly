@@ -88,14 +88,6 @@ describe('GET /api/profiles', () => {
     await app.close()
     expect(res.statusCode).toBe(403)
   })
-
-  it('blocks when the profiles module is disabled', async () => {
-    const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/profiles', headers: authWith('profiles:read', { modules: [{ id: 'profiles', enabled: false }] }) })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-    expect(JSON.parse(res.body).error).toBe('module_disabled')
-  })
 })
 
 // ─── POST /api/profiles ──────────────────────────────────────────────────────
@@ -118,6 +110,28 @@ describe('POST /api/profiles', () => {
     expect(body.id).toMatch(/^[0-9a-f-]{36}$/)
     expect(body.baseId).toBeUndefined()
     expect(mockWriteConfig).toHaveBeenCalledWith('profiles', [expect.objectContaining({ id: body.id })])
+  })
+
+  it('rejects a routing profile whose llm policy names an unregistered routing model (ROUT-434)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'),
+      payload: { kind: 'routing', label: 'Bad', policies: [{ type: 'llm', enabled: true, config: { routingModelId: 'rout388-bad' } }] },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).error).toContain('rout388-bad')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('PATCH rejects a newly added unregistered routing model on a routing profile (ROUT-434)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile] }),
+      payload: { policies: [{ type: 'llm', enabled: true, config: { fallbackModelIds: ['ghost'] } }] },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
   })
 
   it('fills routing defaults when only kind and label are sent', async () => {
@@ -193,14 +207,6 @@ describe('POST /api/profiles', () => {
     const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:read'), payload: { kind: 'routing', label: 'X' } })
     await app.close()
     expect(res.statusCode).toBe(403)
-  })
-
-  it('blocks when the profiles module is disabled', async () => {
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage', { modules: [{ id: 'profiles', enabled: false }] }), payload: { kind: 'routing', label: 'X' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-    expect(JSON.parse(res.body).error).toBe('module_disabled')
   })
 })
 
@@ -402,6 +408,32 @@ describe('PUT /api/routers/:id/profiles', () => {
     expect(body.optimizerProfileId).toBe('o1')
   })
 
+  it('assigning and clearing profiles never touches the router custom settings (ROUT-441)', async () => {
+    const custom = {
+      policies: [{ type: 'cheapest', enabled: true }],
+      optimizers: { steps: [{ id: 'caveman', enabled: true }] },
+      guardrails: { rules: [{ type: 'keyword', target: 'request', value: 'x', block: true }] },
+      pii: { policies: [{ entity: 'EMAIL', action: 'redact' }] },
+    }
+    const app = await buildApp()
+    const assigned = await app.inject({
+      method: 'PUT', url: '/api/routers/p1/profiles',
+      headers: authWith('router:write', { routers: [{ ...router, ...custom }], profiles: [userProfile, optimizerProfile, securityProfile] }),
+      payload: { routing: 'u1', optimizer: 'o1', security: 's1' },
+    })
+    const cleared = await app.inject({
+      method: 'PUT', url: '/api/routers/p1/profiles',
+      headers: authWith('router:write', { routers: [{ ...router, ...custom, routingProfileId: 'u1', optimizerProfileId: 'o1', securityProfileId: 's1' }] }),
+      payload: { routing: null, optimizer: null, security: null },
+    })
+    await app.close()
+    for (const res of [assigned, cleared]) {
+      expect(res.statusCode).toBe(200)
+      expect(JSON.parse(res.body)).toMatchObject(custom)
+    }
+    expect(JSON.parse(cleared.body).securityProfileId).toBeUndefined()
+  })
+
   it('drops the legacy profileId on any assignment', async () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'PUT', url: '/api/routers/p1/profiles', headers: authWith('router:write', { routers: [{ ...router, profileId: 'fast' }], profiles: [userProfile] }), payload: { routing: 'u1' } })
@@ -466,13 +498,5 @@ describe('PUT /api/routers/:id/profiles', () => {
     expect(body.tokens).toHaveLength(1)
     expect(body.tokens[0].token).toBeUndefined()
     expect(JSON.stringify(body)).not.toContain('sha256-secret-hash')
-  })
-
-  it('blocks when the profiles module is disabled', async () => {
-    const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/routers/p1/profiles', headers: authWith('router:write', { routers: [router], modules: [{ id: 'profiles', enabled: false }] }), payload: { routing: 'auto' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-    expect(JSON.parse(res.body).error).toBe('module_disabled')
   })
 })

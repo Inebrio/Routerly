@@ -1,5 +1,6 @@
 import type { DiscordChannelConfig } from '@routerly/shared';
 import type { NotificationPayload } from './slack.js';
+import { validateWebhookUrl } from '../url-guard.js';
 
 const SEVERITY_COLOR: Record<string, number> = {
   critical: 0xED4245,
@@ -8,6 +9,7 @@ const SEVERITY_COLOR: Record<string, number> = {
 };
 
 export async function sendDiscord(cfg: DiscordChannelConfig, payload: NotificationPayload): Promise<void> {
+  validateWebhookUrl(cfg.webhookUrl);
   const color = SEVERITY_COLOR[payload.severity] ?? 0x5865F2;
   const fields = payload.details
     ? Object.entries(payload.details).map(([name, value]) => ({

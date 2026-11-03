@@ -98,6 +98,30 @@ describe('routerly update check', () => {
     expect(lines.some(l => l.includes('up to date'))).toBe(true);
   });
 
+  it.each([
+    [{ ...upToDateInfo, status: 'disabled', latestVersion: '' }, 'disabled'],
+    [{ ...upToDateInfo, status: 'error', error: 'GitHub API returned 403', latestVersion: '' }, 'GitHub API returned 403'],
+  ])('exits 1 with the reason on stderr when status is not ok (%#)', async (info, text) => {
+    mockApi.mockResolvedValue(info);
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('check')).rejects.toThrow('exit');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errSpy.mock.calls.map(c => c.join(' ')).join('\n')).toContain(text);
+    exitSpy.mockRestore();
+    errSpy.mockRestore();
+  });
+
+  it('--json passes the status through', async () => {
+    mockApi.mockResolvedValue({ ...upToDateInfo, status: 'disabled' });
+    const { lines, spy } = captureConsole();
+    await run('check', '--json');
+    spy.mockRestore();
+    expect(JSON.parse(lines.join('\n')).status).toBe('disabled');
+  });
+
   it('prints update available message when newer version exists', async () => {
     mockApi.mockResolvedValue(updateAvailableInfo);
     const { lines, spy } = captureConsole();

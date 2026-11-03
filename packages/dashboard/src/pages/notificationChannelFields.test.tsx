@@ -143,11 +143,16 @@ describe('targetsHint', () => {
 
 describe('summariseChannel', () => {
   it('shows "All events" when events is undefined', () => {
-    expect(summariseChannel({}, t)).toContain('All events');
+    expect(summariseChannel({ provider: 'dashboard' }, t)).toContain('All events');
+  });
+
+  it('shows "No events (silent)" for an external channel without events', () => {
+    expect(summariseChannel({ provider: 'smtp', events: [] }, t)).toContain('No events (silent)');
+    expect(summariseChannel({ provider: 'smtp', events: [] }, t)).not.toContain('All events');
   });
 
   it('shows "All events" when events is empty', () => {
-    expect(summariseChannel({ events: [] }, t)).toContain('All events');
+    expect(summariseChannel({ provider: 'dashboard', events: [] }, t)).toContain('All events');
   });
 
   it('shows "1 event" for a single event', () => {
@@ -498,6 +503,31 @@ describe('ChannelEditFields — webhook (lines 509-523)', () => {
   });
 });
 
+describe('ChannelEditFields — remove optional secret', () => {
+  it('webhook edit: Remove secret sends null, Undo restores empty', async () => {
+    const onChange = renderEditFields('webhook', {}, true);
+    await userEvent.click(screen.getByRole('button', { name: 'Remove secret' }));
+    expect(onChange).toHaveBeenCalledWith('secret', null);
+  });
+
+  it('shows Undo and disables the input while removal is pending', async () => {
+    const onChange = renderEditFields('webhook', { secret: null }, true);
+    expect(screen.getByPlaceholderText('Will be removed on save')).toHaveProperty('disabled', true);
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(onChange).toHaveBeenCalledWith('secret', '');
+  });
+
+  it('no Remove secret button on create or for required secrets', () => {
+    renderEditFields('webhook', {}, false);
+    expect(screen.queryByRole('button', { name: 'Remove secret' })).toBeNull();
+  });
+
+  it('no Remove secret button for slack bot token', () => {
+    renderEditFields('slack', {}, true);
+    expect(screen.queryByRole('button', { name: 'Remove secret' })).toBeNull();
+  });
+});
+
 describe('ChannelEditFields — slack (lines 525-530)', () => {
   it('renders slack bot token and channel id fields', () => {
     renderEditFields('slack');
@@ -595,16 +625,22 @@ describe('RoutingEditFields', () => {
 
   it('onChange fires when events MultiSelect changes', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ events: [] }} onChange={onChange}
+    render(<RoutingEditFields form={{ provider: 'dashboard', events: [] }} onChange={onChange}
       t={t} />);
     const evSelect = screen.getByTestId('multiselect-All events (leave empty for all)') as HTMLSelectElement;
     await userEvent.selectOptions(evSelect, ['provider.error']);
     expect(onChange).toHaveBeenCalledWith('events', ['provider.error']);
   });
 
+  it('external channel: placeholder and hint say no events = silent', () => {
+    render(<RoutingEditFields form={{ provider: 'smtp' }} onChange={vi.fn()} t={t} />);
+    expect(screen.getByTestId('multiselect-No events selected: this channel receives nothing (leave empty to disable).')).toBeTruthy();
+    expect(screen.getByText(/stays silent/)).toBeTruthy();
+  });
+
   it('onChange passes undefined when events cleared', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ events: ['provider.error'] }} onChange={onChange}
+    render(<RoutingEditFields form={{ provider: 'dashboard', events: ['provider.error'] }} onChange={onChange}
       t={t} />);
     const evSelect = screen.getByTestId('multiselect-All events (leave empty for all)') as HTMLSelectElement;
     // Deselect all by selecting nothing

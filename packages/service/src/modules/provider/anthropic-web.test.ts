@@ -263,7 +263,8 @@ describe('AnthropicWebAdapter system prompt with non-string content', () => {
       ],
     }
     await adapter.chatCompletion(request, makeModel())
-    expect(typeof capturedBody?.system_prompt).toBe('string')
+    expect(capturedBody).not.toHaveProperty('system_prompt')
+    expect(capturedBody?.prompt).toBe('system\n\nHuman: hi')
   });
 });
 
@@ -558,9 +559,8 @@ describe('AnthropicWebAdapter buildPrompt branches', () => {
       ],
     };
     await adapter.chatCompletion(request, makeModel());
-    expect(capturedBody?.system_prompt).toBe('You are helpful');
-    // The prompt should only have the user message (system is filtered out for prompt building)
-    expect(capturedBody?.prompt).toBe('Human: hi');
+    expect(capturedBody).not.toHaveProperty('system_prompt');
+    expect(capturedBody?.prompt).toBe('You are helpful\n\nHuman: hi');
   });
 });
 
@@ -742,11 +742,9 @@ function makeConnection(overrides: Partial<ProviderConnection> = {}): ProviderCo
 }
 
 describe('resolveAnthropicWebCredential', () => {
-  it('refuses to run when the provider-web module is disabled', async () => {
+  it('ignores a stored disabled provider-web record (all modules always active)', async () => {
     mockReadConfig.mockResolvedValueOnce([{ id: 'provider-web', enabled: false }] as any);
-    await expect(resolveAnthropicWebCredential(makeConnection())).rejects.toThrow(
-      "'provider-web' module is disabled",
-    );
+    expect(await resolveAnthropicWebCredential(makeConnection())).toBe('sk-ant-sid01-live-session');
   });
 
   it('decrypts the stored session cookie when the module is enabled', async () => {

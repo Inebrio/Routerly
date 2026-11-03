@@ -91,4 +91,11 @@ describe('sendDiscord', () => {
     const body = JSON.parse((mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string);
     expect(body.embeds[0].fields).toBeUndefined();
   });
+
+  it('rejects a private IP webhookUrl without fetching', async () => {
+    const mockFetch = vi.fn()
+    vi.stubGlobal('fetch', mockFetch)
+    await expect(sendDiscord({ ...cfg, webhookUrl: 'http://192.168.1.1/x' }, payload)).rejects.toThrow('private or loopback')
+    expect(mockFetch).not.toHaveBeenCalled()
+  });
 });

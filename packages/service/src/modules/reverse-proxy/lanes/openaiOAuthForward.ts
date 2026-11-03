@@ -3,10 +3,11 @@ import { homedir } from 'node:os';
 import type { FastifyBaseLogger } from 'fastify';
 import type { ServerResponse } from 'node:http';
 import type {
-  ChatCompletionResponse, ChoiceDelta, ModelConfig, PiiConfig, StreamChoice, StreamChunk,
+  ChatCompletionResponse, ChoiceDelta, ModelConfig, PiiConfig, StreamChoice, StreamChunk, TraceEntry,
 } from '@routerly/shared';
 import { mergePolicies, StreamingScrubber } from '../../pii/piiScrubber.js';
 import { trackUsage } from '../../usage/tracker.js';
+import { calculateCost } from '../../../lib/cost.js';
 import { readConfig } from '../../config/loader.js';
 import { decryptCredential } from '../../../lib/crypto-cred.js';
 import { resolveOpenAIOAuthCredential } from '../../provider/openai-oauth.js';
@@ -274,7 +275,7 @@ export async function* streamOpenAIOAuthChunks(
   body: Record<string, unknown>,
   model: ModelConfig,
   log: FastifyBaseLogger,
-  opts: { traceId: string; routerId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined },
+  opts: { traceId: string; routerId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined; emit?: ((entry: TraceEntry) => void) | undefined },
 ): AsyncGenerator<StreamChunk> {
   const startMs = Date.now();
   const modelId = model.id.includes('/') ? model.id.split('/').slice(1).join('/') : model.id;
@@ -287,6 +288,14 @@ export async function* streamOpenAIOAuthChunks(
   let outcome: 'success' | 'error' = 'error';
   let inputTokens = 0;
   let outputTokens = 0;
+  let errorMessage = 'openai-oauth stream ended without a result';
+
+  // Same trace entries llmStream emits, so the recap reports this provider too.
+  opts.emit?.({
+    panel: 'request',
+    message: 'model:request',
+    details: { modelId: model.id, provider: model.provider, stream: true, messageCount: Array.isArray(body.messages) ? body.messages.length : 0 },
+  });
 
   const chunk = (
     delta: ChoiceDelta,
@@ -417,7 +426,24 @@ export async function* streamOpenAIOAuthChunks(
     }
     yield chunk({}, sawTool ? 'tool_calls' : 'stop', { prompt_tokens: inputTokens, completion_tokens: outputTokens });
     outcome = 'success';
+  } catch (err) {
+    errorMessage = err instanceof Error ? err.message : String(err);
+    throw err;
   } finally {
+    const latencyMs = Date.now() - startMs;
+    if (outcome === 'success') {
+      const totalCostUsd = calculateCost(inputTokens, outputTokens, model, 0, 0);
+      opts.emit?.({
+        panel: 'response',
+        message: 'model:success',
+        details: {
+          modelId: model.id, inputTokens, outputTokens, latencyMs, totalCostUsd,
+          tokensPerSec: latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0,
+        },
+      });
+    } else {
+      opts.emit?.({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: errorMessage, latencyMs } });
+    }
     if (opts.routerId) {
       void trackUsage({
         routerId: opts.routerId, model, inputTokens, outputTokens,

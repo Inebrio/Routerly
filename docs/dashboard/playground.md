@@ -67,6 +67,21 @@ header folds the whole card away.
 
 ![Playground Debug panel showing the turn summary card above the collapsed trace log](../assets/screenshot-playground-trace.png)
 
+### Resizing and collapsing the panel
+
+Drag the thin handle between the conversation and the Debug sidebar to widen or
+narrow it. With the handle focused, use `Left`/`Right` (16 px, `Shift` for 64 px),
+`Home`/`End` for the minimum and maximum, and `Enter` (or a double click) to
+restore the default 380 px. The width is always between 280 and 720 px, and the
+conversation keeps at least 360 px; on narrow windows the panel takes at most
+half of the row. Long trace lines wrap inside the panel instead of being cut.
+
+The chevron in the panel header collapses the sidebar into a slim rail; the
+chevron on the rail expands it again at the width it had. Collapsing keeps the
+turns collected so far. Width and collapsed state are remembered per browser and
+brought back within the limits if the window has become smaller. In compare mode
+each column keeps its own inline Debug section.
+
 ### Summary card
 
 Built from the `trace:recap` entry the service writes when the request finishes.

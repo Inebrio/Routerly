@@ -10,6 +10,13 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const nm = path.join(root, 'node_modules');
 
+// website/ is not an npm workspace: share the main checkout's install (docs-version tests need it).
+const wnm = path.join(root, 'website', 'node_modules');
+if (!fs.existsSync(wnm) && fs.existsSync(path.join(root, 'node_modules'))) {
+  const mainWnm = path.join(fs.realpathSync(path.join(root, 'node_modules')), '..', 'website', 'node_modules');
+  if (fs.existsSync(mainWnm)) fs.symlinkSync(mainWnm, wnm);
+}
+
 if (fs.lstatSync(nm, { throwIfNoEntry: false })?.isSymbolicLink()) {
   const target = fs.realpathSync(nm);
   fs.unlinkSync(nm);

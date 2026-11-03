@@ -5,6 +5,7 @@ import { api, ApiError } from '../api.js';
 import { getCurrentAccount, requireAccount } from '../store.js';
 import { formatUptime } from './status.js';
 import type { Settings, UsageRetentionConfig } from '@routerly/shared';
+import { LOG_LEVELS } from '@routerly/shared';
 
 interface SystemInfo {
   version: string;
@@ -17,6 +18,13 @@ function parseRetentionInt(flag: string, value: string): number {
     throw new Error(`${flag} must be a positive integer (got "${value}")`);
   }
   return parseInt(value, 10);
+}
+
+function parseBool(flag: string, value: string): boolean {
+  if (value !== 'true' && value !== 'false') {
+    throw new Error(`${flag} must be true or false (got "${value}")`);
+  }
+  return value === 'true';
 }
 
 export function makeServiceCommand(): Command {
@@ -116,7 +124,7 @@ Examples:
     .option('--port <port>', 'HTTP port to listen on')
     .option('--host <host>', 'Host to bind to')
     .option('--dashboard <bool>', 'Enable/disable dashboard (true|false)')
-    .option('--log-level <level>', 'Log level: trace|debug|info|warn|error')
+    .option('--log-level <level>', 'Log level: fatal|error|warn|info|debug|trace')
     .option('--metrics <bool>', 'Enable/disable Prometheus /metrics endpoint (true|false)')
     .option('--metrics-token <token>', 'Optional Bearer token to protect /metrics (empty string removes it)')
     .option('--public-url <url>', 'External URL clients use to reach the service')
@@ -137,18 +145,24 @@ Examples:
         for (const [flag, v] of [['--usage-retention-days', opts.usageRetentionDays], ['--usage-retention-max-mb', opts.usageRetentionMaxMb]] as const) {
           if (v) parseRetentionInt(flag, v);
         }
+        if (opts.logLevel !== undefined && !(LOG_LEVELS as readonly string[]).includes(opts.logLevel)) {
+          throw new Error(`--log-level must be one of: ${LOG_LEVELS.join(', ')}`);
+        }
+        for (const [flag, v] of [['--dashboard', opts.dashboard], ['--metrics', opts.metrics], ['--require-mfa', opts.requireMfa]] as const) {
+          if (v !== undefined) parseBool(flag, v);
+        }
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
       if (opts.port) patch.port = parseInt(opts.port, 10);
       if (opts.host) patch.host = opts.host;
-      if (opts.dashboard !== undefined) patch.dashboardEnabled = opts.dashboard === 'true';
-      if (opts.logLevel) patch.logLevel = opts.logLevel as Settings['logLevel'];
-      if (opts.metrics !== undefined) patch.metricsEnabled = opts.metrics === 'true';
+      if (opts.dashboard !== undefined) patch.dashboardEnabled = parseBool('--dashboard', opts.dashboard);
+      if (opts.logLevel !== undefined) patch.logLevel = opts.logLevel as Settings['logLevel'];
+      if (opts.metrics !== undefined) patch.metricsEnabled = parseBool('--metrics', opts.metrics);
       if (opts.metricsToken !== undefined) patch.prometheusAuthToken = opts.metricsToken; // '' removes it server-side
       if (opts.publicUrl !== undefined) patch.publicUrl = opts.publicUrl;
-      if (opts.requireMfa !== undefined) patch.requireMfa = opts.requireMfa === 'true';
+      if (opts.requireMfa !== undefined) patch.requireMfa = parseBool('--require-mfa', opts.requireMfa);
       if (opts.defaultLanguage !== undefined) patch.defaultLanguage = opts.defaultLanguage;
 
       try {

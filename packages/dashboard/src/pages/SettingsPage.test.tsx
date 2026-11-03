@@ -181,6 +181,13 @@ describe('SettingsGeneralTab', () => {
     return render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
   }
 
+  it('ROUT-427 does not request settings without settings:read', async () => {
+    mockCan = p => p !== 'settings:read';
+    renderGeneral();
+    await screen.findByText("You don't have permission to view settings.");
+    expect(mockGetSettings).not.toHaveBeenCalled();
+  });
+
   it('AC5/AC6 shows the Internationalization section and saves the instance default', async () => {
     renderGeneral();
     await screen.findByText('Internationalization');
@@ -204,6 +211,24 @@ describe('SettingsGeneralTab', () => {
     renderGeneral();
     await screen.findByText('Internationalization');
     expect(screen.getByLabelText('Default Language')).toBeDisabled();
+  });
+
+  it('AC1 public URL, retention, log level and telemetry are read-only without settings:write', async () => {
+    mockCan = p => p !== 'settings:write';
+    renderGeneral();
+    await screen.findByText('Internationalization');
+    expect(screen.getByLabelText('Log Level')).toBeDisabled();
+    expect(document.getElementById('s-publicurl')).toBeDisabled();
+    expect(document.getElementById('s-usage-retention-days')).toBeDisabled();
+    expect(document.getElementById('s-usage-retention-size')).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Enable$/ })).toBeDisabled();
+  });
+
+  it('Save Settings is disabled without settings:write', async () => {
+    mockCan = p => p !== 'settings:write';
+    renderGeneral();
+    await screen.findByText('Internationalization');
+    expect(screen.getByRole('button', { name: /Save Settings/i })).toBeDisabled();
   });
 
   it('shows spinner while loading', () => {
@@ -302,6 +327,14 @@ describe('SettingsGeneralTab', () => {
     expect(input.value).toBe('http://localhost:3000');
   });
 
+  it('Save does not persist the pre-filled publicUrl default when none is stored (ROUT-459)', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, publicUrl: '' } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    fireEvent.click(screen.getByRole('button', { name: /Save/ }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ publicUrl: '' })));
+  });
+
   it('renders usage retention inputs empty when no policy is configured', async () => {
     renderGeneral();
     await waitFor(() => expect(screen.queryByLabelText('Max age (days)')).not.toBeNull());
@@ -352,7 +385,7 @@ describe('SettingsGeneralTab', () => {
     await waitFor(() => screen.getByLabelText('Log Level'));
     const sel = screen.getByLabelText('Log Level') as HTMLSelectElement;
     const values = Array.from(sel.options).map(o => o.value);
-    expect(values).toEqual(['trace', 'debug', 'info', 'warn', 'error']);
+    expect(values).toEqual(['trace', 'debug', 'info', 'warn', 'error', 'fatal']);
   });
 
   it('does not render the 2FA toggle — it lives in the Security tab', async () => {
@@ -506,6 +539,14 @@ describe('SettingsSecurityTab', () => {
     return render(<MemoryRouter><SettingsSecurityTab /></MemoryRouter>);
   }
 
+  it('viewer without settings:write: checkbox and Save are disabled', async () => {
+    mockCan = p => p !== 'settings:write';
+    renderSecurity();
+    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
+    expect(checkbox().disabled).toBe(true);
+    expect((screen.getByText(/Save Settings/).closest('button') as HTMLButtonElement).disabled).toBe(true);
+  });
+
   function checkbox() {
     return screen.getByText(/Require Two-Factor Authentication/).closest('label')!
       .querySelector('input[type="checkbox"]') as HTMLInputElement;
@@ -544,6 +585,8 @@ describe('SettingsSecurityTab', () => {
     mockGetSettings.mockRejectedValue(new Error('Network failure'));
     renderSecurity();
     await waitFor(() => expect(screen.queryByText('Network failure')).not.toBeNull());
+    // ROUT-442: a failed load must not allow saving the default over the real value.
+    expect((screen.getByText(/Save Settings/).closest('button') as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('shows a fallback error when loading rejects with a non-Error', async () => {
@@ -576,6 +619,14 @@ describe('SettingsSecurityTab', () => {
       await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
       expect(screen.queryByText('File Permissions')).toBeNull();
       expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    });
+
+    it('clears a stale permission error after a successful fix', async () => {
+      mockGetSettings.mockRejectedValue(new Error('Unsafe permissions on secrets file(s): users.'));
+      renderSecurity();
+      await waitFor(() => expect(screen.getByText(/Unsafe permissions on secrets/)).toBeTruthy());
+      window.dispatchEvent(new CustomEvent('lr-permission-fixed'));
+      await waitFor(() => expect(screen.queryByText(/Unsafe permissions on secrets/)).toBeNull());
     });
 
     it('shows a calm all-good state when nothing is unsafe', async () => {
@@ -628,6 +679,26 @@ describe('SettingsSecurityTab', () => {
       await waitFor(() => expect(mockFixPermissions).toHaveBeenCalled());
       await waitFor(() => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy());
     });
+
+    it('clears the banner by itself when the files are fixed outside the dashboard (polling)', async () => {
+      mockGetPermissionStatus
+        .mockResolvedValueOnce({
+          blocked: false,
+          bypassActive: false,
+          unsafe: [{ file: 'settings.json', path: '/etc/routerly/settings.json', mode: '644', severity: 'general' }],
+        })
+        .mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+      renderSecurity();
+      await waitFor(() => screen.getByText('/etc/routerly/settings.json'));
+      const fixed = vi.fn();
+      window.addEventListener('lr-permission-fixed', fixed);
+      await waitFor(
+        () => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy(),
+        { timeout: 12_000 },
+      );
+      window.removeEventListener('lr-permission-fixed', fixed);
+      expect(fixed).toHaveBeenCalledTimes(1);
+    }, 15_000);
 
     it('shows an error when the permission status fails to load', async () => {
       mockGetPermissionStatus.mockRejectedValue(new Error('boom'));
@@ -1243,6 +1314,15 @@ describe('SettingsIntegrationsTab', () => {
     await waitFor(() => screen.getByText(/No integrations configured yet/));
   });
 
+  it('viewer without settings:write: permission message, no request, no empty state, no Add button', async () => {
+    mockCan = p => p !== 'settings:write';
+    renderIntegrations();
+    await screen.findByText("You don't have permission to view integrations.");
+    expect(mockGetIntegrations).not.toHaveBeenCalled();
+    expect(screen.queryByText(/No integrations configured yet/)).toBeNull();
+    expect(screen.queryByText('Add Integration')).toBeNull();
+  });
+
   it('shows Add Integration button', async () => {
     renderIntegrations();
     await waitFor(() => screen.getByRole('button', { name: /Add Integration/i }));
@@ -1576,6 +1656,22 @@ describe('SettingsCatalogTab', () => {
     mockProbeRepo.mockResolvedValue({ ok: true });
   });
 
+  it('viewer without settings:write: write controls are disabled', async () => {
+    mockCan = p => p !== 'settings:write';
+    renderCatalog();
+    await waitFor(() => screen.getByText(/Refresh/));
+    for (const b of screen.getAllByRole('button')) expect((b as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByPlaceholderText('https://example.com/catalog/') as HTMLInputElement).disabled).toBe(true);
+  });
+
+  it('repo table scrolls horizontally on narrow screens instead of clipping', async () => {
+    renderCatalog();
+    const url = await screen.findByText(/Routerly-Providers/);
+    const scroller = url.closest('div[style*="overflow-x: auto"]') as HTMLElement | null;
+    expect(scroller).not.toBeNull();
+    expect(scroller!.firstElementChild!.getAttribute('style')).toContain('min-width: 720px');
+  });
+
   it('shows spinner while loading', () => {
     mockGetSettings.mockReturnValue(new Promise(() => {}));
     renderCatalog();
@@ -1603,6 +1699,13 @@ describe('SettingsCatalogTab', () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, providerRepos: [] } as never);
     renderCatalog();
     await waitFor(() => screen.getByText(/No repositories configured/));
+  });
+
+  it('does not show the empty-repos message when settings failed to load (ROUT-459)', async () => {
+    mockGetSettings.mockRejectedValue(new Error('Required permission: settings:read'));
+    renderCatalog();
+    await waitFor(() => screen.getByText(/Required permission: settings:read/));
+    expect(screen.queryByText(/No repositories configured/)).toBeNull();
   });
 
   it('Refresh button calls refreshCatalog', async () => {
@@ -1950,7 +2053,7 @@ describe('SettingsAboutTab', () => {
 
   it('renders version', async () => {
     renderAbout();
-    await waitFor(() => expect(screen.queryByText('v0.3.0')).not.toBeNull());
+    await waitFor(() => expect(screen.queryAllByText('v0.3.0').length).toBeGreaterThan(0));
   });
 
   it('renders Node.js and Platform info', async () => {
@@ -2014,6 +2117,27 @@ describe('SettingsAboutTab', () => {
     } as never);
     renderAbout();
     await waitFor(() => expect(screen.queryByText('Up to date')).not.toBeNull());
+  });
+
+  it('shows the installed version as Current version even when the check is disabled, and not "Up to date"', async () => {
+    mockGetSystemInfo.mockResolvedValue({
+      ...baseSystemInfo,
+      updateInfo: { available: false, currentVersion: '0.3.0', latestVersion: '', checkedAt: '', status: 'disabled' },
+    } as never);
+    renderAbout();
+    await waitFor(() => expect(screen.queryByText('Update check is disabled on this instance.')).not.toBeNull());
+    expect(screen.queryByText('Up to date')).toBeNull();
+    expect(screen.getAllByText('v0.3.0').length).toBe(2);
+  });
+
+  it('shows the error and not "Up to date" when the check failed', async () => {
+    mockGetSystemInfo.mockResolvedValue({
+      ...baseSystemInfo,
+      updateInfo: { available: false, currentVersion: '0.3.0', latestVersion: '', checkedAt: 'x', status: 'error', error: 'GitHub API returned 403' },
+    } as never);
+    renderAbout();
+    await waitFor(() => expect(screen.queryByText('Update check failed: GitHub API returned 403')).not.toBeNull());
+    expect(screen.queryByText('Up to date')).toBeNull();
   });
 
   it('does NOT show "Last checked" when checkedAt is falsy', async () => {

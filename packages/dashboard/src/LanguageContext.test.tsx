@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, waitFor, act } from '@testing-library/react';
 import i18n from './i18n';
 
-const auth = vi.hoisted(() => ({ user: null as { language?: string } | null, updateUser: vi.fn() }));
+const auth = vi.hoisted(() => ({ user: null as { language?: string } | null, updateUser: vi.fn(), can: (_p: string): boolean => true }));
 vi.mock('./AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('./api', () => ({ getMe: vi.fn(), getSettings: vi.fn(), updateMyLanguage: vi.fn().mockResolvedValue(undefined) }));
 
@@ -21,6 +21,7 @@ const browser = (langs: string[], first = langs[0] ?? '') => {
 
 beforeEach(() => {
   auth.user = null;
+  auth.can = () => true;
   localStorage.setItem('lr_token', 't');
   vi.mocked(getSettings).mockResolvedValue({ defaultLanguage: 'fr' } as never);
   vi.mocked(getMe).mockResolvedValue({} as never);
@@ -70,6 +71,13 @@ describe('LanguageProvider resolution', () => {
     mount();
     await waitFor(() => expect(getSettings).toHaveBeenCalled());
     expect(i18n.language).toBe('en');
+  });
+  it('does not read instance default without settings:read', async () => {
+    browser(['xx']);
+    auth.can = () => false;
+    mount();
+    await new Promise(r => setTimeout(r, 20));
+    expect(getSettings).not.toHaveBeenCalled();
   });
   it('EC5 settings read failure continues silently', async () => {
     browser(['xx']);

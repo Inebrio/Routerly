@@ -67,7 +67,8 @@ export class VertexAdapter extends OpenAIAdapter {
     const token    = saKey ? await getGoogleAccessToken(saKey) : (model.apiKey ?? '');
     const project  = model.vertexProjectId ?? '';
     const location = model.vertexLocation  ?? 'us-central1';
-    const baseURL  = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${project}/locations/${location}/endpoints/openapi`;
+    const host     = model.endpoint?.replace(/\/$/, '') || `https://${location}-aiplatform.googleapis.com`;
+    const baseURL  = `${host}/v1beta1/projects/${project}/locations/${location}/endpoints/openapi`;
     return new OpenAI({
       apiKey:   token,
       baseURL,

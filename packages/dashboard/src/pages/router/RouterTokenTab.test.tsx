@@ -4,6 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { RouterTokenTab, LabelInput } from './RouterTokenTab';
 
+let mockOnly: string | null = null;
+vi.mock('../../AuthContext', () => ({
+  useAuth: () => ({ can: (perm: string) => (mockOnly ? perm === mockOnly : true) }),
+}));
+
 vi.mock('../../api', () => ({
   createRouterToken: vi.fn(),
   updateRouterToken: vi.fn(),
@@ -70,7 +75,7 @@ beforeEach(() => {
   mockDeleteRouterToken.mockResolvedValue(undefined);
 });
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => { vi.clearAllMocks(); mockOnly = null; });
 
 // ── null router guard ────────────────────────────────────────────────────────
 
@@ -662,5 +667,21 @@ describe('RouterTokenTab — delete setRouter callback', () => {
       const result = updater2(null);
       expect(result).toBeNull();
     }
+  });
+});
+
+describe('RouterTokenTab — permission gating', () => {
+  it.each(['token:read', 'router:read'])('hides New Token and row actions with only %s', (perm) => {
+    mockOnly = perm;
+    renderTab();
+    expect(screen.getByText('sk-rt-abcd')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /new/i })).toBeNull();
+    expect(screen.queryByTitle(/revoke|edit/i)).toBeNull();
+  });
+
+  it.each(['token:write', 'router:write'])('shows New Token with only %s', (perm) => {
+    mockOnly = perm;
+    renderTab();
+    expect(screen.getByRole('button', { name: /new/i })).toBeInTheDocument();
   });
 });

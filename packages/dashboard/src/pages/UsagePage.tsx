@@ -4,6 +4,7 @@ import type { TFunction } from 'i18next';
 import { useNavigate } from 'react-router-dom';
 import { Star, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { CALL_TYPES, REQUEST_TYPES, requestTypeLabel, type RequestType } from '@routerly/shared';
+import { useAuth } from '../AuthContext.js';
 import { getUsage, getRouters, getModels, type UsageStats, type Router, type Model } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker';
@@ -73,6 +74,8 @@ const ALL_TIME: DateRange = { from: '', to: '', label: 'All time' };
 export function UsagePage() {
   const { t } = useTranslation();
   const providerLabel = useProviderLabels();
+  const { can } = useAuth();
+  const canReport = can('report:read');
   const [stats, setStats]               = useState<UsageStats | null>(null);
   const [routers, setRouters]         = useState<Router[]>([]);
   const [allModels, setAllModels]       = useState<Model[]>([]);
@@ -147,7 +150,7 @@ export function UsagePage() {
     // ponytail: fetch stable model list once for filter options so the dropdown
     // does not collapse when a model filter is active (server-filtered records
     // would otherwise shrink the option list)
-    getModels().then(setAllModels).catch(console.error);
+    if (can('model:read')) getModels().then(setAllModels).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -155,7 +158,8 @@ export function UsagePage() {
     setNewRowIds(new Set());
   }, [dateRange, page, pageSize, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter, sessionId, endUserId, tagFilter]);
 
-  const fetchStats = useCallback(() => {
+  const fetchStats = useCallback((): Promise<void> => {
+    if (!canReport) return Promise.resolve();
     const prevMax = latestTimestampRef.current;
     let from = dateRange.from || undefined;
     let to = dateRange.to || undefined;
@@ -217,6 +221,7 @@ export function UsagePage() {
   // Savings over the same window and the same filters, one page of records asked
   // for because only the aggregates are read here (T209).
   useEffect(() => {
+    if (!canReport) return;
     let from = dateRange.from || undefined;
     let to = dateRange.to || undefined;
     const recentPreset = RECENT_PRESETS.find(p => p.label === dateRange.label);
@@ -383,6 +388,10 @@ export function UsagePage() {
       return modelSortDir === 'asc' ? cmp : -cmp;
     });
   }, [rankedRows, modelSortKey, modelSortDir]);
+
+  if (!canReport) {
+    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>{t('overview.noPermission')}</div>;
+  }
 
   return (
     <>

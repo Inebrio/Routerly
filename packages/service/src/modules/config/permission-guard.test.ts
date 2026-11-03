@@ -187,6 +187,7 @@ describe('AC1-3 — startup guard', () => {
 
     expect(exitSpy).toHaveBeenCalledWith(1)
     expect(errSpy.mock.calls.some(c => String(c[0]).includes('/test/config/users.json'))).toBe(true)
+    expect(errSpy.mock.calls.some(c => String(c[0]).includes('Recover with: chmod 600 /test/config/users.json'))).toBe(true)
     expect(mockChmod).not.toHaveBeenCalled()
     exitSpy.mockRestore(); errSpy.mockRestore()
   })

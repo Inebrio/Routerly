@@ -34,11 +34,17 @@ vi.mock('../components/SearchableSelect', () => ({
 // everything else the component asks `can()` about is granted.
 const mockCanManage = true;
 let mockCanWriteModels = true;
+let mockCanReadModels = true;
+let mockCanReadReport = true;
+let mockCanReadConnections = true;
 vi.mock('../AuthContext', () => ({
   useAuth: () => ({
     can: (p: string) => {
       if (p === 'resilience:manage') return mockCanManage;
       if (p === 'model:write') return mockCanWriteModels;
+      if (p === 'model:read') return mockCanReadModels;
+      if (p === 'report:read') return mockCanReadReport;
+      if (p === 'connections:read') return mockCanReadConnections;
       return true;
     },
   }),
@@ -275,6 +281,49 @@ describe('ModelsPage — models list', () => {
 
 // ── ConfirmDialog / delete flow ────────────────────────────────────────────────
 
+describe('ModelsPage — without model:read', () => {
+  it('shows the permission message and does not call the models, connections or health APIs', async () => {
+    mockCanReadModels = false;
+    try {
+      renderPage();
+      expect(screen.getByText("You don't have permission to view models.")).toBeTruthy();
+      expect(getModels).not.toHaveBeenCalled();
+      expect(getConnections).not.toHaveBeenCalled();
+      expect(getProviderHealth).not.toHaveBeenCalled();
+    } finally {
+      mockCanReadModels = true;
+    }
+  });
+});
+
+describe('ModelsPage — without report:read / connections:read', () => {
+  it('does not call the health API without report:read, still loads models', async () => {
+    mockCanReadReport = false;
+    try {
+      mockGetModels.mockResolvedValue([makeModel()]);
+      renderPage();
+      await waitFor(() => screen.getByText('gpt-4o'));
+      expect(getProviderHealth).not.toHaveBeenCalled();
+      expect(getConnections).toHaveBeenCalled();
+    } finally {
+      mockCanReadReport = true;
+    }
+  });
+
+  it('does not call the connections API without connections:read, still loads models', async () => {
+    mockCanReadConnections = false;
+    try {
+      mockGetModels.mockResolvedValue([makeModel()]);
+      renderPage();
+      await waitFor(() => screen.getByText('gpt-4o'));
+      expect(getConnections).not.toHaveBeenCalled();
+      expect(getProviderHealth).toHaveBeenCalled();
+    } finally {
+      mockCanReadConnections = true;
+    }
+  });
+});
+
 describe('ModelsPage — delete with ConfirmDialog', () => {
   it('shows confirm dialog when delete button clicked', async () => {
     mockGetModels.mockResolvedValue([makeModel()]);
@@ -394,6 +443,16 @@ describe('ModelsPage — health columns (merged table)', () => {
     expect(screen.getByText(/Requests/)).toBeTruthy();
     expect(screen.getByText(/Last success/)).toBeTruthy();
     expect(screen.getByText(/Cooldown/)).toBeTruthy();
+  });
+
+  it('health table uses the compact layout so it fits 1280px (ROUT-464)', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
+    const th = screen.getByText(/Last success/).closest('th')!;
+    expect(th.closest('table')!.className).toContain('table-compact');
+    expect(th.style.whiteSpace).toBe('');
   });
 
   it('shows Healthy badge when health data matches model', async () => {

@@ -292,26 +292,42 @@ while [ $_i -lt ${#_ORIG_ARGS[@]} ]; do
 done
 
 # ── Resolve download URL from channel or version ──────────────────────────────
+# GET a URL and print the body (empty on any failure).
+http_get() {
+  if need_cmd curl; then curl -fsSL "$1" 2>/dev/null || true
+  elif need_cmd wget; then wget -qO- "$1" 2>/dev/null || true
+  else die "Neither 'curl' nor 'wget' found. Please install one and retry."
+  fi
+}
+
 resolve_download_url() {
   local api_base="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases"
-  local api_url release_json
+  local release_json=""
 
   if [ -n "$INSTALL_VERSION" ]; then
     info "Resolving version ${BOLD}${INSTALL_VERSION}${RESET}..."
-    api_url="${api_base}/tags/${INSTALL_VERSION}"
+    release_json="$(http_get "${api_base}/tags/${INSTALL_VERSION}")"
   else
     case "$INSTALL_CHANNEL" in
       latest|current)
         info "Resolving channel ${BOLD}${INSTALL_CHANNEL}${RESET}..."
-        api_url="${api_base}/latest"
+        # /releases/latest skips pre-releases, which hides every 0.3+ build, so
+        # pick the highest plain vX.Y.Z tag from the release list instead.
+        local newest
+        newest="$(http_get "${api_base}?per_page=100" | \
+          grep -o '"tag_name": *"v[0-9]*\.[0-9]*\.[0-9]*"' | \
+          sed 's/.*"\(v[^"]*\)"$/\1/' | sort -V | tail -1 || true)"
+        if [ -n "$newest" ]; then
+          release_json="$(http_get "${api_base}/tags/${newest}")"
+        else
+          release_json="$(http_get "${api_base}/latest")"
+        fi
         ;;
-      next)
-        info "Resolving channel ${BOLD}next${RESET}..."
-        api_url="${api_base}/tags/channel-next"
-        ;;
-      develop)
-        info "Resolving channel ${BOLD}develop${RESET}..."
-        api_url="${api_base}/tags/channel-develop"
+      next|develop)
+        info "Resolving channel ${BOLD}${INSTALL_CHANNEL}${RESET}..."
+        release_json="$(http_get "${api_base}/tags/channel-${INSTALL_CHANNEL}")"
+        # Releases published before the pointer tags were renamed use the bare name.
+        [ -n "$release_json" ] || release_json="$(http_get "${api_base}/tags/${INSTALL_CHANNEL}")"
         ;;
       *)
         die "Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next, develop"
@@ -319,24 +335,23 @@ resolve_download_url() {
     esac
   fi
 
-  release_json=""
-  if need_cmd curl; then
-    release_json="$(curl -fsSL "$api_url" 2>/dev/null || true)"
-  elif need_cmd wget; then
-    release_json="$(wget -qO- "$api_url" 2>/dev/null || true)"
-  else
-    die "Neither 'curl' nor 'wget' found. Please install one and retry."
-  fi
-
+  # The pointer releases (channel-next/develop) carry no tag of their own: the
+  # real version is in the title "Routerly next (→ vX.Y.Z)".
   RELEASE_TAG=""
   if [ -n "$release_json" ]; then
-    RELEASE_TAG="$(echo "$release_json" | \
-      grep -o '"tag_name": *"[^"]*"' | head -1 | \
-      sed 's/"tag_name": *"//' | sed 's/"$//')"
+    RELEASE_TAG="$(echo "$release_json" | grep -o '"name": *"Routerly [a-z]* (→ v[^)"]*)"' | head -1 | \
+      sed 's/.*→ \(v[^)]*\)).*/\1/' || true)"
+    [ -n "$RELEASE_TAG" ] || RELEASE_TAG="$(echo "$release_json" | \
+      grep -o '"tag_name": *"[^"]*"' | head -1 | sed 's/"tag_name": *"//;s/"$//')"
   fi
 
   if [ -n "$RELEASE_TAG" ]; then
-    TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
+    # The attached routerly-X.Y.Z.tar.gz carries the stamped package versions
+    # (/health, --version); the git archive of the tag is un-stamped.
+    TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/${RELEASE_TAG}/routerly-${RELEASE_TAG#v}.tar.gz"
+    if ! http_head_ok "$TARBALL_URL"; then
+      TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
+    fi
   else
     if [ -n "$INSTALL_VERSION" ]; then
       die "Could not find release '${INSTALL_VERSION}' on GitHub. Check the version tag and retry."
@@ -346,6 +361,12 @@ resolve_download_url() {
     fi
     warn "Could not fetch release from GitHub API. Falling back to main branch..."
     TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/heads/main.tar.gz"
+  fi
+}
+
+http_head_ok() {
+  if need_cmd curl; then curl -fsSLI -o /dev/null "$1" 2>/dev/null
+  else wget -q --spider "$1" 2>/dev/null
   fi
 }
 

@@ -146,7 +146,7 @@ Examples:
         console.log('');
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
-          console.error(chalk.red('Client configurator module is disabled on the service. Enable it with: routerly modules enable clients'));
+          console.error(chalk.red('Client configurator is not available on this service.'));
         } else {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         }
@@ -307,10 +307,10 @@ Examples:
       }
       try {
         const res = await api<{ enabled: boolean; clients: unknown[] }>('GET', '/api/clients');
-        console.log(chalk.green(`✓ Client configurator module enabled (${res.clients.length} client(s) registered).`));
+        console.log(chalk.green(`✓ Client configurator available (${res.clients.length} client(s) registered).`));
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
-          console.log(chalk.yellow('  Client configurator module is disabled on the service.'));
+          console.log(chalk.yellow('  Client configurator is not available on this service.'));
         } else {
           console.error(chalk.red(`✗ Could not check client configurator module: ${(err as Error).message}`));
           hadError = true;

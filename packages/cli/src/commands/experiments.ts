@@ -60,9 +60,6 @@ function fail(message: string): never {
 
 function handleError(err: unknown): never {
   if (err instanceof ApiError) {
-    if (err.message === 'module_disabled') {
-      fail('The experiments module is disabled. Enable it with: routerly modules enable experiments');
-    }
     fail(`Error: ${err.message}`);
   }
   return fail(String(err));

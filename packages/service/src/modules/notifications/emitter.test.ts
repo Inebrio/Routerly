@@ -285,6 +285,26 @@ describe('per-router override + cooldown (preserved)', () => {
     );
   });
 
+  it('merges per-router override from details.routerId when opts.routerId is absent (ROUT-335)', async () => {
+    settings(
+      { channels: [{ id: 'proj-ch', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
+      { routers: [{ id: 'p1', notifications: { channels: ['proj-ch'] } }] },
+    );
+    await emitEvent('provider.error', 'warning', { routerId: 'p1' });
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'proj-ch' }), expect.anything(), undefined,
+    );
+  });
+
+  it('ignores a non-string details.routerId for the override (ROUT-335)', async () => {
+    settings(
+      { channels: [{ id: 'proj-ch', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
+      { routers: [{ id: 'p1', notifications: { channels: ['proj-ch'] } }] },
+    );
+    await emitEvent('provider.error', 'warning', { routerId: 42 });
+    expect(mockDispatch).not.toHaveBeenCalled();
+  });
+
   it('per-router override referencing a non-external (unknown) channel id is ignored', async () => {
     settings(
       { channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
@@ -365,6 +385,16 @@ describe('per-router override + cooldown (preserved)', () => {
 });
 
 describe('router-scoped channel filtering (lines 165-166)', () => {
+  it('skips a scoped channel for an event carrying the router only in details', async () => {
+    settings(
+      { channels: [{ id: 'scoped', provider: 'webhook', url: 'https://x', events: ['provider.error'], routers: ['p1'] }] },
+    );
+    await emitEvent('provider.error', 'critical', { routerId: 'p2' });
+    expect(mockDispatch).not.toHaveBeenCalled();
+    await emitEvent('provider.error', 'critical', { routerId: 'p1' });
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
+  });
+
   it('dispatches when channel has routers filter and event is from one of them (line 166 if branch=0)', async () => {
     // Channel has routers: ['p1'] and event is from router p1 → dispatch (branch=0 = includes → not returned)
     settings(

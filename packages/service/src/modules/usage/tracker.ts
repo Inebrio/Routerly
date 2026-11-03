@@ -68,7 +68,8 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     priceInput: model.cost.inputPerMillion,
     priceOutput: model.cost.outputPerMillion,
   };
-  const cost = model === undefined ? null : calculateCost(
+  // A failed/blocked call with no resolved model sent nothing upstream: it cost nothing.
+  const cost = model === undefined ? (params.outcome === 'success' ? null : 0) : calculateCost(
     params.inputTokens,
     params.outputTokens,
     model,

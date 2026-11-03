@@ -106,15 +106,6 @@ describe('experiments list', () => {
     expect(lines.join('\n')).toContain('No experiments found');
   });
 
-  it('names the module when it is disabled', async () => {
-    const { ApiError } = await import('../api.js');
-    mockApi.mockRejectedValueOnce(new ApiError(403, 'module_disabled'));
-    const exitSpy = expectExit();
-    await expect(makeCmd().parseAsync(['node', 'experiments', 'list'])).rejects.toThrow('exit');
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('routerly modules enable experiments'));
-  });
-
   it('exits 1 on a non-ApiError', async () => {
     mockApi.mockRejectedValueOnce(new Error('network fail'));
     const exitSpy = expectExit();

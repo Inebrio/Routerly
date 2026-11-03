@@ -72,50 +72,8 @@ interface GithubRelease {
   draft: boolean;
 }
 
-function fetchAllReleases(): Promise<GithubRelease[]> {
+function githubGet<T>(path: string, failure: (status: number | undefined) => string): Promise<T> {
   return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'api.github.com',
-      path: `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases?per_page=100`,
-      method: 'GET',
-      headers: {
-        'User-Agent': `routerly-update-checker/${GITHUB_OWNER}`,
-        'Accept': 'application/vnd.github+json',
-      },
-      timeout: 10_000,
-    };
-
-    const req = httpsRequest(options, (res) => {
-      const chunks: Buffer[] = [];
-      res.on('data', (c: Buffer) => chunks.push(c));
-      res.on('end', () => {
-        if (res.statusCode === 200) {
-          try {
-            resolve(JSON.parse(Buffer.concat(chunks).toString('utf-8')) as GithubRelease[]);
-          } catch (e) { reject(e); }
-        } else {
-          reject(new Error(`GitHub API returned ${res.statusCode}`));
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('GitHub API request timed out')); });
-    req.end();
-  });
-}
-
-// Rolling prerelease channels are served off a tag renamed to avoid colliding
-// with the branches of the same name (`next`, `develop`) — see release.yml's
-// next-pointer/develop-pointer jobs.
-const ROLLING_CHANNEL_TAGS: Record<string, string> = { next: 'channel-next', develop: 'channel-develop' };
-
-function fetchRelease(channel: string): Promise<GithubRelease> {
-  return new Promise((resolve, reject) => {
-    const path = (channel === 'latest' || channel === 'current')
-      ? `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`
-      : `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${ROLLING_CHANNEL_TAGS[channel] ?? channel}`;
-
     const options = {
       hostname: 'api.github.com',
       path,
@@ -133,12 +91,10 @@ function fetchRelease(channel: string): Promise<GithubRelease> {
       res.on('end', () => {
         if (res.statusCode === 200) {
           try {
-            resolve(JSON.parse(Buffer.concat(chunks).toString('utf-8')) as GithubRelease);
-          } catch (e) {
-            reject(e);
-          }
+            resolve(JSON.parse(Buffer.concat(chunks).toString('utf-8')) as T);
+          } catch (e) { reject(e); }
         } else {
-          reject(new Error(`GitHub API returned ${res.statusCode} for channel "${channel}"`));
+          reject(new Error(failure(res.statusCode)));
         }
       });
     });
@@ -149,6 +105,50 @@ function fetchRelease(channel: string): Promise<GithubRelease> {
   });
 }
 
+const REPO_API = `/repos/${GITHUB_OWNER}/${GITHUB_REPO}`;
+
+function fetchAllReleases(): Promise<GithubRelease[]> {
+  return githubGet<GithubRelease[]>(`${REPO_API}/releases?per_page=100`, s => `GitHub API returned ${s}`);
+}
+
+// Rolling prerelease channels are served off a tag renamed to avoid colliding
+// with the branches of the same name (`next`, `develop`) — see release.yml's
+// next-pointer/develop-pointer jobs. Until those jobs have run, only the legacy
+// release tagged `next` exists, so it stays as a fallback.
+const ROLLING_CHANNEL_TAGS: Record<string, string> = { next: 'channel-next', develop: 'channel-develop' };
+
+/**
+ * `latest`/`current`: the highest plain `vX.Y.Z` release. GitHub's
+ * `/releases/latest` skips pre-releases, which would pin every channel to the
+ * last non-pre-release (v0.2.0) while all 0.3+ releases are flagged as such;
+ * it stays as the fallback when the list is unavailable.
+ */
+async function fetchNewestRelease(channel: string): Promise<GithubRelease> {
+  const failure = (s: number | undefined) => `GitHub API returned ${s} for channel "${channel}"`;
+  try {
+    const list = await fetchAllReleases();
+    let best: GithubRelease | undefined;
+    for (const r of Array.isArray(list) ? list : []) {
+      if (r.draft || !/^v\d+\.\d+\.\d+$/.test(r.tag_name)) continue;
+      if (!best || isNewer(r.tag_name, best.tag_name)) best = r;
+    }
+    if (best) return best;
+  } catch { /* fall through to /releases/latest */ }
+  return githubGet<GithubRelease>(`${REPO_API}/releases/latest`, failure);
+}
+
+async function fetchRelease(channel: string): Promise<GithubRelease> {
+  if (channel === 'latest' || channel === 'current') return fetchNewestRelease(channel);
+  const failure = (s: number | undefined) => `GitHub API returned ${s} for channel "${channel}"`;
+  const tag = ROLLING_CHANNEL_TAGS[channel];
+  if (!tag) return githubGet<GithubRelease>(`${REPO_API}/releases/tags/${channel}`, failure);
+  try {
+    return await githubGet<GithubRelease>(`${REPO_API}/releases/tags/${tag}`, failure);
+  } catch {
+    return githubGet<GithubRelease>(`${REPO_API}/releases/tags/${channel}`, failure);
+  }
+}
+
 // ─── Singleton ────────────────────────────────────────────────────────────────
 
 export class UpdateChecker {
@@ -156,6 +156,7 @@ export class UpdateChecker {
   private _timer: ReturnType<typeof setInterval> | null = null;
   private _currentVersion = '';
   private _channel = 'latest';
+  private _enabled = false;
 
   /** Normalise a raw channel value (name, tag, `undefined` or `''`) and store it. */
   private setChannel(channel: string | undefined): void {
@@ -163,10 +164,19 @@ export class UpdateChecker {
     this._channel = normalized.channel;
   }
 
-  /** Start periodic checking. Safe to call multiple times (idempotent). */
-  start(currentVersion: string, channel: string): void {
+  /**
+   * Record the running version and channel without polling, so a disabled
+   * checker still reports the installed version truthfully.
+   */
+  configure(currentVersion: string, channel: string): void {
     this._currentVersion = currentVersion;
     this.setChannel(channel);
+  }
+
+  /** Start periodic checking. Safe to call multiple times (idempotent). */
+  start(currentVersion: string, channel: string): void {
+    this.configure(currentVersion, channel);
+    this._enabled = true;
 
     // Initial check (fire-and-forget, errors are swallowed)
     void this.check();
@@ -186,6 +196,7 @@ export class UpdateChecker {
   /** Force an immediate check and return the result. */
   async check(): Promise<UpdateInfo> {
     const channel = this._channel;
+    if (!this._enabled) return this.disabledInfo();
     try {
       const release = await fetchRelease(channel);
       const rawTag = release.tag_name.startsWith('v') ? release.tag_name.slice(1) : release.tag_name;
@@ -202,23 +213,37 @@ export class UpdateChecker {
         channel,
         releaseUrl: release.html_url,
         checkedAt: new Date().toISOString(),
+        status: 'ok',
       };
       this._result = result;
       await this.maybeAnnounce(result);
       return result;
-    } catch {
-      // Network errors, rate limits, etc. — return a safe fallback
-      const fallback: UpdateInfo = {
+    } catch (err) {
+      // Network errors, rate limits, etc. — reported as such, never as "up to date"
+      const failed: UpdateInfo = {
         available: false,
         currentVersion: this._currentVersion,
-        latestVersion: this._currentVersion,
+        latestVersion: '',
         channel,
         checkedAt: new Date().toISOString(),
+        status: 'error',
+        error: err instanceof Error ? err.message : String(err),
       };
-      // Only overwrite cached result if we have none yet
-      if (!this._result) this._result = fallback;
-      return this._result;
+      // Keep a previous good result cached (it still drives the update banner)
+      if (!this._result) this._result = failed;
+      return failed;
     }
+  }
+
+  private disabledInfo(): UpdateInfo {
+    return {
+      available: false,
+      currentVersion: this._currentVersion,
+      latestVersion: '',
+      channel: this._channel,
+      checkedAt: '',
+      status: 'disabled',
+    };
   }
 
   /**
@@ -300,7 +325,7 @@ export class UpdateChecker {
 
   /** Return the last cached result, or null if no check has completed yet. */
   getLastResult(): UpdateInfo | null {
-    return this._result;
+    return this._result ?? (this._enabled ? null : this.disabledInfo());
   }
 
   /** Stop the background interval (used in tests). */

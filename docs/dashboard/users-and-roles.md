@@ -18,14 +18,14 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 | `model:read` | View registered models |
 | `model:write` | Create, edit, and delete models |
 | `user:read` | View dashboard users |
-| `user:write` | Create, edit, and delete users, assign roles |
+| `user:write` | Create, edit, and delete users, assign roles. You can only grant, edit or remove users and roles whose permissions you hold yourself; otherwise the action is refused with 403 |
 | `report:read` | View usage analytics and request logs |
 | `settings:read` | View global settings |
 | `settings:write` | Change global settings |
 | `notification:write` | Manage notification channels and rules |
-| `token:read` | View router tokens |
-| `token:write` | Create and revoke router tokens |
-| `role:write` | Create, edit, and delete custom roles |
+| `token:read` | View router tokens (the token list in router responses is hidden without `token:read`, `token:write` or `router:write`) |
+| `token:write` | Create, edit and revoke router tokens (also granted by `router:write`) |
+| `role:write` | Create, edit, and delete custom roles (also granted by `user:write`) |
 | `audit:read` | Read the audit log |
 | `modules:read` | View which modules are installed and enabled |
 | `modules:manage` | Enable and disable modules |
@@ -39,9 +39,6 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 | `optimizers:manage` | Change a router's optimizer pipeline |
 | `experiments:read` | View [experiments](./experiments.md) and their metrics |
 | `experiments:manage` | Create, edit, and delete experiments, manage their tokens |
-
-Permissions gated by a module (`experiments:*`, for instance) still answer
-`403` while that module is disabled, whatever the role says.
 
 ---
 

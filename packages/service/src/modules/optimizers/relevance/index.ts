@@ -125,8 +125,8 @@ export const relevanceOptimizer = {
 export const relevanceModule: RouterlyModule = defineModule({
   manifest: {
     id: 'optimizer-relevance',
-    version: '0.5.4',
-    dependsOn: { 'optimizer-core': '^0.5.4' },
+    version: '0.6.0',
+    dependsOn: { 'optimizer-core': '^0.6.0' },
   },
   register({ container }) {
     container.resolve(OPTIMIZER_REGISTRY).register(relevanceOptimizer)

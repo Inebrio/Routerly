@@ -1,9 +1,9 @@
 import type { GrafanaIntegration } from '@routerly/shared';
 import type { getMetricsSnapshot } from './metrics-snapshot.js';
+import { encodeRemoteWrite, remoteWriteHeaders } from './remote-write.js';
 import {
   percentile,
   routerBudgetRatio,
-  renderMetric,
   type Metric,
   type Sample,
 } from './metrics-snapshot.js';
@@ -36,15 +36,10 @@ export async function pushGrafana(integration: GrafanaIntegration, snapshot: Sna
     { name: 'routerly_budget_used_ratio', help: 'Budget used ratio per router (0-1)', type: 'gauge', samples: budgetSamples },
   ];
 
-  const body = metrics.map(renderMetric).join('\n\n').concat('\n');
-  const auth = Buffer.from(`${integration.username}:${integration.apiKey}`).toString('base64');
-
-  await fetch(integration.url, {
+  const res = await fetch(integration.url, {
     method: 'POST',
-    headers: {
-      'Authorization': `Basic ${auth}`,
-      'Content-Type': 'text/plain; version=0.0.4; charset=utf-8',
-    },
-    body,
+    headers: remoteWriteHeaders(integration.username, integration.apiKey),
+    body: encodeRemoteWrite(metrics),
   });
+  if (!res.ok) throw new Error(`Grafana remote_write returned HTTP ${res.status}`);
 }

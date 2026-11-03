@@ -89,6 +89,7 @@ export const semanticIntentPolicy: PolicyFn = async ({
   // The dashboard saves embedding_provider/embedding_model but not apiKey/endpoint.
   // Look them up from models.json so classifyIntent doesn't get a 401.
   let resolvedCfg: SemanticIntentConfig = cfg;
+  let registeredInputCost = 0;
   {
     // routing-adjacent: embedding model must be on an enabled connection
     const allModels = await listEffectiveModels();
@@ -103,6 +104,7 @@ export const semanticIntentPolicy: PolicyFn = async ({
     const upstreamModel = rawUpstream === modelEntry.id && rawUpstream.includes('/')
       ? rawUpstream.split('/').slice(1).join('/')
       : rawUpstream;
+    registeredInputCost = modelEntry.cost?.inputPerMillion ?? 0;
     resolvedCfg = {
       ...cfg,
       embedding_model: upstreamModel,
@@ -122,7 +124,9 @@ export const semanticIntentPolicy: PolicyFn = async ({
     // in the dashboard alongside llm-policy routing calls.
     // The embedding model is not in models.json, so we build a synthetic ModelConfig.
     if (routerId) {
-      const inputPerMillion = await getEmbeddingInputCost(cfg.embedding_provider, cfg.embedding_model);
+      // Registered price first; catalog lookup uses the upstream name (the catalog is not keyed by registry id).
+      const inputPerMillion = registeredInputCost
+        || await getEmbeddingInputCost(cfg.embedding_provider, resolvedCfg.embedding_model);
       await trackUsage({
         routerId,
         model: {

@@ -6,7 +6,6 @@ import { EXPERIMENT_ROTATIONS, STICKY_KEYS } from '@routerly/shared';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
-import { isModuleEnabled } from '../../core/modules/registry.js';
 import { computeExperimentMetrics } from '../experiments/metrics.js';
 
 // ── Route-local auth helpers (mirrors api.ts/profiles.ts; no shared route-helper module exists) ──
@@ -29,13 +28,6 @@ function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply)
     return false;
   }
   return true;
-}
-
-async function checkModuleGate(reply: FastifyReply): Promise<boolean> {
-  const records = await readConfig('modules');
-  if (isModuleEnabled(records, 'experiments')) return true;
-  reply.status(403).send({ error: 'module_disabled', message: 'experiments module is disabled' });
-  return false;
 }
 
 /** The token value is written once, at creation, and never read back — same rule as router tokens. */
@@ -104,13 +96,11 @@ const patchSchema = z.object({
 export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/experiments', async (req, reply) => {
     if (!requirePerm(req, 'experiments:read', reply)) return;
-    if (!await checkModuleGate(reply)) return;
     return reply.send((await readConfig('experiments')).map(mask));
   });
 
   fastify.get<{ Params: { id: string } }>('/api/experiments/:id', async (req, reply) => {
     if (!requirePerm(req, 'experiments:read', reply)) return;
-    if (!await checkModuleGate(reply)) return;
     const found = (await readConfig('experiments')).find(e => e.id === req.params.id);
     if (!found) return reply.status(404).send({ error: 'Not found' });
     return reply.send(mask(found));
@@ -120,7 +110,6 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
   // it routes (T71), so the comparison needs no store of its own.
   fastify.get<{ Params: { id: string }; Querystring: { from?: string; to?: string } }>('/api/experiments/:id/metrics', async (req, reply) => {
     if (!requirePerm(req, 'experiments:read', reply)) return;
-    if (!await checkModuleGate(reply)) return;
     const found = (await readConfig('experiments')).find(e => e.id === req.params.id);
     if (!found) return reply.status(404).send({ error: 'Not found' });
     const [records, routers] = await Promise.all([readConfig('usage'), readConfig('routers')]);
@@ -143,7 +132,6 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post<{ Body: unknown }>('/api/experiments', async (req, reply) => {
     if (!requirePerm(req, 'experiments:manage', reply)) return;
-    if (!await checkModuleGate(reply)) return;
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: validationError(parsed.error) });
 
@@ -176,7 +164,6 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.patch<{ Params: { id: string }; Body: unknown }>('/api/experiments/:id', async (req, reply) => {
     if (!requirePerm(req, 'experiments:manage', reply)) return;
-    if (!await checkModuleGate(reply)) return;
     const parsed = patchSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: validationError(parsed.error) });
 
@@ -209,7 +196,6 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post<{ Params: { id: string } }>('/api/experiments/:id/tokens', async (req, reply) => {
     if (!requirePerm(req, 'experiments:manage', reply)) return;
-    if (!await checkModuleGate(reply)) return;
     const experiments = await readConfig('experiments');
     const idx = experiments.findIndex(e => e.id === req.params.id);
     if (idx === -1) return reply.status(404).send({ error: 'Not found' });
@@ -223,7 +209,6 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.delete<{ Params: { id: string; tokenId: string } }>('/api/experiments/:id/tokens/:tokenId', async (req, reply) => {
     if (!requirePerm(req, 'experiments:manage', reply)) return;
-    if (!await checkModuleGate(reply)) return;
     const experiments = await readConfig('experiments');
     const idx = experiments.findIndex(e => e.id === req.params.id);
     if (idx === -1) return reply.status(404).send({ error: 'Not found' });
@@ -238,7 +223,6 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.delete<{ Params: { id: string } }>('/api/experiments/:id', async (req, reply) => {
     if (!requirePerm(req, 'experiments:manage', reply)) return;
-    if (!await checkModuleGate(reply)) return;
     const experiments = await readConfig('experiments');
     const idx = experiments.findIndex(e => e.id === req.params.id);
     if (idx === -1) return reply.status(404).send({ error: 'Not found' });

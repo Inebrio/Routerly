@@ -41,7 +41,7 @@ beforeEach(() => {
 
 describe('pushGrafana', () => {
   it('POSTs to grafana url with Basic auth and text/plain body', async () => {
-    mockFetch.mockResolvedValue({ ok: true });
+    mockFetch.mockResolvedValue({ ok: true, status: 200 });
 
     await pushGrafana(integration, snapshot);
 
@@ -50,9 +50,18 @@ describe('pushGrafana', () => {
 
     const expectedAuth = 'Basic ' + Buffer.from('user1:grafana-key').toString('base64');
     expect((opts.headers as Record<string, string>)['Authorization']).toBe(expectedAuth);
-    expect((opts.headers as Record<string, string>)['Content-Type']).toContain('text/plain');
-    expect(typeof opts.body).toBe('string');
-    expect(opts.body as string).toContain('routerly_requests_total');
+    const h = opts.headers as Record<string, string>;
+    expect(h['Content-Type']).toBe('application/x-protobuf');
+    expect(h['Content-Encoding']).toBe('snappy');
+    expect(h['X-Prometheus-Remote-Write-Version']).toBe('0.1.0');
+    expect(Buffer.isBuffer(opts.body)).toBe(true);
+    // literal-only snappy: the series name is present verbatim in the payload
+    expect((opts.body as Buffer).toString('latin1')).toContain('routerly_requests_total');
+  });
+
+  it('throws on a non-2xx response', async () => {
+    mockFetch.mockResolvedValue({ ok: false, status: 400 });
+    await expect(pushGrafana(integration, snapshot)).rejects.toThrow('HTTP 400');
   });
 
   it('propagates fetch errors', async () => {
@@ -61,7 +70,7 @@ describe('pushGrafana', () => {
   });
 
   it('includes token, cost, duration and budget lines when maps/routers are non-empty', async () => {
-    mockFetch.mockResolvedValue({ ok: true });
+    mockFetch.mockResolvedValue({ ok: true, status: 200 });
     mockBudgetRatio.mockResolvedValue(0.5);
 
     const richSnapshot = {
@@ -80,9 +89,7 @@ describe('pushGrafana', () => {
     await pushGrafana(integration, richSnapshot);
 
     const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(opts.body as string).toContain('routerly_tokens_total');
-    expect(opts.body as string).toContain('routerly_cost_usd_total');
-    expect(opts.body as string).toContain('routerly_request_duration_p50_ms');
-    expect(opts.body as string).toContain('routerly_budget_used_ratio');
+    const text = (opts.body as Buffer).toString('latin1');
+    for (const n of ['routerly_tokens_total', 'routerly_cost_usd_total', 'routerly_request_duration_p50_ms', 'routerly_budget_used_ratio']) expect(text).toContain(n);
   });
 });

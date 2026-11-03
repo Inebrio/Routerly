@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { RouterLogsTab } from './RouterLogsTab';
 
+const mockCan = vi.hoisted(() => vi.fn((_p: string) => true));
+vi.mock('../../AuthContext', () => ({ useAuth: () => ({ can: mockCan }) }));
+
 vi.mock('../../api', () => ({
   getUsage: vi.fn(),
 }));
@@ -658,5 +661,16 @@ describe('RouterLogsTab — Router Calls card toggle to all', () => {
       const rows = document.querySelectorAll('tbody tr');
       expect(rows.length).toBe(4);
     });
+  });
+});
+
+describe('RouterLogsTab — without report:read', () => {
+  it('does not call getUsage', async () => {
+    mockCan.mockImplementation((p: string) => p !== 'report:read');
+    mockGetUsage.mockClear();
+    renderTab();
+    await new Promise(r => setTimeout(r, 50));
+    expect(mockGetUsage).not.toHaveBeenCalled();
+    mockCan.mockImplementation(() => true);
   });
 });

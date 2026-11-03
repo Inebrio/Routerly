@@ -122,7 +122,7 @@ Create a `docker-compose.yml`:
 ```yaml
 services:
   routerly:
-    image: inebrio/routerly:latest
+    image: inebrio/routerly:v0.5.3
     ports:
       - "3000:3000"
     volumes:
@@ -153,7 +153,7 @@ docker run -d \
   -v routerly_data:/data \
   -e ROUTERLY_HOME=/data \
   --restart unless-stopped \
-  inebrio/routerly:latest
+  inebrio/routerly:v0.5.3
 ```
 
 ### Option 2 — Build from source

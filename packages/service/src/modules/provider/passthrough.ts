@@ -51,3 +51,11 @@ export function forwardableResponseHeaders(headers: Headers | Record<string, str
   });
   return out;
 }
+
+/**
+ * Providers whose API has no `developer` role (Anthropic, Bedrock) read it as `system`.
+ * OpenAI-family providers keep it untouched: they accept it natively.
+ */
+export function developerAsSystem<T extends { role: string }>(messages: T[]): T[] {
+  return messages.map((m) => (m.role === 'developer' ? { ...m, role: 'system' } : m));
+}

@@ -1,5 +1,6 @@
 import type { TeamsChannelConfig } from '@routerly/shared';
 import type { NotificationPayload } from './slack.js';
+import { validateWebhookUrl } from '../url-guard.js';
 
 const SEVERITY_COLOR: Record<string, string> = {
   critical: 'attention',
@@ -8,6 +9,7 @@ const SEVERITY_COLOR: Record<string, string> = {
 };
 
 export async function sendTeams(cfg: TeamsChannelConfig, payload: NotificationPayload): Promise<void> {
+  validateWebhookUrl(cfg.webhookUrl);
   const color = SEVERITY_COLOR[payload.severity] ?? 'default';
   const facts = payload.details
     ? Object.entries(payload.details).map(([title, value]) => ({ title, value: String(value) }))

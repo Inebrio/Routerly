@@ -63,7 +63,10 @@ latest round.
 The window is resolved from `ctx.request.model` against the effective model
 list, held in a 30-second cache because `supports()` is synchronous and
 `listEffectiveModels()` is not. The first request after boot (or after a
-`resetContextWindowCache()`) sees a cold cache and skips the step once.
+`resetContextWindowCache()`) sees a cold cache and skips the step once. The cache
+is warmed at module registration and refreshed (awaited by the writer) on every
+write of `connections` or `instances`, so a model created through the API is
+honoured from the very next request.
 
 It used to read `ctx.attempt?.model?.contextWindow` instead. `optimizer.apply`
 runs in `request.preprocess`; `ctx.attempt` is assigned two phases later,

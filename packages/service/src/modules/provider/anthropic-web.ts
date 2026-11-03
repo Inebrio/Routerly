@@ -7,9 +7,8 @@ import type {
   StreamChunk,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { developerAsSystem } from './passthrough.js';
 import { decryptCredential } from '../../lib/crypto-cred.js';
-import { readConfig } from '../config/loader.js';
-import { isModuleEnabled } from '../../core/modules/registry.js';
 
 /**
  * Unofficial adapter for Claude web (claude.ai).
@@ -22,6 +21,14 @@ import { isModuleEnabled } from '../../core/modules/registry.js';
  * ⚠️  This adapter uses an internal, undocumented API that may break at any time.
  *     Using it may violate Anthropic's Terms of Service.
  */
+/** Join the text blocks of array content; fall back to JSON for anything else */
+function textOf(content: unknown): string {
+  if (Array.isArray(content) && content.every(b => b && typeof b === 'object' && (b as { type?: string }).type === 'text')) {
+    return content.map(b => (b as { text: string }).text).join('\n');
+  }
+  return JSON.stringify(content);
+}
+
 export class AnthropicWebAdapter implements ProviderAdapter {
   /** Organization ID per session cookie — the adapter is a singleton shared by every connection */
   private readonly orgIds = new Map<string, string>();
@@ -136,7 +143,7 @@ export class AnthropicWebAdapter implements ProviderAdapter {
   private buildPrompt(request: ChatCompletionRequest): string {
     return request.messages
       .map(m => {
-        const content = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
+        const content = typeof m.content === 'string' ? m.content : textOf(m.content);
         if (m.role === 'system') return content;
         const prefix = m.role === 'assistant' ? 'Assistant' : 'Human';
         return `${prefix}: ${content}`;
@@ -202,21 +209,16 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     model: ModelConfig,
   ): Promise<Response> {
     const upstreamModel = this.getUpstreamModelId(model);
-    const systemMessage = request.messages.find(m => m.role === 'system');
-    const nonSystemMessages = request.messages.filter(m => m.role !== 'system');
+    const messages = developerAsSystem(request.messages);
 
     const body: Record<string, unknown> = {
       model: upstreamModel,
-      prompt: this.buildPrompt({ ...request, messages: nonSystemMessages }),
+      // claude.ai rejects a system_prompt field (400 "Extra inputs are not permitted"): system text leads the prompt
+      prompt: this.buildPrompt({ ...request, messages }),
       timezone: 'UTC',
       attachments: [],
       files: [],
     };
-    if (systemMessage?.content) {
-      body['system_prompt'] = typeof systemMessage.content === 'string'
-        ? systemMessage.content
-        : JSON.stringify(systemMessage.content);
-    }
 
     const response = await globalThis.fetch(
       `${base}/api/organizations/${orgId}/chat_conversations/${convId}/completion`,
@@ -335,16 +337,11 @@ export class AnthropicWebAdapter implements ProviderAdapter {
 // ─── Web credential resolution (encrypted-at-rest, module-gated) ───────────
 
 /**
- * Decrypts the stored session cookie for an anthropic-web connection, refusing to run
- * unless the 'provider-web' module is enabled. There is no refresh flow: this is a
+ * Decrypts the stored session cookie for an anthropic-web connection, There is no refresh flow: this is a
  * browser session cookie, not an OAuth token — an expired cookie surfaces as the
  * provider's own HTTP error on the next request.
  */
 export async function resolveAnthropicWebCredential(connection: ProviderConnection): Promise<string> {
-  const records = await readConfig('modules');
-  if (!isModuleEnabled(records, 'provider-web')) {
-    throw new Error("anthropic-web: 'provider-web' module is disabled");
-  }
   const creds = connection.credentials as { cookieEnc?: string };
   if (!creds.cookieEnc) {
     throw new Error('anthropic-web: connection missing encrypted session cookie');

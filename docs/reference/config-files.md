@@ -105,7 +105,7 @@ Global service configuration.
 | `port` | `number` | `3000` | TCP port the service listens on |
 | `host` | `string` | `"0.0.0.0"` | Bind address. Use `127.0.0.1` behind a reverse proxy |
 | `dashboardEnabled` | `boolean` | `true` | Enable or disable the web dashboard |
-| `logLevel` | `string` | `"info"` | Log verbosity: `"error"`, `"warn"`, `"info"`, `"debug"` |
+| `logLevel` | `string` | `"info"` | Log verbosity: `"fatal"`, `"error"`, `"warn"`, `"info"`, `"debug"`, `"trace"` |
 | `publicUrl` | `string` | `"http://localhost:3000"` | Externally reachable URL, used for notification links |
 | `channel` | `string` | `"current"` | Update channel: `"latest"`, `"current"`, `"next"`, `"develop"`, or a version tag such as `"v0.2.0"`. `"stable"` is rejected (breaking change — it used to be an accepted alias for `"current"`). Controls which GitHub Release the update checker compares against |
 | `notifications.channels` | `array` | `[]` | Notification channel objects. Each has `provider`, optional `name`, `id`, `events` (event patterns), `targets` (`{ roles, permissions, users }`), plus provider-specific fields. See [Notifications](../concepts/notifications.md) |

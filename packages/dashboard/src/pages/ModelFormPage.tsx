@@ -456,7 +456,10 @@ export function ModelFormPage() {
         customModel = false;
       }
     } else {
+      // Routerly ID without the provider prefix: keep it as-is and prefill the upstream name
+      // so the required "model name" field is not left empty (which blocked saving).
       customId = model.id;
+      formId = model.upstreamModelId ?? model.id.slice(model.id.indexOf('/') + 1);
     }
 
     // If prices are 0 (model was created without specifying them), fall back to preset values
@@ -632,7 +635,7 @@ export function ModelFormPage() {
         // Empty on edit resets to the default (null); empty on create just omits it.
         ...(form.timeout ? { timeout: parseInt(form.timeout, 10) } : isEditing ? { timeout: null } : {}),
         ...(pricingTiersPayload.length ? { pricingTiers: pricingTiersPayload } : {}),
-        ...(Object.keys(fieldOverrides).length ? { fieldOverrides } : {}),
+        fieldOverrides,
         limits: limitRows
           .filter(l => l.value !== '' && !isNaN(parseFloat(l.value)))
           .map(rowToLimit),
@@ -699,7 +702,7 @@ export function ModelFormPage() {
             <div className="form-group">
               <label className="form-label">{t('models.form.identification.provider')}</label>
               <SearchableSelect
-                options={PROVIDERS.map(p => ({ value: p, label: PROVIDER_LABEL_KEYS[p] ? t(PROVIDER_LABEL_KEYS[p]!) : p }))}
+                options={(PROVIDERS.includes(form.provider) || !form.provider ? PROVIDERS : [form.provider, ...PROVIDERS]).map(p => ({ value: p, label: PROVIDER_LABEL_KEYS[p] ? t(PROVIDER_LABEL_KEYS[p]!) : p }))}
                 value={form.provider}
                 onChange={v => handleProviderChange(v as Provider)}
               />

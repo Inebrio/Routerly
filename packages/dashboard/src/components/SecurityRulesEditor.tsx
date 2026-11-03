@@ -14,6 +14,7 @@ import {
   type SemanticGuardConfig,
   type TopicGuardConfig,
 } from '../api';
+import { blocksResponseStreaming } from '@routerly/shared';
 import { SearchableSelect } from './SearchableSelect';
 import { MultiSelect } from './MultiSelect';
 import { uuid } from '../utils/uuid';
@@ -725,9 +726,7 @@ export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolici
   const { regexErrorsByRule, moderationErrorIds } = validateSecurityRules(rules);
 
   // Section-level guardrail warnings (both banners live at the top of the section)
-  const hasResponseBlockingRule = rules.some(
-    r => r.block === true && (r.target === 'response' || r.target === 'both'),
-  );
+  const hasResponseBlockingRule = blocksResponseStreaming(rules);
   const hasInjectingRule = rules.some(r => r.inject === true);
 
   // ponytail: embedding-only models can't act as chat judges — exclude them

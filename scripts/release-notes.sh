@@ -99,7 +99,9 @@ cd "$REPO_ROOT"
 CLIFF_ERR="$(mktemp)"
 trap 'rm -f "$CLIFF_ERR"' EXIT
 if ! "${CLIFF[@]}" "${CLIFF_ARGS[@]}" 2>"$CLIFF_ERR"; then
-  CAUSE="$(grep -v '^[[:space:]]*$' "$CLIFF_ERR" | head -1)"
+  # Strip colour codes and git-cliff's own INFO notices (e.g. "a new version is
+  # available"), so the cause is the first real diagnostic.
+  CAUSE="$(sed $'s/\x1b\\[[0-9;]*m//g' "$CLIFF_ERR" | grep -v -e '^[[:space:]]*$' -e '^INFO' | head -1)"
   echo "release-notes: git-cliff failed to render ${FROM_REF}..${TO_REF}${CAUSE:+ — ${CAUSE}}" >&2
   exit 1
 fi

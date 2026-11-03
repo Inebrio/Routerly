@@ -96,6 +96,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
     const body = ctx.request
     const log = ctx.log
     const router = ctx.router
+    log.debug({ modelId: model.id, provider: model.provider, routerId: router.id, stream: ctx.stream }, 'completion: candidate selected')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const endUserId = (body as any).user as string | undefined || undefined
 
@@ -131,11 +132,14 @@ export const openaiUpstream: Processor<ProxyContext> = {
             routerId: router.id,
             ...(router.pii ? { pii: router.pii } : {}),
             ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+          ...(ctx.emit ? { emit: ctx.emit } : {}),
           })
           ctx.result = { kind: 'json', body: await chunksToChatResponse(chunks, model.id) }
         } catch (err) {
           log.warn({ err, modelId: model.id }, 'openai-oauth call failed, trying next candidate')
           ctx.attemptError = err
+          const attemptResponse = upstreamResponseFromError(err)
+          if (attemptResponse !== undefined) ctx.attemptResponse = attemptResponse
         }
         return
       }
@@ -148,11 +152,14 @@ export const openaiUpstream: Processor<ProxyContext> = {
           routerId: router.id,
           ...(router.pii ? { pii: router.pii } : {}),
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+          ...(ctx.emit ? { emit: ctx.emit } : {}),
         })
         ctx.result = { kind: 'stream', body: await primeStream(chunks) }
       } catch (err) {
         log.warn({ err, modelId: model.id }, 'openai-oauth call failed, trying next candidate')
         ctx.attemptError = err
+        const attemptResponse = upstreamResponseFromError(err)
+        if (attemptResponse !== undefined) ctx.attemptResponse = attemptResponse
       }
       return
     }
@@ -290,10 +297,14 @@ export const openaiEgress: Processor<ProxyContext> = {
 
     if (result.kind === 'json') {
       if (result.status) reply.code(result.status)
-      if (result.headers && !ctx.responsesApi) reply.headers(result.headers)
-      reply.send(ctx.responsesApi
+      const forwarded = result.headers
+      if (forwarded) reply.headers(result.headers!)
+      // A pre-serialised Buffer keeps the provider's content-type as is; Fastify appends
+      // `; charset=utf-8` to application/json for an object or string payload.
+      const payload = ctx.responsesApi
         ? chatToResponsesObject(result.body as ChatCompletionResponse, ctx.request.model ?? '', ctx.traceId, ctx.original as ResponsesRequest)
-        : result.body)
+        : result.body
+      reply.send(forwarded && result.headers!['content-type'] ? Buffer.from(JSON.stringify(payload)) : payload)
       traceEgress(ctx, { kind: 'json', status: result.status ?? 200, ...(ctx.responsesApi ? { encoding: 'responses' } : {}) })
       return
     }
@@ -315,12 +326,16 @@ export const openaiEgress: Processor<ProxyContext> = {
       reply.raw.setHeader('Access-Control-Allow-Origin', origin)
       reply.raw.setHeader('Access-Control-Allow-Credentials', 'true')
     }
-    if (result.headers && !ctx.responsesApi) {
+    if (result.headers) {
+      // Provider headers go back as received: no Cache-Control / Connection of our own,
+      // and the provider's content-type (charset included) is kept.
       for (const [k, v] of Object.entries(result.headers)) reply.raw.setHeader(k, v)
+      if (!result.headers['content-type']) reply.raw.setHeader('Content-Type', 'text/event-stream')
+    } else {
+      reply.raw.setHeader('Content-Type', 'text/event-stream')
+      reply.raw.setHeader('Cache-Control', 'no-cache')
+      reply.raw.setHeader('Connection', 'keep-alive')
     }
-    reply.raw.setHeader('Content-Type', 'text/event-stream')
-    reply.raw.setHeader('Cache-Control', 'no-cache')
-    reply.raw.setHeader('Connection', 'keep-alive')
     reply.raw.flushHeaders()
 
     // The stream carries provider bytes only. Trace entries reach the caller on the
@@ -348,7 +363,8 @@ export const openaiEgress: Processor<ProxyContext> = {
         ctx.log.error({ err }, 'Streaming error mid-stream')
         failure = err instanceof Error ? err.message : String(err)
       }
-      reply.raw.end()
+      // An aborted stream is closed abnormally so the client sees an error, not a complete response.
+      if (failure) reply.raw.destroy(); else reply.raw.end()
       traceEgress(ctx, { kind: 'stream', encoding: 'responses', frames, bytes, ...(failure ? { error: failure } : {}) })
       return
     }
@@ -364,8 +380,13 @@ export const openaiEgress: Processor<ProxyContext> = {
       ctx.log.error({ err }, 'Streaming error mid-stream')
       failure = err instanceof Error ? err.message : String(err)
     }
-    reply.raw.write('data: [DONE]\n\n')
-    reply.raw.end()
+    if (failure) {
+      // No [DONE]: close abnormally so the client can tell the stream was cut.
+      reply.raw.destroy()
+    } else {
+      reply.raw.write('data: [DONE]\n\n')
+      reply.raw.end()
+    }
     traceEgress(ctx, { kind: 'stream', encoding: 'sse', frames, bytes, ...(failure ? { error: failure } : {}) })
   },
 }
