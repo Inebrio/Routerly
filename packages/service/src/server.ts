@@ -14,7 +14,7 @@ import { routerPassthroughRoutes } from './modules/api-reverse-proxy/router-pass
 import { mcpHttpRoutes } from './modules/mcp/http.js';
 import { apiRoutes } from './modules/api/api.js';
 import { metricsRoutes } from './modules/observability/metrics.js';
-import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage, effectivePort } from './modules/config/loader.js';
+import { initConfigDirs, readConfig, writeConfig, effectivePort } from './modules/config/loader.js';
 import { migrateRouterStorage, migrateUsageToNdjson, reenableModules } from './modules/config/migrate.js';
 import { enforceStartupGuard } from './modules/config/permission-guard.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
@@ -219,23 +219,7 @@ export async function startServer() {
     }
   }
 
-  // migrateRouterStorage() already ran above, before anything could touch
-  // CONFIG_PATHS.routers. pruneOrphanUsage() (called below) reads
-  // 'routers' too, and readConfig auto-creates an empty routers.json on
-  // first touch — if that ran before migrateRouterStorage(), the migration's
-  // own idempotency check ("does routers.json already exist?") would see
-  // that accidental empty file and skip the real migration, silently
-  // dropping every pre-existing router (and every not-yet-renamed usage
-  // record, which pruneOrphanUsage would then read as an orphan and
-  // delete). Keeping pruneOrphanUsage() after buildServer() (and therefore
-  // after the migration above) preserves that ordering.
   const server = await buildServer();
-
-  const orphansRemoved = await pruneOrphanUsage();
-  if (orphansRemoved > 0) {
-     
-    console.log(`[startup] pruned ${orphansRemoved} orphan usage record(s) (no matching router)`);
-  }
 
   if (isMcpStdio()) return;
 

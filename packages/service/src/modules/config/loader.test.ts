@@ -34,7 +34,7 @@ vi.mock('node:fs/promises', () => ({
   stat: vi.fn().mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' })),
 }))
 
-import { readConfig, writeConfig, initConfigDirs, getOrCreateSecret, appendUsageRecord, pruneOrphanUsage, effectivePort } from './loader.js'
+import { readConfig, writeConfig, initConfigDirs, getOrCreateSecret, appendUsageRecord, effectivePort } from './loader.js'
 import * as fs from 'node:fs/promises'
 import lockfile from 'proper-lockfile'
 
@@ -339,51 +339,6 @@ describe('getOrCreateSecret', () => {
   it('rethrows non-ENOENT errors', async () => {
     mockReadFile.mockRejectedValue(new Error('access denied'))
     await expect(getOrCreateSecret()).rejects.toThrow('access denied')
-  })
-})
-
-describe('pruneOrphanUsage (#77 BUG-5)', () => {
-  // readConfig reads usage.ndjson (NDJSON, one record per line) and routers.json
-  // (still a JSON array) by path; route the mock per path.
-  function byPath(usage: unknown[], routers: unknown[]) {
-    mockReadFile.mockImplementation(((p: string) =>
-      Promise.resolve(
-        p.endsWith('usage.ndjson') ? usage.map((r) => JSON.stringify(r)).join('\n')
-        : p.endsWith('routers.json') ? JSON.stringify(routers)
-        : '[]',
-      )) as any)
-  }
-
-  it('removes records whose routerId matches no router, keeps real ones', async () => {
-    const releaseFn = vi.fn().mockResolvedValue(undefined)
-    mockLock.mockResolvedValue(releaseFn)
-    const usage = [
-      { id: 'u1', routerId: 'real-1', cost: 0.1 },
-      { id: 'u2', routerId: 'guardrail', cost: 0, outcome: 'error' },
-      { id: 'u3', routerId: 'real-2', cost: 0.2 },
-      { id: 'u4', routerId: 'guardrail', cost: 0, outcome: 'error' },
-    ]
-    byPath(usage, [{ id: 'real-1' }, { id: 'real-2' }])
-
-    const removed = await pruneOrphanUsage()
-
-    expect(removed).toBe(2)
-    // wrote the pruned usage back (via temp file), keeping only real records
-    const writeCall = mockWriteFile.mock.calls.find(c => String(c[0]).startsWith('/test/data/usage.ndjson.tmp-'))
-    expect(writeCall).toBeDefined()
-    const written = String(writeCall![1]).split('\n').filter(Boolean).map((l) => JSON.parse(l))
-    expect(written.map((r: any) => r.id)).toEqual(['u1', 'u3'])
-    expect(mockRename).toHaveBeenCalledWith(String(writeCall![0]), '/test/data/usage.ndjson')
-  })
-
-  it('does nothing (no write) when there are no orphans', async () => {
-    byPath(
-      [{ id: 'u1', routerId: 'real-1', cost: 0.1 }],
-      [{ id: 'real-1' }],
-    )
-    const removed = await pruneOrphanUsage()
-    expect(removed).toBe(0)
-    expect(mockWriteFile.mock.calls.some(c => String(c[0]).endsWith('usage.ndjson'))).toBe(false)
   })
 })
 

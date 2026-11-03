@@ -9,7 +9,6 @@ vi.mock('../modules/config/loader.js', () => ({
   initConfigDirs: vi.fn(),
   readConfig: vi.fn(),
   writeConfig: vi.fn(),
-  pruneOrphanUsage: vi.fn(async () => 0),
   appendUsageRecord: vi.fn(),
 }))
 

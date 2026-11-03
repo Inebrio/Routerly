@@ -86,7 +86,7 @@ async function publishUsageNdjson(filePath: string, records: UsageRecord[]): Pro
 /**
  * Full atomic rewrite of the usage history — temp file + rename, the same
  * publish pattern writeConfig() uses for every other config key. O(n): only
- * for the occasional full-rewrite callers (pruneOrphanUsage, the retention
+ * for the occasional full-rewrite callers (the retention
  * sweep), never the per-request append path.
  */
 export async function writeUsageNdjson(records: UsageRecord[]): Promise<void> {
