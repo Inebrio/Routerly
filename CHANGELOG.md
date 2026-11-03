@@ -19,6 +19,7 @@ the change itself — never reconstructed after the fact. See
 - **Version 0.6.0.** The next release is numbered 0.6.0: while the major is 0, `release.config.mjs` maps a BREAKING CHANGE to a minor bump instead of 1.0.0. The breaking change in this release is that `develop` is now its own channel instead of an alias for `next` (ROUT-539).
 
 ### Fixed
+- **Docs version cut publishes on release.** The `Publish documentation cut to docs-versions` step uses `mktemp -u` for the temporary git index (git rejects an empty index file) and commits with the non-releasable `ci(docs):` type (ROUT-577).
 
 - **Release on `next` no longer fails.** The `addChannel` step runs `gh release edit --latest` only on `main`; GitHub rejects `--latest` on a prerelease with HTTP 422 (ROUT-576).
 - **Router General tab read-only without `router:write`.** Name, advanced settings and Save are disabled/hidden for users lacking the permission, like the other router tabs (ROUT-574).
