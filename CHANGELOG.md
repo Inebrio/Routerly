@@ -15,6 +15,10 @@ the change itself — never reconstructed after the fact. See
 
 - **Version 0.6.0.** The next release is numbered 0.6.0: while the major is 0, `release.config.mjs` maps a BREAKING CHANGE to a minor bump instead of 1.0.0. The breaking change in this release is that `develop` is now its own channel instead of an alias for `next` (ROUT-539).
 
+### Fixed
+
+- **Usage history no longer pruned at startup.** The service (and `routerly mcp serve`) no longer deletes usage records whose router was removed each time it starts; the history is only reduced by the retention setting (ROUT-552).
+
 ### Added
 
 - **`stable` update channel.** `stable` is a permanent, valid channel accepted by the service, management API, CLI (`routerly update channel stable`), dashboard selector and the `install.sh`/`install.ps1`/`install.mjs` installers (`--channel stable`). It has its own release pointer (`channel-stable`, moved by the manual `stable-pointer` workflow), independent from `current`, so the two can differ. A persisted `stable` keeps working and is never rewritten. `GET /api/system/releases` returns `channelVersions` (the version each channel points to); the dashboard selector and `routerly update channel` show it, with a note on `stable` vs `current`. The selector no longer lists `channel-*` pointer tags as extra channels (ROUT-551).

@@ -26,7 +26,6 @@ vi.mock('./modules/config/loader.js', () => ({
   initConfigDirs: mockInitConfigDirs,
   readConfig: mockReadConfig,
   writeConfig: mockWriteConfig,
-  pruneOrphanUsage: vi.fn(async () => 0),
   effectivePort: (s: { port: number }) => s.port,
   appendUsageRecord: vi.fn(),
   getOrCreateSecret: mockGetOrCreateSecret,

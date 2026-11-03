@@ -152,7 +152,7 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
   data: StoredTypeMap[K],
 ): Promise<void> {
   // Usage history: same NDJSON delegation as readConfig above. Still a full
-  // atomic rewrite (used by pruneOrphanUsage and the retention sweep — both
+  // atomic rewrite (used by the retention sweep — both
   // occasional, off the per-request hot path), just via the NDJSON writer.
   if (key === 'usage') {
     await writeUsageNdjson(data as UsageRecord[]);
@@ -184,7 +184,7 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
     // write; kept modest so a real deadlock still surfaces. Usage records no
     // longer go through this path per-write (RTR-06: append-only NDJSON,
     // usageNdjson.ts) — this write path is now only the occasional full
-    // rewrite (settings/projects/etc., plus usage's pruneOrphanUsage/retention
+    // rewrite (settings/projects/etc., plus usage's retention
     // sweep via writeUsageNdjson's own identical lock).
     release = await lockfile.lock(filePath, {
       retries: { retries: 10, minTimeout: 50, maxTimeout: 500 },
@@ -323,26 +323,6 @@ export async function appendUsageRecords(records: UsageRecord[]): Promise<void> 
   if (process.env['ROUTERLY_SKIP_TRACKING']) return; // ponytail: env guard, skips write in e2e/test runs
   if (records.length === 0) return;
   await appendUsageRecordsNdjson(records);
-}
-
-/**
- * One-shot cleanup of orphan usage records (#77, BUG-5).
- *
- * Drops usage rows whose routerId matches no existing router — residue from
- * the pre-fix guardrail path which wrote records under a fictitious
- * routerId 'guardrail'. Real routers' records are kept. Only rewrites the
- * file when something was actually removed. Returns the number removed.
- */
-export async function pruneOrphanUsage(): Promise<number> {
-  const [usage, routers] = await Promise.all([
-    readConfig('usage'),
-    readConfig('routers'),
-  ]);
-  const validIds = new Set(routers.map((r) => r.id));
-  const kept = usage.filter((r) => validIds.has(r.routerId));
-  const removed = usage.length - kept.length;
-  if (removed > 0) await writeConfig('usage', kept);
-  return removed;
 }
 
 /**
