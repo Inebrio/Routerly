@@ -26,6 +26,7 @@ describe('requiredPermission', () => {
     expect(requiredPermission('config.model_added')).toBe('model:read')
     expect(requiredPermission('config.router_deleted')).toBe('router:read')
     expect(requiredPermission('system.startup')).toBe('settings:read')
+    expect(requiredPermission('system.permissions_unsafe')).toBe('settings:write')
   })
 
   it('leaves operational events ungated', () => {

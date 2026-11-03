@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../AuthContext';
 import { getProviderDescriptors, type ProviderDescriptor } from '../api';
 
 // Module-level cache so every page shares a single descriptors fetch.
@@ -27,11 +28,14 @@ async function loadLabels(): Promise<Record<string, string>> {
  * or when unknown. Source of truth is the service provider descriptors.
  */
 export function useProviderLabels(): (id: string) => string {
+  const { can } = useAuth();
+  const allowed = can('connections:read');
   const [labels, setLabels] = useState<Record<string, string>>(cache ?? {});
   useEffect(() => {
+    if (!allowed) return; // descriptors need connections:read: fall back to raw ids, no 403
     let alive = true;
     void loadLabels().then((l) => { if (alive) setLabels(l); });
     return () => { alive = false; };
-  }, []);
+  }, [allowed]);
   return (id: string) => labels[id] ?? id;
 }

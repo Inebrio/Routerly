@@ -289,8 +289,8 @@ Examples:
   routerly model add --id gpt-4o --provider openai --connection conn-abc123
 `)
     .requiredOption('--id <id>', 'Unique model ID (e.g. gpt-4o)')
-    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | gemini | ollama | custom | azure-openai | bedrock | vertex')
-    .option('--connection <id>', 'Bind to an existing provider connection (see `routerly connections list`); omits inline credentials')
+    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | openai-oauth | gemini | mistral | cohere | xai | deepseek | groq | together | perplexity | fireworks | cerebras | ollama | custom | azure-openai | bedrock | vertex')
+    .option('--connection <id|label>', 'Bind to an existing provider connection by id or label (see `routerly connections list`); omits inline credentials')
     .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)')
     .option('--api-key <key>', 'API key (stored plaintext; file permissions protect it)')
     .option('--input-price <usd>', 'Cost per 1M input tokens in USD')
@@ -326,9 +326,12 @@ Examples:
     }) => {
       const timeout = parseTimeoutOpt(opts.timeout);
       const preset = PRICING_PRESETS[opts.id];
-      const cost: TokenCost = {
-        inputPerMillion: opts.inputPrice ? parseFloat(opts.inputPrice) : (preset?.inputPerMillion ?? 0),
-        outputPerMillion: opts.outputPrice ? parseFloat(opts.outputPrice) : (preset?.outputPerMillion ?? 0),
+      // No flag and no preset: leave the price unset (list/show print `-`), never a silent 0.
+      const inputPerMillion = opts.inputPrice ? parseFloat(opts.inputPrice) : preset?.inputPerMillion;
+      const outputPerMillion = opts.outputPrice ? parseFloat(opts.outputPrice) : preset?.outputPerMillion;
+      const cost: Partial<TokenCost> = {
+        ...(inputPerMillion !== undefined ? { inputPerMillion } : {}),
+        ...(outputPerMillion !== undefined ? { outputPerMillion } : {}),
       };
 
       const providerEndpoints: Record<string, string> = {
@@ -379,6 +382,23 @@ Examples:
         }
       }
 
+      // Accept a connection id or label. Lookup is best-effort: without connections:read
+      // (or on an unexpected reply) the value is sent as-is, like before.
+      let connectionId = opts.connection;
+      if (connectionId) {
+        let conns: { id: string; label?: string }[] | undefined;
+        try { conns = await api<{ id: string; label?: string }[]>('GET', '/api/connections'); }
+        catch { /* no connections:read — send the value unchanged */ }
+        if (Array.isArray(conns)) {
+          const match = conns.find(c => c.id === connectionId) ?? conns.find(c => c.label === connectionId);
+          if (!match) {
+            console.error(chalk.red(`Connection '${connectionId}' not found, see \`routerly connections list\``));
+            process.exit(1);
+          }
+          connectionId = match.id;
+        }
+      }
+
       const body = {
         id: opts.id,
         name: opts.id,
@@ -388,7 +408,7 @@ Examples:
         ...(timeout ? { timeout } : {}),
         ...(limits?.length ? { limits } : {}),
         ...(opts.connection
-          ? { connectionId: opts.connection }
+          ? { connectionId }
           : {
             endpoint: opts.endpoint ?? providerEndpoints[opts.provider] ?? '',
             apiKey: opts.apiKey,
@@ -516,9 +536,11 @@ Examples:
         catch { console.error(chalk.red('--pricing-tiers-json: invalid JSON')); process.exit(1); }
       }
 
-      const updatedCost: TokenCost = {
-        inputPerMillion:  opts.inputPrice  ? parseFloat(opts.inputPrice)  : (existing.cost?.inputPerMillion  ?? 0),
-        outputPerMillion: opts.outputPrice ? parseFloat(opts.outputPrice) : (existing.cost?.outputPerMillion ?? 0),
+      const inputPerMillion  = opts.inputPrice  ? parseFloat(opts.inputPrice)  : existing.cost?.inputPerMillion;
+      const outputPerMillion = opts.outputPrice ? parseFloat(opts.outputPrice) : existing.cost?.outputPerMillion;
+      const updatedCost: Partial<TokenCost> = {
+        ...(inputPerMillion !== undefined ? { inputPerMillion } : {}),
+        ...(outputPerMillion !== undefined ? { outputPerMillion } : {}),
         ...(opts.cachePrice ? { cachePerMillion: parseFloat(opts.cachePrice) } : existing.cost?.cachePerMillion !== undefined ? { cachePerMillion: existing.cost.cachePerMillion } : {}),
         ...(pricingTiers?.length ? { pricingTiers } : pricingTiers === undefined && existing.cost?.pricingTiers?.length ? { pricingTiers: existing.cost.pricingTiers } : {}),
       };
@@ -571,7 +593,7 @@ Examples:
         provider: string;
         name: string;
         contextWindow: number;
-        modalities: string[];
+        modalities?: string[];
         pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
         local?: boolean;
         isConfigured: boolean;
@@ -621,7 +643,7 @@ Examples:
           e.id + configured,
           e.provider,
           ctx,
-          e.modalities.join(', '),
+          (e.modalities ?? []).join(', ') || '—',
           priceIn,
           priceOut,
         ]);

@@ -5,6 +5,7 @@ import type {
 import type { ProxyContext, ProxyResult } from './context.js'
 import { StreamingScrubber, scrubText } from '../pii/piiScrubber.js'
 import type { EffectivePii } from '../pii/piiScrubber.js'
+import { blocksResponseStreaming } from '@routerly/shared'
 import { checkGuardrails } from '../guardrails/guardrails.js'
 import { openAIChunksToAnthropicSSE } from '../provider/messages-compat.js'
 import { chatToResponsesObject, openAIChunksToResponsesSSE } from '../provider/responses-compat.js'
@@ -266,10 +267,7 @@ export async function* wrapWithResponseGuardrail(
   log: FastifyBaseLogger,
   ctx: ProxyContext,
 ): AsyncGenerator<unknown> {
-  const bufferForGuardrail = router.guardrails?.rules.some(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
-    (r: any) => r.enabled !== false && r.block === true && (r.target === 'response' || r.target === 'both'),
-  ) ?? false
+  const bufferForGuardrail = blocksResponseStreaming(router.guardrails?.rules)
   const buffered: unknown[] = []
   let fullContent = ''
 
@@ -284,6 +282,12 @@ export async function* wrapWithResponseGuardrail(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const result = await checkGuardrails('response', fullContent, router.guardrails, guardrailPctx as any, log)
     const hit = result.triggered ? { triggered: result.triggered } : null
+    if (result.evaluated.length > 0) {
+      ctx.emit?.({ panel: 'response', message: 'guardrail:evaluated', details: { target: 'response', rules: result.evaluated } })
+    }
+    if (hit) {
+      ctx.emit?.({ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', block: result.block, log: result.log, blockMessage: result.blockMessage ?? 'Response blocked by content guardrails.' } })
+    }
     if (hit && result.block) {
       ctx.blockedBy = hit.triggered
       yield {

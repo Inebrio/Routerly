@@ -442,3 +442,15 @@ export async function migratePassthroughPseudoModel(): Promise<number> {
   if (count > 0) await writeConfig('routers', updated);
   return count;
 }
+
+/**
+ * Every module is core and always active. Clears any stored `enabled: false` record
+ * (the old default disabled `provider-web`) and returns the ids that were re-enabled,
+ * or an empty array when nothing was disabled. Idempotent.
+ */
+export async function reenableModules(): Promise<string[]> {
+  const records = await readConfig('modules');
+  const disabled = records.filter((r) => !r.enabled).map((r) => r.id);
+  if (disabled.length > 0) await writeConfig('modules', []);
+  return disabled;
+}

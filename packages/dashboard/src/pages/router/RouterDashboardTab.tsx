@@ -4,11 +4,13 @@ import { useParams } from 'react-router-dom';
 import { Activity, Clock, Coins, PiggyBank } from 'lucide-react';
 import { optimizerLabel } from '@routerly/shared';
 import { getUsage, type UsageStats } from '../../api';
+import { useAuth } from '../../AuthContext';
 import { DateRangePicker, RECENT_PRESETS, parseStoredRange, type DateRange } from '../../components/DateRangePicker';
 import { useFilterState } from '../../hooks/useFilterState';
 
 const ms = (n: number | undefined) => (n == null ? '—' : `${Math.round(n).toLocaleString()} ms`);
-const usd = (n: number) => `$${n.toFixed(n !== 0 && Math.abs(n) < 0.0001 ? 8 : 4)}`;
+const usd = (n: number | null | undefined) =>
+  n == null ? '—' : `${n < 0 ? '-' : ''}$${Math.abs(n).toFixed(n !== 0 && Math.abs(n) < 0.0001 ? 8 : 4)}`;
 
 /**
  * Router Dashboard (T62). The first thing a router shows: what the routing
@@ -19,6 +21,7 @@ const usd = (n: number) => `$${n.toFixed(n !== 0 && Math.abs(n) < 0.0001 ? 8 : 4
 export function RouterDashboardTab() {
   const { t } = useTranslation();
   const { id: routerId } = useParams<{ id: string }>();
+  const canReport = useAuth().can('report:read');
 
   const [stats, setStats]   = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,6 +35,7 @@ export function RouterDashboardTab() {
   const fetchStats = useCallback(() => {
     /* v8 ignore next */
     if (!routerId) return Promise.resolve();
+    if (!canReport) { setErr(t('overview.noPermission')); return Promise.resolve(); }
     let from = dateRange.from || undefined;
     let to = dateRange.to || undefined;
     const recentPreset = RECENT_PRESETS.find(p => p.label === dateRange.label);
@@ -45,7 +49,7 @@ export function RouterDashboardTab() {
     return getUsage(period, routerId, from, to, 1, 1, { savings: true })
       .then(data => { setStats(data); setErr(''); })
       .catch(e => setErr(e.message));
-  }, [routerId, dateRange]);
+  }, [routerId, dateRange, canReport, t]);
 
   useEffect(() => {
     setLoading(true);
@@ -141,7 +145,7 @@ export function RouterDashboardTab() {
                 {((summary.successCalls / summary.totalCalls) * 100).toFixed(1)}%
               </div>
               <div className="stat-sub">
-                {t('routers.dashboard.stats.errorsAndBlocked', { errors: summary.errorCalls, blocked: summary.blockedCalls ?? 0 })}
+                {t('routers.dashboard.stats.errorsAndBlocked', { count: summary.errorCalls, errors: summary.errorCalls, blocked: summary.blockedCalls ?? 0 })}
               </div>
             </div>
           </div>

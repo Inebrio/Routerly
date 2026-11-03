@@ -181,6 +181,13 @@ describe('SettingsGeneralTab', () => {
     return render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
   }
 
+  it('ROUT-427 does not request settings without settings:read', async () => {
+    mockCan = p => p !== 'settings:read';
+    renderGeneral();
+    await screen.findByText("You don't have permission to view settings.");
+    expect(mockGetSettings).not.toHaveBeenCalled();
+  });
+
   it('AC5/AC6 shows the Internationalization section and saves the instance default', async () => {
     renderGeneral();
     await screen.findByText('Internationalization');
@@ -204,6 +211,17 @@ describe('SettingsGeneralTab', () => {
     renderGeneral();
     await screen.findByText('Internationalization');
     expect(screen.getByLabelText('Default Language')).toBeDisabled();
+  });
+
+  it('AC1 public URL, retention, log level and telemetry are read-only without settings:write', async () => {
+    mockCan = p => p !== 'settings:write';
+    renderGeneral();
+    await screen.findByText('Internationalization');
+    expect(screen.getByLabelText('Log Level')).toBeDisabled();
+    expect(document.getElementById('s-publicurl')).toBeDisabled();
+    expect(document.getElementById('s-usage-retention-days')).toBeDisabled();
+    expect(document.getElementById('s-usage-retention-size')).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Enable$/ })).toBeDisabled();
   });
 
   it('Save Settings is disabled without settings:write', async () => {
@@ -309,6 +327,14 @@ describe('SettingsGeneralTab', () => {
     expect(input.value).toBe('http://localhost:3000');
   });
 
+  it('Save does not persist the pre-filled publicUrl default when none is stored (ROUT-459)', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, publicUrl: '' } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    fireEvent.click(screen.getByRole('button', { name: /Save/ }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ publicUrl: '' })));
+  });
+
   it('renders usage retention inputs empty when no policy is configured', async () => {
     renderGeneral();
     await waitFor(() => expect(screen.queryByLabelText('Max age (days)')).not.toBeNull());
@@ -359,7 +385,7 @@ describe('SettingsGeneralTab', () => {
     await waitFor(() => screen.getByLabelText('Log Level'));
     const sel = screen.getByLabelText('Log Level') as HTMLSelectElement;
     const values = Array.from(sel.options).map(o => o.value);
-    expect(values).toEqual(['trace', 'debug', 'info', 'warn', 'error']);
+    expect(values).toEqual(['trace', 'debug', 'info', 'warn', 'error', 'fatal']);
   });
 
   it('does not render the 2FA toggle — it lives in the Security tab', async () => {
@@ -559,6 +585,8 @@ describe('SettingsSecurityTab', () => {
     mockGetSettings.mockRejectedValue(new Error('Network failure'));
     renderSecurity();
     await waitFor(() => expect(screen.queryByText('Network failure')).not.toBeNull());
+    // ROUT-442: a failed load must not allow saving the default over the real value.
+    expect((screen.getByText(/Save Settings/).closest('button') as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('shows a fallback error when loading rejects with a non-Error', async () => {
@@ -591,6 +619,14 @@ describe('SettingsSecurityTab', () => {
       await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
       expect(screen.queryByText('File Permissions')).toBeNull();
       expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    });
+
+    it('clears a stale permission error after a successful fix', async () => {
+      mockGetSettings.mockRejectedValue(new Error('Unsafe permissions on secrets file(s): users.'));
+      renderSecurity();
+      await waitFor(() => expect(screen.getByText(/Unsafe permissions on secrets/)).toBeTruthy());
+      window.dispatchEvent(new CustomEvent('lr-permission-fixed'));
+      await waitFor(() => expect(screen.queryByText(/Unsafe permissions on secrets/)).toBeNull());
     });
 
     it('shows a calm all-good state when nothing is unsafe', async () => {
@@ -643,6 +679,26 @@ describe('SettingsSecurityTab', () => {
       await waitFor(() => expect(mockFixPermissions).toHaveBeenCalled());
       await waitFor(() => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy());
     });
+
+    it('clears the banner by itself when the files are fixed outside the dashboard (polling)', async () => {
+      mockGetPermissionStatus
+        .mockResolvedValueOnce({
+          blocked: false,
+          bypassActive: false,
+          unsafe: [{ file: 'settings.json', path: '/etc/routerly/settings.json', mode: '644', severity: 'general' }],
+        })
+        .mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+      renderSecurity();
+      await waitFor(() => screen.getByText('/etc/routerly/settings.json'));
+      const fixed = vi.fn();
+      window.addEventListener('lr-permission-fixed', fixed);
+      await waitFor(
+        () => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy(),
+        { timeout: 12_000 },
+      );
+      window.removeEventListener('lr-permission-fixed', fixed);
+      expect(fixed).toHaveBeenCalledTimes(1);
+    }, 15_000);
 
     it('shows an error when the permission status fails to load', async () => {
       mockGetPermissionStatus.mockRejectedValue(new Error('boom'));
@@ -1258,11 +1314,11 @@ describe('SettingsIntegrationsTab', () => {
     await waitFor(() => screen.getByText(/No integrations configured yet/));
   });
 
-  it('viewer without settings:write: error only, no empty state, no Add button', async () => {
+  it('viewer without settings:write: permission message, no request, no empty state, no Add button', async () => {
     mockCan = p => p !== 'settings:write';
-    mockGetIntegrations.mockRejectedValue(new Error('Required permission: settings:write'));
     renderIntegrations();
-    await waitFor(() => screen.getByText(/Required permission: settings:write/));
+    await screen.findByText("You don't have permission to view integrations.");
+    expect(mockGetIntegrations).not.toHaveBeenCalled();
     expect(screen.queryByText(/No integrations configured yet/)).toBeNull();
     expect(screen.queryByText('Add Integration')).toBeNull();
   });
@@ -1645,6 +1701,13 @@ describe('SettingsCatalogTab', () => {
     await waitFor(() => screen.getByText(/No repositories configured/));
   });
 
+  it('does not show the empty-repos message when settings failed to load (ROUT-459)', async () => {
+    mockGetSettings.mockRejectedValue(new Error('Required permission: settings:read'));
+    renderCatalog();
+    await waitFor(() => screen.getByText(/Required permission: settings:read/));
+    expect(screen.queryByText(/No repositories configured/)).toBeNull();
+  });
+
   it('Refresh button calls refreshCatalog', async () => {
     renderCatalog();
     await waitFor(() => screen.getByRole('button', { name: /Refresh/i }));
@@ -1960,7 +2023,7 @@ describe('SettingsCatalogTab', () => {
 describe('SettingsAboutTab', () => {
   beforeEach(() => {
     mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current', 'next', 'develop'], versions: [] } as never);
+    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current', 'next', 'stable', 'develop'], versions: [] } as never);
     mockCheckForUpdates.mockResolvedValue({ available: false, currentVersion: '0.3.0', latestVersion: '0.3.0', checkedAt: new Date().toISOString() } as never);
     mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
     mockTriggerUpdate.mockResolvedValue({ message: 'Update started' } as never);
@@ -2214,12 +2277,12 @@ describe('SettingsAboutTab', () => {
     expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
-  it('ChannelSelector: dropdown lists only latest, current, next and custom — no old names', async () => {
+  it('ChannelSelector: dropdown lists latest, current, next, stable, develop and custom', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     const sel = screen.getByRole('combobox') as HTMLSelectElement;
     const values = Array.from(sel.options).map(o => o.value);
-    expect(values).toEqual(['latest', 'current', 'next', 'develop', '__custom']);
+    expect(values).toEqual(['latest', 'current', 'next', 'stable', 'develop', '__custom']);
   });
 
   it('ChannelSelector: selecting a known channel calls updateSettings', async () => {
@@ -2255,7 +2318,7 @@ describe('SettingsAboutTab', () => {
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'v0.2.5' }));
   });
 
-  it('ChannelSelector: custom input still accepts a retired alias name verbatim (RMT-2 EC1)', async () => {
+  it('ChannelSelector: custom input accepts a free-text value verbatim', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
@@ -2320,17 +2383,21 @@ describe('SettingsAboutTab', () => {
     await waitFor(() => expect(screen.queryByText('Saved')).not.toBeNull());
   });
 
-  it('ChannelSelector: a stored, now-retired "stable" value is unknown and falls back to the free-text input (RMT-2 EC1)', async () => {
+  it('ChannelSelector: a stored "stable" channel selects itself as a known option and shows its pointed version', async () => {
     mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'stable', rawChannel: 'stable' } as never);
+    mockGetAvailableReleases.mockResolvedValue({
+      channels: ['latest', 'current', 'next', 'stable', 'develop'], versions: [],
+      channelVersions: { current: '0.6.1', stable: '0.6.0' },
+    } as never);
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    // 'stable' is no longer a recognised channel, so it is not in the dropdown
-    // options — the selector falls back to the custom free-text input, not a
-    // silent resolution to any canonical channel.
-    await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).not.toBeNull());
-    const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
-    expect(customInput.value).toBe('stable');
+    await waitFor(() => expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('stable'));
+    const labels = Array.from((screen.getByRole('combobox') as HTMLSelectElement).options).map(o => o.textContent);
+    expect(labels).toContain('stable · 0.6.0');
+    expect(labels).toContain('current · 0.6.1');
+    expect(screen.queryByPlaceholderText('v0.2.0')).toBeNull();
     expect(screen.queryByText(/deprecated/)).toBeNull();
+    expect(screen.getByText(/stable moves only when a release is promoted/)).toBeTruthy();
   });
 
   it('ChannelSelector: stored "develop" channel selects itself as a known option, no hint (RMT-2 AC3)', async () => {

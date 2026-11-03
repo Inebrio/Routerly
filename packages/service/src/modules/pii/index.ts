@@ -88,7 +88,7 @@ const output: Processor<ProxyContext> = {
 }
 
 export const piiModule: RouterlyModule = defineModule({
-  manifest: { id: 'pii', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4' } },
+  manifest: { id: 'pii', version: '0.6.0', dependsOn: { 'reverse-proxy': '^0.6.0' } },
   register({ container }) {
     const pipeline = container.resolve(PROXY_PIPELINE)
     pipeline.contribute(input)

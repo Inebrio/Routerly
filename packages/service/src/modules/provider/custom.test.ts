@@ -510,3 +510,27 @@ describe('CustomAdapter.chatCompletion timeout', () => {
     }
   })
 })
+
+describe('CustomAdapter developer role', () => {
+  const messages = [{ role: 'developer', content: 'rules' }, { role: 'user', content: 'hi' }] as any
+  const expected = [{ role: 'system', content: 'rules' }, { role: 'user', content: 'hi' }]
+
+  it('sends developer as system on chatCompletion', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ choices: [] }) })
+    vi.stubGlobal('fetch', mockFetch)
+    await adapter.chatCompletion({ model: 'auto', messages }, makeModel())
+    expect(JSON.parse(mockFetch.mock.calls[0]![1].body).messages).toEqual(expected)
+    vi.unstubAllGlobals()
+  })
+
+  it('sends developer as system on streamCompletion', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      body: (async function* () { yield new TextEncoder().encode('data: [DONE]\n') })() as unknown as ReadableStream,
+    })
+    vi.stubGlobal('fetch', mockFetch)
+    for await (const _ of adapter.streamCompletion({ model: 'auto', messages }, makeModel())) { /* drain */ }
+    expect(JSON.parse(mockFetch.mock.calls[0]![1].body).messages).toEqual(expected)
+    vi.unstubAllGlobals()
+  })
+})

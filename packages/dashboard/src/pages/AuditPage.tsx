@@ -1,9 +1,10 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ShieldOff } from 'lucide-react';
 import { getAuditLog } from '../api';
 import type { AuditEntry } from '../api';
 import { DateRangePicker, parseStoredRange, type DateRange } from '../components/DateRangePicker';
+import { useAuth } from '../AuthContext';
 import { useFilterState } from '../hooks/useFilterState';
 
 const PAGE_SIZE = 50;
@@ -28,6 +29,8 @@ function fmt(ts: string): string {
 
 export function AuditPage() {
   const { t } = useTranslation();
+  const { can } = useAuth();
+  const canRead = can('audit:read');
   const [entries, setEntries]     = useState<AuditEntry[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
@@ -40,6 +43,7 @@ export function AuditPage() {
   const [dateRange, setDateRange] = useFilterState<DateRange>({ key: 'audit-filter-dateRange', defaultValue: { from: '', to: '', label: 'All time' }, deserialize: parseStoredRange });
 
   const load = useCallback(async (p: number) => {
+    if (!canRead) { setLoading(false); return; }
     setLoading(true);
     setError('');
     try {
@@ -60,7 +64,7 @@ export function AuditPage() {
       setLoading(false);
     }
    
-  }, [emailFilter, actionFilter, dateRange, resultFilter]);
+  }, [canRead, emailFilter, actionFilter, dateRange, resultFilter]);
 
   // Reset to page 1 when filters change
   useEffect(() => { setPage(1); }, [emailFilter, actionFilter, dateRange, resultFilter]);
@@ -68,6 +72,10 @@ export function AuditPage() {
   useEffect(() => { void load(page); }, [load, page]);
 
   function handleSearch() { setPage(1); void load(1); }
+
+  if (!canRead) {
+    return <div className="empty-state"><ShieldOff size={40} /><p>{t('audit.noPermission')}</p></div>;
+  }
 
   return (
     <>

@@ -4,9 +4,10 @@ import type { McpAuthContext, RouterConfig } from '@routerly/shared'
 vi.mock('../../config/loader.js', () => ({
   readConfig: vi.fn(),
   writeConfig: vi.fn(),
+  updateConfig: vi.fn(),
 }))
 
-import { readConfig, writeConfig } from '../../config/loader.js'
+import { readConfig, writeConfig, updateConfig } from '../../config/loader.js'
 import { createRouterTokenTool, toggleModelTool } from './write.js'
 import { expectNoSecrets } from './expectNoSecrets.js'
 import { mcpAuthContext } from '../../../test-support/mcp-auth.js'
@@ -34,6 +35,13 @@ beforeEach(() => {
   mockReadConfig.mockReset()
   mockWriteConfig.mockReset()
   mockWriteConfig.mockResolvedValue(undefined as never)
+  // Same contract as the real updateConfig: mutate the fresh read, write only on change.
+  vi.mocked(updateConfig).mockImplementation((async (key: never, mutate: (c: unknown) => unknown) => {
+    const cur = await mockReadConfig(key)
+    const next = await mutate(cur)
+    if (next !== cur) await mockWriteConfig(key, next as never)
+    return next
+  }) as never)
 })
 
 describe('createRouterTokenTool', () => {

@@ -139,6 +139,13 @@ describe('computeSavings', () => {
     expect(s.cache.cost).toBe(0)
   })
 
+  it('keeps cache cost finite when the model has no input price', () => {
+    const m = { ...model('free', 0, 0), cost: {} } as unknown as ModelConfig
+    const s = computeSavings([record({ modelId: 'free', cachedInputTokens: 500, cost: 0 })], [m], ['free'])
+    expect(s.cache.inputTokens).toBe(500)
+    expect(s.cache.cost).toBe(0)
+  })
+
   it('drops a baseline whose model no longer exists', () => {
     const s = computeSavings([record({ cost: 0.003 })], MODELS, ['cheap', 'deleted-model'])
     expect(s.baselines.map(b => b.modelId)).toEqual(['cheap'])

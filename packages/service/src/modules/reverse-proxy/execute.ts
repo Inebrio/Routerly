@@ -107,6 +107,9 @@ export class BudgetExceededError extends Error {
 
 // ─── In-memory notification state ────────────────────────────────────────────
 
+const WEB_PROVIDERS = new Set<string>(['openai-web', 'anthropic-web']);
+const WEB_PROVIDER_MIN_TTFT_MS = 30_000;
+
 function callOptions(ctx: LLMCallContext): CallOptions {
   return {
     ...(ctx.forwardHeaders ? { headers: ctx.forwardHeaders } : {}),
@@ -550,7 +553,12 @@ export async function llmStream(
 
   const iter = adapter.streamCompletion(streamRequest, model, callOptions(ctx))[Symbol.asyncIterator]();
 
-  const ttftTimeoutMs = callType === 'completion' ? ctx.router.timeoutMs : undefined;
+  const routerTtftMs = callType === 'completion' ? ctx.router.timeoutMs : undefined;
+  // Web providers run a multi-request handshake (sentinel/PoW, org + conversation setup) before
+  // the first chunk (~4 s), so the router default would always time out. 0 stays "disabled".
+  const ttftTimeoutMs = routerTtftMs && WEB_PROVIDERS.has(model.provider)
+    ? Math.max(routerTtftMs, WEB_PROVIDER_MIN_TTFT_MS)
+    : routerTtftMs;
 
   // Attende il primo chunk per poter misurare il TTFT.
   // Se fallisce qui il chiamante può tentare il candidato successivo.

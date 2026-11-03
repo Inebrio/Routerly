@@ -265,8 +265,8 @@ export const cavemanOptimizer = {
 export const cavemanModule: RouterlyModule = defineModule({
   manifest: {
     id: 'optimizer-caveman',
-    version: '0.5.4',
-    dependsOn: { 'optimizer-core': '^0.5.4' },
+    version: '0.6.0',
+    dependsOn: { 'optimizer-core': '^0.6.0' },
   },
   register({ container }) {
     container.resolve(OPTIMIZER_REGISTRY).register(cavemanOptimizer)

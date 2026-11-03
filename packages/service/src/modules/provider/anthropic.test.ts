@@ -369,6 +369,22 @@ describe('AnthropicAdapter.messages', () => {
 })
 
 describe('AnthropicAdapter.streamCompletion — system message and stop reasons', () => {
+  it('reports the provider-returned model string in stream chunks', async () => {
+    const events = [
+      { type: 'message_start', message: { id: 'msg-m', model: 'claude-haiku-4-5-20251001', usage: { input_tokens: 5 } } },
+      { type: 'content_block_start', index: 0, content_block: { type: 'text' } },
+      { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'ok' } },
+      { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 1 } },
+    ]
+    mockCreate.mockReturnValue({
+      [Symbol.asyncIterator]: async function* () { for (const e of events) yield e },
+    })
+    const models: string[] = []
+    for await (const c of adapter.streamCompletion({ model: 'auto', messages: [{ role: 'user', content: 'Hi' }] }, makeModel())) models.push((c as { model: string }).model)
+    expect(models.length).toBeGreaterThan(0)
+    expect(new Set(models)).toEqual(new Set(['claude-haiku-4-5-20251001']))
+  })
+
   it('includes system prompt in streaming params', async () => {
     const events = [
       { type: 'message_start', message: { id: 'msg-sys', usage: { input_tokens: 5, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } },
@@ -1235,5 +1251,19 @@ describe('AnthropicAdapter — tool declarations and tool calls', () => {
       if (call) slots.push(call.index)
     }
     expect(slots).toEqual([0, 0, 1, 1])
+  })
+})
+
+describe('AnthropicAdapter developer role', () => {
+  it('sends developer messages as system on chat and stream calls', async () => {
+    mockCreate.mockResolvedValue({ id: 'm', model: 'claude', content: [{ type: 'text', text: 'hi' }], stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } })
+    const req = { model: 'x', messages: [{ role: 'developer', content: 'Be brief' }, { role: 'user', content: 'hi' }] } as never
+    await adapter.chatCompletion(req, makeModel())
+    mockCreate.mockResolvedValue((async function* () { yield { type: 'message_stop' } })())
+    for await (const _ of adapter.streamCompletion(req, makeModel())) { void _ }
+    for (const [params] of mockCreate.mock.calls) {
+      expect(params.system).toBeDefined()
+      expect(params.messages).toEqual([{ role: 'user', content: 'hi' }])
+    }
   })
 })

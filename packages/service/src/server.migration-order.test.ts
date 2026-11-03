@@ -8,7 +8,7 @@ import { CONFIG_PATHS } from './lib/paths.js'
 //
 // server.test.ts mocks './modules/config/loader.js' and './modules/config/
 // migrate.js' entirely, so it never exercises the actual race between
-// pruneOrphanUsage()'s incidental readConfig('routers') and
+// the startup's incidental readConfig('routers') and
 // migrateRouterStorage()'s "does routers.json already exist?" idempotency
 // check. This file deliberately does NOT mock either module: it seeds a real
 // legacy config/projects.json (17 entities, matching the validator's

@@ -249,6 +249,15 @@ describe('ProtectedLayout — telemetry banner', () => {
     await waitFor(() => expect(screen.getByText(/anonymous install metrics/)).toBeTruthy(), { timeout: 3000 });
   });
 
+  it('lets the telemetry banner wrap on narrow screens (ROUT-429)', async () => {
+    mockGetSettings.mockResolvedValue({ requireMfa: false });
+    renderApp();
+    const body = await screen.findByText(/anonymous install metrics/);
+    const text = body.closest('span') as HTMLElement;
+    expect((text.parentElement as HTMLElement).style.flexWrap).toBe('wrap');
+    expect(text.style.flex).toBe('1 1 240px');
+  });
+
   it('does not show telemetry prompt for non-admin users', async () => {
     mockGetSettings.mockResolvedValue({ requireMfa: false }); // telemetry undefined
     mockUseAuth.mockReturnValue({
@@ -320,6 +329,47 @@ describe('ProtectedLayout — permission warning banner', () => {
     expect(mockGetPermissionStatus).toHaveBeenCalledTimes(1);
   });
 
+  it('clears the banner by itself when the files are fixed outside the dashboard (polling)', async () => {
+    mockGetPermissionStatus
+      .mockResolvedValueOnce({
+        blocked: false,
+        bypassActive: false,
+        unsafe: [{ file: 'settings', path: '/x/settings.json', mode: '644', severity: 'general' }],
+      })
+      .mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+    render(<App />);
+    await waitFor(() => screen.getByText(/permissive access/));
+    await waitFor(() => expect(screen.queryByText(/permissive access/)).toBeNull(), { timeout: 12_000 });
+  }, 15_000);
+
+  it('does not call permissions or settings without settings:read', async () => {
+    mockUseAuth.mockReturnValue({
+      user: adminUser, isLoading: false, login: vi.fn(), loginDirect: vi.fn(), logout: logoutFn, updateUser: vi.fn(),
+      can: vi.fn().mockReturnValue(false),
+    });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+    expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    expect(mockGetSettings).not.toHaveBeenCalled();
+  });
+
+  it('does not poll permission status without settings:read', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      mockUseAuth.mockReturnValue({
+        user: adminUser, isLoading: false, login: vi.fn(), loginDirect: vi.fn(), logout: logoutFn, updateUser: vi.fn(),
+        can: vi.fn().mockReturnValue(false),
+      });
+      mockGetPermissionStatus.mockRejectedValue(new Error('403'));
+      render(<App />);
+      await waitFor(() => screen.getByText('OverviewPage'));
+      await vi.advanceTimersByTimeAsync(35_000);
+      expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('shows no banner when permissions are safe (AC8)', async () => {
     mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
     render(<App />);
@@ -350,10 +400,11 @@ describe('ProtectedLayout — permission-blocked modal', () => {
     render(<App />);
     await waitFor(() => screen.getByText('OverviewPage'));
 
-    window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+    // Re-dispatch until observed: the listener may not be attached yet on a cold, loaded run.
+    const fire = () => window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
       detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
     }));
-    await waitFor(() => expect(screen.getByText(/users.json is unsafe/)).toBeTruthy());
+    await waitFor(() => { fire(); expect(screen.getByText(/users.json is unsafe/)).toBeTruthy(); });
     expect(screen.getByText('users')).toBeTruthy();
 
     await userEvent.click(screen.getByRole('button', { name: 'Fix now' }));
@@ -366,14 +417,35 @@ describe('ProtectedLayout — permission-blocked modal', () => {
     render(<App />);
     await waitFor(() => screen.getByText('OverviewPage'));
 
-    window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+    // Re-dispatch until observed: the listener may not be attached yet on a cold, loaded run.
+    const fire = () => window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
       detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
     }));
-    await waitFor(() => expect(screen.getByText(/users.json is unsafe/)).toBeTruthy());
+    await waitFor(() => { fire(); expect(screen.getByText(/users.json is unsafe/)).toBeTruthy(); });
 
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByText(/users.json is unsafe/)).toBeNull();
     expect(mockFixPermissions).not.toHaveBeenCalled();
+  });
+
+  it('shows a neutral notice and no modal without settings:write', async () => {
+    mockUseAuth.mockReturnValue({
+      user: adminUser, isLoading: false, login: vi.fn(), loginDirect: vi.fn(), logout: logoutFn, updateUser: vi.fn(),
+      can: vi.fn((p: string) => p !== 'settings:write'),
+    });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+
+    // Re-dispatch until observed: the listener may not be attached yet on a cold, loaded run.
+    const fire = () => window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+      detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
+    }));
+    await waitFor(() => { fire(); expect(screen.getByText(/temporarily unavailable/)).toBeTruthy(); });
+    expect(screen.queryByText(/users.json is unsafe/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fix now' })).toBeNull();
+
+    await userEvent.click(screen.getByTitle('Dismiss'));
+    expect(screen.queryByText(/temporarily unavailable/)).toBeNull();
   });
 });
 
@@ -547,6 +619,23 @@ describe('ProtectedLayout — unauthenticated', () => {
     });
     renderApp();
     await waitFor(() => expect(screen.getByText('LoginPage')).toBeTruthy(), { timeout: 3000 });
+  });
+
+  it('sends no authenticated request before the redirect (no 401 noise)', async () => {
+    __resetPermissionCheckForTests();
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isLoading: false,
+      login: vi.fn(),
+      loginDirect: vi.fn(),
+      logout: vi.fn(),
+      updateUser: vi.fn(),
+      can: vi.fn(),
+    });
+    renderApp();
+    await waitFor(() => expect(screen.getByText('LoginPage')).toBeTruthy(), { timeout: 3000 });
+    expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    expect(mockGetSettings).not.toHaveBeenCalled();
   });
 });
 

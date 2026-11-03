@@ -46,6 +46,11 @@ async function run(...args: string[]): Promise<{ out: string[]; err: string[] }>
   return { out, err };
 }
 
+const routersFixture = [{ id: 'r-id-1', name: 'my-proj' }];
+function mockWithRouters(data: unknown) {
+  mockApi.mockImplementation(async (_m: string, url: string) => (url === '/api/routers' ? routersFixture : data));
+}
+
 const usageFixture = {
   summary: {
     totalCost: 0.001234,
@@ -133,9 +138,23 @@ describe('report usage', () => {
   });
 
   it('appends --router filter to URL', async () => {
-    mockApi.mockResolvedValue(usageFixture);
+    mockWithRouters(usageFixture);
     await run('usage', '--router', 'my-proj');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=my-proj'));
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=r-id-1'));
+  });
+
+  it('accepts a router ID as well', async () => {
+    mockWithRouters(usageFixture);
+    await run('usage', '--router', 'r-id-1');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=r-id-1'));
+  });
+
+  it('fails with an error for an unknown router', async () => {
+    mockWithRouters(usageFixture);
+    const { err } = await run('usage', '--router', 'nope');
+    expect(err.join('\n')).toContain('Router "nope" not found');
+    expect(process.exit).toHaveBeenCalledWith(1);
+    expect(mockApi).not.toHaveBeenCalledWith('GET', expect.stringContaining('/api/usage'));
   });
 
   it('appends --session-id filter to URL', async () => {
@@ -286,9 +305,9 @@ describe('report calls', () => {
   });
 
   it('appends --router filter', async () => {
-    mockApi.mockResolvedValue(usageFixture);
-    await run('calls', '--router', 'p1');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=p1'));
+    mockWithRouters(usageFixture);
+    await run('calls', '--router', 'my-proj');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=r-id-1'));
   });
 
   it('exits 1 on API error', async () => {
@@ -405,9 +424,9 @@ describe('report leaderboard', () => {
   });
 
   it('appends --router filter', async () => {
-    mockApi.mockResolvedValue(leaderboardFixture);
-    await run('leaderboard', '--router', 'p1');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=p1'));
+    mockWithRouters(leaderboardFixture);
+    await run('leaderboard', '--router', 'my-proj');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=r-id-1'));
   });
 
   it('exits 1 on API error', async () => {
@@ -453,9 +472,9 @@ describe('report sessions', () => {
   });
 
   it('appends --router filter', async () => {
-    mockApi.mockResolvedValue(sessionsFixture);
-    await run('sessions', '--router', 'p1');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=p1'));
+    mockWithRouters(sessionsFixture);
+    await run('sessions', '--router', 'my-proj');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('routerId=r-id-1'));
   });
 
   it('exits 1 on API error', async () => {
@@ -510,6 +529,12 @@ describe('report savings', () => {
     expect(text).toContain('Compared calls: 9');
     expect(text).toContain('$0.003000');
     expect(text).toContain('$0.000900 saved');
+  });
+
+  it('prints a zero cache saving when the service reports a null cost', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, cache: { inputTokens: 400, cost: null } } });
+    const { out } = await run('savings');
+    expect(out.join('\n')).toContain('$0.000000 saved');
   });
 
   it('lists one counterfactual per target, priced and never timed', async () => {
@@ -607,10 +632,10 @@ describe('report savings', () => {
   });
 
   it('passes --router and --type through as filters', async () => {
-    mockApi.mockResolvedValue(savingsFixture);
-    await run('savings', '--router', 'p1', '--type', 'embedding');
-    const url = String(mockApi.mock.calls[0]![1]);
-    expect(url).toContain('routerId=p1');
+    mockWithRouters(savingsFixture);
+    await run('savings', '--router', 'my-proj', '--type', 'embedding');
+    const url = String(mockApi.mock.calls[1]![1]);
+    expect(url).toContain('routerId=r-id-1');
     expect(url).toContain('requestType=embedding');
   });
 

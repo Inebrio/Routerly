@@ -100,8 +100,8 @@ export const sessionDedupOptimizer = {
 export const sessionDedupModule: RouterlyModule = defineModule({
   manifest: {
     id: 'optimizer-session-dedup',
-    version: '0.5.4',
-    dependsOn: { 'optimizer-core': '^0.5.4' },
+    version: '0.6.0',
+    dependsOn: { 'optimizer-core': '^0.6.0' },
   },
   register({ container }) {
     container.resolve(OPTIMIZER_REGISTRY).register(sessionDedupOptimizer)

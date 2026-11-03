@@ -83,7 +83,7 @@ Invalidate the in-memory catalog cache and fetch all enabled repositories immedi
 
 ## `routerly modules`
 
-Manage optional service modules. Disable unneeded modules to reduce memory and startup time. Core modules (`config`, `provider`, `catalog`, `reverse-proxy`, `routing`) cannot be disabled. Disabling a module requires a service restart to take effect.
+List the service modules. Every module is core and always active: there is no command to enable or disable one. A configuration that still marks a module as disabled (older versions allowed it) is cleared at the next service start, which logs the modules it re-enabled.
 
 ### `routerly modules list`
 
@@ -91,86 +91,27 @@ Manage optional service modules. Disable unneeded modules to reduce memory and s
 routerly modules list [--json]
 ```
 
-List all available modules with their enabled state, version, and dependencies.
+List all modules with version and dependencies.
 
 **Table columns:**
 - **ID** - module identifier
 - **Version** - module semantic version
-- **Enabled** - `yes` / `no`
-- **Always-on** - `yes` / `no` (core modules cannot be disabled)
+- **Enabled** - always `yes`
+- **Always-on** - always `yes`
 - **Depends on** - comma-separated list of module IDs this module requires; empty if no dependencies
-
-**Example output:**
-```
-ID             Version   Enabled   Always-on   Depends on
-guardrails     0.4.0     yes       no          -
-pii            0.4.0     no        no          -
-reverse-proxy  0.4.0     yes       yes         provider, routing
-```
 
 **JSON output** (`--json`):
 ```json
 [
   {
     "id": "guardrails",
-    "version": "0.4.0",
+    "version": "0.5.4",
     "enabled": true,
-    "alwaysOn": false,
+    "alwaysOn": true,
     "dependsOn": []
   }
 ]
 ```
-
-### `routerly modules enable`
-
-```
-routerly modules enable <id>
-```
-
-Enable a module (requires a service restart to take effect).
-
-**Example:**
-```bash
-routerly modules enable guardrails
-```
-
-**Output on success:**
-```
-Enabled: guardrails
-Restart the Routerly service for this to take effect (e.g. `docker restart <container>`, or stop and re-run the service process).
-```
-
-**Error cases:**
-- Module is unknown: `Error: Unknown module "unknown-module"`
-- Module has unmet dependencies: `Error: Cannot enable "guardrails": depends on disabled provider`
-
-(Enabling an already-enabled or always-on module is a no-op, not an error.)
-
-Exit code: `0` on success, `1` on error.
-
-### `routerly modules disable`
-
-```
-routerly modules disable <id>
-```
-
-Disable a module (requires a service restart to take effect).
-
-**Example:**
-```bash
-routerly modules disable guardrails
-```
-
-**Output on success:**
-```
-Disabled: guardrails
-Restart the Routerly service for this to take effect (e.g. `docker restart <container>`, or stop and re-run the service process).
-```
-
-**Error cases:**
-- Module is always-on (cannot be disabled): `Error: Module "reverse-proxy" is always-on and cannot be disabled`
-- Module is unknown: `Error: Unknown module "unknown-module"`
-- Module is required by other enabled modules: `Error: Cannot disable "provider": required by reverse-proxy, routing`
 
 Exit code: `0` on success, `1` on error.
 
@@ -409,7 +350,7 @@ routerly model add --id <id> --provider <provider> [options]
 |--------|-------------|
 | `--id <id>` | Model identifier (e.g. `gpt-5-mini`), required |
 | `--provider <provider>` | Provider: `openai`, `anthropic`, `anthropic-oauth`, `gemini`, `ollama`, `custom`, `azure-openai`, `bedrock`, `vertex`, required |
-| `--connection <id>` | Bind to an existing provider connection (see `routerly connections list`); omits inline credentials |
+| `--connection <id\|label>` | Bind to an existing provider connection by id or label (see `routerly connections list`); omits inline credentials |
 | `--endpoint <url>` | Custom API endpoint (uses provider default if omitted) |
 | `--api-key <key>` | API key (stored plaintext; file permissions protect it) |
 | `--input-price <usd>` | Cost per 1M input tokens in USD |
@@ -425,7 +366,7 @@ additional provider-specific flags (`--azure-resource`, `--aws-region`,
 `--vertex-router`, `--cf-clearance`, etc.); see `routerly model add --help`.
 
 **`--connection` vs. inline credentials:**
-- With `--connection <id>`: the model binds to that existing connection. No credential flags (`--api-key`, `--endpoint`, and the provider-specific credential flags) are sent; the connection already owns them. The connection's provider must match `--provider`.
+- With `--connection <id|label>`: the model binds to that existing connection. The value is matched against connection ids first, then labels; an unknown value fails with `Connection 'x' not found, see \`routerly connections list\`` (exit 1) and nothing is created. Without `connections:read` the value is sent unchanged and must be an id. No credential flags (`--api-key`, `--endpoint`, and the provider-specific credential flags) are sent; the connection already owns them. The connection's provider must match `--provider`.
 - Without `--connection`: `--endpoint`/`--api-key` (and provider-specific flags) are sent inline, same as before the connections cutover. The service creates a dedicated, single-model connection with id `conn-for-<id>` from them and binds the model to it.
 
 ```bash
@@ -505,7 +446,7 @@ routerly router create [options]
 | `--routing-model <id>` | Model ID used for routing decisions |
 | `--kind <kind>` | Router kind: `router` (default), `orchestrator`, or `passthrough`. Budgets/limits do not apply to a passthrough router's fixed pass-through entry, but do apply to any real target model added to it, exactly like on a `router`-kind router. |
 | `--candidate <routerId>` | Candidate router for an orchestrator (repeatable). Order of repetition sets priority: the first `--candidate` given is highest priority. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
-| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable), format `<routerId>:<metric>:period|rolling:...:<value>`. Requires a matching `--candidate`. |
+| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable), format `<routerId>:<metric>:period\|rolling:...:<value>`. Requires a matching `--candidate`. |
 
 ```bash
 # An orchestrator, routing to two candidate routers in priority order (first = highest priority)
@@ -536,8 +477,10 @@ routerly router edit <router> [options]
 | `--timeout <ms>` | New time-to-first-token timeout per model attempt, in ms (`0` disables it) |
 | `--trace-content` | Record prompts and answers in the router's traces |
 | `--no-trace-content` | Record metadata only: no prompts, no answers (default) |
+| `--notification-channel <idOrName>` | Also send this router's events to a notification channel (repeatable, replaces the existing override). Requires `router:write` and `notification:write` |
+| `--no-notification-channels` | Remove the router's notification channel override |
 | `--candidate <routerId>` | Candidate router for an orchestrator (repeatable); order of repetition sets priority; replaces the existing candidate list. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
-| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable); requires `--candidate`, format `<routerId>:<metric>:period|rolling:...:<value>` |
+| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable); requires `--candidate`, format `<routerId>:<metric>:period\|rolling:...:<value>` |
 
 Traces always carry metadata (models, policies, guardrail outcomes, tokens,
 timings). Prompts and answers are recorded only with `--trace-content`, and the
@@ -581,7 +524,7 @@ routerly router routing update <router> [options]
 
 | Option | Description |
 |--------|-------------|
-| `--routing-model <id>` | Model ID used for LLM-based routing decisions |
+| `--routing-model <id>` | Model ID used for LLM-based routing decisions (must be in the model registry, otherwise the service answers 400) |
 | `--fallback-models <ids>` | Comma-separated fallback routing model IDs |
 | `--auto-routing` / `--no-auto-routing` | Enable or disable auto-routing |
 
@@ -869,7 +812,7 @@ Launches an interactive wizard. Steps:
    - **Regex**: regex patterns (one per line, case-insensitive)
    - **Semantic**: embedding model, fallback models, example phrases to block, similarity threshold
    - **Topic**: allowed-topics description
-   - **Moderation**: custom instructions (required; used for injection or passed to the judge)
+   - **Moderation**: policy in plain words (required; used for injection, and the judge scores how much content violates it)
 
 New rules are appended to the end of the list and are active by default.
 
@@ -1834,8 +1777,9 @@ Requires `optimizers:manage` permission.
 routerly optimizers preview <router> (--message <text> ... | --fixture <id>) [--model <id>] [--json]
 ```
 
-Dry-run the router's currently configured optimizer pipeline against a
-sample message list. No upstream call is made and the router's config is
+Dry-run the optimizer pipeline the router really uses (its assigned optimizer
+profile, else its custom steps; the output names which) against a sample
+message list. No upstream call is made and the router's config is
 not modified.
 
 | Option | Description |
@@ -1952,7 +1896,6 @@ the browser.
 Every subcommand answers the same way when the module is off:
 
 ```
-The experiments module is disabled. Enable it with: routerly modules enable experiments
 ```
 
 ### `routerly experiments list`
@@ -2872,7 +2815,7 @@ routerly report usage [options]
 | Option | Description |
 |--------|-------------|
 | `--period <period>` | `daily`, `weekly`, `monthly` (default: `monthly`) |
-| `--router <slug>` | Filter to one router |
+| `--router <name\|id>` | Filter to one router (name or ID; an unknown router exits with an error) |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--caller <caller>` | Filter by who made the call: `routing`, `completion`, `guardrail`, `judge` |
 | `--session-id <id>` | Filter by session ID |
@@ -2912,7 +2855,7 @@ routerly report calls [options]
 | Option | Description |
 |--------|-------------|
 | `--limit <n>` | Number of records to return (default: 20) |
-| `--router <slug>` | Filter to one router |
+| `--router <name\|id>` | Filter to one router (name or ID; an unknown router exits with an error) |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--caller <caller>` | Filter by who made the call: `routing`, `completion`, `guardrail`, `judge` |
 | `--token <id>` | Filter by router token ID, comma-separated for several |
@@ -2940,7 +2883,7 @@ routerly report savings [options]
 | Option | Description |
 |--------|-------------|
 | `--period <period>` | `daily`, `weekly`, `monthly`, `all` (default: `monthly`) |
-| `--router <id>` | Filter by router ID |
+| `--router <name\|id>` | Filter by router name or ID |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--trend` | Add a per-bucket breakdown: one row per hour with `--period daily`, one per day otherwise |
 | `--json` | Output the raw savings block |
@@ -3099,7 +3042,7 @@ Show or change the update channel.
 routerly update channel [name]
 ```
 
-With no argument, prints the current channel. With an argument, updates the channel immediately - the running service is notified without a restart.
+With no argument, prints the current channel and, for every channel, the version it points to. With an argument, updates the channel immediately - the running service is notified without a restart.
 
 Valid values:
 
@@ -3108,17 +3051,12 @@ Valid values:
 | `latest` | Newest production-ready release |
 | `current` | Newest production-ready release (same as `latest`) |
 | `next` | Validated pre-release line, promoted from `develop` |
+| `stable` | Release explicitly promoted to stable; moves only on promotion, so it can lag behind `current` |
 | `develop` | Bleeding-edge, unreviewed release line |
 | `vX.Y.Z` | Pin to a specific version tag (e.g. `v0.2.0`) |
 
 :::warning Breaking change
-`stable` is no longer accepted as an alias for `current` — it is rejected
-outright, with an error naming the four values above. `develop` is no
-longer an alias for `next`: it is now its own real channel, the
-bleeding-edge line, and resolves to itself with no deprecation warning. Any
-instance that had `stable` or `develop` persisted as its channel is
-affected — see [Update Channel](../dashboard/settings.md#update-channel)
-for what changes for an existing install.
+`develop` is not an alias for `next`: it is its own channel, the bleeding-edge line. An instance that had `develop` persisted under the old meaning now tracks the bleeding-edge line instead of `next`. See [Update Channel](../dashboard/settings.md#update-channel).
 :::
 
 ```bash
@@ -3126,6 +3064,7 @@ routerly update channel           # show current channel
 routerly update channel latest    # switch to latest
 routerly update channel current   # switch to current
 routerly update channel next      # switch to the validated pre-release line
+routerly update channel stable    # switch to the promoted stable release
 routerly update channel develop   # switch to the bleeding-edge line
 routerly update channel v0.2.0    # pin to a specific version
 ```
@@ -3292,10 +3231,11 @@ Add a notification channel.
 |------|----------|-------------|
 | `--type <type>` | yes | `dashboard`, `smtp`, `ses`, `sendgrid`, `azure`, `google`, `webhook`, `slack`, `teams`, `pagerduty`, `discord` |
 | `--name <name>` | yes | Friendly label shown in the UI |
-| `--events <patterns>` | no | Comma-separated event patterns this channel receives (e.g. `budget.*,model.added`). Omit for all events. |
+| `--events <patterns>` | no | Comma-separated event patterns this channel receives (e.g. `budget.*,model.added`). Omit for all events on `dashboard` channels; external channels without events are silent. |
 | `--target-roles <roles>` | no | Comma-separated role IDs to target. Omit for everyone. |
 | `--target-permissions <perms>` | no | Comma-separated permission names to target. |
 | `--target-users <users>` | no | Comma-separated user IDs to target. |
+| `--json` | no | Print the created channel as JSON. |
 
 **Provider-specific flags:**
 | Provider | Flags |
@@ -3322,6 +3262,11 @@ routerly notification channel add \
 routerly notification channel add \
   --type slack --name "ops-alerts" \
   --bot-token xoxb-... --channel-id C1234567890
+
+# Webhook channel with HMAC-SHA256 signature (X-Routerly-Signature)
+routerly notification channel add \
+  --type webhook --name "hook" \
+  --url https://hooks.example.com/routerly --method POST --secret s3cret
 
 # SMTP channel for provider errors to operators
 routerly notification channel add \
@@ -3374,6 +3319,9 @@ Edit a channel's configuration. Only provided options are updated; omitted optio
 | `--url <url>` | Webhook URL |
 | `--method <method>` | HTTP method (POST or GET) |
 | `--secret <secret>` | HMAC signing secret (secret) |
+| `--clear-secret` | Remove the webhook signing secret (deliveries are no longer signed) |
+| `--clear-password` | Remove the SMTP password |
+| `--clear-secret-access-key` | Remove the AWS secret access key (SES) |
 | `--bot-token <token>` | Slack bot token (secret) |
 | `--channel-id <id>` | Slack channel ID |
 | `--webhook-url <url>` | Webhook URL (Teams/Discord, secret) |

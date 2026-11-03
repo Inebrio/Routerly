@@ -11,6 +11,9 @@ vi.mock('../api', () => ({
   getModels: vi.fn(),
 }));
 
+let mockCan = true;
+vi.mock('../AuthContext', () => ({ useAuth: () => ({ can: () => mockCan }) }));
+
 // Mock DateRangePicker and MultiSelect to avoid complex UI
 vi.mock('../components/DateRangePicker', () => ({
   DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
@@ -72,8 +75,21 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  mockCan = true;
   vi.mocked(getRouters).mockResolvedValue([]);
   vi.mocked(getModels).mockResolvedValue([]);
+});
+
+describe('UsagePage — without permissions (ROUT-384)', () => {
+  it('calls neither getUsage nor getModels and shows the permission message', async () => {
+    mockCan = false;
+    vi.mocked(getUsage).mockClear();
+    vi.mocked(getModels).mockClear();
+    renderPage();
+    await waitFor(() => expect(screen.queryByText(/No permission to view usage data/)).not.toBeNull());
+    expect(getUsage).not.toHaveBeenCalled();
+    expect(getModels).not.toHaveBeenCalled();
+  });
 });
 
 describe('UsagePage — no leaderboard tab', () => {

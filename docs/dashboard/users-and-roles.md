@@ -40,9 +40,6 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 | `experiments:read` | View [experiments](./experiments.md) and their metrics |
 | `experiments:manage` | Create, edit, and delete experiments, manage their tokens |
 
-Permissions gated by a module (`experiments:*`, for instance) still answer
-`403` while that module is disabled, whatever the role says.
-
 ---
 
 ## Built-in Roles

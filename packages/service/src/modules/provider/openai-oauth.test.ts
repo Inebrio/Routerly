@@ -273,17 +273,6 @@ describe('resolveOpenAIOAuthCredential', () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mockWriteConfig).not.toHaveBeenCalled();
   });
-
-  it('refuses to run when the provider-oauth module is disabled', async () => {
-    mockReadConfig.mockImplementation(async (type: string) => {
-      if (type === 'modules') return [{ id: 'provider-oauth', enabled: false }];
-      return [];
-    });
-    const connection = makeConnection();
-    await expect(resolveOpenAIOAuthCredential(connection)).rejects.toThrow(
-      "'provider-oauth' module is disabled",
-    );
-  });
 });
 
 describe('refreshOpenAIOAuthToken', () => {

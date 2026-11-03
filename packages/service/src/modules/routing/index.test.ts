@@ -136,12 +136,25 @@ describe('routing module', () => {
       forgetUpstreamError(ctx.router.id)
     })
 
-    it('rethrows other routing errors', async () => {
-      routeRequestMock.mockRejectedValue(new Error('no_models_available'))
+    it.each([
+      ['openai', { error: { message: 'No model of this router is currently available.', type: 'server_error' } }],
+      ['anthropic', { type: 'error', error: { type: 'overloaded_error', message: 'No model of this router is currently available.' } }],
+    ] as const)('returns a provider-shaped 503 when the router has no models (%s)', async (protocol, body) => {
+      routeRequestMock.mockRejectedValue(new Error('no_models_available: router has no resolvable models'))
       const { container, events, pipeline } = harness()
       await routingModule.register({ container, events })
       const proc = pipeline.orderedFor('routing.prepare').find((p) => p.id === 'routing.prepare')!
-      await expect(proc.run(baseCtx())).rejects.toThrow('no_models_available')
+      const ctx = baseCtx({ protocol })
+      await proc.run(ctx)
+      expect(ctx.result).toEqual({ kind: 'block', status: 503, body })
+    })
+
+    it('rethrows other routing errors', async () => {
+      routeRequestMock.mockRejectedValue(new Error('boom'))
+      const { container, events, pipeline } = harness()
+      await routingModule.register({ container, events })
+      const proc = pipeline.orderedFor('routing.prepare').find((p) => p.id === 'routing.prepare')!
+      await expect(proc.run(baseCtx())).rejects.toThrow('boom')
     })
   })
 

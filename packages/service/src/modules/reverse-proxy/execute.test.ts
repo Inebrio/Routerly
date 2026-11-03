@@ -465,6 +465,22 @@ describe('llmStream', () => {
 
     resolveNever!()
   })
+
+  it('web providers get a TTFT floor above the router timeout (ROUT-466)', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({
+      streamCompletion: vi.fn().mockReturnValue({
+        [Symbol.asyncIterator]: () => ({
+          next: () => new Promise(r => setTimeout(() => r({ value: { id: 'x', choices: [] }, done: false }), 150)),
+          return: vi.fn().mockResolvedValue({ value: undefined as any, done: true }),
+        }),
+      }),
+    } as any)
+
+    const ctxWithTimeout = makeCtx({ router: { ...makeRouter(), timeoutMs: 50 } })
+    const result = await llmStream({ messages: [] } as any, { ...makeModel(), provider: 'openai-web' } as any, ctxWithTimeout)
+    expect(typeof result.ttftMs).toBe('number')
+  })
 })
 
   it('swallows trackUsage rejection in success path', async () => {

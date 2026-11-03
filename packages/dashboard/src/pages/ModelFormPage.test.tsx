@@ -298,6 +298,29 @@ describe('ModelFormPage — edit path', () => {
     expect(screen.getByRole('heading', { name: /Edit Model/ })).toBeTruthy();
   });
 
+  it('keeps the provider of a model whose provider is missing from the catalog (ROUT-469)', async () => {
+    const model = makeModel({ id: 'openai-web/gpt-5', provider: 'openai-web' });
+    mockGetModels.mockResolvedValue([model]);
+
+    renderPage('/dashboard/models/openai-web%2Fgpt-5');
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      expect(all[0]!.value).toBe('openai-web');
+      expect(Array.from(all[0]!.options).map(o => o.value)).toContain('openai-web');
+    });
+  });
+
+  it('prefills the model name when the Routerly ID has no provider prefix (ROUT-376)', async () => {
+    const model = makeModel({ id: 'custom-prefix/gpt-4.1-nano', provider: 'openai' });
+    mockGetModels.mockResolvedValue([model]);
+
+    renderPage('/dashboard/models/custom-prefix%2Fgpt-4.1-nano');
+
+    const input = await screen.findByPlaceholderText(/my-fine-tuned-model/) as HTMLInputElement;
+    expect(input.value).toBe('gpt-4.1-nano');
+  });
+
   it('shows the stored timeout in a field that accepts round values (step 1)', async () => {
     mockGetModels.mockResolvedValue([makeModel({ id: 'openai/gpt-5.2', provider: 'openai', timeout: 5000 })]);
 

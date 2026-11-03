@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield, Lock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield, Lock, AlertTriangle, CheckCircle2, ShieldOff } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration, refreshCatalog, getCatalogStatus, probeRepo, getPermissionStatus, fixPermissions } from '../api';
 import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RepoStatus, UsageRetentionConfig, PermissionCheckStatus } from '../api';
@@ -14,12 +14,15 @@ import { useAuth } from '../AuthContext';
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
 import { SUPPORTED_LANGUAGES } from '../locales/languages';
 
-const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
+const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'];
 
 // ── Telemetry section (self-saving) ──────────────────────────────────────────
 
 function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: (s: Settings) => void }) {
   const { t } = useTranslation();
+  const { can } = useAuth();
+  const canWrite = can('settings:write');
+  const noWriteTitle = canWrite ? undefined : 'Required permission: settings:write';
   const telemetry = settings.telemetry;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -71,7 +74,8 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
           <button
             type="button"
             className={`btn btn-sm ${telemetry?.enabled ? 'btn-primary' : 'btn-secondary'}`}
-            disabled={saving || telemetry?.enabled === true}
+            disabled={saving || !canWrite || telemetry?.enabled === true}
+            title={noWriteTitle}
             onClick={() => toggle(true)}
             style={{ fontSize: '0.8rem' }}
           >
@@ -80,7 +84,8 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
           <button
             type="button"
             className={`btn btn-sm ${telemetry?.enabled === false ? 'btn-primary' : 'btn-secondary'}`}
-            disabled={saving || telemetry?.enabled === false}
+            disabled={saving || !canWrite || telemetry?.enabled === false}
+            title={noWriteTitle}
             onClick={() => toggle(false)}
             style={{ fontSize: '0.8rem' }}
           >
@@ -112,7 +117,12 @@ export function SettingsGeneralTab() {
   const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  useEffect(() => { load(); }, []);
+  const canRead = can('settings:read');
+
+  useEffect(() => {
+    if (!canRead) { setLoading(false); return; }
+    load();
+  }, [canRead]);
 
   async function load() {
     setLoading(true);
@@ -143,7 +153,9 @@ export function SettingsGeneralTab() {
     setSaving(true);
     setSaved(false);
     try {
-      const updated = await updateSettings(form);
+      // Do not persist the pre-filled default as if the user had typed it.
+      const sendForm = !settings?.publicUrl && form.publicUrl === `http://localhost:${settings?.port}` ? { ...form, publicUrl: '' } : form;
+      const updated = await updateSettings(sendForm);
       setSettings(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -169,6 +181,7 @@ export function SettingsGeneralTab() {
     });
   }
 
+  if (!canRead) return <div className="empty-state"><ShieldOff size={40} /><p>{t('settings.general.noPermission')}</p></div>;
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
   /* v8 ignore next */
   if (!settings) return <div className="form-error" style={{ margin: 24 }}>{error || t('settings.general.errors.loadFailedPeriod')}</div>;
@@ -233,6 +246,7 @@ export function SettingsGeneralTab() {
             placeholder={t('settings.general.runtime.logLevel')}
             ariaLabel={t('settings.general.runtime.logLevel')}
             onChange={v => field('logLevel', v as Settings['logLevel'])}
+            disabled={!can('settings:write')}
           />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
             {t('settings.general.runtime.logLevelHint')}
@@ -248,6 +262,7 @@ export function SettingsGeneralTab() {
             placeholder={`http://${settings?.host === '0.0.0.0' ? '<your-ip>' : (settings?.host ?? 'localhost')}:${settings?.port ?? 3000}`}
             value={form.publicUrl ?? ''}
             onChange={e => field('publicUrl', e.target.value)}
+            disabled={!can('settings:write')}
           />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
             <Trans
@@ -265,20 +280,24 @@ export function SettingsGeneralTab() {
               className="form-input"
               type="number"
               min={1}
+              step={1}
               placeholder={t('settings.general.runtime.noLimit')}
               aria-label={t('settings.general.runtime.maxAgeDays')}
               value={form.usageRetention?.maxAgeDays ?? ''}
               onChange={e => retentionField('maxAgeDays', e.target.value)}
+              disabled={!can('settings:write')}
             />
             <input
               id="s-usage-retention-size"
               className="form-input"
               type="number"
               min={1}
+              step={1}
               placeholder={t('settings.general.runtime.noLimit')}
               aria-label={t('settings.general.runtime.maxSizeMb')}
               value={form.usageRetention?.maxSizeMb ?? ''}
               onChange={e => retentionField('maxSizeMb', e.target.value)}
+              disabled={!can('settings:write')}
             />
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
@@ -377,6 +396,7 @@ function useEventLabels(t: (k: string) => string): Record<string, string> {
     'system.startup':            t('settings.notifications.events.systemStartup'),
     'system.shutdown':           t('settings.notifications.events.systemShutdown'),
     'system.update_available':   t('settings.notifications.events.systemUpdateAvailable'),
+    'system.permissions_unsafe': t('settings.notifications.events.systemPermissionsUnsafe'),
   };
 }
 
@@ -441,7 +461,8 @@ function targetsHint(provider: EProvider, t: (k: string) => string): string | nu
 function summariseChannel(ch: EChannel, t: TFunction): string {
   const parts: string[] = [];
   const evCount = ch.events?.length ?? 0;
-  parts.push(evCount === 0 ? t('settings.notifications.summary.allEvents') : t('settings.notifications.summary.eventCount', { count: evCount }));
+  const noEventsKey = ch.provider === 'dashboard' ? 'allEvents' : 'noEvents';
+  parts.push(evCount === 0 ? t(`settings.notifications.summary.${noEventsKey}`) : t('settings.notifications.summary.eventCount', { count: evCount }));
   const targets = ch.targets;
   const targetParts: string[] = [];
   if (targets?.roles?.length) targetParts.push(t('settings.notifications.summary.roleCount', { count: targets.roles.length }));
@@ -701,6 +722,7 @@ export function SettingsNotificationsTab() {
     const roleOptions = roles.map(r => ({ value: r.id, label: r.name }));
     const userOptions = users.map(u => ({ value: u.id, label: u.email }));
     const hint = targetsHint(ch.provider, t);
+    const evSuffix = ch.provider === 'dashboard' ? '' : 'External';
 
     return (
       <div style={{ borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -711,10 +733,10 @@ export function SettingsNotificationsTab() {
             options={EVENT_OPTIONS}
             value={ch.events ?? []}
             onChange={v => uf(ch.id, 'events', v.length ? v : undefined)}
-            placeholder={t('settings.notifications.fields.routing.eventsPlaceholder')}
+            placeholder={t(`settings.notifications.fields.routing.eventsPlaceholder${evSuffix}`)}
           />
           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
-            {t('settings.notifications.fields.routing.eventsHint')}
+            {t(`settings.notifications.fields.routing.eventsHint${evSuffix}`)}
           </p>
         </div>
 
@@ -1365,7 +1387,11 @@ export function SettingsIntegrationsTab() {
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const addRef = useRef<HTMLDivElement>(null);
 
+  // GET /api/integrations requires settings:write.
+  const canList = can('settings:write');
+
   useEffect(() => {
+    if (!canList) { setLoading(false); return; }
     getIntegrations()
       .then(setIntegrations)
       .catch(e => setError(e instanceof Error ? e.message : t('settings.integrations.errors.loadFailed')))
@@ -1469,6 +1495,7 @@ export function SettingsIntegrationsTab() {
     setForms(f => ({ ...f, [id]: { ...(f[id] ?? {}), ...patch } }));
   }
 
+  if (!canList) return <div className="empty-state"><ShieldOff size={40} /><p>{t('settings.integrations.noPermission')}</p></div>;
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
 
   const cardHeaderStyle: React.CSSProperties = {
@@ -1820,7 +1847,7 @@ export function SettingsCatalogTab() {
           ))}
         </div>
 
-        {repos.length === 0 && (
+        {repos.length === 0 && !error && (
           <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
             {t('settings.catalog.empty')}
           </div>
@@ -1915,7 +1942,7 @@ export function SettingsCatalogTab() {
 
 // ── About tab ────────────────────────────────────────────────────────────────
 
-const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'current', 'next', 'develop'], versions: [] };
+const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'current', 'next', 'stable', 'develop'], versions: [] };
 
 function ChannelSelector({
   current,
@@ -1965,7 +1992,8 @@ function ChannelSelector({
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
+    <div style={{ padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <span style={{ fontSize: '0.83rem', color: 'var(--text-muted)', flexShrink: 0, marginRight: 20 }}>{t('settings.about.channel')}</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {err && <span style={{ fontSize: '0.72rem', color: 'var(--error, #e53e3e)' }}>{err}</span>}
@@ -1996,17 +2024,19 @@ function ChannelSelector({
           </>
         ) : (
           <SearchableSelect
-            style={{ fontSize: '0.83rem', width: 130 }}
+            style={{ fontSize: '0.83rem', width: 170 }}
             value={isKnown ? selectValue : '__custom'}
             onChange={handleSelectChange}
             disabled={saving}
             options={[
-              ...releases.channels.map(ch => ({ value: ch, label: ch })),
+              ...releases.channels.map(ch => ({ value: ch, label: releases.channelVersions?.[ch] ? `${ch} · ${releases.channelVersions[ch]}` : ch })),
               { value: '__custom', label: 'custom...' },
             ]}
           />
         )}
       </div>
+    </div>
+    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>{t('settings.about.channelNote')}</p>
     </div>
   );
 }
@@ -2223,6 +2253,7 @@ function FilePermissionsSection() {
   const [error, setError] = useState('');
   const [fixing, setFixing] = useState(false);
   const [fixError, setFixError] = useState('');
+  const hadUnsafe = React.useRef(false);
 
   useEffect(() => {
     if (!canRead) { setLoading(false); return; }
@@ -2234,20 +2265,30 @@ function FilePermissionsSection() {
   // this section's own status — it has its own independent load() cycle.
   useEffect(() => {
     if (!canRead) return;
-    window.addEventListener('lr-permission-fixed', load);
-    return () => window.removeEventListener('lr-permission-fixed', load);
+    const onFixed = () => { load(); };
+    window.addEventListener('lr-permission-fixed', onFixed);
+    // A fix from the CLI emits no event: poll quietly so the banner clears on its own.
+    const timer = setInterval(() => { load(true); }, 10_000);
+    return () => { window.removeEventListener('lr-permission-fixed', onFixed); clearInterval(timer); };
      
   }, [canRead]);
 
-  async function load() {
-    setLoading(true);
-    setError('');
+  async function load(silent = false) {
+    if (!silent) { setLoading(true); setError(''); }
     try {
-      setStatus(await getPermissionStatus());
+      const next = await getPermissionStatus();
+      setStatus(next);
+      if (silent) setError('');
+      // A fix outside the dashboard (CLI) emits no event: announce it so the
+      // blocking modal and any stale 423 error clear too.
+      if (silent && hadUnsafe.current && next.unsafe.length === 0) {
+        window.dispatchEvent(new CustomEvent('lr-permission-fixed'));
+      }
+      hadUnsafe.current = next.unsafe.length > 0;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load permission status');
+      if (!silent) setError(e instanceof Error ? e.message : 'Failed to load permission status');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
@@ -2333,6 +2374,7 @@ export function SettingsSecurityTab() {
   const canWrite = can('settings:write');
   const [requireMfa, setRequireMfa] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -2340,8 +2382,15 @@ export function SettingsSecurityTab() {
   useEffect(() => {
     getSettings()
       .then(s => setRequireMfa(!!s.requireMfa))
-      .catch(e => setError(e instanceof Error ? e.message : t('settings.security.errors.loadFailed')))
+      .catch(e => { setLoadFailed(true); setError(e instanceof Error ? e.message : t('settings.security.errors.loadFailed')); })
       .finally(() => setLoading(false));
+  }, []);
+
+  // A successful permission fix invalidates a stale 423 "unsafe permissions" error.
+  useEffect(() => {
+    const onFixed = () => setError('');
+    window.addEventListener('lr-permission-fixed', onFixed);
+    return () => window.removeEventListener('lr-permission-fixed', onFixed);
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -2395,7 +2444,7 @@ export function SettingsSecurityTab() {
         </div>
       )}
       <div>
-        <button type="submit" className="btn btn-primary" disabled={saving || !canWrite} title={canWrite ? undefined : 'Required permission: settings:write'}>
+        <button type="submit" className="btn btn-primary" disabled={saving || !canWrite || loadFailed} title={canWrite ? undefined : 'Required permission: settings:write'}>
           {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} /> {t('settings.security.saving')}</> : <><Save size={15} /> {t('settings.security.saveSettings')}</>}
         </button>
       </div>

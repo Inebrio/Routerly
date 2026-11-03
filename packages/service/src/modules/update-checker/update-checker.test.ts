@@ -75,6 +75,26 @@ function stubGithubNotFound(): void {
   });
 }
 
+/** Per-path GitHub stub: body for 200, absent path → 404. Records every requested path. */
+const requestedPaths: string[] = [];
+function stubGithubRoutes(routes: Record<string, object>): void {
+  requestedPaths.length = 0;
+  mockRequest.mockImplementation((opts: { path: string }, cb: (res: MockRes) => void) => {
+    requestedPaths.push(opts.path);
+    const req = new EventEmitter() as ReqLike;
+    req.end = () => {
+      const res = new EventEmitter() as MockRes;
+      const body = routes[opts.path];
+      res.statusCode = body ? 200 : 404;
+      cb(res);
+      res.emit('data', Buffer.from(body ? JSON.stringify(body) : 'Not Found'));
+      res.emit('end');
+    };
+    req.destroy = () => {};
+    return req;
+  });
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 let checker: UpdateChecker;
@@ -327,6 +347,7 @@ describe('UpdateChecker.getAvailableReleases()', () => {
       { tag_name: 'draft-only', draft: true, prerelease: false },
       { tag_name: 'stable', draft: false, prerelease: false },
       { tag_name: 'develop', draft: false, prerelease: false },
+      { tag_name: 'channel-stable', draft: false, prerelease: true },
     ]);
 
     // Do NOT call start() — it fires check() which would consume the first mock call
@@ -338,10 +359,11 @@ describe('UpdateChecker.getAvailableReleases()', () => {
     expect(result.channels).not.toContain('draft-only')
     // 'develop' is now a base channel (UPDATE_CHANNELS), so the rolling
     // GitHub tag of the same name is excluded from "extra" and must not
-    // appear twice. 'stable' is not a base channel, so it DOES surface as
-    // an extra, arbitrary non-semver tag.
+    // appear twice; the same holds for 'stable'. Pointer releases (channel-*)
+    // are never offered as channels of their own.
     expect(result.channels.filter((c) => c === 'develop')).toHaveLength(1)
-    expect(result.channels).toContain('stable')
+    expect(result.channels.filter((c) => c === 'stable')).toHaveLength(1)
+    expect(result.channels).not.toContain('channel-stable')
   });
 
   it('falls back to base channels when fetchAllReleases returns invalid JSON', async () => {
@@ -359,19 +381,19 @@ describe('UpdateChecker.getAvailableReleases()', () => {
     });
 
     const result = await checker.getAvailableReleases();
-    expect(result.channels).toEqual(['latest', 'current', 'next', 'develop']);
+    expect(result.channels).toEqual(['latest', 'current', 'next', 'stable', 'develop']);
   });
 });
 
 describe('UpdateChecker.getAvailableReleases() base set', () => {
-  it('starts with exactly the canonical four-channel set, develop included as a plain member', async () => {
+  it('starts with exactly the canonical five-channel set, stable and develop included as plain members', async () => {
     stubGithubOk([
       { tag_name: 'nightly', draft: false, prerelease: false },
     ]);
 
     const result = await checker.getAvailableReleases();
 
-    expect(result.channels.slice(0, 4)).toEqual(['latest', 'current', 'next', 'develop']);
+    expect(result.channels.slice(0, 5)).toEqual(['latest', 'current', 'next', 'stable', 'develop']);
     expect(result.channels).toContain('nightly');
   });
 });
@@ -383,6 +405,7 @@ describe('UpdateChecker channel resolution', () => {
     ['latest', `${REPO_PATH}/releases/latest`],
     ['current', `${REPO_PATH}/releases/latest`],
     ['next', `${REPO_PATH}/releases/tags/channel-next`],
+    ['stable', `${REPO_PATH}/releases/tags/channel-stable`],
     ['develop', `${REPO_PATH}/releases/tags/channel-develop`],
     ['v0.3.0', `${REPO_PATH}/releases/tags/v0.3.0`],
   ])('channel "%s" resolves to %s (AC8, EC3)', async (channel, expectedPath) => {
@@ -392,6 +415,38 @@ describe('UpdateChecker channel resolution', () => {
     await checker.check();
 
     expect(lastRequestPath).toBe(expectedPath);
+  });
+
+  it('stable and current resolve to their own releases when they diverge (ROUT-551 AC2)', async () => {
+    const R = `${REPO_PATH}/releases`;
+    stubGithubRoutes({
+      [`${R}?per_page=100`]: [
+        { tag_name: 'v0.6.1', name: 'v0.6.1', html_url: 'u1', draft: false, prerelease: false },
+        { tag_name: 'v0.6.0', name: 'v0.6.0', html_url: 'u0', draft: false, prerelease: false },
+      ] as unknown as object,
+      [`${R}/tags/channel-stable`]: { tag_name: 'channel-stable', name: 'Routerly stable (→ v0.6.0)', html_url: 'ps', draft: false, prerelease: true },
+    });
+
+    checker.start('0.5.0', 'stable');
+    const stable = await checker.check();
+    expect(stable).toMatchObject({ status: 'ok', channel: 'stable', latestVersion: '0.6.0', available: true });
+
+    checker.updateChannel('current');
+    const current = await checker.check();
+    expect(current).toMatchObject({ status: 'ok', channel: 'current', latestVersion: '0.6.1' });
+
+    const releases = await checker.getAvailableReleases();
+    expect(releases.channelVersions).toMatchObject({ latest: '0.6.1', current: '0.6.1', stable: '0.6.0' });
+    // next/develop pointers do not exist in this stub: omitted, not guessed
+    expect(releases.channelVersions).not.toHaveProperty('next');
+  });
+
+  it('stable without its pointer release reports status=error, never falling back to current', async () => {
+    stubGithubNotFound();
+    checker.start('0.5.0', 'stable');
+    const result = await checker.check();
+    expect(result.status).toBe('error');
+    expect(result.latestVersion).toBe('');
   });
 
   it('develop resolves against its own tag path, distinct from next, with no deprecation warning (AC3, AC4)', async () => {
@@ -456,6 +511,47 @@ describe('UpdateChecker.stop()', () => {
     checker.stop();
     checker.stop();
     // Should not throw
+  });
+});
+
+describe('UpdateChecker channel resolution against pre-releases and legacy pointers (ROUT-382)', () => {
+  const REPO_PATH = '/repos/Inebrio/Routerly';
+  const rel = (tag: string, extra: object = {}) => ({ tag_name: tag, name: tag, html_url: `https://x/${tag}`, prerelease: true, draft: false, ...extra });
+
+  it.each(['latest', 'current'])('"%s" picks the highest plain vX.Y.Z including pre-releases, not /releases/latest', async (channel) => {
+    stubGithubRoutes({
+      [`${REPO_PATH}/releases?per_page=100`]: [rel('next'), rel('v0.5.3'), rel('v0.10.0'), rel('v0.2.0', { prerelease: false }), rel('v9.9.9', { draft: true })],
+      [`${REPO_PATH}/releases/latest`]: rel('v0.2.0', { prerelease: false }),
+    });
+    prime(checker, '0.4.0', channel);
+    const result = await checker.check();
+    expect(result.latestVersion).toBe('0.10.0');
+    expect(result.status).toBe('ok');
+    expect(requestedPaths).not.toContain(`${REPO_PATH}/releases/latest`);
+  });
+
+  it('"current" falls back to /releases/latest when the release list is unavailable', async () => {
+    stubGithubRoutes({ [`${REPO_PATH}/releases/latest`]: rel('v0.2.0', { prerelease: false }) });
+    prime(checker, '0.1.0', 'current');
+    const result = await checker.check();
+    expect(result.latestVersion).toBe('0.2.0');
+  });
+
+  it('"next" falls back to the legacy "next" release and reads the version from its title', async () => {
+    stubGithubRoutes({ [`${REPO_PATH}/releases/tags/next`]: rel('next', { name: 'Routerly next (→ v0.5.3)' }) });
+    prime(checker, '0.4.0', 'next');
+    const result = await checker.check();
+    expect(result.status).toBe('ok');
+    expect(result.latestVersion).toBe('0.5.3');
+    expect(requestedPaths).toEqual([`${REPO_PATH}/releases/tags/channel-next`, `${REPO_PATH}/releases/tags/next`]);
+  });
+
+  it('"develop" with neither pointer release reports status=error', async () => {
+    stubGithubRoutes({});
+    prime(checker, '0.4.0', 'develop');
+    const result = await checker.check();
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('404');
   });
 });
 

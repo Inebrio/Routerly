@@ -46,6 +46,7 @@ export function OverviewPage() {
   const chartTheme = useChartTheme();
 
   useEffect(() => {
+    if (!can('report:read')) { setStatsError(true); return; }
     // `series` carries the savings bucketed over time for the chart (T81),
     // `savings` the whole-window totals per baseline the saving cards read (T102).
     let from = dateRange.from || undefined;
@@ -162,7 +163,7 @@ export function OverviewPage() {
         )}
 
         {/* Cost by model (bar) + Calls by model (table) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div className="overview-split">
 
           {/* Horizontal bar chart — top models by cost */}
           <div className="chart-card" style={{ marginBottom: 0 }}>

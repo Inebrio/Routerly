@@ -10,7 +10,7 @@ import { dispatchNotification, sendTestNotification } from './sender.js';
  * this module additionally makes it reachable through the container.
  */
 export const notificationsModule = defineModule({
-  manifest: { id: 'notifications', version: '0.5.4', dependsOn: { config: '^0.5.4' } },
+  manifest: { id: 'notifications', version: '0.6.0', dependsOn: { config: '^0.6.0' } },
   register({ container }) {
     container.register(NOTIFICATIONS, {
       emitEvent,

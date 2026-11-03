@@ -86,6 +86,15 @@ describe('catalog repos add', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
+  it('rejects a non-http(s) URL without calling the API (ROUT-442)', async () => {
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
+    const cmd = makeCatalogCommand();
+    await expect(cmd.parseAsync(['node', 'routerly', 'repos', 'add', 'ftp://x/'])).rejects.toThrow('exit');
+    expect(exit).toHaveBeenCalledWith(1);
+    expect(mockApi).not.toHaveBeenCalled();
+    exit.mockRestore();
+  });
+
   it('adds a new repo', async () => {
     mockApi
       .mockResolvedValueOnce({ providerRepos: [] })   // GET

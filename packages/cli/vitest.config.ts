@@ -1,8 +1,15 @@
 import { defineConfig } from 'vitest/config'
+import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
+  resolve: {
+    // Worktrees have no shared/dist: test against the sibling package source.
+    alias: { '@routerly/shared': fileURLToPath(new URL('../shared/src/index.ts', import.meta.url)) },
+  },
   test: {
     include: ['src/**/*.test.ts'],
+    // Cold dynamic imports (real inquirer after a doMock/doUnmock) exceed 5s on a loaded machine.
+    testTimeout: 30_000,
     setupFiles: ['./src/test-setup.ts'],
     coverage: {
       provider: 'v8',

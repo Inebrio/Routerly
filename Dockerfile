@@ -16,6 +16,7 @@ RUN npm ci
 
 # Copy source code
 COPY tsconfig.base.json ./
+COPY scripts/link-worktree-modules.mjs ./scripts/
 COPY packages/shared/ ./packages/shared/
 COPY packages/service/ ./packages/service/
 COPY packages/dashboard/ ./packages/dashboard/

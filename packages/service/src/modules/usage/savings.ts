@@ -146,7 +146,7 @@ export function computeSavings(
     if (cached > 0) {
       const model = byId.get(r.modelId);
       if (model) {
-        const full = model.cost.inputPerMillion;
+        const full = model.cost.inputPerMillion ?? 0;
         const cachedRate = model.cost.cachePerMillion ?? full;
         cacheTokens += cached;
         cacheCost += (cached / 1_000_000) * (full - cachedRate);

@@ -11,20 +11,11 @@ interface ModuleInfo {
   dependsOn: string[];
 }
 
-interface ToggleResult {
-  id: string;
-  enabled: boolean;
-  restartRequired: boolean;
-}
-
-const RESTART_HINT =
-  'Restart the Routerly service for this to take effect (e.g. `docker restart <container>`, or stop and re-run the service process).';
-
 export function makeModulesCommand(): Command {
-  const cmd = new Command('modules').description('Enable or disable optional Routerly modules');
+  const cmd = new Command('modules').description('List Routerly modules (all modules are core and always active)');
 
   cmd.command('list')
-    .description('List modules and their enabled state')
+    .description('List modules')
     .option('--json', 'Output as JSON')
     .action(async (opts: { json?: boolean }) => {
       try {
@@ -46,32 +37,6 @@ export function makeModulesCommand(): Command {
           ]);
         }
         console.log(table.toString());
-      } catch (err) {
-        console.error(chalk.red(`Error: ${(err as Error).message}`));
-        process.exit(1);
-      }
-    });
-
-  cmd.command('enable <id>')
-    .description('Enable a module (requires a service restart)')
-    .action(async (id: string) => {
-      try {
-        const res = await api<ToggleResult>('POST', `/api/modules/${encodeURIComponent(id)}/enable`);
-        console.log(chalk.green(`Enabled: ${res.id}`));
-        if (res.restartRequired) console.log(chalk.yellow(RESTART_HINT));
-      } catch (err) {
-        console.error(chalk.red(`Error: ${(err as Error).message}`));
-        process.exit(1);
-      }
-    });
-
-  cmd.command('disable <id>')
-    .description('Disable a module (requires a service restart)')
-    .action(async (id: string) => {
-      try {
-        const res = await api<ToggleResult>('POST', `/api/modules/${encodeURIComponent(id)}/disable`);
-        console.log(chalk.green(`Disabled: ${res.id}`));
-        if (res.restartRequired) console.log(chalk.yellow(RESTART_HINT));
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);

@@ -38,13 +38,18 @@ function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+/** Trimmed, lower-cased labels; entries without a label (corrupt connections.json) are skipped. */
+function normalizeLabels(labels: readonly (string | undefined)[]): string[] {
+  return labels.filter((l): l is string => typeof l === 'string').map(l => l.trim().toLowerCase());
+}
+
 export function suggestConnectionLabel(
   providerId: string,
   providerName: string | undefined,
-  taken: readonly string[],
+  taken: readonly (string | undefined)[],
 ): string {
   const base = slugify(providerName ?? '') || slugify(providerId) || 'connection';
-  const used = new Set(taken.map(l => l.trim().toLowerCase()));
+  const used = new Set(normalizeLabels(taken));
   if (!used.has(base)) return base;
   // Bounded by the number of existing names: one of the first `taken.length + 1` is free.
   for (let n = 2; ; n++) {
@@ -54,9 +59,8 @@ export function suggestConnectionLabel(
 }
 
 /** True when `label` is already worn by one of `taken`, ignoring case and surrounding space. */
-export function isConnectionLabelTaken(label: string, taken: readonly string[]): boolean {
-  const wanted = label.trim().toLowerCase();
-  return taken.some(l => l.trim().toLowerCase() === wanted);
+export function isConnectionLabelTaken(label: string, taken: readonly (string | undefined)[]): boolean {
+  return normalizeLabels(taken).includes(label.trim().toLowerCase());
 }
 
 /**
@@ -821,7 +825,7 @@ export interface ProviderRepo {
 // ─── Update channels ─────────────────────────────────────────────────────────
 
 /** Update channels an instance can follow, by their current names. */
-export const UPDATE_CHANNELS = ['latest', 'current', 'next', 'develop'] as const;
+export const UPDATE_CHANNELS = ['latest', 'current', 'next', 'stable', 'develop'] as const;
 export type UpdateChannel = (typeof UPDATE_CHANNELS)[number];
 
 /** What may legally sit in `Settings.channel`: a channel name, or a version tag. */
@@ -852,14 +856,17 @@ export function isValidUpdateChannel(value: string): boolean {
 }
 
 /** The rejection message, so service and CLI cannot drift. */
-export const UPDATE_CHANNEL_ERROR = 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.';
+export const UPDATE_CHANNEL_ERROR = 'Invalid channel. Accepted values: latest, current, next, stable, develop, or a version tag such as v0.4.0.';
+
+export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'] as const;
+export type LogLevel = (typeof LOG_LEVELS)[number];
 
 export interface Settings {
   port: number;
   host: string;
   /** Whether to serve the dashboard at /dashboard */
   dashboardEnabled: boolean;
-  logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
+  logLevel: LogLevel;
   /**
    * Public base URL of the service (e.g. https://routerly.example.com).
    * Used in the dashboard "How to connect" section when the dashboard is served
@@ -869,7 +876,7 @@ export interface Settings {
   publicUrl?: string;
   /** Optional notification channels configuration */
   notifications?: NotificationsConfig;
-  /** Distribution channel for updates: 'latest' | 'current' | 'next' | 'develop' | vX.Y.Z tag */
+  /** Distribution channel for updates: 'latest' | 'current' | 'next' | 'stable' | 'develop' | vX.Y.Z tag */
   channel?: UpdateChannelSetting;
   /** Whether to expose the Prometheus-compatible /metrics endpoint (default true) */
   metricsEnabled?: boolean;
@@ -901,8 +908,10 @@ export interface UsageRetentionConfig {
 
 /** Available channels and version tags from GitHub Releases. */
 export interface AvailableReleases {
-  /** Named channels (e.g. 'latest', 'current', 'next', 'develop') */
+  /** Named channels (e.g. 'latest', 'current', 'next', 'stable', 'develop') */
   channels: string[];
+  /** Version each named channel points to right now (e.g. { stable: '0.6.0' }); a channel that cannot be resolved is omitted */
+  channelVersions?: Record<string, string>;
   /** Semver version tags (e.g. 'v0.2.0', 'v0.1.5') */
   versions: string[];
 }
@@ -1071,6 +1080,13 @@ export const CHANNEL_SECRET_FIELDS: Record<ChannelProvider, string[]> = {
   dashboard:  [],
 };
 
+/** Secret fields a channel works without; PATCH `null` (CLI `--clear-<field>`) removes them. */
+export const OPTIONAL_CHANNEL_SECRET_FIELDS: Partial<Record<ChannelProvider, string[]>> = {
+  smtp:    ['password'],
+  ses:     ['secretAccessKey'],
+  webhook: ['secret'],
+};
+
 /** Top-level notifications configuration */
 export interface NotificationsConfig {
   channels?: NotificationChannel[];
@@ -1103,6 +1119,7 @@ export const NOTIFICATION_EVENTS = [
   'system.startup',
   'system.shutdown',
   'system.update_available',
+  'system.permissions_unsafe',
 ] as const;
 
 /** One of the canonical {@link NOTIFICATION_EVENTS} names. */
@@ -1197,6 +1214,15 @@ export type CallType = (typeof CALL_TYPES)[number];
  */
 export function isCompletionCall(callType?: CallType): boolean {
   return callType !== 'routing' && callType !== 'guardrail' && callType !== 'judge';
+}
+
+/**
+ * True when a rule makes the proxy hold the whole response before releasing it:
+ * an enabled rule that blocks and judges the response. Single source for the
+ * service buffering, the Security page warning and the Playground stream toggle.
+ */
+export function blocksResponseStreaming(rules: readonly Pick<GuardrailRule, 'enabled' | 'block' | 'target'>[] | undefined): boolean {
+  return rules?.some(r => r.enabled !== false && r.block === true && (r.target === 'response' || r.target === 'both')) ?? false;
 }
 
 export interface UsageRecord {

@@ -9,7 +9,7 @@ Routerly emits events when something notable happens — a provider goes down, a
 
 Every channel supports two filtering dimensions:
 
-- **Events** — which event types it receives. Leave empty to receive all events.
+- **Events** — which event types it receives. `dashboard` channels with no events receive all events; every external channel (email, webhook, Slack, …) with no events is silent and receives nothing until at least one event pattern is set.
 - **Targets** — who receives them (`{ roles, permissions, users }`). Leave empty for everyone.
 
 ---
@@ -198,6 +198,7 @@ The event name is the stable identifier: rules, cooldowns and filters all match 
 | `config.router_created` / `config.router_deleted` | config | Router created / Router deleted | info | A router was created or deleted |
 | `system.startup` / `system.shutdown` | system | Service started / Service stopped | info | Service lifecycle |
 | `system.update_available` | system | A newer release is available | info | The update checker found a release newer than the one running on the configured channel; `details` carries `currentVersion`, `latestVersion`, `channel` and, when known, `releaseUrl`. Raised once per distinct release/channel/version combination, not on every scheduled check |
+| `system.permissions_unsafe` | system | Unsafe file permissions | critical | A secrets file has group/other permission bits set and the service blocks management requests with 423; `details.files` lists the files. Raised once per unsafe state (again only after the files were safe in between) and shown in the inbox only to users with `settings:write`, who can fix it from Settings → Security or `routerly permissions fix`. Users without that permission get no modal, only a neutral notice |
 
 An event that is not in this table still displays: its title is derived from the name (`cache.purged` reads as "Cache purged") and its category comes from the prefix.
 

@@ -4,7 +4,6 @@ vi.mock('./modules/config/loader.js', () => ({
   initConfigDirs: vi.fn(),
   readConfig: vi.fn(),
   writeConfig: vi.fn(),
-  pruneOrphanUsage: vi.fn(async () => 0),
   effectivePort: (s: { port: number }) => s.port,
   appendUsageRecord: vi.fn(),
   getOrCreateSecret: vi.fn(),
@@ -37,6 +36,7 @@ vi.mock('./modules/config/migrate.js', () => ({
   migrateUsageRouterId: vi.fn(async () => 0),
   migrateNotificationChannelScope: vi.fn(async () => 0),
   migrateUsageToNdjson: vi.fn(async () => 0),
+  reenableModules: vi.fn(async () => [] as string[]),
   migrateOrchestratorCandidateOrder: vi.fn(async () => 0),
   migratePassthroughPseudoModel: vi.fn(async () => 0),
   migrateUserRouterIds: vi.fn(async () => 0),
@@ -245,16 +245,12 @@ describe('startServer', () => {
     expect(mockPingTelemetry).not.toHaveBeenCalled()
   })
 
-  it('prunes orphan usage records on startup and logs when any removed (BUG-5)', async () => {
-    const { pruneOrphanUsage } = await import('./modules/config/loader.js')
-    vi.mocked(pruneOrphanUsage).mockResolvedValueOnce(18)
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+  it('never rewrites usage history at startup (ROUT-552)', async () => {
+    const { writeConfig } = await import('./modules/config/loader.js')
     mockSettings({ logLevel: 'silent', dashboardEnabled: false, port: 3095, host: '127.0.0.1', telemetry: { enabled: false } } as any)
 
     await startServer()
 
-    expect(pruneOrphanUsage).toHaveBeenCalled()
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('pruned 18 orphan usage record'))
-    logSpy.mockRestore()
+    expect(vi.mocked(writeConfig).mock.calls.some((c) => c[0] === 'usage')).toBe(false)
   })
 })

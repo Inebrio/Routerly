@@ -8,7 +8,7 @@ import type {
   MessagesResponse,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
-import { forwardableResponseHeaders, type CallOptions } from './passthrough.js';
+import { forwardableResponseHeaders, developerAsSystem, type CallOptions } from './passthrough.js';
 import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages-compat.js';
 
 /**
@@ -28,6 +28,7 @@ async function upstreamError(response: Response): Promise<Error> {
 
 /**
  * Generic adapter for any provider that exposes an OpenAI-compatible API.
+ * `developer` messages are sent as `system`: DeepSeek and most compatible servers reject the role.
  * Requires a custom endpoint in ModelConfig.
  *
  * chatCompletion and streamCompletion use raw fetch to guarantee 100%
@@ -65,7 +66,7 @@ export class CustomAdapter implements ProviderAdapter {
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
       // `stream` stays exactly as the client sent it.
-      body: JSON.stringify({ ...rest, ...(request.stream === false ? { stream: false } : {}), model: upstreamModel }),
+      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), ...(request.stream === false ? { stream: false } : {}), model: upstreamModel }),
       signal: AbortSignal.timeout(model.timeout ?? 60000),
     });
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
@@ -95,7 +96,7 @@ export class CustomAdapter implements ProviderAdapter {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
-      body: JSON.stringify({ ...rest, model: upstreamModel, stream: true }),
+      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), model: upstreamModel, stream: true }),
       signal: ctl.signal,
     }).finally(() => clearTimeout(timer));
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));

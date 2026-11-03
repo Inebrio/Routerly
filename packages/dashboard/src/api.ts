@@ -15,6 +15,13 @@ function msUntilExpiry(): number {
   return Math.max(0, parseInt(raw, 10) - Date.now());
 }
 
+// With requireMfa on and no 2FA, App redirects to the Profile while in-flight page calls
+// reject with 403 mfa_required; those rejections are expected, not page errors.
+window.addEventListener('unhandledrejection', (e: PromiseRejectionEvent) => {
+  const r = e.reason as ApiError | undefined;
+  if (r?.status === 403 && r.code === 'mfa_required') e.preventDefault();
+});
+
 let refreshPromise: Promise<boolean> | null = null;
 
 /** Attempts a silent refresh. Returns true if successful. Concurrent calls share one promise. */
@@ -133,8 +140,11 @@ async function processResponse<T>(res: Response, _path: string): Promise<T> {
   if (!res.ok) {
     // Some routes answer with a machine code plus a sentence (`label_taken` +
     // "Label ... is already used"); the sentence is the one worth showing.
-    const body = data as { error?: string; message?: string };
-    throw httpError(body.message ?? body.error ?? `HTTP ${res.status}`, res.status, body.error);
+    // /api/usage and others wrap it: { error: { message } }.
+    const body = data as { error?: string | { message?: string }; message?: string };
+    const code = typeof body.error === 'string' ? body.error : undefined;
+    const nested = typeof body.error === 'object' ? body.error?.message : undefined;
+    throw httpError(body.message ?? nested ?? code ?? `HTTP ${res.status}`, res.status, code);
   }
   return data as T;
 }
@@ -431,6 +441,7 @@ export const updateRouter = (id: string, data: {
   guardrails?: GuardrailConfig | null;
   pii?: PiiConfig | null;
   optimizers?: OptimizerConfig | null;
+  notifications?: { channels: string[] } | null;
   traceContent?: boolean;
 }) => request<Router>(`/routers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteRouter = (id: string) => request<void>(`/routers/${id}`, { method: 'DELETE' });
@@ -500,17 +511,7 @@ export interface ModuleInfo {
   dependsOn: string[];
 }
 
-export interface ModuleToggleResult {
-  id: string;
-  enabled: boolean;
-  restartRequired: boolean;
-}
-
 export const getModules = () => request<ModuleInfo[]>('/modules');
-export const enableModule = (id: string) =>
-  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/enable`, { method: 'POST' });
-export const disableModule = (id: string) =>
-  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/disable`, { method: 'POST' });
 
 // ── Usage Stats ───────────────────────────────────────────────────────────
 export interface TraceEntry {
@@ -734,11 +735,11 @@ export interface Settings {
   port: number;
   host: string;
   dashboardEnabled: boolean;
-  logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
+  logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
   /** Public base URL of the service — used in "How to connect" when dashboard runs on a different host. */
   publicUrl?: string;
   notifications?: NotificationsConfig;
-  /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
+  /** Distribution channel for updates: 'latest' | 'current' | 'next' | 'stable' | 'develop' | vX.Y.Z tag */
   channel?: string;
   /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
   telemetry?: TelemetryConfig;
@@ -810,6 +811,8 @@ export const triggerUpdate = () => request<{ message: string }>('/system/update'
 export interface AvailableReleases {
   channels: string[];
   versions: string[];
+  /** Version each named channel currently points to; unresolved channels are omitted. */
+  channelVersions?: Record<string, string>;
 }
 export const getAvailableReleases = () => request<AvailableReleases>('/system/releases');
 
@@ -869,10 +872,13 @@ export interface Me {
   id: string;
   email: string;
   roleId: string;
+  permissions?: string[];
   language?: string;
 }
 
-export const getMe = () => request<Me>('/me');
+// AuthProvider and LanguageProvider both ask for /me when a session is restored: share one request.
+let meInFlight: Promise<Me> | undefined;
+export const getMe = () => (meInFlight ??= request<Me>('/me').finally(() => { meInFlight = undefined; }));
 export const updateMe = (data: { currentPassword: string; newPassword: string }) =>
   request<Me>('/me', { method: 'PUT', body: JSON.stringify(data) });
 export const updateMyLanguage = (language: string) =>
@@ -1225,6 +1231,8 @@ export interface OptimizerPreviewResult {
   estimatedTokensBefore: number;
   estimatedTokensAfter: number;
   perStep: OptimizerPreviewStep[];
+  /** Which pipeline ran: the router's assigned profile or its custom steps. */
+  pipeline?: { kind: 'profile' | 'custom'; profileId?: string; label: string };
   /** The prompt the whole pipeline would forward. */
   messages: Message[];
 }
@@ -1234,7 +1242,8 @@ export const previewOptimizers = (body: {
   /** Model the sample is addressed to, so context-window steps have a window. */
   model?: string;
   sampleMessages: Message[];
-  steps: OptimizerStep[];
+  /** Omit to run the router's own pipeline (assigned profile, else saved custom steps). */
+  steps?: OptimizerStep[];
 }) => request<OptimizerPreviewResult>('/optimizers/preview', { method: 'POST', body: JSON.stringify(body) });
 
 /** One installable LLMLingua-2 checkpoint, as the service host reports it. */
@@ -1283,3 +1292,21 @@ export interface ClientsResponse {
 /** 404s (as an ApiError with `status === 404`) when the client-configurator module is disabled. */
 export const getClients = () => request<ClientsResponse>('/clients');
 
+
+// ── Playground Debug panel layout (per-browser preference) ───────────────────
+const PLAYGROUND_DEBUG_KEY = 'lr_playground_debug';
+export interface PlaygroundDebugLayout { width: number | null; collapsed: boolean }
+
+export function getPlaygroundDebugLayout(): PlaygroundDebugLayout {
+  try {
+    const v = JSON.parse(localStorage.getItem(PLAYGROUND_DEBUG_KEY) ?? 'null');
+    return {
+      width: typeof v?.width === 'number' && Number.isFinite(v.width) ? v.width : null,
+      collapsed: v?.collapsed === true,
+    };
+  } catch { return { width: null, collapsed: false }; }
+}
+
+export function setPlaygroundDebugLayout(layout: PlaygroundDebugLayout): void {
+  try { localStorage.setItem(PLAYGROUND_DEBUG_KEY, JSON.stringify(layout)); } catch { /* storage unavailable */ }
+}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Plus, Trash2, Lock, Save, X } from 'lucide-react';
+import { Plus, Trash2, Lock, Save, X, ShieldOff } from 'lucide-react';
 import { getRoles, createRole, updateRole, deleteRole, ALL_PERMISSIONS } from '../api';
 import type { Role, Permission } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -48,7 +48,9 @@ const EMPTY_FORM: RoleFormState = { id: '', name: '', permissions: [] };
 
 export function RolesPage() {
   const { t } = useTranslation();
-  const canWrite = useAuth().can('user:write');
+  const { can } = useAuth();
+  const canRead = can('user:read');
+  const canWrite = can('user:write') || can('role:write');
   const PERM_LABELS = permLabels(t);
   const [roles, setRoles]           = useState<Role[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -60,7 +62,7 @@ export function RolesPage() {
   const [saving, setSaving]         = useState(false);
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (canRead) load(); else setLoading(false); }, [canRead]);
 
   async function load() {
     setLoading(true);
@@ -142,6 +144,10 @@ export function RolesPage() {
   }
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
+
+  if (!canRead) {
+    return <div className="empty-state"><ShieldOff size={40} /><p>{t('roles.noPermission')}</p></div>;
+  }
 
   return (
     <>

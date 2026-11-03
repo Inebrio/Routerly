@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import type { Permission, Profile, ProfileKind } from '@routerly/shared';
+import type { Permission, Profile, ProfileKind, RoutingPolicy } from '@routerly/shared';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
-import { isModuleEnabled } from '../../core/modules/registry.js';
 import { listProfiles, cloneProfile, bumpVersion, assertWritableProfile } from '../routing/profiles/store.js';
 import { getBuiltin } from '../routing/profiles/presets.js';
+import { validateRoutingModels } from '../routing/validate-routing-models.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema } from './schemas.js';
 
 // ── Route-local auth helpers (mirrors api.ts/connections.ts; no shared route-helper module exists) ──
@@ -30,21 +30,6 @@ function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply)
     return false;
   }
   return true;
-}
-
-/**
- * Gates every profile handler on the 'profiles' module record. No
- * ModuleManifest/catalog entry exists for this id yet, so with no config record
- * isModuleEnabled defaults to true and nothing is disabled out of the box.
- */
-async function checkProfilesModuleGate(reply: FastifyReply): Promise<boolean> {
-  const records = await readConfig('modules');
-  if (isModuleEnabled(records, 'profiles')) return true;
-  reply.status(403).send({
-    error: 'module_disabled',
-    message: `profiles module is disabled`,
-  });
-  return false;
 }
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
@@ -141,7 +126,6 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get<{ Querystring: { kind?: string } }>('/api/profiles', async (req, reply) => {
     if (!requirePerm(req, 'profiles:read', reply)) return;
-    if (!await checkProfilesModuleGate(reply)) return;
     const kind = req.query.kind;
     if (kind !== undefined && !profileKindSchema.safeParse(kind).success) {
       return reply.status(400).send({ error: 'invalid_kind' });
@@ -151,9 +135,13 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post<{ Body: unknown }>('/api/profiles', async (req, reply) => {
     if (!requirePerm(req, 'profiles:manage', reply)) return;
-    if (!await checkProfilesModuleGate(reply)) return;
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+
+    if (parsed.data.kind === 'routing') {
+      const modelsError = await validateRoutingModels({ policies: parsed.data.policies as RoutingPolicy[] });
+      if (modelsError) return reply.status(400).send({ error: modelsError });
+    }
 
     const profile = { ...parsed.data, id: randomUUID(), version: 1, builtin: false } as Profile;
     const userProfiles = await readConfig('profiles');
@@ -165,7 +153,6 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post<{ Body: unknown }>('/api/profiles/clone', async (req, reply) => {
     if (!requirePerm(req, 'profiles:manage', reply)) return;
-    if (!await checkProfilesModuleGate(reply)) return;
     const parsed = cloneSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
 
@@ -184,7 +171,6 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.patch<{ Params: { id: string }; Body: unknown }>('/api/profiles/:id', async (req, reply) => {
     if (!requirePerm(req, 'profiles:manage', reply)) return;
-    if (!await checkProfilesModuleGate(reply)) return;
 
     const userProfiles = await readConfig('profiles');
     const idx = userProfiles.findIndex(p => p.id === req.params.id);
@@ -195,6 +181,14 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
     const current = userProfiles[idx]!;
     const parsed = PATCH_SCHEMAS[current.kind].safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+
+    if (current.kind === 'routing' && (parsed.data as { policies?: RoutingPolicy[] }).policies) {
+      const modelsError = await validateRoutingModels(
+        { policies: (parsed.data as { policies: RoutingPolicy[] }).policies },
+        { policies: current.policies },
+      );
+      if (modelsError) return reply.status(400).send({ error: modelsError });
+    }
 
     // The schema for this kind already rejected every field that does not belong
     // to it, so the parsed body can be merged as-is.
@@ -208,7 +202,6 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.delete<{ Params: { id: string } }>('/api/profiles/:id', async (req, reply) => {
     if (!requirePerm(req, 'profiles:manage', reply)) return;
-    if (!await checkProfilesModuleGate(reply)) return;
 
     const userProfiles = await readConfig('profiles');
     const idx = userProfiles.findIndex(p => p.id === req.params.id);
@@ -234,7 +227,6 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.put<{ Params: { id: string }; Body: unknown }>('/api/routers/:id/profiles', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
-    if (!await checkProfilesModuleGate(reply)) return;
     const parsed = assignSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
     const body = parsed.data;

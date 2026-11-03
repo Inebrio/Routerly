@@ -1,13 +1,15 @@
 {
   "name": "@routerly/dashboard",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node ../../scripts/link-worktree-modules.mjs",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "pretypecheck": "node ../../scripts/link-worktree-modules.mjs",
     "typecheck": "tsc"
   },
   "dependencies": {

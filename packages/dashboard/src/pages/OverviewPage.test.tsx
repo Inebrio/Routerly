@@ -64,6 +64,7 @@ const monthStart = () => {
   return iso(new Date(now.getFullYear(), now.getMonth(), 1));
 };
 const today = () => iso(new Date());
+const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return iso(d); };
 
 /** The date range picker: its trigger is the only secondary button on the page. */
 const openPicker = () => userEvent.click(document.querySelector('button.btn-secondary') as HTMLElement);
@@ -133,6 +134,11 @@ describe('OverviewPage — error state', () => {
 // ── Loaded state ───────────────────────────────────────────────────────────────
 
 describe('OverviewPage — loaded state', () => {
+  it('lays cost and calls cards out with the responsive overview-split grid', async () => {
+    const { container } = renderPage();
+    await waitFor(() => expect(container.querySelector('.overview-split')?.children).toHaveLength(2));
+  });
+
   it('renders page header', async () => {
     renderPage();
     await waitFor(() => expect(screen.queryByText('Overview')).not.toBeNull());
@@ -288,7 +294,7 @@ describe('OverviewPage — period selector', () => {
     await waitFor(() => screen.queryByText('This month'));
     await openPicker();
     await userEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
-    const from = new Date(Date.now() - 6 * 86400_000).toISOString().slice(0, 10);
+    const from = daysAgo(6);
     await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith(
       'custom', undefined, from, today(), undefined, undefined, { series: true, savings: true },
     ));
@@ -343,6 +349,13 @@ describe('OverviewPage — cost by model', () => {
     renderPage();
     await waitFor(() => screen.queryByText('Overview'));
     expect(mockGetModels).not.toHaveBeenCalled();
+  });
+
+  it('does not call getUsage without report:read and shows the permission message', async () => {
+    mockCan = false;
+    renderPage();
+    await waitFor(() => expect(screen.queryByText(/No permission to view usage data/)).not.toBeNull());
+    expect(vi.mocked(getUsage)).not.toHaveBeenCalled();
   });
 
   it('getRouters error is caught silently', async () => {

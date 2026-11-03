@@ -12,7 +12,8 @@ import type { LLMCallContext } from '../execute.js'
 import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
 import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
 import { traceEgress } from '../helpers.js'
-import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
+import { forwardAnthropicOAuth, forwardAnthropicApiKey, type PassthroughScrub, type UpstreamFailure } from './oauthForward.js'
+import { mergePolicies } from '../../pii/piiScrubber.js'
 import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import {
   anthropicToChatRequest, openAIToAnthropicResponse, openAIChunksToAnthropicSSE,
@@ -60,6 +61,33 @@ export const anthropicInject: Processor<ProxyContext> = {
   },
 }
 
+/** Output PII policy for the verbatim pass-through (the pii.output processor never sees those bytes). */
+function outputScrub(ctx: ProxyContext): PassthroughScrub | undefined {
+  const policies = ctx.router.pii?.policies
+  if (!policies?.length) return undefined
+  const effective = mergePolicies(policies, 'output')
+  if (!(effective.entities?.length || effective.customPatterns?.length)) return undefined
+  return { effective, ...(ctx.emit ? { emit: ctx.emit } : {}) }
+}
+
+/**
+ * Verbatim forward result: a non-2xx answer with candidates still to try was not sent to the
+ * client. Record it as the attempt's failure so the candidate loop advances.
+ */
+function deferredFailure(ctx: ProxyContext, sent: unknown): boolean {
+  const f = sent as Partial<UpstreamFailure> | undefined
+  if (typeof f?.status !== 'number' || typeof f.message !== 'string') return false
+  ctx.attemptError = new Error(f.message)
+  ctx.attemptResponse = { status: f.status, body: f.body }
+  return true
+}
+
+/** True when a candidate other than the current one has not been tried yet (loop order: weight, descending). */
+function hasLaterCandidate(ctx: ProxyContext): boolean {
+  const ordered = [...(ctx.candidates ?? [])].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+  return ordered.findIndex((c) => c === ctx.attempt?.candidate) < ordered.length - 1
+}
+
 // ─── upstream.execute: passthrough forward OR toChat+llmChat/llmStream (anthropic.ts L220-286) ──
 export const anthropicUpstream: Processor<ProxyContext> = {
   id: 'anthropic:upstream',
@@ -86,18 +114,18 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     if (model.provider === 'anthropic-oauth') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      await forwardAnthropicOAuth(req, reply, liveModel)
+      if (deferredFailure(ctx, await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx)))) { ctx.passthrough = false; return }
       ctx.result = { kind: 'passthrough' }
       return
     }
 
-    // ── Anthropic API-key / web models: verbatim pass-through (anthropic.ts L229-232). ──
-    // Same live-credential reload as above: anthropic-web's session key also needs it;
-    // plain anthropic api-key models resolve to the same static value either way.
-    if (model.provider === 'anthropic' || model.provider === 'anthropic-web') {
+    // ── Anthropic API-key models: verbatim pass-through (anthropic.ts L229-232). ──
+    // anthropic-web is NOT forwarded: claude.ai exposes no /v1/messages, so it goes through
+    // the generic adapter path below (Anthropic -> chat -> anthropic-web -> Anthropic).
+    if (model.provider === 'anthropic') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      await forwardAnthropicApiKey(req, reply, liveModel)
+      if (deferredFailure(ctx, await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx)))) { ctx.passthrough = false; return }
       ctx.result = { kind: 'passthrough' }
       return
     }
@@ -112,6 +140,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
           routerId: router.id,
           ...(router.pii ? { pii: router.pii } : {}),
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+          ...(ctx.emit ? { emit: ctx.emit } : {}),
         })
         if (!body.stream) {
           const chatResp = await chunksToChatResponse(chunks, model.id)
@@ -298,7 +327,8 @@ export const anthropicEgress: Processor<ProxyContext> = {
       // mid-stream error: nothing to write to the client, but the trace says so.
       failure = err instanceof Error ? err.message : String(err)
     }
-    reply.raw.end()
+    // An aborted stream is closed abnormally so the client sees an error, not a complete response.
+    if (failure) reply.raw.destroy(); else reply.raw.end()
     traceEgress(ctx, { kind: 'stream', encoding: 'anthropic-sse', frames, bytes, ...(failure ? { error: failure } : {}) })
   },
 }

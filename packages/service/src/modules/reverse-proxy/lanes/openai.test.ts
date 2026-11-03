@@ -43,7 +43,7 @@ const mockEmitEvent = vi.mocked(emitEvent)
 afterEach(() => vi.clearAllMocks())
 
 function makeLog() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+  return { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }
 
 function makeFakeStore() {
@@ -275,9 +275,12 @@ describe('openai transport lane', () => {
 
   it('egress counts the SSE frames the client actually received, and names a mid-stream failure', async () => {
     const emit = vi.fn()
+    const written: string[] = []
+    const destroy = vi.fn()
+    const end = vi.fn()
     const reply: any = {
       hijack: () => {},
-      raw: { setHeader: () => {}, flushHeaders: () => {}, write: () => {}, end: () => {} },
+      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end, destroy },
     }
     async function* body() {
       yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'm', choices: [{ index: 0, delta: { content: 'hi' }, finish_reason: null }] }
@@ -294,6 +297,10 @@ describe('openai transport lane', () => {
       message: 'egress:sent',
       details: { protocol: 'openai', kind: 'stream', encoding: 'sse', frames: 1, bytes: expect.any(Number), error: 'upstream reset' },
     })
+    // truncated stream: no clean [DONE], connection closed abnormally
+    expect(written.join('')).not.toContain('[DONE]')
+    expect(destroy).toHaveBeenCalled()
+    expect(end).not.toHaveBeenCalled()
   })
 
   it('egress no-ops on a block with no body (streaming block already wrote its own bytes)', async () => {
@@ -417,7 +424,7 @@ describe('openai transport lane', () => {
     const logError = vi.fn()
     const reply: any = {
       hijack: () => {},
-      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end: () => {} },
+      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end: () => {}, destroy: () => {} },
     }
     async function* body(): AsyncGenerator<unknown> {
       yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'm', choices: [] }
@@ -430,7 +437,7 @@ describe('openai transport lane', () => {
     } as unknown as ProxyContext
     await openaiEgress.run(ctx)
     expect(logError).toHaveBeenCalledOnce()
-    expect(written.at(-1)).toBe('data: [DONE]\n\n')
+    expect(written).not.toContain('data: [DONE]\n\n')
   })
 })
 
@@ -582,7 +589,7 @@ describe('/v1/responses on the openai lane', () => {
     let ended = false
     const reply: any = {
       hijack: () => {},
-      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end: () => { ended = true } },
+      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end: () => {}, destroy: () => { ended = true } },
     }
     async function* body(): AsyncGenerator<unknown> {
       yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'hi' }, finish_reason: null }] }
@@ -826,6 +833,20 @@ describe('openai:upstream', () => {
     await openaiUpstream.run(ctx)
     expect(ctx.attemptError).toBe(err)
     expect(ctx.attemptResponse).toBeUndefined()
+  })
+
+  it('logs the selected candidate at debug level without request content', async () => {
+    mockLlmChat.mockResolvedValueOnce({ choices: [] } as any)
+    const log = makeLog()
+    const ctx = {
+      protocol: 'openai', stream: false,
+      attempt: { model, candidate },
+      request: { model: 'model-a', messages: [{ role: 'user', content: 'secret prompt' }] }, log,
+      router: { id: 'p1' }, traceId: 't1',
+    } as unknown as ProxyContext
+    await openaiUpstream.run(ctx)
+    expect(log.debug).toHaveBeenCalledOnce()
+    expect(JSON.stringify(log.debug.mock.calls)).not.toContain('secret prompt')
   })
 
   it('BudgetExceededError does NOT stash ctx.attemptError (a local skip, not an upstream fault)', async () => {

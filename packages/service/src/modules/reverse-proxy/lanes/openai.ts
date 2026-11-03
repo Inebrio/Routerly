@@ -96,6 +96,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
     const body = ctx.request
     const log = ctx.log
     const router = ctx.router
+    log.debug({ modelId: model.id, provider: model.provider, routerId: router.id, stream: ctx.stream }, 'completion: candidate selected')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const endUserId = (body as any).user as string | undefined || undefined
 
@@ -131,6 +132,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
             routerId: router.id,
             ...(router.pii ? { pii: router.pii } : {}),
             ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+          ...(ctx.emit ? { emit: ctx.emit } : {}),
           })
           ctx.result = { kind: 'json', body: await chunksToChatResponse(chunks, model.id) }
         } catch (err) {
@@ -150,6 +152,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
           routerId: router.id,
           ...(router.pii ? { pii: router.pii } : {}),
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+          ...(ctx.emit ? { emit: ctx.emit } : {}),
         })
         ctx.result = { kind: 'stream', body: await primeStream(chunks) }
       } catch (err) {
@@ -360,7 +363,8 @@ export const openaiEgress: Processor<ProxyContext> = {
         ctx.log.error({ err }, 'Streaming error mid-stream')
         failure = err instanceof Error ? err.message : String(err)
       }
-      reply.raw.end()
+      // An aborted stream is closed abnormally so the client sees an error, not a complete response.
+      if (failure) reply.raw.destroy(); else reply.raw.end()
       traceEgress(ctx, { kind: 'stream', encoding: 'responses', frames, bytes, ...(failure ? { error: failure } : {}) })
       return
     }
@@ -376,8 +380,13 @@ export const openaiEgress: Processor<ProxyContext> = {
       ctx.log.error({ err }, 'Streaming error mid-stream')
       failure = err instanceof Error ? err.message : String(err)
     }
-    reply.raw.write('data: [DONE]\n\n')
-    reply.raw.end()
+    if (failure) {
+      // No [DONE]: close abnormally so the client can tell the stream was cut.
+      reply.raw.destroy()
+    } else {
+      reply.raw.write('data: [DONE]\n\n')
+      reply.raw.end()
+    }
     traceEgress(ctx, { kind: 'stream', encoding: 'sse', frames, bytes, ...(failure ? { error: failure } : {}) })
   },
 }

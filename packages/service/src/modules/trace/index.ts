@@ -14,7 +14,7 @@ import type { ProxyContext } from '../reverse-proxy/context.js'
 import { publishTrace, TRACE_COMPLETED_TOPIC, type TraceCompletedEvent } from './publish.js'
 import { makeTraceStreamHandler } from './routes.js'
 import { readConfig } from '../config/loader.js'
-import { printTrace } from './console.js'
+import { printTrace, setTraceLogLevel } from './console.js'
 import { buildRecap } from './recap.js'
 import { closeTrace, getTrace, getTraceStartedAt, openTrace, recordTrace, type TraceEvent } from './store.js'
 
@@ -86,16 +86,16 @@ function makeFinalize(events: EventBus): Processor<ProxyContext> {
 }
 
 export const traceModule: RouterlyModule = defineModule({
-  manifest: { id: 'trace', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4', api: '^0.5.4' } },
+  manifest: { id: 'trace', version: '0.6.0', dependsOn: { 'reverse-proxy': '^0.6.0', api: '^0.6.0' } },
   async register({ container, events }) {
-    // The console gets the whole trace, live. Read once at boot: the level only
-    // decides how much of it is printed, and re-reading it per entry would put a
-    // config read on the hot path of every emit.
-    const logLevel = await readConfig('settings').then((s) => s.logLevel).catch(() => 'info')
+    // The console gets the whole trace, live. The level is read once at boot and
+    // kept in console.ts; PUT /api/settings updates it, so there is no config
+    // read on the hot path of every emit.
+    setTraceLogLevel(await readConfig('settings').then((s) => s.logLevel).catch(() => 'info'))
     events.subscribe('trace/**', (_topic, payload) => {
       const event = payload as TraceEvent
       recordTrace(event)
-      printTrace(event, logLevel)
+      printTrace(event)
     })
     const pipeline = container.resolve(PROXY_PIPELINE)
     pipeline.contribute(makeIngress(events))

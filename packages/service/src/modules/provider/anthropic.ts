@@ -8,7 +8,7 @@ import type {
   MessagesResponse,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
-import { forwardableResponseHeaders, type CallOptions } from './passthrough.js';
+import { forwardableResponseHeaders, developerAsSystem, type CallOptions } from './passthrough.js';
 
 export class AnthropicAdapter implements ProviderAdapter {
   protected getClient(model: ModelConfig): Anthropic {
@@ -191,8 +191,9 @@ export class AnthropicAdapter implements ProviderAdapter {
     const client = this.getClient(model);
 
     // Convert OpenAI message format to Anthropic format
-    const systemMessage = request.messages.find((m) => m.role === 'system');
-    const nonSystemMessages = request.messages.filter((m) => m.role !== 'system');
+    const messages = developerAsSystem(request.messages);
+    const systemMessage = messages.find((m) => m.role === 'system');
+    const nonSystemMessages = messages.filter((m) => m.role !== 'system');
 
     const upstreamModel = this.getUpstreamModelId(model);
 
@@ -270,8 +271,9 @@ export class AnthropicAdapter implements ProviderAdapter {
     const client = this.getClient(model);
     const upstreamModel = this.getUpstreamModelId(model);
 
-    const systemMessage = request.messages.find((m) => m.role === 'system');
-    const nonSystemMessages = request.messages.filter((m) => m.role !== 'system');
+    const messages = developerAsSystem(request.messages);
+    const systemMessage = messages.find((m) => m.role === 'system');
+    const nonSystemMessages = messages.filter((m) => m.role !== 'system');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const params: any = {
@@ -300,7 +302,7 @@ export class AnthropicAdapter implements ProviderAdapter {
 
     let id = `chatcmpl-${Math.random().toString(36).substring(2, 10)}`;
     const created = Math.floor(Date.now() / 1000);
-    const responseModel = upstreamModel;
+    let responseModel = upstreamModel;
     let inputTokens = 0;
     let cacheReadTokens = 0;
     let cacheCreationTokens = 0;
@@ -315,6 +317,7 @@ export class AnthropicAdapter implements ProviderAdapter {
     for await (const event of stream) {
       if (event.type === 'message_start') {
         id = event.message.id;
+        responseModel = event.message.model ?? upstreamModel;
         inputTokens = event.message.usage.input_tokens;
         cacheReadTokens = event.message.usage.cache_read_input_tokens ?? 0;
         cacheCreationTokens = event.message.usage.cache_creation_input_tokens ?? 0;

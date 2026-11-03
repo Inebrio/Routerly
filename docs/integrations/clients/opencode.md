@@ -64,6 +64,19 @@ Replace `http://localhost:3000/v1` with your Routerly instance's URL and
 [Routers](../../dashboard/routers.md) page, or let `clients configure`
 mint one for you).
 
+## Select the model
+
+OpenCode addresses a model as `<provider id>/<model id>`. Here the provider
+is `routerly` and the model id is `routerly/ada`, so the full name is
+`routerly/routerly/ada` (`-m routerly/ada` is not valid):
+
+```bash
+opencode run -m routerly/routerly/ada "Explain this repository"
+```
+
+In the OpenCode TUI, run `/models` and pick **Routerly (auto-routed)** under
+the Routerly provider.
+
 ## Undo
 
 Every `configure` run prints a `Backup ID`. Restore the file to its exact

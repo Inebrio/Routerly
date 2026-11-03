@@ -353,4 +353,18 @@ describe('clineIntegration', () => {
   it('has no launch() (not a standalone binary)', () => {
     expect(clineIntegration.launch).toBeUndefined();
   });
+
+  it('validate probes /health: ok, non-2xx, unreachable', async () => {
+    mockRequireAccount.mockResolvedValue({ serverUrl: 'http://localhost:3000/' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce({ ok: true }));
+    expect(await clineIntegration.validate()).toMatchObject({ ok: true, reachable: true });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce({ ok: false, status: 503 }));
+    expect(await clineIntegration.validate()).toMatchObject({ ok: false, reachable: true });
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new Error('boom')));
+    expect(await clineIntegration.validate()).toMatchObject({ ok: false, reachable: false });
+  });
+
+  it('rollback restores a backup (unknown id rejects)', async () => {
+    await expect(clineIntegration.rollback('missing-backup')).rejects.toThrow();
+  });
 });

@@ -5,11 +5,14 @@ import { deleteRouterToken } from '../../api';
 import { useRouter } from './RouterLayout';
 import { useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { useAuth } from '../../AuthContext';
 
 export function RouterTokenTab() {
   const { t } = useTranslation();
   const { router, setRouter } = useRouter();
   const navigate = useNavigate();
+  const { can } = useAuth();
+  const canWrite = can('token:write') || can('router:write');
   if (!router) return null;
 
   const [loading, setLoading] = useState(false);
@@ -52,11 +55,13 @@ export function RouterTokenTab() {
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
-        <button className="btn btn-primary" onClick={openCreate} disabled={loading}>
-          <Plus size={16} /> {t('routers.token.newButton')}
-        </button>
-      </div>
+      {canWrite && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+          <button className="btn btn-primary" onClick={openCreate} disabled={loading}>
+            <Plus size={16} /> {t('routers.token.newButton')}
+          </button>
+        </div>
+      )}
 
       {
         tokens.length === 0 ? (
@@ -142,14 +147,14 @@ export function RouterTokenTab() {
                       {token.expiresAt ? new Date(token.expiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : t('routers.token.never')}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  {canWrite && <div style={{ display: 'flex', gap: 8 }}>
                     <button className="btn-icon" onClick={() => openEdit(token.id)} disabled={loading} title={t('routers.token.editTitle')}>
                       <Edit2 size={16} />
                     </button>
                     <button className="btn-icon danger" onClick={() => handleDelete(token.id, token.tokenSnippet || '')} disabled={loading} title={t('routers.token.revokeTitle')}>
                       <Trash2 size={16} />
                     </button>
-                  </div>
+                  </div>}
                 </div>
               </div>
             ))}
