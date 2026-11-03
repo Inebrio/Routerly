@@ -1,0 +1,181 @@
+[
+  {
+    "name": "screenshot-login",
+    "path": "/dashboard/login",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-overview",
+    "path": "/dashboard/overview",
+    "clip": "full",
+    "steps": []
+  },
+  {
+    "name": "screenshot-models",
+    "path": "/dashboard/models",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-models-discover",
+    "path": "/dashboard/models/discover",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-models-new-prefilled",
+    "path": "/dashboard/models/new?provider=openai&modelId=gpt-4o",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-projects",
+    "path": "/dashboard/projects",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-project-routing-profile",
+    "path": "/dashboard/projects/proj-acme-demo/routing",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-project-optimizer-tab",
+    "path": "/dashboard/projects/proj-acme-demo/optimizer",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-usage",
+    "path": "/dashboard/usage",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-usage-calls",
+    "path": "/dashboard/usage",
+    "clip": "viewport",
+    "steps": [
+      { "click": "text=Router Calls" }
+    ]
+  },
+  {
+    "name": "screenshot-playground",
+    "path": "/dashboard/test",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-playground-trace",
+    "path": "/dashboard/test",
+    "clip": "viewport",
+    "steps": [
+      { "fill": "input[placeholder='sk-rt-...']", "value": "sk-rt-acmefake0000000000000000000000000000000000000000000000" },
+      { "click": "[role=combobox]" },
+      { "click": "text=local-demo-model" },
+      { "fill": "textarea[placeholder='Type a message...']", "value": "Say hello in one short sentence." },
+      { "click": "[data-testid=playground-send-button]" }
+    ],
+    "waitFor": "text=fixed local response"
+  },
+  {
+    "name": "screenshot-experiments",
+    "path": "/dashboard/experiments",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-experiment-metrics",
+    "path": "/dashboard/experiments/exp-model-compare/metrics",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-profiles",
+    "path": "/dashboard/profiles",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-profile",
+    "path": "/dashboard/profile",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-profile-2fa",
+    "path": "/dashboard/profile",
+    "clip": "viewport",
+    "steps": [
+      { "click": "text=Enable Two-Factor Authentication" }
+    ]
+  },
+  {
+    "name": "screenshot-profile-notifications",
+    "path": "/dashboard/profile/notifications",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-settings",
+    "path": "/dashboard/settings/general",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-settings-notifications",
+    "path": "/dashboard/settings/notifications",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-settings-notifications-dashboard",
+    "path": "/dashboard/settings/notifications",
+    "clip": "viewport",
+    "steps": [
+      { "click": "tr:has-text(\"In-app inbox\") button[title=\"Edit channel\"]" }
+    ],
+    "waitFor": "text=Edit Dashboard (in-app inbox) channel"
+  },
+  {
+    "name": "screenshot-settings-notifications-expanded",
+    "path": "/dashboard/settings/notifications",
+    "clip": "viewport",
+    "steps": [
+      { "click": "tr:has-text(\"Ops Mailer\") button[title=\"Edit channel\"]" }
+    ],
+    "waitFor": "text=Edit SMTP channel"
+  },
+  {
+    "name": "screenshot-settings-integrations",
+    "path": "/dashboard/settings/integrations",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-settings-roles",
+    "path": "/dashboard/settings/roles",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-settings-users",
+    "path": "/dashboard/settings/users",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-connect",
+    "path": "/dashboard/connect",
+    "clip": "viewport",
+    "steps": []
+  },
+  {
+    "name": "screenshot-connect-client",
+    "path": "/dashboard/connect/codex",
+    "clip": "viewport",
+    "steps": []
+  }
+]

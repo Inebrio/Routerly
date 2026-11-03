@@ -39,7 +39,7 @@ A single HTTP `POST` request to `https://telemetry.routerly.ai/ping` with this J
 | `platform` | string | `linux` | OS platform: `linux`, `darwin`, or `win32` |
 | `installId` | string | `a3f1c8b2...` | Random hex ID generated once at opt-in time |
 
-**Nothing else is sent.** No hostname, no IP address logged server-side, no email, no project names, no model IDs, no usage data, no tokens.
+**Nothing else is sent.** No hostname, no IP address logged server-side, no email, no router names, no model IDs, no usage data, no tokens.
 
 The `installId` is a random string generated locally the moment you opt in. It has no relation to your identity — it exists only to deduplicate counts (so a single instance upgrading ten times is counted as one installation, not ten).
 
@@ -49,11 +49,13 @@ The `installId` is a random string generated locally the moment you opt in. It h
 
 | Event | When |
 |-------|------|
-| `install` | Once, after you answer "yes" to the consent prompt during a fresh installation, or after clicking "Yes, help out" in the dashboard banner |
-| `upgrade` | Once per upgrade run, if you had previously opted in |
+| `install` | On the first service startup after opting in, when no previous ping has been recorded |
+| `upgrade` | On service startup, when the running version differs from the last pinged version |
 | `uninstall` | Once, just before the uninstaller removes your files, if you had previously opted in |
 
-Events are fire-and-forget with a 3-second timeout. If the request fails (network error, server down), Routerly continues normally — no retry, no error.
+The service checks on every startup whether a ping is due (version changed or first run after opt-in). If telemetry is disabled or no version change is detected, nothing is sent.
+
+Events have a 3-second timeout. If the request fails (network error, server down), Routerly continues normally. Because `lastPingedVersion` is only written on a successful ping, the event will be retried on the next startup until it succeeds.
 
 ---
 
@@ -61,7 +63,7 @@ Events are fire-and-forget with a 3-second timeout. If the request fails (networ
 
 - LLM requests, prompts, or completions
 - Token counts or cost data
-- Project names, model IDs, or API keys
+- Router names, model IDs, or API keys
 - User email addresses or any account information
 - Hostname, IP address, or any network identifier
 - Usage statistics or performance metrics
@@ -122,10 +124,17 @@ The preference is stored in your local `settings.json` file:
 {
   "telemetry": {
     "enabled": true,
-    "installId": "a3f1c8b2d4e6..."
+    "installId": "a3f1c8b2d4e6...",
+    "lastPingedVersion": "0.2.1"
   }
 }
 ```
+
+| Field | Description |
+|-------|-------------|
+| `enabled` | `true` if you have opted in, `false` or absent if not |
+| `installId` | Random hex string generated once at opt-in time |
+| `lastPingedVersion` | Version number of the last successful ping; used to detect upgrades on next startup |
 
 If `telemetry` is absent from the file, Routerly has not asked you yet and no data has ever been sent.
 

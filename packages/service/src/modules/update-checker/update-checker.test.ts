@@ -1,0 +1,841 @@
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { EventEmitter } from 'node:events';
+
+// ── Mock node:https before importing the module under test ───────────────────
+
+const { mockRequest } = vi.hoisted(() => ({ mockRequest: vi.fn() }));
+vi.mock('node:https', () => ({ request: mockRequest }));
+
+// ── Mock the announcement record store and the notification emitter (RA-15) ──
+
+vi.mock('../config/loader.js', () => ({
+  readConfig: vi.fn(),
+  writeConfig: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../notifications/emitter.js', () => ({
+  emitEvent: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { UpdateChecker } from './update-checker.js';
+import { readConfig, writeConfig } from '../config/loader.js';
+import { emitEvent } from '../notifications/emitter.js';
+
+const mockReadConfig = vi.mocked(readConfig);
+const mockWriteConfig = vi.mocked(writeConfig);
+const mockEmitEvent = vi.mocked(emitEvent);
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+interface MockRes extends EventEmitter {
+  statusCode: number;
+}
+
+type ReqLike = EventEmitter & { end: () => void; destroy: () => void };
+
+/** Path of the most recent request made through `stubGithubOk`'s mock. */
+let lastRequestPath: string | undefined;
+
+function stubGithubOk(body: object): void {
+  mockRequest.mockImplementation((opts: { path: string }, cb: (res: MockRes) => void) => {
+    lastRequestPath = opts.path;
+    const req = new EventEmitter() as ReqLike;
+    req.end = () => {
+      const res = new EventEmitter() as MockRes;
+      res.statusCode = 200;
+      cb(res);
+      res.emit('data', Buffer.from(JSON.stringify(body)));
+      res.emit('end');
+    };
+    req.destroy = () => {};
+    return req;
+  });
+}
+
+function stubGithubError(): void {
+  mockRequest.mockImplementation((_opts: unknown, _cb: unknown) => {
+    const req = new EventEmitter() as ReqLike;
+    req.end = () => { req.emit('error', new Error('Network failure')); };
+    req.destroy = () => {};
+    return req;
+  });
+}
+
+function stubGithubNotFound(): void {
+  mockRequest.mockImplementation((_opts: unknown, cb: (res: MockRes) => void) => {
+    const req = new EventEmitter() as ReqLike;
+    req.end = () => {
+      const res = new EventEmitter() as MockRes;
+      res.statusCode = 404;
+      cb(res);
+      res.emit('data', Buffer.from('Not Found'));
+      res.emit('end');
+    };
+    req.destroy = () => {};
+    return req;
+  });
+}
+
+/** Per-path GitHub stub: body for 200, absent path → 404. Records every requested path. */
+const requestedPaths: string[] = [];
+function stubGithubRoutes(routes: Record<string, object>): void {
+  requestedPaths.length = 0;
+  mockRequest.mockImplementation((opts: { path: string }, cb: (res: MockRes) => void) => {
+    requestedPaths.push(opts.path);
+    const req = new EventEmitter() as ReqLike;
+    req.end = () => {
+      const res = new EventEmitter() as MockRes;
+      const body = routes[opts.path];
+      res.statusCode = body ? 200 : 404;
+      cb(res);
+      res.emit('data', Buffer.from(body ? JSON.stringify(body) : 'Not Found'));
+      res.emit('end');
+    };
+    req.destroy = () => {};
+    return req;
+  });
+}
+
+// ── Tests ────────────────────────────────────────────────────────────────────
+
+let checker: UpdateChecker;
+
+beforeEach(() => {
+  checker = new UpdateChecker();
+  // Default: no announcement record on disk yet (matches loader.ts DEFAULTS.updateAnnouncement).
+  mockReadConfig.mockResolvedValue({});
+});
+
+afterEach(() => {
+  vi.clearAllMocks();
+  checker.stop();
+});
+
+describe('UpdateChecker.check()', () => {
+  it('returns available=true when GitHub reports a newer version', async () => {
+    stubGithubOk({
+      tag_name: 'v1.0.0',
+      html_url: 'https://github.com/Inebrio/Routerly/releases/tag/v1.0.0',
+      prerelease: false,
+    });
+
+    checker.start('0.1.5', 'latest');
+    const result = await checker.check();
+
+    expect(result.available).toBe(true);
+    expect(result.currentVersion).toBe('0.1.5');
+    expect(result.latestVersion).toBe('1.0.0');
+    expect(result.channel).toBe('latest');
+    expect(result.releaseUrl).toBe('https://github.com/Inebrio/Routerly/releases/tag/v1.0.0');
+    expect(result.checkedAt).toBeTruthy();
+  });
+
+  it('returns available=false when already on the latest version', async () => {
+    stubGithubOk({ tag_name: 'v0.1.5', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', 'latest');
+    const result = await checker.check();
+
+    expect(result.available).toBe(false);
+    expect(result.latestVersion).toBe('0.1.5');
+  });
+
+  it('returns available=false when running newer than the channel tag', async () => {
+    stubGithubOk({ tag_name: 'v0.1.4', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', 'current');
+    const result = await checker.check();
+
+    expect(result.available).toBe(false);
+  });
+
+  it('strips leading "v" from tag_name in latestVersion', async () => {
+    stubGithubOk({ tag_name: 'v2.0.0', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', 'latest');
+    const result = await checker.check();
+
+    expect(result.latestVersion).toBe('2.0.0');
+  });
+
+  it('uses tag_name as-is when it has no leading "v"', async () => {
+    stubGithubOk({ tag_name: '2.0.0', html_url: 'https://example.com', prerelease: false });
+
+    checker.start('0.1.5', 'latest');
+    const result = await checker.check();
+
+    expect(result.latestVersion).toBe('2.0.0');
+    expect(result.available).toBe(true);
+  });
+
+  it('returns available=false when candidate has a lower major version (isNewer branch)', async () => {
+    stubGithubOk({ tag_name: 'v0.0.1', html_url: '', prerelease: false });
+
+    checker.start('1.0.0', 'current');
+    const result = await checker.check();
+
+    expect(result.available).toBe(false);
+  });
+
+  it('returns available=false for non-semver tag names with no version in name', async () => {
+    stubGithubOk({ tag_name: 'not-a-version', name: '', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', 'latest');
+    const result = await checker.check();
+
+    expect(result.available).toBe(false);
+  });
+
+  it('extracts version from release name for rolling channels (next)', async () => {
+    stubGithubOk({ tag_name: 'next', name: 'Routerly 0.3.0 (next channel)', html_url: 'https://example.com', prerelease: true });
+
+    checker.start('0.2.0', 'next');
+    const result = await checker.check();
+
+    expect(result.available).toBe(true);
+    expect(result.latestVersion).toBe('0.3.0');
+  });
+
+  it('keeps existing cached result when a subsequent check fails', async () => {
+    // First successful check populates the cache
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: 'https://example.com', prerelease: false });
+    checker.start('0.1.5', 'latest');
+    const first = await checker.check();
+    expect(first.latestVersion).toBe('1.0.0');
+
+    // Second check fails — the caller is told so, but the cached good result is preserved
+    stubGithubError();
+    const second = await checker.check();
+    expect(second.status).toBe('error');
+    expect(checker.getLastResult()!.status).toBe('ok');
+    expect(checker.getLastResult()!.latestVersion).toBe('1.0.0');
+  });
+
+  it('reports network errors as status=error, never as up to date', async () => {
+    stubGithubError();
+
+    checker.start('0.1.5', 'latest');
+    const result = await checker.check();
+
+    expect(result.status).toBe('error');
+    expect(result.error).toBe('Network failure');
+    expect(result.available).toBe(false);
+    expect(result.currentVersion).toBe('0.1.5');
+    expect(result.latestVersion).toBe('');
+  });
+
+  it('reports non-200 GitHub responses as status=error', async () => {
+    stubGithubNotFound();
+
+    checker.start('0.1.5', 'current');
+    const result = await checker.check();
+
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('404');
+    expect(result.available).toBe(false);
+  });
+
+  it('reports status=ok on a successful check', async () => {
+    stubGithubOk({ tag_name: 'v0.1.5', html_url: '', prerelease: false });
+    checker.start('0.1.5', 'latest');
+    expect((await checker.check()).status).toBe('ok');
+  });
+
+  it('configure() without start(): status=disabled, real version and channel, no request made', async () => {
+    checker.configure('0.5.4', 'develop');
+    const result = await checker.check();
+
+    expect(mockRequest).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ status: 'disabled', currentVersion: '0.5.4', channel: 'develop', available: false });
+    expect(checker.getLastResult()).toMatchObject({ status: 'disabled', currentVersion: '0.5.4' });
+  });
+});
+
+describe('UpdateChecker.getLastResult()', () => {
+  it('returns null before any check has completed on an enabled checker', () => {
+    checker.start('0.1.5', 'latest');
+    expect(checker.getLastResult()).toBeNull();
+  });
+
+  it('returns the cached result after a successful check', async () => {
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', 'latest');
+    await checker.check();
+
+    const cached = checker.getLastResult();
+    expect(cached).not.toBeNull();
+    expect(cached!.latestVersion).toBe('1.0.0');
+  });
+});
+
+describe('UpdateChecker.start() with empty channel', () => {
+  it('defaults channel to "latest" when an empty string is passed', async () => {
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+    checker.start('0.1.5', '');
+    const result = await checker.check();
+    expect(result.channel).toBe('latest');
+  });
+});
+
+describe('UpdateChecker.updateChannel()', () => {
+  it('changes the channel used for subsequent checks', async () => {
+    // First check on "latest"
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+    checker.start('0.1.5', 'latest');
+    await checker.check();
+
+    // Switch to "current"; use a tag older than the current version
+    checker.updateChannel('current');
+    stubGithubOk({ tag_name: 'v0.1.0', html_url: '', prerelease: false });
+    const result = await checker.check();
+
+    expect(result.channel).toBe('current');
+    expect(result.available).toBe(false); // 0.1.0 < 0.1.5
+  });
+
+  it('does not update the cached result until the next check runs', async () => {
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+    checker.start('0.1.5', 'latest');
+    await checker.check();
+
+    const before = checker.getLastResult();
+    checker.updateChannel('next');
+    const after = checker.getLastResult();
+
+    // Cached result channel is unchanged until next check
+    expect(before?.channel).toBe(after?.channel);
+  });
+
+  it('defaults to "latest" when empty string is passed to updateChannel', async () => {
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+    checker.start('0.1.5', 'latest');
+    checker.updateChannel('');
+    const result = await checker.check();
+    expect(result.channel).toBe('latest');
+  });
+});
+
+describe('UpdateChecker.start() idempotency', () => {
+  it('creates only one interval timer even if called multiple times', async () => {
+    const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+
+    stubGithubOk({ tag_name: 'v0.1.5', html_url: '', prerelease: false });
+    checker.start('0.1.5', 'latest');
+    checker.start('0.1.5', 'latest');
+    checker.start('0.1.5', 'latest');
+
+    expect(setIntervalSpy).toHaveBeenCalledTimes(1);
+    setIntervalSpy.mockRestore();
+  });
+});
+
+describe('UpdateChecker.getAvailableReleases()', () => {
+  it('returns base channels when GitHub API fails', async () => {
+    stubGithubError();
+    checker.start('0.1.5', 'latest');
+    const result = await checker.getAvailableReleases();
+    expect(result.channels).toContain('latest');
+    expect(result.channels).toContain('current');
+    expect(result.channels).toContain('next');
+  });
+
+  it('returns base channels plus extra non-semver tags from GitHub, excluding the canonical channel names themselves', async () => {
+    stubGithubOk([
+      { tag_name: 'beta-2', draft: false, prerelease: true },
+      { tag_name: 'v0.1.5', draft: false, prerelease: false },
+      { tag_name: 'nightly', draft: false, prerelease: false },
+      { tag_name: 'draft-only', draft: true, prerelease: false },
+      { tag_name: 'stable', draft: false, prerelease: false },
+      { tag_name: 'develop', draft: false, prerelease: false },
+      { tag_name: 'channel-stable', draft: false, prerelease: true },
+    ]);
+
+    // Do NOT call start() — it fires check() which would consume the first mock call
+    const result = await checker.getAvailableReleases();
+    expect(result.channels).toContain('nightly')
+    // v0.1.5 is a semver tag so not added as extra channel
+    expect(result.channels).not.toContain('v0.1.5')
+    // draft-only is skipped
+    expect(result.channels).not.toContain('draft-only')
+    // 'develop' is now a base channel (UPDATE_CHANNELS), so the rolling
+    // GitHub tag of the same name is excluded from "extra" and must not
+    // appear twice; the same holds for 'stable'. Pointer releases (channel-*)
+    // are never offered as channels of their own.
+    expect(result.channels.filter((c) => c === 'develop')).toHaveLength(1)
+    expect(result.channels.filter((c) => c === 'stable')).toHaveLength(1)
+    expect(result.channels).not.toContain('channel-stable')
+  });
+
+  it('falls back to base channels when fetchAllReleases returns invalid JSON', async () => {
+    mockRequest.mockImplementation((_opts: unknown, cb: (res: MockRes) => void) => {
+      const req = new EventEmitter() as ReqLike;
+      req.end = () => {
+        const res = new EventEmitter() as MockRes;
+        res.statusCode = 200;
+        cb(res);
+        res.emit('data', Buffer.from('{{{invalid-json'));
+        res.emit('end');
+      };
+      req.destroy = () => {};
+      return req;
+    });
+
+    const result = await checker.getAvailableReleases();
+    expect(result.channels).toEqual(['latest', 'current', 'next', 'stable', 'develop']);
+  });
+});
+
+describe('UpdateChecker.getAvailableReleases() base set', () => {
+  it('starts with exactly the canonical five-channel set, stable and develop included as plain members', async () => {
+    stubGithubOk([
+      { tag_name: 'nightly', draft: false, prerelease: false },
+    ]);
+
+    const result = await checker.getAvailableReleases();
+
+    expect(result.channels.slice(0, 5)).toEqual(['latest', 'current', 'next', 'stable', 'develop']);
+    expect(result.channels).toContain('nightly');
+  });
+});
+
+describe('UpdateChecker channel resolution', () => {
+  const REPO_PATH = '/repos/Inebrio/Routerly';
+
+  it.each([
+    ['latest', `${REPO_PATH}/releases/latest`],
+    ['current', `${REPO_PATH}/releases/latest`],
+    ['next', `${REPO_PATH}/releases/tags/channel-next`],
+    ['stable', `${REPO_PATH}/releases/tags/channel-stable`],
+    ['develop', `${REPO_PATH}/releases/tags/channel-develop`],
+    ['v0.3.0', `${REPO_PATH}/releases/tags/v0.3.0`],
+  ])('channel "%s" resolves to %s (AC8, EC3)', async (channel, expectedPath) => {
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', channel);
+    await checker.check();
+
+    expect(lastRequestPath).toBe(expectedPath);
+  });
+
+  it('stable and current resolve to their own releases when they diverge (ROUT-551 AC2)', async () => {
+    const R = `${REPO_PATH}/releases`;
+    stubGithubRoutes({
+      [`${R}?per_page=100`]: [
+        { tag_name: 'v0.6.1', name: 'v0.6.1', html_url: 'u1', draft: false, prerelease: false },
+        { tag_name: 'v0.6.0', name: 'v0.6.0', html_url: 'u0', draft: false, prerelease: false },
+      ] as unknown as object,
+      [`${R}/tags/channel-stable`]: { tag_name: 'channel-stable', name: 'Routerly stable (→ v0.6.0)', html_url: 'ps', draft: false, prerelease: true },
+    });
+
+    checker.start('0.5.0', 'stable');
+    const stable = await checker.check();
+    expect(stable).toMatchObject({ status: 'ok', channel: 'stable', latestVersion: '0.6.0', available: true });
+
+    checker.updateChannel('current');
+    const current = await checker.check();
+    expect(current).toMatchObject({ status: 'ok', channel: 'current', latestVersion: '0.6.1' });
+
+    const releases = await checker.getAvailableReleases();
+    expect(releases.channelVersions).toMatchObject({ latest: '0.6.1', current: '0.6.1', stable: '0.6.0' });
+    // next/develop pointers do not exist in this stub: omitted, not guessed
+    expect(releases.channelVersions).not.toHaveProperty('next');
+  });
+
+  it('stable without its pointer release reports status=error, never falling back to current', async () => {
+    stubGithubNotFound();
+    checker.start('0.5.0', 'stable');
+    const result = await checker.check();
+    expect(result.status).toBe('error');
+    expect(result.latestVersion).toBe('');
+  });
+
+  it('develop resolves against its own tag path, distinct from next, with no deprecation warning (AC3, AC4)', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', 'develop');
+    await checker.check();
+
+    expect(lastRequestPath).toBe(`${REPO_PATH}/releases/tags/channel-develop`);
+    expect(lastRequestPath).not.toBe(`${REPO_PATH}/releases/tags/channel-next`);
+    expect(checker.getLastResult()?.channel).toBe('develop');
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('does not warn for any canonical channel name', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', 'current');
+    await checker.check();
+
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+});
+
+describe('UpdateChecker.check() JSON parse error', () => {
+  it('handles JSON parse error gracefully', async () => {
+    mockRequest.mockImplementation((_opts: unknown, cb: (res: MockRes) => void) => {
+      const req = new EventEmitter() as ReqLike;
+      req.end = () => {
+        const res = new EventEmitter() as MockRes;
+        res.statusCode = 200;
+        cb(res);
+        res.emit('data', Buffer.from('not-valid-json-{{{'));
+        res.emit('end');
+      };
+      req.destroy = () => {};
+      return req;
+    });
+
+    checker.start('0.1.5', 'latest');
+    const result = await checker.check();
+    // Should return fallback on JSON parse error
+    expect(result.available).toBe(false);
+  });
+});
+
+describe('UpdateChecker.stop()', () => {
+  it('clears the interval timer', () => {
+    const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
+    stubGithubOk({ tag_name: 'v0.1.5', html_url: '', prerelease: false });
+    checker.start('0.1.5', 'latest');
+    checker.stop();
+    expect(clearIntervalSpy).toHaveBeenCalled();
+    clearIntervalSpy.mockRestore();
+  });
+
+  it('is idempotent when called multiple times', () => {
+    checker.stop();
+    checker.stop();
+    // Should not throw
+  });
+});
+
+describe('UpdateChecker channel resolution against pre-releases and legacy pointers (ROUT-382)', () => {
+  const REPO_PATH = '/repos/Inebrio/Routerly';
+  const rel = (tag: string, extra: object = {}) => ({ tag_name: tag, name: tag, html_url: `https://x/${tag}`, prerelease: true, draft: false, ...extra });
+
+  it.each(['latest', 'current'])('"%s" picks the highest plain vX.Y.Z including pre-releases, not /releases/latest', async (channel) => {
+    stubGithubRoutes({
+      [`${REPO_PATH}/releases?per_page=100`]: [rel('next'), rel('v0.5.3'), rel('v0.10.0'), rel('v0.2.0', { prerelease: false }), rel('v9.9.9', { draft: true })],
+      [`${REPO_PATH}/releases/latest`]: rel('v0.2.0', { prerelease: false }),
+    });
+    prime(checker, '0.4.0', channel);
+    const result = await checker.check();
+    expect(result.latestVersion).toBe('0.10.0');
+    expect(result.status).toBe('ok');
+    expect(requestedPaths).not.toContain(`${REPO_PATH}/releases/latest`);
+  });
+
+  it('"current" falls back to /releases/latest when the release list is unavailable', async () => {
+    stubGithubRoutes({ [`${REPO_PATH}/releases/latest`]: rel('v0.2.0', { prerelease: false }) });
+    prime(checker, '0.1.0', 'current');
+    const result = await checker.check();
+    expect(result.latestVersion).toBe('0.2.0');
+  });
+
+  it('"next" falls back to the legacy "next" release and reads the version from its title', async () => {
+    stubGithubRoutes({ [`${REPO_PATH}/releases/tags/next`]: rel('next', { name: 'Routerly next (→ v0.5.3)' }) });
+    prime(checker, '0.4.0', 'next');
+    const result = await checker.check();
+    expect(result.status).toBe('ok');
+    expect(result.latestVersion).toBe('0.5.3');
+    expect(requestedPaths).toEqual([`${REPO_PATH}/releases/tags/channel-next`, `${REPO_PATH}/releases/tags/next`]);
+  });
+
+  it('"develop" with neither pointer release reports status=error', async () => {
+    stubGithubRoutes({});
+    prime(checker, '0.4.0', 'develop');
+    const result = await checker.check();
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('404');
+  });
+});
+
+describe('UpdateChecker — remaining uncovered branches', () => {
+  it('isNewer returns true when candidate has higher minor version (line 35 true branch)', async () => {
+    stubGithubOk({ tag_name: 'v0.2.0', html_url: 'http://x.com', prerelease: false });
+    checker.start('0.1.5', 'latest');
+    const result = await checker.check();
+    expect(result.available).toBe(true);
+    expect(result.latestVersion).toBe('0.2.0');
+  });
+
+  it('rejects when GitHub API returns non-200 status (line 65 false branch)', async () => {
+    mockRequest.mockImplementation((_opts: unknown, cb: (res: MockRes) => void) => {
+      const req = new EventEmitter() as ReqLike;
+      req.end = () => {
+        const res = new EventEmitter() as MockRes;
+        res.statusCode = 404;
+        cb(res);
+        res.emit('end');
+      };
+      req.destroy = () => {};
+      return req;
+    });
+    checker.start('0.1.5', 'latest');
+    const result = await checker.check();
+    // Error from non-200 → check returns false (not available)
+    expect(result.available).toBe(false);
+  });
+
+  it('does not create a second timer when start() is called twice (line 139 false branch)', () => {
+    stubGithubOk([{ tag_name: 'v0.1.5', html_url: '', prerelease: false, draft: false }]);
+    const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+    checker.start('0.1.5', 'latest');
+    checker.start('0.1.5', 'latest');
+    // Timer should only be created once
+    expect(setIntervalSpy).toHaveBeenCalledTimes(1);
+    setIntervalSpy.mockRestore();
+  });
+
+  it('getAvailableReleases: non-200 response from fetchReleaseList → falls back to base channels (line 70)', async () => {
+    mockRequest.mockImplementation((_opts: unknown, cb: (res: MockRes) => void) => {
+      const req = new EventEmitter() as ReqLike;
+      req.end = () => {
+        const res = new EventEmitter() as MockRes;
+        res.statusCode = 403;
+        cb(res);
+        res.emit('data', Buffer.from('Forbidden'));
+        res.emit('end');
+      };
+      req.destroy = () => {};
+      return req;
+    });
+    checker.start('0.1.5', 'latest');
+    const result = await checker.getAvailableReleases();
+    expect(result.channels).toContain('latest');
+    expect(result.channels).toContain('current');
+  });
+
+  it('setInterval callback fires and triggers a check (line 137 function)', async () => {
+    stubGithubOk({ tag_name: 'v0.2.0', html_url: '', prerelease: false });
+    vi.useFakeTimers();
+    checker.start('0.1.5', 'latest');
+    // Advance past CHECK_INTERVAL_MS to trigger the setInterval callback
+    await vi.advanceTimersByTimeAsync(3_700_000);
+    vi.useRealTimers();
+    // The setInterval callback called check() — verify the result was fetched
+    expect(checker.getLastResult()).not.toBeNull();
+  });
+
+  it('fetchRelease timeout → rejects with timeout error (line 76 function)', async () => {
+    mockRequest.mockImplementation((_opts: unknown, _cb: unknown) => {
+      const req = new EventEmitter() as ReqLike;
+      req.end = () => { req.emit('timeout'); };
+      req.destroy = vi.fn();
+      return req;
+    });
+    checker.start('0.1.5', 'latest');
+    const result = await checker.check();
+    // timeout → error caught → fallback result
+    expect(result.available).toBe(false);
+  });
+});
+
+/**
+ * Sets a checker's target version/channel directly, without going through
+ * `start()`, whose fire-and-forget initial check would otherwise run a second,
+ * uncontrolled `check()` concurrently with the explicit one these tests make,
+ * double-counting emissions for what production only ever does once at boot.
+ */
+function prime(c: UpdateChecker, currentVersion: string, channel: string): void {
+  (c as unknown as { _currentVersion: string })._currentVersion = currentVersion;
+  (c as unknown as { _channel: string })._channel = channel;
+  (c as unknown as { _enabled: boolean })._enabled = true;
+}
+
+describe('UpdateChecker — system.update_available announcement (RA-15)', () => {
+  it('emits system.update_available on first detection of an available update (AC1)', async () => {
+    stubGithubOk({
+      tag_name: 'v0.5.0',
+      html_url: 'https://github.com/Inebrio/Routerly/releases/tag/v0.5.0',
+      prerelease: false,
+    });
+
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+    expect(mockEmitEvent).toHaveBeenCalledWith('system.update_available', 'info', {
+      currentVersion: '0.4.0',
+      latestVersion: '0.5.0',
+      channel: 'stable',
+      releaseUrl: 'https://github.com/Inebrio/Routerly/releases/tag/v0.5.0',
+    });
+    expect(mockWriteConfig).toHaveBeenCalledWith(
+      'updateAnnouncement',
+      expect.objectContaining({
+        announcedVersion: '0.5.0',
+        currentVersion: '0.4.0',
+        channel: 'stable',
+        announcedAt: expect.any(String),
+      }),
+    );
+  });
+
+  it('does not emit again when the next poll finds the identical release (AC5)', async () => {
+    stubGithubOk({ tag_name: 'v0.5.0', html_url: '', prerelease: false });
+    prime(checker, '0.4.0', 'stable');
+    await checker.check();
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+
+    // The record now "on disk" is exactly what the first check persisted.
+    const written = mockWriteConfig.mock.calls[0]![1];
+    mockReadConfig.mockResolvedValue(written as never);
+
+    await checker.check();
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-emit across a restart when the record already on disk covers this release (AC6)', async () => {
+    mockReadConfig.mockResolvedValue({
+      announcedVersion: '0.5.0',
+      currentVersion: '0.4.0',
+      channel: 'stable',
+      announcedAt: '2026-08-01T00:00:00.000Z',
+    });
+    stubGithubOk({ tag_name: 'v0.5.0', html_url: '', prerelease: false });
+
+    // A fresh instance, as after a process restart, with no in-memory state at all.
+    const restarted = new UpdateChecker();
+    prime(restarted, '0.4.0', 'stable');
+    const result = await restarted.check();
+
+    expect(result.available).toBe(true);
+    expect(mockEmitEvent).not.toHaveBeenCalled();
+    restarted.stop();
+  });
+
+  it('emits again for a genuinely newer release than the one already announced (AC7)', async () => {
+    mockReadConfig.mockResolvedValue({
+      announcedVersion: '0.5.0',
+      currentVersion: '0.4.0',
+      channel: 'stable',
+      announcedAt: '2026-08-01T00:00:00.000Z',
+    });
+    stubGithubOk({ tag_name: 'v0.6.0', html_url: '', prerelease: false });
+
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+    expect(mockEmitEvent).toHaveBeenCalledWith(
+      'system.update_available',
+      'info',
+      expect.objectContaining({ latestVersion: '0.6.0' }),
+    );
+  });
+
+  it('does not emit and leaves the record untouched when already on the newest release (AC8)', async () => {
+    stubGithubOk({ tag_name: 'v0.4.0', html_url: '', prerelease: false });
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(false);
+    expect(mockReadConfig).not.toHaveBeenCalled();
+    expect(mockEmitEvent).not.toHaveBeenCalled();
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('does not emit and leaves the record untouched on a network failure (EC1)', async () => {
+    stubGithubError();
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(false);
+    expect(mockEmitEvent).not.toHaveBeenCalled();
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('emits again when the channel changed, even if the release alone looks already known (EC3)', async () => {
+    mockReadConfig.mockResolvedValue({
+      announcedVersion: '0.5.0',
+      currentVersion: '0.4.0',
+      channel: 'develop',
+      announcedAt: '2026-08-01T00:00:00.000Z',
+    });
+    stubGithubOk({ tag_name: 'v0.5.0', html_url: '', prerelease: false });
+
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(true);
+    expect(result.channel).toBe('stable');
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('emits again after a downgrade, for the same announced release (downgrade case)', async () => {
+    mockReadConfig.mockResolvedValue({
+      announcedVersion: '0.5.0',
+      currentVersion: '0.5.0',
+      channel: 'stable',
+      announcedAt: '2026-08-01T00:00:00.000Z',
+    });
+    stubGithubOk({ tag_name: 'v0.5.0', html_url: '', prerelease: false });
+
+    // The operator rolled back to an older build; the same release is news again.
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+    expect(mockEmitEvent).toHaveBeenCalledWith(
+      'system.update_available',
+      'info',
+      expect.objectContaining({ currentVersion: '0.4.0' }),
+    );
+  });
+
+  it('treats a missing record as first-run and a corrupt/malformed record as no record, without throwing', async () => {
+    // Missing file: readConfig resolves the empty DEFAULTS.updateAnnouncement.
+    mockReadConfig.mockResolvedValue({});
+    stubGithubOk({ tag_name: 'v0.5.0', html_url: '', prerelease: false });
+
+    prime(checker, '0.4.0', 'stable');
+    const first = await checker.check();
+
+    expect(first.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+    expect(mockWriteConfig).toHaveBeenCalledTimes(1);
+    const written = mockWriteConfig.mock.calls[0]![1] as Record<string, unknown>;
+    expect(written['announcedVersion']).toBe('0.5.0');
+    expect(written['currentVersion']).toBe('0.4.0');
+    expect(written['channel']).toBe('stable');
+    expect(typeof written['announcedAt']).toBe('string');
+
+    // Corrupt/malformed file: a fresh checker, readConfig either rejects (JSON parse
+    // error) or resolves a valid-JSON object missing a required field. Both must be
+    // treated as record === null, log a warning, and never throw out of check().
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mockReadConfig.mockRejectedValueOnce(new SyntaxError('Unexpected token in JSON'));
+
+    const corrupted = new UpdateChecker();
+    prime(corrupted, '0.4.0', 'stable');
+    const second = await corrupted.check();
+
+    expect(second.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(2);
+    expect(warnSpy).toHaveBeenCalled();
+    corrupted.stop();
+
+    warnSpy.mockClear();
+    mockReadConfig.mockResolvedValueOnce({ announcedVersion: '0.5.0' }); // missing currentVersion, channel
+
+    const partial = new UpdateChecker();
+    prime(partial, '0.4.0', 'stable');
+    const third = await partial.check();
+
+    expect(third.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(3);
+    expect(warnSpy).toHaveBeenCalled();
+    partial.stop();
+
+    warnSpy.mockRestore();
+  });
+});

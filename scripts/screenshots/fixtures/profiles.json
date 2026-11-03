@@ -1,0 +1,33 @@
+[
+  {
+    "id": "profile-balanced-routing",
+    "version": 1,
+    "label": "Balanced Routing",
+    "kind": "routing",
+    "builtin": false,
+    "policies": [
+      { "type": "cheapest", "enabled": true },
+      { "type": "context", "enabled": true }
+    ],
+    "selector": "weighted-random",
+    "fallbackStrategy": "next-best"
+  },
+  {
+    "id": "profile-cost-saver",
+    "version": 1,
+    "label": "Cost Saver",
+    "kind": "optimizer",
+    "builtin": false,
+    "optimizers": {
+      "steps": [
+        { "id": "session-dedup", "enabled": true },
+        { "id": "caveman", "enabled": true },
+        { "id": "rtk", "enabled": false },
+        { "id": "relevance", "enabled": false },
+        { "id": "headroom", "enabled": false },
+        { "id": "json-table", "enabled": false },
+        { "id": "llmlingua-2", "enabled": false }
+      ]
+    }
+  }
+]

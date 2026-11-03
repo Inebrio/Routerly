@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # CLI Overview
 
-The `routerly` CLI lets you manage all aspects of a Routerly instance from the terminal — models, projects, users, usage reports, and service configuration. It communicates with the running Routerly service via its management API.
+The `routerly` CLI lets you manage all aspects of a Routerly instance from the terminal — models, routers, users, usage reports, and service configuration. It communicates with the running Routerly service via its management API.
 
 ---
 
@@ -100,7 +100,7 @@ Prints: service URL, version, uptime, and whether the service is reachable. Add 
 |-------|-------------|
 | `routerly auth` | Authentication and account management |
 | `routerly model` | Register and manage LLM models |
-| `routerly project` | Create and manage projects |
+| `routerly router` | Create and manage routers |
 | `routerly user` | Manage dashboard users |
 | `routerly role` | Manage RBAC roles |
 | `routerly report` | Usage and billing reports |

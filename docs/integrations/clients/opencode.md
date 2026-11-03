@@ -1,0 +1,91 @@
+---
+title: OpenCode
+sidebar_label: OpenCode
+---
+
+# OpenCode
+
+[OpenCode](https://opencode.ai) is an open-source terminal-based AI coding
+agent. It speaks the OpenAI wire format and reads its provider settings from
+a JSON config file.
+
+**Support state:** `auto-configurable`. `routerly clients configure` writes
+this file for you.
+**Config file:** `~/.config/opencode/opencode.json` (JSON)
+**Wire format:** OpenAI
+
+---
+
+## Auto-configure (recommended)
+
+With the [CLI](../../cli/commands.md#routerly-clients) installed and logged in:
+
+```bash
+routerly clients configure opencode --router <your-router>
+```
+
+This mints a router token (or reuses one you pass with `--token`), backs
+up your existing `~/.config/opencode/opencode.json`, and merges in a
+`provider.routerly` entry. Any other provider already in the file is left
+untouched.
+
+Minting a new token requires `router:write` permission on the target
+router (use `--token <existing-token>` to skip this).
+
+## Manual configuration
+
+Open `~/.config/opencode/opencode.json` and merge in:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "routerly": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Routerly",
+      "options": {
+        "baseURL": "http://localhost:3000/v1",
+        "apiKey": "sk-rt-YOUR_ROUTER_TOKEN"
+      },
+      "models": {
+        "routerly/ada": { "name": "Routerly (auto-routed)" }
+      }
+    }
+  }
+}
+```
+
+`baseURL` includes the `/v1` suffix. The provider ID is `routerly` (not
+`opencode`) so it doesn't collide with OpenCode's built-in providers. The
+single model entry `routerly/ada` is the auto-routing sentinel: selecting
+it in OpenCode lets Routerly pick the actual upstream model per request.
+Replace `http://localhost:3000/v1` with your Routerly instance's URL and
+`sk-rt-YOUR_ROUTER_TOKEN` with a router token (create one on the
+[Routers](../../dashboard/routers.md) page, or let `clients configure`
+mint one for you).
+
+## Select the model
+
+OpenCode addresses a model as `<provider id>/<model id>`. Here the provider
+is `routerly` and the model id is `routerly/ada`, so the full name is
+`routerly/routerly/ada` (`-m routerly/ada` is not valid):
+
+```bash
+opencode run -m routerly/routerly/ada "Explain this repository"
+```
+
+In the OpenCode TUI, run `/models` and pick **Routerly (auto-routed)** under
+the Routerly provider.
+
+## Undo
+
+Every `configure` run prints a `Backup ID`. Restore the file to its exact
+prior state with:
+
+```bash
+routerly clients undo <backupId>
+```
+
+See [CLI: `routerly clients`](../../cli/commands.md#routerly-clients) for the full command
+reference, including `inspect` (check current status) and `doctor` (check
+service reachability).

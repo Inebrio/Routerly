@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { api, ApiError } from '../api.js';
+import { normalizeUpdateChannel, UPDATE_CHANNELS, type AvailableReleases } from '@routerly/shared';
 
 interface UpdateInfo {
   available: boolean;
@@ -9,6 +10,8 @@ interface UpdateInfo {
   channel: string;
   releaseUrl?: string;
   checkedAt: string;
+  status?: 'ok' | 'disabled' | 'error';
+  error?: string;
 }
 
 interface Settings {
@@ -23,7 +26,7 @@ export function makeUpdateCommand(): Command {
 Examples:
   routerly update check            Check if a newer version is available
   routerly update channel          Show the current update channel
-  routerly update channel stable   Switch to the stable channel
+  routerly update channel current  Switch to the current channel
   routerly update run              Update to the latest version on the current channel
   routerly update run --version v0.2.0  Update to a specific version
 `);
@@ -39,6 +42,14 @@ Examples:
         if (opts.json) {
           console.log(JSON.stringify(info, null, 2));
           return;
+        }
+        if (info.status === 'disabled') {
+          console.error(chalk.yellow(`Update check is disabled on this instance (Routerly v${info.currentVersion}).`));
+          process.exit(1);
+        }
+        if (info.status === 'error') {
+          console.error(chalk.red(`Update check failed: ${info.error ?? 'unknown error'}`));
+          process.exit(1);
         }
         console.log();
         if (info.available) {
@@ -64,15 +75,22 @@ Examples:
   // ── channel ─────────────────────────────────────────────────────────────────
   cmd
     .command('channel [name]')
-    .description('Show or change the update channel (latest | stable | develop | vX.Y.Z)')
+    .description('Show or change the update channel (latest | current | next | stable | develop | vX.Y.Z)')
     .action(async (name: string | undefined) => {
       try {
         if (!name) {
           const settings = await api<Settings>('GET', '/api/settings');
-          const current = settings.channel ?? 'latest';
+          const normalized = normalizeUpdateChannel(settings.channel);
           console.log();
-          console.log(`  Current channel: ${chalk.cyan(current)}`);
-          console.log(chalk.gray(`  Valid values: latest, stable, develop, or a specific tag (e.g. v0.2.0)`));
+          console.log(`  Current channel: ${chalk.cyan(normalized.channel)}`);
+          const releases = await api<AvailableReleases>('GET', '/api/system/releases').catch(() => null);
+          console.log();
+          for (const ch of UPDATE_CHANNELS) {
+            const v = releases?.channelVersions?.[ch];
+            console.log(`  ${ch.padEnd(8)} ${v ? `v${v}` : chalk.gray('unavailable')}${ch === normalized.channel ? chalk.cyan('  ← selected') : ''}`);
+          }
+          console.log(chalk.gray(`  current follows every new stable release; stable moves only when a release is promoted, so the two can differ.`));
+          console.log(chalk.gray(`  Valid values: ${UPDATE_CHANNELS.join(', ')}, or a specific tag (e.g. v0.4.0)`));
           console.log();
           return;
         }

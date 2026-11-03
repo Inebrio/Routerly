@@ -19,14 +19,22 @@ Everything lives under the installing user's home directory.
 ~/.routerly/
 ├── app/               # Service binary (managed by installer)
 ├── config/
-│   ├── settings.json  # Global settings
-│   ├── models.json    # Registered LLM models
-│   ├── projects.json  # Projects, routing, budgets, tokens
-│   ├── users.json     # User accounts
-│   ├── roles.json     # Custom roles and permissions
-│   └── secret         # JWT signing key (mode 0600, keep safe)
+│   ├── settings.json     # Global settings
+│   ├── models.json       # Registered LLM models
+│   ├── routers.json     # Routers, routing, budgets, tokens
+│   ├── users.json        # User accounts
+│   ├── roles.json        # Custom roles and permissions
+│   ├── modules.json      # Which modules are enabled
+│   ├── profiles.json     # Routing profiles
+│   ├── connections.json  # Provider connections
+│   ├── instances.json    # Model instances
+│   ├── experiments.json  # A/B tests, their variants and tokens
+│   └── secret            # JWT signing key (mode 0600, keep safe)
 └── data/
-    └── usage.json     # Usage records
+    ├── usage.ndjson     # Usage records (append-only NDJSON)
+    ├── notifications.json # Notification inbox
+    ├── audit.json        # Audit log
+    └── update-announcement.json # Last update alert announced (RA-15)
 ```
 
 ### System scope
@@ -44,12 +52,20 @@ Service config and data move to a system-wide directory; the CLI auth tokens rem
 ├── config/
 │   ├── settings.json
 │   ├── models.json
-│   ├── projects.json
+│   ├── routers.json
 │   ├── users.json
 │   ├── roles.json
+│   ├── modules.json
+│   ├── profiles.json
+│   ├── connections.json
+│   ├── instances.json
+│   ├── experiments.json
 │   └── secret              # JWT signing key (mode 0600)
 └── data/
-    └── usage.json
+    ├── usage.ndjson
+    ├── notifications.json
+    ├── audit.json
+    └── update-announcement.json
 ```
 
 ### CLI auth tokens (always per-user)
@@ -73,11 +89,14 @@ Global service configuration.
   "port": 3000,
   "host": "0.0.0.0",
   "dashboardEnabled": true,
-  "defaultTimeoutMs": 30000,
   "logLevel": "info",
   "publicUrl": "http://localhost:3000",
-  "channel": "stable",
-  "notifications": []
+  "channel": "current",
+  "notifications": {
+    "channels": [],
+    "notificationRules": [],
+    "cooldowns": {}
+  }
 }
 ```
 
@@ -86,11 +105,12 @@ Global service configuration.
 | `port` | `number` | `3000` | TCP port the service listens on |
 | `host` | `string` | `"0.0.0.0"` | Bind address. Use `127.0.0.1` behind a reverse proxy |
 | `dashboardEnabled` | `boolean` | `true` | Enable or disable the web dashboard |
-| `defaultTimeoutMs` | `number` | `30000` | Default provider request timeout in milliseconds |
-| `logLevel` | `string` | `"info"` | Log verbosity: `"error"`, `"warn"`, `"info"`, `"debug"` |
+| `logLevel` | `string` | `"info"` | Log verbosity: `"fatal"`, `"error"`, `"warn"`, `"info"`, `"debug"`, `"trace"` |
 | `publicUrl` | `string` | `"http://localhost:3000"` | Externally reachable URL, used for notification links |
-| `channel` | `string` | `"stable"` | Update channel: `"latest"`, `"stable"`, `"develop"`, or a version tag such as `"v0.2.0"`. Controls which GitHub Release the update checker compares against |
-| `notifications` | `array` | `[]` | Notification channel configurations — see [Notifications](../concepts/notifications.md) |
+| `channel` | `string` | `"current"` | Update channel: `"latest"`, `"current"`, `"next"`, `"stable"`, `"develop"`, or a version tag such as `"v0.2.0"`. `"stable"` is a permanent channel with its own release pointer; a persisted value is never rewritten. Controls which GitHub Release the update checker compares against |
+| `notifications.channels` | `array` | `[]` | Notification channel objects. Each has `provider`, optional `name`, `id`, `events` (event patterns), `targets` (`{ roles, permissions, users }`), plus provider-specific fields. See [Notifications](../concepts/notifications.md) |
+| `notifications.notificationRules` | `array` | `[]` | Route event patterns to specific channel IDs: `{ events, channels }` |
+| `notifications.cooldowns` | `object` | `{}` | Minimum interval between repeated dispatches per event type (e.g. `"provider.degraded": "15m"`) |
 
 ---
 
@@ -121,7 +141,7 @@ Array of registered LLM model configurations.
 | `apiKey` | `string` | API key — stored AES-256 encrypted with the value from `secret` |
 | `inputPrice` | `number` | Cost per 1,000 input tokens in USD |
 | `outputPrice` | `number` | Cost per 1,000 output tokens in USD |
-| `cachePrice` | `number` | Cost per 1,000 cached/read tokens in USD (optional) |
+| `cachePrice` | `number` | Cost per 1,000 cached/read tokens in USD (optional). If omitted, cache reads are billed at `inputPrice` (the service logs a one-time warning) |
 | `contextWindow` | `number` | Maximum context window in tokens |
 | `capabilities` | `string[]` | Supported capabilities: `"chat"`, `"vision"`, `"tools"`, `"json_mode"` |
 | `pricingTiers` | `array` | Volume-based pricing tiers (optional) |
@@ -134,72 +154,56 @@ Never edit `apiKey` values manually. Use the dashboard or CLI to manage API keys
 
 ---
 
-## projects.json
+## routers.json
 
-Array of project configurations including routing policies, budgets, tokens, and members.
+Array of Router configurations: routers, Orchestrators, and Passthrough Routers alike (see [Concepts: Routers](../concepts/routers.md) and [Concepts: Architecture](../concepts/architecture.md#router-orchestrator-passthrough) for the three kinds). Migrated automatically and idempotently from the pre-rename `projects.json` on first start.
 
 ```json
 [
   {
-    "id": "proj_abc123",
+    "id": "a1b2c3d4-e5f6-4a1b-8c2d-9e0f1a2b3c4d",
     "name": "My App",
-    "slug": "my-app",
-    "defaultTimeoutMs": 30000,
-    "policies": ["random"],
-    "models": ["gpt-5-mini", "claude-haiku-4-5"],
+    "timeoutMs": 2000,
+    "policies": [{ "type": "cheapest" }],
+    "models": [{ "modelId": "gpt-5-mini" }, { "modelId": "claude-haiku-4-5" }],
     "tokens": [
       {
-        "id": "tok_xyz",
-        "token": "HASHED:...",
-        "description": "Production token",
+        "id": "b2c3d4e5-f6a1-4b2c-9d3e-0f1a2b3c4d5e",
+        "token": "sk-rt-...",
         "createdAt": "2024-01-15T10:00:00Z"
       }
     ],
     "members": [
       { "userId": "usr_abc", "role": "admin" }
-    ],
-    "budgets": [
-      {
-        "metric": "cost",
-        "limit": 10.00,
-        "windowType": "period",
-        "windowSize": "monthly",
-        "onExhausted": "block"
-      }
     ]
   }
 ]
 ```
 
-### Project Fields
+### Router Fields (kind `router`, the default)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | `string` | Internal project ID (`proj_…`) |
-| `name` | `string` | Human-readable project name |
-| `slug` | `string` | URL-safe identifier, used in scoped proxy path `/projects/{slug}/v1/*` |
-| `defaultTimeoutMs` | `number` | Per-project request timeout override |
-| `policies` | `string[]` | Routing policies in priority order |
-| `models` | `string[]` | Model IDs assigned to the project |
+| `id` | `string` | Internal Router ID (UUID) |
+| `name` | `string` | Human-readable Router name |
+| `kind` | `string` | `"router"` \| `"orchestrator"` \| `"passthrough"`. Absent means `"router"` (every Router stored before this field existed) |
+| `timeoutMs` | `number` | Time-to-first-token timeout per model attempt, streaming requests only, in milliseconds. Default `2000`; `0` disables it. Non-streaming calls are capped by the model `timeout` (default `60000`) |
+| `policies` | `RoutingPolicy[]` | Routing policies in priority order (each `{ type, ...params }`); see [Concepts: Routing](../concepts/routing.md) |
+| `models` | `array` | Target models: `{ modelId, prompt? }` |
+| `candidates` | `array` | Only on `kind: "orchestrator"`: `{ routerId, limits? }` — other Routers this one forwards to, in priority order (index 0 = highest); no `weight` field |
+| `slug` | `string` | Only on `kind: "passthrough"`: the URL path segment at `/passthrough/<slug>/*` |
+
+Budgets are not a top-level array on the Router: they live as `limits` on a model entry or on a token (see Token Fields below), not on the Router record itself.
 
 ### Token Fields
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | `string` | Token ID (`tok_…`) |
-| `token` | `string` | Token value, stored as a bcrypt hash — the plain `sk-rt-…` value is only shown once on creation |
-| `description` | `string` | Optional label |
+| `id` | `string` | Token ID (UUID) |
+| `token` | `string` | Router token, stored in plaintext (file permissions `0600` protect it — the proxy must compare it against an incoming `Authorization` header of unknown origin) |
+| `expiresAt` | `string` | Optional ISO 8601 expiry; absent or null means never expires |
+| `models` | `array` | Optional per-token, per-model budget overrides |
 | `createdAt` | `string` | ISO 8601 creation timestamp |
-
-### Budget Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `metric` | `string` | `"cost"`, `"calls"`, `"input_tokens"`, `"output_tokens"`, `"total_tokens"` |
-| `limit` | `number` | Maximum allowed value for the metric |
-| `windowType` | `string` | `"period"` (fixed calendar window) or `"rolling"` (sliding window) |
-| `windowSize` | `string` | For period: `"hourly"`, `"daily"`, `"weekly"`, `"monthly"`, `"yearly"`. For rolling: `"second"`, `"minute"`, `"hour"`, `"day"`, `"week"`, `"month"` |
-| `onExhausted` | `string` | `"block"` — return HTTP 503 when budget is reached |
 
 ---
 
@@ -247,36 +251,59 @@ Array of custom role definitions. The three built-in roles (`admin`, `member`, `
 | `name` | `string` | Unique role name |
 | `permissions` | `string[]` | List of permission strings |
 
-Available permissions: `models:write`, `projects:write`, `users:write`, `roles:write`, `settings:write`, `usage:read`, `proxy:use`.
+Available permissions: `models:write`, `routers:write`, `users:write`, `roles:write`, `settings:write`, `usage:read`, `proxy:use`.
 
 ---
 
-## data/usage.json
+## data/usage.ndjson
 
-Array of usage records, one per LLM request. Written by the service after each completed call.
+Append-only NDJSON: one JSON object per line, one line per LLM request. The service appends to this file without reading or rewriting the rest of it, so a write's cost does not grow with the history size. Migrated automatically from a legacy `data/usage.json` array on first start after the upgrade.
 
 ```json
-[
-  {
-    "id": "use_abc123",
-    "timestamp": "2024-01-15T10:30:00Z",
-    "projectId": "proj_abc",
-    "projectSlug": "my-app",
-    "modelId": "gpt-5-mini",
-    "provider": "openai",
-    "inputTokens": 150,
-    "outputTokens": 42,
-    "cacheTokens": 0,
-    "totalTokens": 192,
-    "cost": 0.000048,
-    "durationMs": 1234,
-    "status": "success",
-    "traceId": "trc_xyz"
-  }
-]
+{"id":"a1b2c3d4-...","timestamp":"2024-01-15T10:30:00Z","routerId":"b2c3d4e5-...","modelId":"gpt-5-mini","inputTokens":150,"outputTokens":42,"cost":0.000048,"latencyMs":1234,"outcome":"success"}
 ```
 
-This file grows continuously. Routerly does not currently rotate or archive it automatically — back it up and truncate as needed.
+Key fields (see `UsageRecord` in `@routerly/shared` for the full shape):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Usage record ID |
+| `timestamp` | `string` | ISO 8601 |
+| `routerId` | `string` | The Router that served the request |
+| `modelId` | `string` | The model the request was routed to |
+| `inputTokens` / `outputTokens` | `number` | Token counts |
+| `cost` | `number \| null` | USD cost; `null` when no model could be priced against (e.g. Passthrough traffic) |
+| `latencyMs` | `number` | Forwarding start to last byte received |
+| `outcome` | `string` | `"success"`, `"error"`, or `"blocked"` |
+| `orchestratorId` | `string` | Set when the call was forwarded through an Orchestrator; `routerId`/`modelId` still identify the Router and model that actually executed it |
+
+This file grows continuously. `routerly service configure --usage-retention-days <n>` and `--usage-retention-max-mb <n>` (or the equivalent Settings page fields) enable an age- and/or size-based retention sweep that drops the oldest records first; both are unset by default and Routerly does not rotate or archive the file on its own.
+
+---
+
+## data/update-announcement.json
+
+Records the last `system.update_available` alert the update checker raised, so the same release is not announced again after a restart. See [Concepts: Notifications](../concepts/notifications.md) for the event itself.
+
+```json
+{
+  "announcedVersion": "0.5.0",
+  "currentVersion": "0.4.0",
+  "channel": "current",
+  "announcedAt": "2026-08-04T10:00:00.000Z"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `announcedVersion` | `string` | The `latestVersion` from the check that raised the alert |
+| `currentVersion` | `string` | The version the instance was running when it announced |
+| `channel` | `string` | The update channel the announcement came from |
+| `announcedAt` | `string` | ISO 8601 timestamp, informational only |
+
+The update checker is the file's only writer: it reads the record before each check and rewrites it whenever it raises a new alert. No API endpoint exposes this file; it is not readable or writable through the dashboard, the CLI, or the management API.
+
+Deleting this file does not disable the alert. It is read the same way a missing or corrupt file is: as "no prior announcement". The next check announces the current channel's release once more and rewrites the file, after which deduplication resumes as normal.
 
 ---
 

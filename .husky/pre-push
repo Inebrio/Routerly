@@ -1,0 +1,57 @@
+# Two jobs:
+# 1. Dev-box guard: when IS_SANDBOX=1 (dispatcher runs), refuse any push whose
+#    remote ref is develop or main. Those pushes trigger the release pipeline
+#    and need the maintainer's confirmation. Not bypass-proof (--no-verify).
+# 2. Advisory only, never blocks: on release/* branches, proposes which
+#    screenshots the pushed commits may have affected, using
+#    scripts/screenshots-affected.mjs.
+set +e
+
+refs=$(cat)
+
+if [ "${IS_SANDBOX:-}" = "1" ]; then
+  if printf '%s\n' "$refs" | awk '{print $3}' | grep -qE '^refs/heads/(develop|main)$'; then
+    echo "pre-push: push to develop/main refused in a dispatcher session (IS_SANDBOX=1)." >&2
+    exit 1
+  fi
+fi
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+case "$branch" in
+  release/*) ;;
+  *) exit 0 ;;
+esac
+
+zero="0000000000000000000000000000000000000000"
+range="HEAD~1..HEAD"
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ -n "$local_sha" ] && [ "$local_sha" != "$zero" ] && [ -n "$remote_sha" ] && [ "$remote_sha" != "$zero" ]; then
+    range="$remote_sha..$local_sha"
+  fi
+done <<EOF_REFS
+$refs
+EOF_REFS
+
+echo "screenshot-review (advisory, does not block this push): range $range"
+
+shots=$(npm run --silent screenshots:affected -- --range "$range" 2>&1)
+status=$?
+
+if [ $status -ne 0 ]; then
+  echo "screenshot-review: selector did not run cleanly, no proposal:"
+  echo "$shots"
+  exit 0
+fi
+
+if [ -z "$shots" ]; then
+  echo "screenshot-review: no screenshots affected"
+  exit 0
+fi
+
+echo "screenshot-review: affected shots:"
+printf '%s\n' "$shots"
+echo "screenshot-review: to regenerate, run:"
+echo '  npm run screenshots -- --only "$(npm run --silent screenshots:affected | paste -sd, -)"'
+
+exit 0

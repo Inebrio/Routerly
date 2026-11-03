@@ -1,0 +1,352 @@
+/**
+ * Update checker — polls GitHub Releases API to compare the running version
+ * against the configured channel (latest, current, next, stable, develop, or a
+ * specific tag), normalised via `@routerly/shared`.
+ *
+ * Design:
+ *  - Singleton instance, started once after server boot.
+ *  - Checks at startup and every CHECK_INTERVAL_MS afterwards.
+ *  - Result cached in-memory; callers read `getLastResult()`.
+ *  - No external dependencies beyond Node.js built-in `https`.
+ */
+
+import { request as httpsRequest } from 'node:https';
+import type { UpdateInfo, AvailableReleases } from '@routerly/shared';
+import {
+  normalizeUpdateChannel,
+  UPDATE_CHANNELS,
+} from '@routerly/shared';
+import { readConfig, writeConfig, type UpdateAnnouncement } from '../config/loader.js';
+import { emitEvent } from '../notifications/emitter.js';
+import { CONFIG_PATHS } from '../../lib/paths.js';
+
+const GITHUB_OWNER = 'Inebrio';
+const GITHUB_REPO  = 'Routerly';
+const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// ─── Semver comparison (no external deps) ─────────────────────────────────────
+
+/** Parse "v1.2.3" or "1.2.3" into [major, minor, patch]. Returns null for non-semver tags. */
+function parseSemver(tag: string): [number, number, number] | null {
+  const clean = tag.startsWith('v') ? tag.slice(1) : tag;
+  const parts = clean.split('.').map(Number);
+  if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return null;
+  return parts as [number, number, number];
+}
+
+/** Returns true if `candidate` is strictly newer than `current`. */
+function isNewer(candidate: string, current: string): boolean {
+  const a = parseSemver(candidate);
+  const b = parseSemver(current);
+  if (!a || !b) return false;
+  if (a[0] !== b[0]) return a[0] > b[0];
+  if (a[1] !== b[1]) return a[1] > b[1];
+  return a[2] > b[2];
+}
+
+/** A non-empty string, the shared shape guard for the announcement record's fields. */
+function isNonEmptyString(v: unknown): v is string {
+  return typeof v === 'string' && v.length > 0;
+}
+
+/**
+ * True when a stored (possibly partial/corrupt) announcement has the three
+ * fields the announcement rule compares against, each a non-empty string.
+ * `announcedAt` is informational only and is not part of this guard.
+ */
+function isValidAnnouncement(v: Partial<UpdateAnnouncement>): v is UpdateAnnouncement {
+  return (
+    isNonEmptyString(v.announcedVersion) &&
+    isNonEmptyString(v.currentVersion) &&
+    isNonEmptyString(v.channel)
+  );
+}
+
+// ─── GitHub Releases API ──────────────────────────────────────────────────────
+
+interface GithubRelease {
+  tag_name: string;
+  name: string;
+  html_url: string;
+  prerelease: boolean;
+  draft: boolean;
+}
+
+function githubGet<T>(path: string, failure: (status: number | undefined) => string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.github.com',
+      path,
+      method: 'GET',
+      headers: {
+        'User-Agent': `routerly-update-checker/${GITHUB_OWNER}`,
+        'Accept': 'application/vnd.github+json',
+      },
+      timeout: 10_000,
+    };
+
+    const req = httpsRequest(options, (res) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (c: Buffer) => chunks.push(c));
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          try {
+            resolve(JSON.parse(Buffer.concat(chunks).toString('utf-8')) as T);
+          } catch (e) { reject(e); }
+        } else {
+          reject(new Error(failure(res.statusCode)));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('GitHub API request timed out')); });
+    req.end();
+  });
+}
+
+const REPO_API = `/repos/${GITHUB_OWNER}/${GITHUB_REPO}`;
+
+function fetchAllReleases(): Promise<GithubRelease[]> {
+  return githubGet<GithubRelease[]>(`${REPO_API}/releases?per_page=100`, s => `GitHub API returned ${s}`);
+}
+
+// Rolling prerelease channels are served off a tag renamed to avoid colliding
+// with the branches of the same name (`next`, `develop`) — see release.yml's
+// next-pointer/develop-pointer jobs. Until those jobs have run, only the legacy
+// release tagged `next` exists, so it stays as a fallback.
+const ROLLING_CHANNEL_TAGS: Record<string, string> = { next: 'channel-next', stable: 'channel-stable', develop: 'channel-develop' };
+
+/**
+ * `latest`/`current`: the highest plain `vX.Y.Z` release. GitHub's
+ * `/releases/latest` skips pre-releases, which would pin every channel to the
+ * last non-pre-release (v0.2.0) while all 0.3+ releases are flagged as such;
+ * it stays as the fallback when the list is unavailable.
+ */
+async function fetchNewestRelease(channel: string): Promise<GithubRelease> {
+  const failure = (s: number | undefined) => `GitHub API returned ${s} for channel "${channel}"`;
+  try {
+    const list = await fetchAllReleases();
+    let best: GithubRelease | undefined;
+    for (const r of Array.isArray(list) ? list : []) {
+      if (r.draft || !/^v\d+\.\d+\.\d+$/.test(r.tag_name)) continue;
+      if (!best || isNewer(r.tag_name, best.tag_name)) best = r;
+    }
+    if (best) return best;
+  } catch { /* fall through to /releases/latest */ }
+  return githubGet<GithubRelease>(`${REPO_API}/releases/latest`, failure);
+}
+
+/** Version a release stands for: its tag, or for a pointer release the one in its title ("Routerly stable (→ v0.6.0)"). */
+function releaseVersion(release: GithubRelease): string {
+  const rawTag = release.tag_name.startsWith('v') ? release.tag_name.slice(1) : release.tag_name;
+  return parseSemver(rawTag) ? rawTag : (release.name?.match(/(\d+\.\d+\.\d+)/)?.[1] ?? rawTag);
+}
+
+async function fetchRelease(channel: string): Promise<GithubRelease> {
+  if (channel === 'latest' || channel === 'current') return fetchNewestRelease(channel);
+  const failure = (s: number | undefined) => `GitHub API returned ${s} for channel "${channel}"`;
+  const tag = ROLLING_CHANNEL_TAGS[channel];
+  if (!tag) return githubGet<GithubRelease>(`${REPO_API}/releases/tags/${channel}`, failure);
+  try {
+    return await githubGet<GithubRelease>(`${REPO_API}/releases/tags/${tag}`, failure);
+  } catch {
+    return githubGet<GithubRelease>(`${REPO_API}/releases/tags/${channel}`, failure);
+  }
+}
+
+// ─── Singleton ────────────────────────────────────────────────────────────────
+
+export class UpdateChecker {
+  private _result: UpdateInfo | null = null;
+  private _timer: ReturnType<typeof setInterval> | null = null;
+  private _currentVersion = '';
+  private _channel = 'latest';
+  private _enabled = false;
+
+  /** Normalise a raw channel value (name, tag, `undefined` or `''`) and store it. */
+  private setChannel(channel: string | undefined): void {
+    const normalized = normalizeUpdateChannel(channel);
+    this._channel = normalized.channel;
+  }
+
+  /**
+   * Record the running version and channel without polling, so a disabled
+   * checker still reports the installed version truthfully.
+   */
+  configure(currentVersion: string, channel: string): void {
+    this._currentVersion = currentVersion;
+    this.setChannel(channel);
+  }
+
+  /** Start periodic checking. Safe to call multiple times (idempotent). */
+  start(currentVersion: string, channel: string): void {
+    this.configure(currentVersion, channel);
+    this._enabled = true;
+
+    // Initial check (fire-and-forget, errors are swallowed)
+    void this.check();
+
+    if (!this._timer) {
+      this._timer = setInterval(() => void this.check(), CHECK_INTERVAL_MS);
+      // Allow the process to exit without waiting for the timer
+      if (this._timer.unref) this._timer.unref();
+    }
+  }
+
+  /** Update the channel used for future checks (e.g. after settings change). */
+  updateChannel(channel: string): void {
+    this.setChannel(channel);
+  }
+
+  /** Force an immediate check and return the result. */
+  async check(): Promise<UpdateInfo> {
+    const channel = this._channel;
+    if (!this._enabled) return this.disabledInfo();
+    try {
+      const release = await fetchRelease(channel);
+      const latestVersion = releaseVersion(release);
+
+      const result: UpdateInfo = {
+        available: isNewer(latestVersion, this._currentVersion),
+        currentVersion: this._currentVersion,
+        latestVersion,
+        channel,
+        releaseUrl: release.html_url,
+        checkedAt: new Date().toISOString(),
+        status: 'ok',
+      };
+      this._result = result;
+      await this.maybeAnnounce(result);
+      return result;
+    } catch (err) {
+      // Network errors, rate limits, etc. — reported as such, never as "up to date"
+      const failed: UpdateInfo = {
+        available: false,
+        currentVersion: this._currentVersion,
+        latestVersion: '',
+        channel,
+        checkedAt: new Date().toISOString(),
+        status: 'error',
+        error: err instanceof Error ? err.message : String(err),
+      };
+      // Keep a previous good result cached (it still drives the update banner)
+      if (!this._result) this._result = failed;
+      return failed;
+    }
+  }
+
+  private disabledInfo(): UpdateInfo {
+    return {
+      available: false,
+      currentVersion: this._currentVersion,
+      latestVersion: '',
+      channel: this._channel,
+      checkedAt: '',
+      status: 'disabled',
+    };
+  }
+
+  /**
+   * Announcement rule (RA-15): when a check finds an available update that
+   * differs from the last persisted announcement, emit `system.update_available`
+   * and persist the new record. Never throws: any failure in reading, emitting
+   * or writing is caught and logged so it cannot change what `check()` returns
+   * or prevent it from returning.
+   */
+  private async maybeAnnounce(result: UpdateInfo): Promise<void> {
+    if (!result.available) return;
+    try {
+      let record: UpdateAnnouncement | null;
+      try {
+        const stored = await readConfig('updateAnnouncement');
+        if (isValidAnnouncement(stored)) {
+          record = stored;
+        } else {
+          record = null;
+          // An empty {} default (no record yet) is not corruption; only a
+          // non-empty object missing/invalidating a required field is.
+          if (Object.keys(stored).length > 0) {
+            console.warn(`update-checker: ignoring malformed announcement record at ${CONFIG_PATHS.updateAnnouncement}`);
+          }
+        }
+      } catch (err) {
+        // Read/parse failure (e.g. invalid JSON on disk): treat as no record,
+        // per the frozen contract, and keep going rather than aborting the check.
+        record = null;
+        console.warn(`update-checker: failed to read announcement record at ${CONFIG_PATHS.updateAnnouncement}`, err);
+      }
+
+      const alreadyAnnounced =
+        record !== null &&
+        record.announcedVersion === result.latestVersion &&
+        record.currentVersion === result.currentVersion &&
+        record.channel === result.channel;
+      if (alreadyAnnounced) return;
+
+      const details: Record<string, unknown> = {
+        currentVersion: result.currentVersion,
+        latestVersion: result.latestVersion,
+        channel: result.channel,
+      };
+      if (result.releaseUrl) details['releaseUrl'] = result.releaseUrl;
+
+      await emitEvent('system.update_available', 'info', details);
+
+      await writeConfig('updateAnnouncement', {
+        announcedVersion: result.latestVersion,
+        currentVersion: result.currentVersion,
+        channel: result.channel,
+        announcedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn('update-checker: failed to process the update announcement', err);
+    }
+  }
+
+  /** Version each named channel points to; a channel that fails to resolve is left out. */
+  private async channelVersions(): Promise<Record<string, string>> {
+    const out: Record<string, string> = {};
+    // `latest` and `current` are the same lookup: resolve once to spare the GitHub rate limit.
+    await Promise.all(UPDATE_CHANNELS.filter(ch => ch !== 'latest').map(async ch => {
+      try { out[ch] = releaseVersion(await fetchRelease(ch)); } catch { /* unresolved: omitted */ }
+    }));
+    if (out['current']) out['latest'] = out['current'];
+    return out;
+  }
+
+  /** Fetch available channels from GitHub Releases, always including the base set. */
+  async getAvailableReleases(): Promise<AvailableReleases> {
+    const base: string[] = [...UPDATE_CHANNELS];
+    const excluded = new Set<string>(UPDATE_CHANNELS);
+    try {
+      const releases = await fetchAllReleases();
+      const extra: string[] = [];
+      for (const r of releases) {
+        if (r.draft) continue;
+        const tag = r.tag_name;
+        if (!parseSemver(tag) && !excluded.has(tag) && !tag.startsWith('channel-')) {
+          extra.push(tag);
+        }
+      }
+      return { channels: [...base, ...extra], versions: [], channelVersions: await this.channelVersions() };
+    } catch {
+      return { channels: base, versions: [], channelVersions: await this.channelVersions() };
+    }
+  }
+
+  /** Return the last cached result, or null if no check has completed yet. */
+  getLastResult(): UpdateInfo | null {
+    return this._result ?? (this._enabled ? null : this.disabledInfo());
+  }
+
+  /** Stop the background interval (used in tests). */
+  stop(): void {
+    if (this._timer) {
+      clearInterval(this._timer);
+      this._timer = null;
+    }
+  }
+}
+
+export const updateChecker = new UpdateChecker();

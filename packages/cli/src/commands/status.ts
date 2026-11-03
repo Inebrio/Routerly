@@ -4,6 +4,14 @@ import { api, ApiError } from '../api.js';
 import { getCurrentAccount } from '../store.js';
 import type { Settings } from '@routerly/shared';
 
+export function formatUptime(seconds: number): string {
+  const total = Math.floor(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
 interface SystemInfo {
   version: string;
   uptimeSeconds: number;
@@ -48,11 +56,11 @@ Examples:
 
         if (!expired) {
           try {
-            const [info, settings, models, projects] = await Promise.all([
+            const [info, settings, models, routers] = await Promise.all([
               api<SystemInfo>('GET', '/api/system/info').catch(() => null),
               api<Settings>('GET', '/api/settings').catch(() => null),
               api<unknown[]>('GET', '/api/models').catch(() => null),
-              api<unknown[]>('GET', '/api/projects').catch(() => null),
+              api<unknown[]>('GET', '/api/routers').catch(() => null),
             ]);
 
             base.service = {
@@ -66,7 +74,7 @@ Examples:
               dashboardUrl: settings?.dashboardEnabled ? `${account.serverUrl}/dashboard/` : null,
               logLevel: settings?.logLevel ?? null,
               modelCount: models?.length ?? null,
-              projectCount: projects?.length ?? null,
+              routerCount: routers?.length ?? null,
             };
           } catch {
             base.service = { reachable: false };
@@ -103,22 +111,18 @@ Examples:
 
       // ── Server health + settings ────────────────────────────────────────
       try {
-        const [info, settings, models, projects] = await Promise.all([
+        const [info, settings, models, routers] = await Promise.all([
           api<SystemInfo>('GET', '/api/system/info').catch(() => null),
           api<Settings>('GET', '/api/settings').catch(() => null),
           api<unknown[]>('GET', '/api/models').catch(() => null),
-          api<unknown[]>('GET', '/api/projects').catch(() => null),
+          api<unknown[]>('GET', '/api/routers').catch(() => null),
         ]);
 
         // Connectivity
         console.log(`  ${chalk.cyan('Reachable:')}     ${info ? chalk.green('yes') : chalk.red('no — server did not respond')}`);
 
         if (info) {
-          const uptimeSec = Math.floor(info.uptimeSeconds);
-          const h = Math.floor(uptimeSec / 3600);
-          const m = Math.floor((uptimeSec % 3600) / 60);
-          const s = uptimeSec % 60;
-          const uptimeStr = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+          const uptimeStr = formatUptime(info.uptimeSeconds);
           console.log(`  ${chalk.cyan('Version:')}       ${info.version}`);
           console.log(`  ${chalk.cyan('Uptime:')}        ${uptimeStr}`);
         }
@@ -138,7 +142,7 @@ Examples:
         }
 
         if (models !== null)   console.log(`  ${chalk.cyan('Models:')}        ${models.length}`);
-        if (projects !== null) console.log(`  ${chalk.cyan('Projects:')}      ${projects.length}`);
+        if (routers !== null) console.log(`  ${chalk.cyan('Routers:')}      ${routers.length}`);
 
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {

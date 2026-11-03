@@ -1,0 +1,55 @@
+name: Deploy Docs
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Git ref to build the site from. Empty = the caller''s triggering commit.'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install website dependencies
+        run: npm ci --prefix website
+
+      # Nothing release-pipeline.yml cuts becomes a commit on main/develop
+      # any more (RC-2's docs-versions branch) — a plain checkout above only
+      # sees whatever snapshots already existed in this ref's own history.
+      # Layer every cut accumulated on docs-versions back on before the site
+      # builds. No-op (and harmless) while docs-versions doesn't exist yet.
+      - name: Layer documentation cuts from docs-versions
+        run: |
+          if git ls-remote --exit-code --heads origin docs-versions > /dev/null 2>&1; then
+            git fetch origin docs-versions
+            git checkout FETCH_HEAD -- website/versioned_docs website/versioned_sidebars website/versions.json
+            git reset
+          fi
+
+      - name: Build website
+        run: npm run build --prefix website
+
+      - name: Verify build output
+        run: test -f website/build/index.html || exit 1
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_ROUTERLY_DOCS }}"
+          channelId: live
+          projectId: routerly-docs

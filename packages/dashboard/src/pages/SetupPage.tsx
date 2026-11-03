@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { setupFirstAdmin, checkSetupStatus } from '../api';
 import { useAuth } from '../AuthContext';
 import { Logo } from '../components/Logo';
 
 export function SetupPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { loginDirect, user } = useAuth();
   const [email, setEmail] = useState('');
@@ -27,15 +29,15 @@ export function SetupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (password !== confirm) { setError('Passwords do not match'); return; }
-    if (password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (password !== confirm) { setError(t('setup.errors.mismatch')); return; }
+    if (password.length < 8) { setError(t('setup.errors.tooShort')); return; }
     setLoading(true);
     try {
       const { token, user } = await setupFirstAdmin(email, password);
       loginDirect(token, user);
       navigate('/dashboard/overview', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Setup failed');
+      setError(err instanceof Error ? err.message : t('setup.errors.setupFailed'));
     } finally {
       setLoading(false);
     }
@@ -47,7 +49,7 @@ export function SetupPage() {
         <div className="login-logo">
           <Logo size={52} />
           <h1>Routerly.ai</h1>
-          <p>One gateway. Any AI model. Total control.</p>
+          <p>{t('app.tagline')}</p>
         </div>
 
         <div style={{
@@ -60,10 +62,10 @@ export function SetupPage() {
         }}>
           <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>🚀</div>
           <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-            Welcome! Let's get you set up.
+            {t('setup.welcome')}
           </div>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: 4 }}>
-            Create the first admin account to start managing Routerly.
+            {t('setup.welcomeSubtitle')}
           </div>
         </div>
 
@@ -77,55 +79,55 @@ export function SetupPage() {
           color: 'var(--text-secondary)',
           lineHeight: 1.5,
         }}>
-          <span style={{ fontWeight: 600, color: 'rgba(234,179,8,0.9)' }}>🚧 Beta</span>
-          {' '}— Routerly is actively evolving. Bugs may occur.{' '}
-          Your feedback helps shape what it becomes —{' '}
+          <span style={{ fontWeight: 600, color: 'rgba(234,179,8,0.9)' }}>{t('setup.betaBadge')}</span>
+          {' '}— {t('setup.betaNotice')}{' '}
+          {t('setup.betaFeedback')}{' '}
           <a
             href="https://github.com/Inebrio/Routerly/issues"
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: 'rgba(234,179,8,0.8)', textDecoration: 'underline' }}
           >
-            report issues or share ideas
+            {t('setup.betaLink')}
           </a>.
         </div>
 
         <form onSubmit={handleSubmit}>
           {error && <div className="form-error">{error}</div>}
           <div className="form-group">
-            <label className="form-label" htmlFor="setup-email">Admin Email</label>
+            <label className="form-label" htmlFor="setup-email">{t('setup.emailLabel')}</label>
             <input
               id="setup-email"
               type="email"
               className="form-input"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="admin@example.com"
+              placeholder={t('setup.emailPlaceholder')}
               required
               autoFocus
             />
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="setup-password">Password</label>
+            <label className="form-label" htmlFor="setup-password">{t('setup.passwordLabel')}</label>
             <input
               id="setup-password"
               type="password"
               className="form-input"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="Minimum 8 characters"
+              placeholder={t('setup.passwordPlaceholder')}
               required
             />
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="setup-confirm">Confirm Password</label>
+            <label className="form-label" htmlFor="setup-confirm">{t('setup.confirmLabel')}</label>
             <input
               id="setup-confirm"
               type="password"
               className="form-input"
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
-              placeholder="Re-enter password"
+              placeholder={t('setup.confirmPlaceholder')}
               required
             />
           </div>
@@ -135,7 +137,7 @@ export function SetupPage() {
             disabled={loading}
             style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
           >
-            {loading ? <span className="spinner" /> : 'Create Admin Account'}
+            {loading ? <span className="spinner" /> : t('setup.submit')}
           </button>
         </form>
       </div>

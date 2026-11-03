@@ -5,10 +5,13 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 // ─── CLI config lives in the user's home dir, independent of the service ─────
 // Multiple users on the same machine each have their own config.
 // The service config lives elsewhere (e.g. /etc/routerly or ~/.routerly).
+// Base honors ROUTERLY_HOME so the CLI and service share the same configurable
+// home; when ROUTERLY_HOME is unset it falls back to ~/.routerly (unchanged).
 
-const CLI_DIR = join(homedir(), '.routerly', 'cli');
+const HOME = process.env.ROUTERLY_HOME ?? join(homedir(), '.routerly');
+const CLI_DIR = join(HOME, 'cli');
 const CLI_CONFIG_PATH = join(CLI_DIR, 'config.json');
-const CLI_INSTALL_CONFIG_PATH = join(homedir(), '.routerly', 'config', 'cli.json');
+const CLI_INSTALL_CONFIG_PATH = join(HOME, 'config', 'cli.json');
 
 export interface AccountEntry {
   /** Friendly alias chosen at login, e.g. "home", "work" */

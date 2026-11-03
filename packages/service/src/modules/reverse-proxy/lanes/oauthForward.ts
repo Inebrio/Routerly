@@ -1,0 +1,357 @@
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import { Readable } from 'node:stream';
+import type { ModelConfig } from '@routerly/shared';
+import { protocolError } from '../../../lib/protocol-errors.js';
+import { buildUpstreamUrl } from '../../api-reverse-proxy/passthrough.js';
+import { trackUsage } from '../../usage/tracker.js';
+import { createUsageTap, type TappedUsage } from './usageTap.js';
+import { createAnthropicScrubTransform } from './anthropicScrub.js';
+import type { EffectivePii } from '../../pii/piiScrubber.js';
+import type { TraceEntry } from '@routerly/shared';
+
+/** Output-PII scrub applied to the pass-through response (set when the router has an output policy). */
+export interface PassthroughScrub { effective: EffectivePii; emit?: (entry: TraceEntry) => void }
+
+/**
+ * Faithful pass-through for subscription / OAuth models (Flow A).
+ *
+ * When a model's credential is a subscription OAuth token (e.g. a Claude
+ * Pro/Max token from `claude setup-token`) the request must be forwarded to the
+ * provider **verbatim** — bypassing the SDK adapter, which reconstructs the body
+ * and would corrupt the `system` block / tool-use content. The client (real
+ * Claude Code, pointed at Routerly) supplies its own system block; Routerly only
+ * swaps the inbound tenant `Authorization` for the stored OAuth token and adds
+ * the headers Anthropic expects for OAuth credentials. Nothing in the body is
+ * altered and no identity is injected.
+ */
+
+/** Anthropic OAuth beta header value required for `sk-ant-oat…` credentials. */
+const ANTHROPIC_OAUTH_BETA = 'oauth-2025-04-20';
+
+/**
+ * Betas a subscription credential cannot use. Claude Code always asks for the
+ * 1M-context beta; on a Pro/Max token Anthropic answers
+ * `400 The long context beta is not yet available for this subscription.`, so
+ * the request fails before it starts. Dropping the beta is the only way the
+ * client works at all — everything else in the header is forwarded untouched.
+ */
+const SUBSCRIPTION_UNSUPPORTED_BETA = /^context-1m-/;
+
+/**
+ * The bare model name the provider knows.
+ *
+ * Instance ids are namespaced (`anthropic/claude-haiku-4-5`) and `upstreamModelId`
+ * is stored namespaced too — both the connections migration and POST /api/models
+ * default it to the full instance id — so the prefix has to come off before the
+ * name goes upstream, or Anthropic answers 404 `model: anthropic/claude-haiku-4-5`.
+ * Only the model's own provider prefix is stripped: a name that legitimately
+ * contains a slash (`fauxpaslife/arch-router:1.5b`) is left alone.
+ */
+export function upstreamModelName(model: ModelConfig): string {
+  const raw = model.upstreamModelId ?? model.id;
+  const prefix = `${model.id.split('/')[0]}/`;
+  const stripped = raw.startsWith(prefix) ? raw.slice(prefix.length) : raw;
+  return stripped || model.id;
+}
+
+/**
+ * Serialize the outbound body, replacing the `model` field with the upstream
+ * model id (OAuth/API-key scopes don't always cover the client-supplied id).
+ * Everything else is forwarded verbatim.
+ *
+ * If the body is a string that is not valid JSON, there is no `model` field to
+ * rewrite — forward it byte-verbatim (wire-transparency contract). This is a
+ * deliberate pass-through, not a catch-all that hides serialization bugs.
+ */
+function rewriteBodyModel(rawBody: unknown, model: ModelConfig): string {
+  const upstreamModel = upstreamModelName(model);
+  if (typeof rawBody === 'string') {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      return rawBody; // not JSON, nothing to rewrite — pass through as-is
+    }
+    return JSON.stringify({ ...(parsed as Record<string, unknown>), model: upstreamModel });
+  }
+  return JSON.stringify({ ...(rawBody as Record<string, unknown>), model: upstreamModel });
+}
+
+/**
+ * Request headers we never forward upstream: true hop-by-hop headers plus the
+ * inbound tenant-auth headers (the Routerly router token), which we replace
+ * with the stored OAuth credential.
+ */
+const DROP_REQUEST = new Set([
+  'host',
+  'content-length',
+  'connection',
+  'transfer-encoding',
+  'authorization',
+  'x-api-key',
+]);
+
+/** Response headers that must not be copied back when re-streaming. */
+const HOP_BY_HOP_RESPONSE = new Set([
+  'content-encoding',
+  'content-length',
+  'transfer-encoding',
+  'connection',
+]);
+
+/**
+ * Clone the incoming headers, drop hop-by-hop + inbound tenant auth, and inject
+ * the stored OAuth credential as `Authorization: Bearer`. Ensures the Anthropic
+ * OAuth beta is present (merged with the client's `anthropic-beta`, never
+ * clobbering it) and defaults `anthropic-version` when the client omitted it.
+ */
+export function buildOAuthForwardHeaders(
+  model: ModelConfig,
+  incoming: Record<string, string | string[] | undefined>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(incoming)) {
+    if (value === undefined) continue;
+    const lower = key.toLowerCase();
+    if (DROP_REQUEST.has(lower)) continue;
+    out[lower] = Array.isArray(value) ? value.join(', ') : value;
+  }
+
+  out['authorization'] = `Bearer ${model.apiKey ?? ''}`;
+  out['anthropic-dangerous-direct-browser-access'] = 'true';
+
+  const betas = out['anthropic-beta']
+    ? out['anthropic-beta'].split(',').map((s) => s.trim()).filter(Boolean).filter((b) => !SUBSCRIPTION_UNSUPPORTED_BETA.test(b))
+    : [];
+  if (!betas.includes(ANTHROPIC_OAUTH_BETA)) betas.push(ANTHROPIC_OAUTH_BETA);
+  out['anthropic-beta'] = betas.join(',');
+
+  if (!out['anthropic-version']) out['anthropic-version'] = '2023-06-01';
+
+  return out;
+}
+
+/** A non-2xx upstream answer, drained so it can be recorded and, when another candidate remains, skipped. */
+export interface UpstreamFailure { status: number; body: unknown; message: string }
+
+const ZERO_USAGE: TappedUsage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 };
+
+async function drainFailure(upstream: Response): Promise<UpstreamFailure & { text: string }> {
+  const text = await upstream.text().catch(() => '');
+  let body: unknown = text;
+  try { body = JSON.parse(text); } catch { /* not JSON: keep the raw text */ }
+  const inner = (body as { error?: { message?: unknown } } | null)?.error?.message;
+  const detail = typeof inner === 'string' ? inner : text.trim().slice(0, 500);
+  return { status: upstream.status, body, text, message: `Upstream returned ${upstream.status}${detail ? `: ${detail}` : ''}` };
+}
+
+/**
+ * Forward the current request verbatim to the model's upstream endpoint using
+ * the stored OAuth credential, then stream the response back to the client.
+ */
+export async function forwardAnthropicOAuth(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  model: ModelConfig,
+  scrub?: PassthroughScrub,
+  /** More candidates remain: a non-2xx answer is returned (nothing sent to the client) so the caller can fall back. */
+  deferFailure = false,
+): Promise<unknown> {
+  const startMs = Date.now();
+  const routerId = request.router?.id ?? '';
+  const tokenId = request.token?.id;
+  const { method, url } = request;
+  const targetUrl = buildUpstreamUrl(model, url);
+  const headers = buildOAuthForwardHeaders(model, request.headers);
+
+  let body: string | undefined;
+  if (method !== 'GET' && method !== 'HEAD' && request.body != null) {
+    body = rewriteBodyModel(request.body, model);
+  }
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(targetUrl, {
+      method,
+      headers,
+      ...(body !== undefined ? { body, duplex: 'half' } : {}),
+    } as RequestInit);
+  } catch (err) {
+    request.log.error({ err, url: targetUrl }, 'oauth pass-through upstream error');
+    if (routerId) {
+      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
+    }
+    return reply.code(502).send({
+      type: 'error',
+      error: {
+        type: 'api_error',
+        message: err instanceof Error ? err.message : 'upstream request failed',
+      },
+    });
+  }
+
+  request.log.info(
+    {
+      oauth: true,
+      provider: model.provider,
+      modelId: model.id,
+      path: url,
+      upstreamHost: new URL(targetUrl).host,
+      status: upstream.status,
+      routerId: request.router ? request.router.id : undefined,
+    },
+    'oauth pass-through',
+  );
+
+  const record = (u: TappedUsage, errorMessage?: string): void => {
+    if (!routerId) return;
+    void trackUsage({
+      routerId, model, inputTokens: u.inputTokens, outputTokens: u.outputTokens,
+      ...(u.cachedInputTokens > 0 ? { cachedInputTokens: u.cachedInputTokens } : {}),
+      ...(u.cacheCreationInputTokens > 0 ? { cacheCreationInputTokens: u.cacheCreationInputTokens } : {}),
+      latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion',
+      ...(errorMessage !== undefined ? { errorMessage } : {}),
+      ...(tokenId ? { tokenId } : {}),
+    }).catch(() => {});
+  };
+
+  if (!upstream.ok) {
+    const failure = await drainFailure(upstream);
+    record(ZERO_USAGE, failure.message);
+    if (deferFailure) return failure;
+    upstream.headers.forEach((value, key) => {
+      if (!HOP_BY_HOP_RESPONSE.has(key.toLowerCase())) reply.header(key, value);
+    });
+    return reply.code(failure.status).send(failure.text);
+  }
+
+  upstream.headers.forEach((value, key) => {
+    if (!HOP_BY_HOP_RESPONSE.has(key.toLowerCase())) reply.header(key, value);
+  });
+  reply.code(upstream.status);
+  if (upstream.body) {
+    const ct = upstream.headers.get('content-type');
+    const src = Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]);
+    return reply.send(
+      (scrub ? src.pipe(createAnthropicScrubTransform(ct, scrub.effective, scrub.emit)) : src)
+        .pipe(createUsageTap(ct, record)),
+    );
+  }
+  record({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 });
+  return reply.send();
+}
+
+const DROP_API_KEY_REQUEST = new Set([
+  'host', 'content-length', 'connection', 'transfer-encoding', 'authorization', 'x-api-key',
+]);
+
+/**
+ * Verbatim pass-through for standard Anthropic API-key models.
+ * Swaps the inbound router token for the model's x-api-key, replaces the
+ * model field in the body with the upstream model id, and pipes the response
+ * back as-is — preserving streaming, betas, and all client-specific fields.
+ */
+export async function forwardAnthropicApiKey(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  model: ModelConfig,
+  scrub?: PassthroughScrub,
+  /** More candidates remain: a non-2xx answer is returned (nothing sent to the client) so the caller can fall back. */
+  deferFailure = false,
+): Promise<unknown> {
+  const startMs = Date.now();
+  const routerId = request.router?.id ?? '';
+  const tokenId = request.token?.id;
+  const { method, url } = request;
+  const targetUrl = buildUpstreamUrl(model, url);
+
+  const headers: Record<string, string> = {};
+  for (const [key, value] of Object.entries(request.headers)) {
+    if (value === undefined) continue;
+    const lower = key.toLowerCase();
+    if (DROP_API_KEY_REQUEST.has(lower)) continue;
+    headers[lower] = Array.isArray(value) ? value.join(', ') : value;
+  }
+  headers['x-api-key'] = model.apiKey ?? '';
+  if (!headers['anthropic-version']) headers['anthropic-version'] = '2023-06-01';
+
+  let body: string | undefined;
+  if (method !== 'GET' && method !== 'HEAD' && request.body != null) {
+    body = rewriteBodyModel(request.body, model);
+  }
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(targetUrl, {
+      method, headers, ...(body !== undefined ? { body, duplex: 'half' } : {}),
+    } as RequestInit);
+  } catch (err) {
+    request.log.error({ err, url: targetUrl }, 'api-key pass-through upstream error');
+    if (routerId) {
+      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
+    }
+    return reply.code(502).send({ type: 'error', error: { type: 'api_error', message: err instanceof Error ? err.message : 'upstream request failed' } });
+  }
+
+  request.log.info(
+    { provider: model.provider, modelId: model.id, path: url, upstreamHost: new URL(targetUrl).host, status: upstream.status, routerId },
+    'api-key pass-through',
+  );
+
+  const record = (u: TappedUsage, errorMessage?: string): void => {
+    if (!routerId) return;
+    void trackUsage({
+      routerId, model, inputTokens: u.inputTokens, outputTokens: u.outputTokens,
+      ...(u.cachedInputTokens > 0 ? { cachedInputTokens: u.cachedInputTokens } : {}),
+      ...(u.cacheCreationInputTokens > 0 ? { cacheCreationInputTokens: u.cacheCreationInputTokens } : {}),
+      latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion',
+      ...(errorMessage !== undefined ? { errorMessage } : {}),
+      ...(tokenId ? { tokenId } : {}),
+    }).catch(() => {});
+  };
+
+  // A non-2xx answer is small: drain it so usage carries the reason and, when another candidate
+  // remains, the caller can fall back instead of the client receiving this error.
+  if (!upstream.ok && model.provider !== 'anthropic-web') {
+    const failure = await drainFailure(upstream);
+    record(ZERO_USAGE, failure.message);
+    if (deferFailure) return failure;
+    upstream.headers.forEach((value, key) => {
+      if (!HOP_BY_HOP_RESPONSE.has(key.toLowerCase())) reply.header(key, value);
+    });
+    return reply.code(failure.status).send(failure.text);
+  }
+
+  // anthropic-web talks to claude.ai, a website: its Cloudflare headers and cookies are not
+  // the Anthropic API's and must not reach the client, and its non-JSON errors (empty 404
+  // on a bad session key) are rebuilt as an Anthropic error.
+  const web = model.provider === 'anthropic-web';
+  upstream.headers.forEach((value, key) => {
+    const k = key.toLowerCase();
+    if (HOP_BY_HOP_RESPONSE.has(k)) return;
+    if (web && !WEB_RESPONSE_HEADERS.has(k)) return;
+    reply.header(key, value);
+  });
+
+  if (web && !upstream.ok && !(upstream.headers.get('content-type') ?? '').includes('json')) {
+    const text = (await upstream.text().catch(() => '')).trim().slice(0, 200);
+    record({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 });
+    return reply.code(upstream.status).header('content-type', 'application/json')
+      .send(protocolError('anthropic', upstream.status, text || `anthropic-web: upstream responded HTTP ${upstream.status}`));
+  }
+
+  reply.code(upstream.status);
+  if (upstream.body) {
+    const ct = upstream.headers.get('content-type');
+    const src = Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]);
+    return reply.send(
+      (scrub ? src.pipe(createAnthropicScrubTransform(ct, scrub.effective, scrub.emit)) : src)
+        .pipe(createUsageTap(ct, record)),
+    );
+  }
+  record({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 });
+  return reply.send();
+}
+
+/** Upstream response headers anthropic-web forwards (everything else is claude.ai/Cloudflare noise). */
+const WEB_RESPONSE_HEADERS = new Set(['content-type', 'cache-control', 'retry-after', 'request-id']);

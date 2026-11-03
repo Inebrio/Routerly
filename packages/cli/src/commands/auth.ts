@@ -15,15 +15,19 @@ import { apiWith, api, ApiError } from '../api.js';
 
 interface LoginResponse {
   token: string;
-  /** Permanent refresh token returned at login (absent when calling /api/auth/refresh) */
+  /** Permanent refresh token returned at login (also returned, rotated, by /api/auth/refresh) */
   refreshToken?: string;
   user: { id: string; email: string; role: string };
+  /** Set on HTTP 202 when the account has 2FA enabled */
+  requiresTotp?: boolean;
+  userId?: string;
 }
 
 interface MeResponse {
   id: string;
   email: string;
   roleId: string;
+  language?: string;
 }
 
 export function makeAuthCommand(): Command {
@@ -68,7 +72,19 @@ Examples:
 
       try {
         const fakeAccount = { alias: '', serverUrl, email: email!, token: '', expiresAt: 0 };
-        const res = await apiWith<LoginResponse>(fakeAccount, 'POST', '/api/auth/login', { email, password });
+        let res = await apiWith<LoginResponse>(fakeAccount, 'POST', '/api/auth/login', { email, password });
+
+        // Handle 2FA challenge (service returns HTTP 202 with requiresTotp: true)
+        if (res.requiresTotp) {
+          console.log(chalk.yellow('Two-factor authentication required.'));
+          const { default: inq } = await import('inquirer');
+          const { totpCode } = await inq.prompt([{
+            type: 'input',
+            name: 'totpCode',
+            message: 'Enter your 6-digit authenticator code (or backup code):',
+          }]);
+          res = await apiWith<LoginResponse>(fakeAccount, 'POST', '/api/auth/2fa/verify', { userId: res.userId, token: totpCode as string });
+        }
 
         // Decode expiry from token payload (base64url(json).sig)
         let expiresAt = Date.now() + 24 * 3600_000;
@@ -97,7 +113,7 @@ Examples:
         // Step 1: check if this email is already in use (regardless of --alias)
         if (sameEmail) {
           const { action } = await inquirer.prompt([{
-            type: 'list',
+            type: 'select',
             name: 'action',
             message: `Email "${email}" is already saved as account "${sameEmail.alias}". What do you want to do?`,
             choices: [
@@ -121,7 +137,7 @@ Examples:
           // New email, --alias provided: check alias conflict
           if (existing.has(opts.alias)) {
             const { action } = await inquirer.prompt([{
-              type: 'list',
+              type: 'select',
               name: 'action',
               message: `Alias "${opts.alias}" is already in use. What do you want to do?`,
               choices: [
@@ -192,7 +208,7 @@ Examples:
           const p = JSON.parse(Buffer.from(data.token.split('.')[0]!, 'base64url').toString()) as { exp?: number };
           if (p.exp) expiresAt = p.exp;
         } catch { /* keep default */ }
-        await saveAccount({ ...account, token: data.token, expiresAt });
+        await saveAccount({ ...account, token: data.token, expiresAt, ...(data.refreshToken ? { refreshToken: data.refreshToken } : {}) });
         console.log(chalk.green(`✓ Token refreshed for "${account.alias}".`));
         console.log(chalk.gray(`  Expires: ${new Date(expiresAt).toLocaleString('it-IT')}`));
       } catch (err) {
@@ -323,9 +339,17 @@ Examples:
 Examples:
   # Show the current user's email, role, and session info
   routerly auth whoami
+
+  # Machine-readable output
+  routerly auth whoami --json
 `)
-    .action(async () => {
+    .option('--json', 'Output as JSON')
+    .action(async (opts: { json?: boolean }) => {
       const current = await getCurrentAccount();
+      if (!current && opts.json) {
+        console.error(chalk.red('Not logged in. Run: routerly auth login'));
+        process.exit(1);
+      }
       if (!current) {
         console.log(chalk.yellow('Not logged in. Run: routerly auth login'));
         return;
@@ -333,6 +357,18 @@ Examples:
 
       try {
         const me = await api<MeResponse>('GET', '/api/me');
+        if (opts.json) {
+          console.log(JSON.stringify({
+            id: me.id,
+            email: me.email,
+            roleId: me.roleId,
+            language: me.language ?? null,
+            serverUrl: current.serverUrl,
+            alias: current.alias,
+            expiresAt: current.expiresAt,
+          }, null, 2));
+          return;
+        }
         console.log(chalk.bold(`${me.email}`) + chalk.gray(` (role: ${me.roleId})`));
         console.log(chalk.gray(`  Server:  ${current.serverUrl}`));
         console.log(chalk.gray(`  Account: ${current.alias}`));

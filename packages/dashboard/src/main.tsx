@@ -11,3 +11,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </AuthProvider>
   </React.StrictMode>,
 );
+// RA-16 task 7: trivial change to a dashboard path unmapped in impact.json.

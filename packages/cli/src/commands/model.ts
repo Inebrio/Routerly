@@ -2,7 +2,8 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ModelConfig, TokenCost, Limit, PricingTier } from '@routerly/shared';
+import type { ModelConfig, TokenCost, Limit, PricingTier, CatalogField, ModelInstance } from '@routerly/shared';
+import { fmtUsd } from '../lib/fmt.js';
 
 // ─── Interactive wizard helpers ───────────────────────────────────────────────
 
@@ -14,13 +15,13 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
     ? chalk.gray('  (none)')
     : limits.map((l, i) => `  ${i + 1}. ${l.metric} ${l.windowType === 'period' ? l.period : `rolling ${l.rollingAmount} ${l.rollingUnit}`} ≤ ${l.value}`).join('\n');
 
-  // eslint-disable-next-line no-constant-condition
+   
   while (true) {
     console.log(chalk.bold('\nCurrent limits:'));
     console.log(display());
 
     const { action } = await inquirer.prompt([{
-      type: 'list', name: 'action', message: 'Limits:',
+      type: 'select', name: 'action', message: 'Limits:',
       choices: [
         { name: 'Add a limit', value: 'add' },
         ...(limits.length ? [{ name: 'Remove a limit', value: 'remove' }] : []),
@@ -32,7 +33,7 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
 
     if (action === 'remove') {
       const { idx } = await inquirer.prompt([{
-        type: 'list', name: 'idx', message: 'Which limit to remove?',
+        type: 'select', name: 'idx', message: 'Which limit to remove?',
         choices: limits.map((l, i) => ({ name: `${l.metric} ${l.windowType === 'period' ? l.period : `rolling ${l.rollingAmount} ${l.rollingUnit}`} ≤ ${l.value}`, value: i })),
       }]);
       limits.splice(idx, 1);
@@ -40,14 +41,14 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
     }
 
     const { metric, windowType } = await inquirer.prompt([
-      { type: 'list', name: 'metric', message: 'Metric:', choices: ['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens'] },
-      { type: 'list', name: 'windowType', message: 'Window type:', choices: [{ name: 'period (calendar boundary)', value: 'period' }, { name: 'rolling (sliding window)', value: 'rolling' }] },
+      { type: 'select', name: 'metric', message: 'Metric:', choices: ['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens'] },
+      { type: 'select', name: 'windowType', message: 'Window type:', choices: [{ name: 'period (calendar boundary)', value: 'period' }, { name: 'rolling (sliding window)', value: 'rolling' }] },
     ]);
 
     let limitEntry: Limit;
     if (windowType === 'period') {
       const { period } = await inquirer.prompt([
-        { type: 'list', name: 'period', message: 'Period:', choices: ['hourly', 'daily', 'weekly', 'monthly', 'yearly'] },
+        { type: 'select', name: 'period', message: 'Period:', choices: ['hourly', 'daily', 'weekly', 'monthly', 'yearly'] },
       ]);
       const { value } = await inquirer.prompt([
         { type: 'input', name: 'value', message: `Max ${metric} per ${period}:`, validate: (v: string) => !isNaN(parseFloat(v)) || 'Must be a number' },
@@ -56,7 +57,7 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
     } else {
       const { rollingAmount, rollingUnit, value } = await inquirer.prompt([
         { type: 'input', name: 'rollingAmount', message: 'Window size (number):', validate: (v: string) => !isNaN(parseInt(v)) || 'Must be an integer' },
-        { type: 'list', name: 'rollingUnit', message: 'Window unit:', choices: ['second', 'minute', 'hour', 'day', 'week', 'month'] },
+        { type: 'select', name: 'rollingUnit', message: 'Window unit:', choices: ['second', 'minute', 'hour', 'day', 'week', 'month'] },
         { type: 'input', name: 'value', message: `Max ${metric}:`, validate: (v: string) => !isNaN(parseFloat(v)) || 'Must be a number' },
       ]);
       limitEntry = { metric, windowType: 'rolling', rollingAmount: parseInt(rollingAmount), rollingUnit, value: parseFloat(value) };
@@ -74,13 +75,13 @@ async function promptPricingTiers(existing: PricingTier[] = []): Promise<Pricing
     ? chalk.gray('  (none)')
     : tiers.map((t, i) => `  ${i + 1}. ${t.metric} > ${t.above}: $${t.inputPerMillion}/$${t.outputPerMillion} per 1M`).join('\n');
 
-  // eslint-disable-next-line no-constant-condition
+   
   while (true) {
     console.log(chalk.bold('\nCurrent pricing tiers:'));
     console.log(display());
 
     const { action } = await inquirer.prompt([{
-      type: 'list', name: 'action', message: 'Pricing tiers:',
+      type: 'select', name: 'action', message: 'Pricing tiers:',
       choices: [
         { name: 'Add a tier', value: 'add' },
         ...(tiers.length ? [{ name: 'Remove a tier', value: 'remove' }] : []),
@@ -92,7 +93,7 @@ async function promptPricingTiers(existing: PricingTier[] = []): Promise<Pricing
 
     if (action === 'remove') {
       const { idx } = await inquirer.prompt([{
-        type: 'list', name: 'idx', message: 'Which tier to remove?',
+        type: 'select', name: 'idx', message: 'Which tier to remove?',
         choices: tiers.map((t, i) => ({ name: `${t.metric} > ${t.above}: $${t.inputPerMillion}/$${t.outputPerMillion}`, value: i })),
       }]);
       tiers.splice(idx, 1);
@@ -128,6 +129,16 @@ const PRICING_PRESETS: Record<string, TokenCost> = {
   'gemini-1.5-flash': { inputPerMillion: 0.075, outputPerMillion: 0.3 },
 };
 
+/** Parse `--timeout <ms>`: undefined when absent, exits 1 on anything but a non-negative integer. */
+function parseTimeoutOpt(raw: string | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  if (!/^\d+$/.test(raw.trim())) {
+    console.error(chalk.red('--timeout: must be a non-negative integer (ms)'));
+    process.exit(1);
+  }
+  return parseInt(raw, 10);
+}
+
 export function makeModelCommand(): Command {
   const cmd = new Command('model').description('Manage LLM provider models');
 
@@ -145,16 +156,106 @@ Examples:
           console.log(chalk.yellow('No models registered yet. Use `routerly model add` to add one.'));
           return;
         }
+        // GET /api/models only ever returns legacy standalone models (no connectionId field).
+        // Models migrated to the connection/instance system keep the same id as their
+        // ModelInstance, so the owning connection is resolved by matching instance.id === model.id.
+        // Best-effort: a caller without connections:read still sees the table, just without this column.
+        let connectionByModelId = new Map<string, string>();
+        try {
+          const instances = await api<ModelInstance[]>('GET', '/api/instances');
+          connectionByModelId = new Map(instances.map(i => [i.id, i.connectionId]));
+        } catch { /* no connections:read permission or endpoint unavailable — column stays blank */ }
+
         const table = new Table({
-          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M', 'Catalog', 'Connection ID'].map(h => chalk.cyan(h)),
         });
         for (const m of models) {
-          table.push([m.id, m.provider, m.endpoint, `$${m.cost.inputPerMillion}`, `$${m.cost.outputPerMillion}`]);
+          const overridden = m.fieldOverrides ? Object.values(m.fieldOverrides).some(Boolean) : false;
+          const catalogLabel = overridden
+            ? chalk.yellow('partial override')
+            : m.catalogDefaults
+              ? chalk.green('catalog')
+              : '';
+          const connectionId = connectionByModelId.get(m.id) ?? chalk.gray('-');
+          table.push([m.id, m.provider, m.endpoint, fmtUsd(m.cost?.inputPerMillion), fmtUsd(m.cost?.outputPerMillion), catalogLabel, connectionId]);
         }
         console.log(table.toString());
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
+      }
+    });
+
+  // ── model show ──
+  cmd.command('show <id>')
+    .description('Show details for a registered model')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly model show gpt-4o
+  routerly model show gpt-4o --json
+`)
+    .action(async (id: string, opts: { json?: boolean }) => {
+      let models: ModelConfig[];
+      try {
+        models = await api<ModelConfig[]>('GET', '/api/models');
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+
+      const m = models.find(x => x.id === id);
+      if (!m) {
+        console.error(chalk.red(`Model "${id}" not found.`));
+        process.exit(1);
+      }
+
+      if (opts.json) {
+        console.log(JSON.stringify(m, null, 2));
+        return;
+      }
+
+      const line = (label: string, value: string) =>
+        `  ${chalk.bold(label.padEnd(22))} ${value}`;
+
+      console.log(chalk.bold(`\nModel: ${m.id}`));
+      console.log(line('Provider', m.provider));
+      console.log(line('Endpoint', m.endpoint ?? ''));
+      if (m.contextWindow) console.log(line('Context window', `${m.contextWindow.toLocaleString()} tokens`));
+      if (m.timeout) console.log(line('Timeout', `${m.timeout.toLocaleString()} ms`));
+      if (m.capabilities) {
+        const caps = Object.entries(m.capabilities)
+          .filter(([, v]) => v)
+          .map(([k]) => k)
+          .join(', ');
+        if (caps) console.log(line('Capabilities', caps));
+      }
+
+      console.log(chalk.bold('\nPricing:'));
+      console.log(line('Input $/1M', fmtUsd(m.cost?.inputPerMillion)));
+      console.log(line('Output $/1M', fmtUsd(m.cost?.outputPerMillion)));
+      if (m.cost?.cachePerMillion != null) console.log(line('Cache read $/1M', fmtUsd(m.cost?.cachePerMillion)));
+      if (m.cost?.cacheWritePerMillion != null) console.log(line('Cache write $/1M', fmtUsd(m.cost?.cacheWritePerMillion)));
+
+      // Catalog tracking section
+      const overriddenKeys = m.fieldOverrides
+        ? (Object.entries(m.fieldOverrides) as [CatalogField, boolean | undefined][]).filter(([, v]) => v).map(([k]) => k)
+        : [];
+
+      console.log(chalk.bold('\nCatalog tracking:'));
+      if (overriddenKeys.length > 0) {
+        console.log('  Overridden fields:');
+        for (const field of overriddenKeys) {
+          const def = m.catalogDefaults?.[field];
+          const defStr = def !== undefined
+            ? chalk.gray(`(catalog default: ${typeof def === 'number' && (field === 'inputPerMillion' || field === 'outputPerMillion' || field === 'cachePerMillion' || field === 'cacheWritePerMillion') ? `$${def}` : String(def)})`)
+            : '';
+          console.log(`    ${chalk.yellow(field.padEnd(24))} ${chalk.cyan('Override')} ${defStr}`);
+        }
+      } else if (m.catalogDefaults) {
+        console.log(chalk.green('  Prices: auto-synced from catalog'));
+      } else {
+        console.log(chalk.gray('  (no catalog tracking)'));
       }
     });
 
@@ -183,9 +284,13 @@ Examples:
 
   # Interactive wizard for limits and pricing tiers
   routerly model add --id gpt-4o --provider openai --api-key sk-... --interactive
+
+  # Bind to a preconfigured connection instead of inline credentials
+  routerly model add --id gpt-4o --provider openai --connection conn-abc123
 `)
     .requiredOption('--id <id>', 'Unique model ID (e.g. gpt-4o)')
-    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | gemini | ollama | custom')
+    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | openai-oauth | gemini | mistral | cohere | xai | deepseek | groq | together | perplexity | fireworks | cerebras | ollama | custom | azure-openai | bedrock | vertex')
+    .option('--connection <id|label>', 'Bind to an existing provider connection by id or label (see `routerly connections list`); omits inline credentials')
     .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)')
     .option('--api-key <key>', 'API key (stored plaintext; file permissions protect it)')
     .option('--input-price <usd>', 'Cost per 1M input tokens in USD')
@@ -195,22 +300,49 @@ Examples:
     .option('--limits-json <json>', 'Limits array as JSON string')
     .option('--pricing-tiers-json <json>', 'Pricing tiers array as JSON string')
     .option('--interactive', 'Open interactive wizard for limits and pricing tiers')
+    // Azure OpenAI
+    .option('--azure-resource <name>', 'Azure resource name (azure-openai provider)')
+    .option('--azure-deployment <id>', 'Azure deployment ID (azure-openai provider)')
+    .option('--azure-api-version <v>', "Azure API version (azure-openai provider, default '2024-02-01')")
+    // AWS Bedrock
+    .option('--aws-region <region>', 'AWS region (bedrock provider)')
+    .option('--aws-key-id <id>', 'AWS access key ID (bedrock provider)')
+    .option('--aws-secret <secret>', 'AWS secret access key (bedrock provider)')
+    // Google Vertex AI
+    .option('--vertex-project <id>', 'Google Cloud project ID (vertex provider)')
+    .option('--vertex-location <loc>', 'Vertex AI location, e.g. us-central1 (vertex provider)')
+    .option('--vertex-sa-key <path>', 'Path to service account JSON key file (vertex provider)')
+    // ChatGPT browser session
+    .option('--cf-clearance <value>', 'cf_clearance cookie for Cloudflare bypass (openai-web provider)')
+    .option('--timeout <ms>', 'Upstream request timeout in ms (default 60000)')
     .action(async (opts: {
-      id: string; provider: string; endpoint?: string; apiKey?: string;
+      id: string; provider: string; connection?: string; endpoint?: string; apiKey?: string;
       inputPrice?: string; outputPrice?: string; dailyBudget?: string; monthlyBudget?: string;
       limitsJson?: string; pricingTiersJson?: string; interactive?: boolean;
+      azureResource?: string; azureDeployment?: string; azureApiVersion?: string;
+      awsRegion?: string; awsKeyId?: string; awsSecret?: string;
+      vertexProject?: string; vertexLocation?: string; vertexSaKey?: string;
+      cfClearance?: string; timeout?: string;
     }) => {
+      const timeout = parseTimeoutOpt(opts.timeout);
       const preset = PRICING_PRESETS[opts.id];
-      const cost: TokenCost = {
-        inputPerMillion: opts.inputPrice ? parseFloat(opts.inputPrice) : (preset?.inputPerMillion ?? 0),
-        outputPerMillion: opts.outputPrice ? parseFloat(opts.outputPrice) : (preset?.outputPerMillion ?? 0),
+      // No flag and no preset: leave the price unset (list/show print `-`), never a silent 0.
+      const inputPerMillion = opts.inputPrice ? parseFloat(opts.inputPrice) : preset?.inputPerMillion;
+      const outputPerMillion = opts.outputPrice ? parseFloat(opts.outputPrice) : preset?.outputPerMillion;
+      const cost: Partial<TokenCost> = {
+        ...(inputPerMillion !== undefined ? { inputPerMillion } : {}),
+        ...(outputPerMillion !== undefined ? { outputPerMillion } : {}),
       };
 
       const providerEndpoints: Record<string, string> = {
         openai: 'https://api.openai.com/v1',
         anthropic: 'https://api.anthropic.com',
+        'anthropic-oauth': 'https://api.anthropic.com',
         gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/',
         ollama: 'http://localhost:11434/v1',
+        'azure-openai': '',
+        bedrock: '',
+        vertex: '',
       };
 
       let limits: Limit[] | undefined;
@@ -237,14 +369,64 @@ Examples:
 
       if (pricingTiers?.length) cost.pricingTiers = pricingTiers;
 
+      // Read Vertex service account key file if provided (irrelevant when binding to a
+      // preconfigured connection — that connection already carries its own credentials).
+      let vertexServiceAccountKey: string | undefined;
+      if (opts.vertexSaKey && !opts.connection) {
+        const { readFile } = await import('node:fs/promises');
+        try {
+          vertexServiceAccountKey = await readFile(opts.vertexSaKey, 'utf-8');
+        } catch {
+          console.error(chalk.red(`Cannot read service account key file: ${opts.vertexSaKey}`));
+          process.exit(1);
+        }
+      }
+
+      // Accept a connection id or label. Lookup is best-effort: without connections:read
+      // (or on an unexpected reply) the value is sent as-is, like before.
+      let connectionId = opts.connection;
+      if (connectionId) {
+        let conns: { id: string; label?: string }[] | undefined;
+        try { conns = await api<{ id: string; label?: string }[]>('GET', '/api/connections'); }
+        catch { /* no connections:read — send the value unchanged */ }
+        if (Array.isArray(conns)) {
+          const match = conns.find(c => c.id === connectionId) ?? conns.find(c => c.label === connectionId);
+          if (!match) {
+            console.error(chalk.red(`Connection '${connectionId}' not found, see \`routerly connections list\``));
+            process.exit(1);
+          }
+          connectionId = match.id;
+        }
+      }
+
       const body = {
         id: opts.id,
         name: opts.id,
         provider: opts.provider,
-        endpoint: opts.endpoint ?? providerEndpoints[opts.provider] ?? '',
-        apiKey: opts.apiKey,
-        cost,
+        // The API reads flat price fields, not a nested `cost` object.
+        ...cost,
+        ...(timeout ? { timeout } : {}),
         ...(limits?.length ? { limits } : {}),
+        ...(opts.connection
+          ? { connectionId }
+          : {
+            endpoint: opts.endpoint ?? providerEndpoints[opts.provider] ?? '',
+            apiKey: opts.apiKey,
+            // Azure OpenAI
+            ...(opts.azureResource    ? { azureResourceName: opts.azureResource }                     : {}),
+            ...(opts.azureDeployment  ? { azureDeploymentId: opts.azureDeployment }                   : {}),
+            ...(opts.azureApiVersion  ? { azureApiVersion: opts.azureApiVersion }                     : {}),
+            // AWS Bedrock
+            ...(opts.awsRegion        ? { awsRegion: opts.awsRegion }                                 : {}),
+            ...(opts.awsKeyId         ? { awsAccessKeyId: opts.awsKeyId }                             : {}),
+            ...(opts.awsSecret        ? { awsSecretAccessKey: opts.awsSecret }                        : {}),
+            // Google Vertex AI
+            ...(opts.vertexProject    ? { vertexProjectId: opts.vertexProject }                       : {}),
+            ...(opts.vertexLocation   ? { vertexLocation: opts.vertexLocation }                       : {}),
+            ...(vertexServiceAccountKey ? { vertexServiceAccountKey }                                 : {}),
+            // ChatGPT browser session
+            ...(opts.cfClearance      ? { cfClearance: opts.cfClearance }                             : {}),
+          }),
       };
 
       try {
@@ -311,14 +493,16 @@ Examples:
     .option('--output-price <usd>', 'Cost per 1M output tokens in USD')
     .option('--cache-price <usd>', 'Cache cost per 1M tokens in USD')
     .option('--context-window <tokens>', 'Context window size in tokens')
+    .option('--timeout <ms>', 'Upstream request timeout in ms (default 60000; 0 resets to default)')
     .option('--limits-json <json>', 'Limits array as JSON string (replaces existing limits)')
     .option('--pricing-tiers-json <json>', 'Pricing tiers as JSON string (replaces existing tiers)')
     .option('--interactive', 'Open interactive wizard for limits and pricing tiers')
     .action(async (id: string, opts: {
       newId?: string; provider?: string; endpoint?: string; apiKey?: string;
-      inputPrice?: string; outputPrice?: string; cachePrice?: string; contextWindow?: string;
+      inputPrice?: string; outputPrice?: string; cachePrice?: string; contextWindow?: string; timeout?: string;
       limitsJson?: string; pricingTiersJson?: string; interactive?: boolean;
     }) => {
+      const timeout = parseTimeoutOpt(opts.timeout);
       // Fetch existing model
       let existing: ModelConfig;
       try {
@@ -352,9 +536,11 @@ Examples:
         catch { console.error(chalk.red('--pricing-tiers-json: invalid JSON')); process.exit(1); }
       }
 
-      const updatedCost: TokenCost = {
-        inputPerMillion:  opts.inputPrice  ? parseFloat(opts.inputPrice)  : (existing.cost?.inputPerMillion  ?? 0),
-        outputPerMillion: opts.outputPrice ? parseFloat(opts.outputPrice) : (existing.cost?.outputPerMillion ?? 0),
+      const inputPerMillion  = opts.inputPrice  ? parseFloat(opts.inputPrice)  : existing.cost?.inputPerMillion;
+      const outputPerMillion = opts.outputPrice ? parseFloat(opts.outputPrice) : existing.cost?.outputPerMillion;
+      const updatedCost: Partial<TokenCost> = {
+        ...(inputPerMillion !== undefined ? { inputPerMillion } : {}),
+        ...(outputPerMillion !== undefined ? { outputPerMillion } : {}),
         ...(opts.cachePrice ? { cachePerMillion: parseFloat(opts.cachePrice) } : existing.cost?.cachePerMillion !== undefined ? { cachePerMillion: existing.cost.cachePerMillion } : {}),
         ...(pricingTiers?.length ? { pricingTiers } : pricingTiers === undefined && existing.cost?.pricingTiers?.length ? { pricingTiers: existing.cost.pricingTiers } : {}),
       };
@@ -362,11 +548,15 @@ Examples:
       const body: Record<string, unknown> = {
         provider:      opts.provider      ?? existing.provider,
         endpoint:      opts.endpoint      ?? existing.endpoint,
-        cost:          updatedCost,
+        // The API reads flat price fields, not a nested `cost` object.
+        ...updatedCost,
         ...(opts.newId        ? { id: opts.newId }                                           : {}),
         ...(opts.apiKey       ? { apiKey: opts.apiKey }                                      : {}),
         ...(opts.contextWindow ? { contextWindow: parseInt(opts.contextWindow, 10) }          : {}),
-        ...(limits !== undefined ? { limits } : {}),
+        ...(timeout !== undefined ? { timeout: timeout === 0 ? null : timeout } : {}),
+        // PUT clears limits when the body omits them: resend the existing ones.
+        ...(limits !== undefined ? { limits }
+          : (existing as ModelConfig & { limits?: Limit[] }).limits?.length ? { limits: (existing as ModelConfig & { limits?: Limit[] }).limits } : {}),
       };
 
       try {
@@ -383,6 +573,84 @@ Examples:
         }
         process.exit(1);
       }
+    });
+
+
+  // ── model discover ──
+  cmd.command('discover')
+    .description('Browse the built-in model catalog with capabilities and pricing')
+    .option('--provider <name>', 'Filter by provider (openai, anthropic, gemini, ollama)')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly model discover
+  routerly model discover --provider anthropic
+  routerly model discover --json
+`)
+    .action(async (opts: { provider?: string; json?: boolean }) => {
+      interface CatalogEntry {
+        id: string;
+        provider: string;
+        name: string;
+        contextWindow: number;
+        modalities?: string[];
+        pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
+        local?: boolean;
+        isConfigured: boolean;
+      }
+
+      let entries: CatalogEntry[];
+      try {
+        entries = await api<CatalogEntry[]>('GET', '/api/models/catalog');
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          console.log(chalk.yellow('Model catalog not available on this server version.'));
+          return;
+        }
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+
+      if (opts.provider) {
+        entries = entries.filter(e => e.provider.toLowerCase() === opts.provider!.toLowerCase());
+      }
+
+      if (opts.json) {
+        console.log(JSON.stringify(entries, null, 2));
+        return;
+      }
+
+      if (entries.length === 0) {
+        console.log(chalk.yellow('No models found for the given filter.'));
+        return;
+      }
+
+      const table = new Table({
+        head: ['Model', 'Provider', 'Context', 'Modalities', 'Input /1K', 'Output /1K'].map(h => chalk.cyan(h)),
+      });
+
+      for (const e of entries) {
+        const configured = e.isConfigured ? chalk.green(' ★') : '';
+        // free/local: explicit local flag OR zero-priced (a $0/$0 model is free regardless of the flag).
+        const isFree = e.local || (e.pricing.inputPer1kTokens === 0 && e.pricing.outputPer1kTokens === 0);
+        const priceIn  = isFree ? chalk.green('free/local') : `$${e.pricing.inputPer1kTokens}`;
+        const priceOut = isFree ? chalk.green('free/local') : `$${e.pricing.outputPer1kTokens}`;
+        const ctx = e.contextWindow >= 1_000_000
+          ? `${(e.contextWindow / 1_000_000).toFixed(1)}M`
+          : `${Math.round(e.contextWindow / 1000)}k`;
+
+        table.push([
+          e.id + configured,
+          e.provider,
+          ctx,
+          (e.modalities ?? []).join(', ') || '—',
+          priceIn,
+          priceOut,
+        ]);
+      }
+
+      console.log(table.toString());
+      console.log(chalk.gray(`\n${entries.length} model${entries.length !== 1 ? 's' : ''} shown. ★ = configured in Routerly.`));
     });
 
   return cmd;

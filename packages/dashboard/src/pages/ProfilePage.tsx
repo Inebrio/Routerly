@@ -1,11 +1,626 @@
-import React, { useState } from 'react';
-import { User, Lock } from 'lucide-react';
-import { updateMe } from '../api';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
+import { Link, NavLink, useSearchParams } from 'react-router-dom';
+import QRCode from 'qrcode';
+import { User, Lock, ShieldCheck, ShieldOff, CheckCheck, Circle, RefreshCw, X, Archive } from 'lucide-react';
+import {
+  NOTIFICATION_CATEGORIES, NOTIFICATION_EVENT_CATALOG,
+  notificationCause, notificationCategory, notificationTitle,
+} from '@routerly/shared';
+import { updateMe, setup2fa, confirm2fa, disable2fa, regenerateBackupCodes, getNotificationInbox, getNotificationInboxPage, getNotificationInboxItem, markNotificationsRead, markNotificationsUnread, deleteNotifications, type InboxItem, type InboxPagination, type NotificationCategory } from '../api';
 import { useAuth } from '../AuthContext';
+import { severityIcon, timeAgo } from '../components/NotificationBell';
+import { useFilterState } from '../hooks/useFilterState';
+import { ProfileMcpTab } from './ProfileMcpTab';
+import { ProfilePreferencesTab } from './ProfilePreferencesTab';
+import { DateRangePicker, parseStoredRange, type DateRange } from '../components/DateRangePicker';
+import { writeToClipboard } from '../utils/clipboard';
+import { SearchableSelect } from '../components/SearchableSelect';
 
-export function ProfilePage() {
-  const { user } = useAuth();
+// ─── Notifications tab ────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 20;
+
+type SeverityFilter = 'all' | 'info' | 'warning' | 'critical';
+
+function severityLabel(sev: InboxItem['severity'], t: (k: string) => string): string {
+  return t(`profile.notifications.severity.${sev}`);
+}
+
+/** Absolute, locale-formatted timestamp (the inbox table shows full date, not "ago"). */
+function fmtDate(ts: string): string {
+  return new Date(ts).toLocaleString();
+}
+
+function FilterLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{ fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+      {children}
+    </span>
+  );
+}
+
+/** Technical slug, shown next to the human title so filters and docs stay findable. */
+function EventSlug({ event }: { event: string }) {
+  return (
+    <code style={{ fontSize: '0.72rem', color: 'var(--text-muted)', background: 'var(--bg-secondary)', padding: '1px 5px', borderRadius: 4 }}>
+      {event}
+    </code>
+  );
+}
+
+function useCategoryOptions(t: (k: string) => string) {
+  return [
+    { value: 'all', label: t('profile.notifications.filters.allCategories') },
+    ...NOTIFICATION_CATEGORIES.map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) })),
+  ];
+}
+
+/** Every catalogued event, labelled by title and searchable by slug. */
+function useEventOptions(t: (k: string) => string) {
+  return [
+    { value: '', label: t('profile.notifications.filters.allEvents') },
+    ...Object.entries(NOTIFICATION_EVENT_CATALOG)
+      .map(([event, meta]) => ({ value: event, label: `${meta.title} (${event})` }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+  ];
+}
+
+/** Where a detail value points, when it points anywhere. */
+function detailLink(key: string, value: unknown): string | null {
+  if (typeof value !== 'string' || !value) return null;
+  const id = encodeURIComponent(value);
+  if (key === 'routerId') return `/dashboard/routers/${id}`;
+  // Model ids contain slashes and colons (openai/gpt-4o), hence the encoding.
+  // `primaryModelId` and `fallbackModelId` come from routing.fallback_used.
+  if (key === 'modelId' || key.endsWith('ModelId')) return `/dashboard/models/${id}`;
+  if (key === 'traceId') return `/dashboard/usage/${id}`;
+  return null;
+}
+
+function DetailRow({ name, value, last }: { name: string; value: unknown; last: boolean }) {
+  const href = detailLink(name, value);
+  return (
+    <div style={{
+      display: 'flex', gap: 10, padding: '7px 10px', fontSize: '0.8rem',
+      borderBottom: last ? 'none' : '1px solid var(--border)',
+    }}>
+      <span style={{ color: 'var(--text-muted)', minWidth: 110, fontWeight: 500 }}>{name}</span>
+      <span style={{ color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+        {href
+          ? <Link to={href} style={{ color: 'var(--accent)' }}>{String(value)}</Link>
+          : typeof value === 'string' ? value : JSON.stringify(value)}
+      </span>
+    </div>
+  );
+}
+
+/** Right-side panel showing one notification's full detail. */
+function NotificationDetailDrawer({
+  item,
+  onClose,
+  onMarkRead,
+  onMarkUnread,
+  onDelete,
+}: {
+  item: InboxItem;
+  onClose: () => void;
+  onMarkRead: (id: string) => void;
+  onMarkUnread: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const detailEntries = Object.entries(item.details ?? {});
+  const cause = notificationCause(item.event, item.details ?? {});
+  const sequence = item.events ?? [];
+
+  // Close on Esc.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1000 }}
+      />
+      <div
+        role="dialog"
+        aria-label={t('profile.notifications.detail.ariaLabel')}
+        style={{
+          position: 'fixed', top: 0, right: 0, bottom: 0, width: 420, maxWidth: '90vw',
+          background: 'var(--bg-elevated)', borderLeft: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-lg)', zIndex: 1001, display: 'flex', flexDirection: 'column',
+        }}
+      >
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 20px', borderBottom: '1px solid var(--border)',
+        }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            {severityIcon(item.severity)}
+            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {notificationTitle(item.event)}
+            </span>
+          </span>
+          <button
+            onClick={onClose}
+            title={t('profile.notifications.close')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {cause && (
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>{cause}</div>
+          )}
+
+          <div style={{ display: 'flex', gap: 32 }}>
+            <div>
+              <FilterLabel>{t('profile.notifications.filters.event')}</FilterLabel>
+              <div style={{ marginTop: 4 }}><EventSlug event={item.event} /></div>
+            </div>
+            <div>
+              <FilterLabel>{t('profile.notifications.filters.category')}</FilterLabel>
+              <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-primary)', textTransform: 'capitalize' }}>
+                {notificationCategory(item.event)}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 32 }}>
+            <div>
+              <FilterLabel>{t('profile.notifications.filters.severity')}</FilterLabel>
+              <div style={{ marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                {severityIcon(item.severity)} {severityLabel(item.severity, t)}
+              </div>
+            </div>
+            <div>
+              <FilterLabel>{t('profile.notifications.filters.status')}</FilterLabel>
+              <div style={{ marginTop: 4, fontSize: '0.85rem', color: item.read ? 'var(--text-muted)' : 'var(--accent)', fontWeight: item.read ? 400 : 600 }}>
+                {item.read ? t('profile.notifications.status.read') : t('profile.notifications.status.unread')}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <FilterLabel>{t('profile.notifications.filters.date')}</FilterLabel>
+            <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+              {fmtDate(item.timestamp)}
+              <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>({timeAgo(item.timestamp, t)})</span>
+            </div>
+          </div>
+
+          <div>
+            <FilterLabel>{t('profile.notifications.detail.details')}</FilterLabel>
+            {detailEntries.length === 0 ? (
+              <div style={{ marginTop: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>{t('profile.notifications.detail.noDetails')}</div>
+            ) : (
+              <div style={{ marginTop: 6, border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
+                {detailEntries.map(([k, v], i) => (
+                  <DetailRow key={k} name={k} value={v} last={i === detailEntries.length - 1} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {sequence.length > 1 && (
+            <div>
+              <FilterLabel>{t('profile.notifications.detail.eventsInIncident')}</FilterLabel>
+              <div style={{ marginTop: 6, border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
+                {sequence.map((e, i) => (
+                  <div key={`${e.event}-${e.timestamp}-${i}`} style={{
+                    display: 'flex', alignItems: 'baseline', gap: 8, padding: '7px 10px', fontSize: '0.8rem',
+                    borderBottom: i < sequence.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}>
+                    <span style={{ marginTop: 1 }}>{severityIcon(e.severity)}</span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'block', color: 'var(--text-primary)' }}>{notificationTitle(e.event)}</span>
+                      <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                        {notificationCause(e.event, e.details ?? {}) || e.event}
+                      </span>
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{fmtDate(e.timestamp)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginTop: 'auto', padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
+          {item.read ? (
+            <button className="btn btn-secondary" onClick={() => onMarkUnread(item.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Circle size={14} /> {t('profile.notifications.actions.markUnread')}
+            </button>
+          ) : (
+            <button className="btn btn-secondary" onClick={() => onMarkRead(item.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <CheckCheck size={14} /> {t('profile.notifications.actions.markRead')}
+            </button>
+          )}
+          <button className="btn btn-secondary" onClick={() => onDelete(item.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Archive size={14} /> {t('profile.notifications.actions.archive')}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export function ProfileNotificationsTab() {
+  const { t } = useTranslation();
+  const CATEGORY_OPTIONS = useCategoryOptions(t);
+  const EVENT_OPTIONS = useEventOptions(t);
+  const [searchParams] = useSearchParams();
+  const [items, setItems] = useState<InboxItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [pagination, setPagination] = useState<InboxPagination>({ page: 1, pageSize: PAGE_SIZE, totalRecords: 0, totalPages: 1 });
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<InboxItem | null>(null);
+  // Row selection for bulk operations (mark read / delete).
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+
+  const [severity, setSeverity] = useFilterState<SeverityFilter>({ key: 'notif-filter-severity', defaultValue: 'all' });
+  const [eventFilter, setEventFilter] = useFilterState<string>({ key: 'notif-filter-event', defaultValue: '' });
+  const [category, setCategory] = useFilterState<string>({ key: 'notif-filter-category', defaultValue: 'all' });
+  const [unreadOnly, setUnreadOnly] = useFilterState<boolean>({ key: 'notif-filter-unread', defaultValue: false });
+  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: 'notif-filter-dateRange', defaultValue: { from: '', to: '', label: 'All time' }, deserialize: parseStoredRange });
+
+  const load = useCallback(async (p: number) => {
+    setLoading(true);
+    try {
+      const res = await getNotificationInboxPage({
+        page: p,
+        pageSize: PAGE_SIZE,
+        ...(severity !== 'all' ? { severity } : {}),
+        ...(eventFilter.trim() ? { event: eventFilter.trim() } : {}),
+        ...(category !== 'all' ? { category: category as NotificationCategory } : {}),
+        ...(unreadOnly ? { unreadOnly: true } : {}),
+        ...(dateRange.from ? { from: dateRange.from } : {}),
+        ...(dateRange.to ? { to: dateRange.to } : {}),
+      });
+      setItems(res.items);
+      setUnreadCount(res.unreadCount);
+      setPagination(res.pagination);
+    } catch { /* non-critical */ }
+    finally { setLoading(false); }
+  }, [severity, eventFilter, category, unreadOnly, dateRange.from, dateRange.to]);
+
+  // Reset to page 1 and clear selection when filters change.
+  useEffect(() => { setPage(1); setCheckedIds(new Set()); }, [severity, eventFilter, category, unreadOnly, dateRange.from, dateRange.to]);
+  useEffect(() => { void load(page); }, [load, page]);
+
+  /** Opens the drawer at once, then fills in what only the detail route sends (the incident sequence). */
+  const openItem = useCallback((n: InboxItem) => {
+    setSelected(n);
+    getNotificationInboxItem(n.id)
+      .then(full => setSelected(s => s && s.id === full.id ? full : s))
+      .catch(() => { /* the list payload is enough */ });
+  }, []);
+
+  // Auto-select notification when navigating from the bell dropdown (?notification=<id>).
+  const notifParam = searchParams.get('notification');
+  useEffect(() => {
+    if (!notifParam || loading) return;
+    const found = items.find(n => n.id === notifParam);
+    if (found) openItem(found);
+  }, [notifParam, items, loading, openItem]);
+
+  function toggleOne(id: string) {
+    setCheckedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setCheckedIds(prev => prev.size === items.length ? new Set() : new Set(items.map(n => n.id)));
+  }
+
+  async function markOne(id: string) {
+    try {
+      await markNotificationsRead({ ids: [id] });
+      setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+      setUnreadCount(u => Math.max(0, u - 1));
+      /* v8 ignore next */
+      setSelected(s => s && s.id === id ? { ...s, read: true } : s);
+      window.dispatchEvent(new Event('routerly:notifications'));
+    } catch { /* non-critical */ }
+  }
+
+  async function markUnreadOne(id: string) {
+    try {
+      await markNotificationsUnread({ ids: [id] });
+      setItems(prev => prev.map(n => n.id === id ? { ...n, read: false } : n));
+      setUnreadCount(u => u + 1);
+      /* v8 ignore next */
+      setSelected(s => s && s.id === id ? { ...s, read: false } : s);
+      window.dispatchEvent(new Event('routerly:notifications'));
+    } catch { /* non-critical */ }
+  }
+
+  async function markAll() {
+    try {
+      await markNotificationsRead({ all: true });
+      setItems(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+      setSelected(s => s ? { ...s, read: true } : s);
+      window.dispatchEvent(new Event('routerly:notifications'));
+    } catch { /* non-critical */ }
+  }
+
+  async function bulkMarkRead() {
+    const ids = [...checkedIds];
+    /* v8 ignore next */
+    if (ids.length === 0) return;
+    try {
+      await markNotificationsRead({ ids });
+      const idSet = new Set(ids);
+      const newlyRead = items.filter(n => idSet.has(n.id) && !n.read).length;
+      setItems(prev => prev.map(n => idSet.has(n.id) ? { ...n, read: true } : n));
+      setUnreadCount(u => Math.max(0, u - newlyRead));
+      setCheckedIds(new Set());
+      window.dispatchEvent(new Event('routerly:notifications'));
+    } catch { /* non-critical */ }
+  }
+
+  async function bulkMarkUnread() {
+    const ids = [...checkedIds];
+    /* v8 ignore next */
+    if (ids.length === 0) return;
+    try {
+      await markNotificationsUnread({ ids });
+      const idSet = new Set(ids);
+      const newlyUnread = items.filter(n => idSet.has(n.id) && n.read).length;
+      setItems(prev => prev.map(n => idSet.has(n.id) ? { ...n, read: false } : n));
+      setUnreadCount(u => u + newlyUnread);
+      setCheckedIds(new Set());
+      window.dispatchEvent(new Event('routerly:notifications'));
+    } catch { /* non-critical */ }
+  }
+
+  async function removeIds(ids: string[]) {
+    /* v8 ignore next */
+    if (ids.length === 0) return;
+    try {
+      await deleteNotifications({ ids });
+      const idSet = new Set(ids);
+      const removedUnread = items.filter(n => idSet.has(n.id) && !n.read).length;
+      setUnreadCount(u => Math.max(0, u - removedUnread));
+      setCheckedIds(prev => {
+        const next = new Set(prev);
+        for (const id of ids) next.delete(id);
+        return next;
+      });
+      setSelected(s => s && idSet.has(s.id) ? null : s);
+      window.dispatchEvent(new Event('routerly:notifications'));
+      await load(page);
+    } catch { /* non-critical */ }
+  }
+
+  function deleteOne(id: string) { void removeIds([id]); }
+  function bulkDelete() { void removeIds([...checkedIds]); }
+
+  return (
+    <>
+      {/* Filter bar */}
+      <div className="card" style={{ padding: '14px 18px', marginBottom: 20 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <FilterLabel>{t('profile.notifications.filters.severity')}</FilterLabel>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {(['all', 'info', 'warning', 'critical'] as const).map(s => (
+                <button
+                  key={s}
+                  className={`btn btn-sm ${severity === s ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setSeverity(s)}
+                >
+                  {s === 'all' ? t('profile.notifications.severity.all') : severityLabel(s, t)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 160 }}>
+            <FilterLabel>{t('profile.notifications.filters.category')}</FilterLabel>
+            <SearchableSelect
+              ariaLabel={t('profile.notifications.filters.category')}
+              options={CATEGORY_OPTIONS}
+              value={category}
+              onChange={setCategory}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 260 }}>
+            <FilterLabel>{t('profile.notifications.filters.event')}</FilterLabel>
+            <SearchableSelect
+              ariaLabel={t('profile.notifications.filters.event')}
+              options={EVENT_OPTIONS}
+              value={eventFilter}
+              onChange={setEventFilter}
+              placeholder={t('profile.notifications.filters.allEvents')}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <FilterLabel>{t('profile.notifications.filters.period')}</FilterLabel>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <FilterLabel>{t('profile.notifications.filters.status')}</FilterLabel>
+            <button
+              className={`btn btn-sm ${unreadOnly ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setUnreadOnly(!unreadOnly)}
+            >
+              {unreadOnly ? t('profile.notifications.filters.unreadOnly') : t('profile.notifications.filters.all')}
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <FilterLabel>&nbsp;</FilterLabel>
+            <button className="btn btn-sm btn-secondary" onClick={() => void load(page)} disabled={loading}>
+              <RefreshCw size={13} /> {t('profile.notifications.refresh')}
+            </button>
+          </div>
+
+          <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-end' }}>
+            <FilterLabel>{unreadCount > 0 ? t('profile.notifications.unreadCount', { count: unreadCount }) : t('profile.notifications.allCaughtUp')}</FilterLabel>
+            {unreadCount > 0 && (
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={markAll}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                <CheckCheck size={14} /> {t('profile.notifications.markAllRead')}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bulk action bar */}
+      {checkedIds.size > 0 && (
+        <div className="card" style={{ padding: '10px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{t('profile.notifications.selectedCount', { count: checkedIds.size })}</span>
+          <button className="btn btn-sm btn-secondary" onClick={bulkMarkRead} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <CheckCheck size={14} /> {t('profile.notifications.actions.markRead')}
+          </button>
+          <button className="btn btn-sm btn-secondary" onClick={bulkMarkUnread} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Circle size={14} /> {t('profile.notifications.actions.markUnread')}
+          </button>
+          <button className="btn btn-sm btn-secondary" onClick={bulkDelete} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Archive size={14} /> {t('profile.notifications.actions.archive')}
+          </button>
+          <button className="btn btn-sm btn-secondary" onClick={() => setCheckedIds(new Set())} style={{ marginLeft: 'auto' }}>
+            {t('profile.notifications.clear')}
+          </button>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="loading-center"><div className="spinner" /></div>
+      ) : items.length === 0 ? (
+        <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '40px 0' }}>
+          {t('profile.notifications.empty')}
+        </div>
+      ) : (
+        <>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '10px 12px', width: 40 }}>
+                      <input
+                        type="checkbox"
+                        aria-label={t('profile.notifications.table.selectAll')}
+                        checked={items.length > 0 && checkedIds.size === items.length}
+                        ref={el => { if (el) el.indeterminate = checkedIds.size > 0 && checkedIds.size < items.length; }}
+                        onChange={toggleAll}
+                        style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer', verticalAlign: 'middle' }}
+                      />
+                    </th>
+                    {[t('profile.notifications.table.severity'), t('profile.notifications.table.event'), t('profile.notifications.table.date'), t('profile.notifications.table.status')].map(h => (
+                      <th key={h} style={{
+                        padding: '10px 12px', textAlign: 'left', fontWeight: 600, whiteSpace: 'nowrap',
+                        fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)',
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((n, i) => (
+                    <tr
+                      key={n.id}
+                      onClick={() => openItem(n)}
+                      style={{
+                        cursor: 'pointer',
+                        borderBottom: i < items.length - 1 ? '1px solid var(--border)' : 'none',
+                        background: i % 2 === 0 ? 'transparent' : 'var(--bg-secondary)',
+                      }}
+                    >
+                      <td style={{ padding: '9px 12px', borderLeft: `3px solid ${n.read ? 'transparent' : 'var(--accent)'}` }} onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          aria-label={t('profile.notifications.table.selectRow', { event: n.event })}
+                          checked={checkedIds.has(n.id)}
+                          onChange={() => toggleOne(n.id)}
+                          style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer', verticalAlign: 'middle' }}
+                        />
+                      </td>
+                      <td style={{ padding: '9px 12px', whiteSpace: 'nowrap' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          {severityIcon(n.severity)} {severityLabel(n.severity, t)}
+                        </span>
+                      </td>
+                      <td style={{ padding: '9px 12px', color: 'var(--text-primary)' }}>
+                        <span style={{ display: 'block', fontWeight: n.read ? 400 : 600 }}>
+                          {notificationTitle(n.event)}
+                          {(n.eventCount ?? 1) > 1 && (
+                            <span style={{ marginLeft: 6, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                              {t('profile.notifications.table.eventCount', { count: n.eventCount })}
+                            </span>
+                          )}
+                        </span>
+                        <span style={{ display: 'block', marginTop: 3 }}><EventSlug event={n.event} /></span>
+                      </td>
+                      <td style={{ padding: '9px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>{fmtDate(n.timestamp)}</td>
+                      <td style={{ padding: '9px 12px' }}>
+                        {n.read
+                          ? <span style={{ color: 'var(--text-muted)' }}>{t('profile.notifications.status.read')}</span>
+                          : <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{t('profile.notifications.status.unread')}</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pagination */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16, padding: '10px 0' }}>
+            <button className="btn btn-sm btn-secondary" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
+              {t('profile.notifications.pagination.previous')}
+            </button>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              {t('profile.notifications.pagination.page', { page: pagination.page, totalPages: pagination.totalPages })}
+              <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>{t('profile.notifications.pagination.total', { count: pagination.totalRecords })}</span>
+            </span>
+            <button className="btn btn-sm btn-secondary" disabled={page >= pagination.totalPages} onClick={() => setPage(p => p + 1)}>
+              {t('profile.notifications.pagination.next')}
+            </button>
+          </div>
+        </>
+      )}
+
+      {selected && (
+        <NotificationDetailDrawer
+          item={selected}
+          onClose={() => setSelected(null)}
+          onMarkRead={markOne}
+          onMarkUnread={markUnreadOne}
+          onDelete={deleteOne}
+        />
+      )}
+    </>
+  );
+}
+
+// ─── Profile (security) tab content ──────────────────────────────────────────
+
+function ProfileSecurityTab() {
+  const { t } = useTranslation();
+  const { user, updateUser } = useAuth();
+
+  // ── Change password ─────────────────────────────────────────────────────────
   const [pwForm, setPwForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -20,11 +635,11 @@ export function ProfilePage() {
     setPwError('');
     setPwSaved(false);
     if (pwForm.newPassword !== pwForm.confirmPassword) {
-      setPwError('Passwords do not match.');
+      setPwError(t('profile.security.password.errors.mismatch'));
       return;
     }
     if (pwForm.newPassword.length < 8) {
-      setPwError('New password must be at least 8 characters.');
+      setPwError(t('profile.security.password.errors.tooShort'));
       return;
     }
     setPwSaving(true);
@@ -37,101 +652,449 @@ export function ProfilePage() {
       setPwSaved(true);
       setTimeout(() => setPwSaved(false), 3000);
     } catch (e) {
-      setPwError(e instanceof Error ? e.message : 'Update failed');
+      setPwError(e instanceof Error ? e.message : t('profile.security.password.errors.updateFailed'));
     } finally {
       setPwSaving(false);
     }
   }
 
+  // ── 2FA ─────────────────────────────────────────────────────────────────────
+  type TwoFaStep = 'idle' | 'setup' | 'confirm' | 'enabled';
+  const [tfaStep, setTfaStep] = useState<TwoFaStep>('idle');
+  const [tfaSecret, setTfaSecret] = useState('');
+  const [tfaQrUrl, setTfaQrUrl] = useState('');
+  const [tfaBackupCodes, setTfaBackupCodes] = useState<string[]>([]);
+  const [tfaCode, setTfaCode] = useState('');
+  const [tfaError, setTfaError] = useState('');
+  const [tfaBusy, setTfaBusy] = useState(false);
+  const [tfaEnabled, setTfaEnabled] = useState(!!user?.totpEnabled);
+  const [tfaQrImage, setTfaQrImage] = useState('');
+  const [disableCode, setDisableCode] = useState('');
+  const [backupVisible, setBackupVisible] = useState(false);
+  const [newBackupCodes, setNewBackupCodes] = useState<string[]>([]);
+  const [regenCode, setRegenCode] = useState('');
+
+  useEffect(() => {
+    if (!tfaQrUrl) { setTfaQrImage(''); return; }
+    QRCode.toDataURL(tfaQrUrl, { width: 180, margin: 2 })
+      .then(setTfaQrImage)
+      .catch(() => setTfaQrImage(''));
+  }, [tfaQrUrl]);
+
+  async function handleSetup2fa() {
+    setTfaError('');
+    setTfaBusy(true);
+    try {
+      const res = await setup2fa();
+      setTfaSecret(res.secret);
+      setTfaQrUrl(res.qrUrl);
+      setTfaBackupCodes(res.backupCodes);
+      setTfaStep('setup');
+    } catch (e) {
+      setTfaError(e instanceof Error ? e.message : t('profile.security.tfa.errors.setupFailed'));
+    } finally {
+      setTfaBusy(false);
+    }
+  }
+
+  async function handleConfirm2fa(e: React.FormEvent) {
+    e.preventDefault();
+    setTfaError('');
+    setTfaBusy(true);
+    try {
+      await confirm2fa(tfaCode);
+      setTfaCode('');
+      setTfaStep('enabled');
+      setTfaEnabled(true);
+      updateUser({ totpEnabled: true });
+    } catch (e) {
+      setTfaError(e instanceof Error ? e.message : t('profile.security.tfa.errors.confirmFailed'));
+    } finally {
+      setTfaBusy(false);
+    }
+  }
+
+  async function handleDisable2fa(e: React.FormEvent) {
+    e.preventDefault();
+    setTfaError('');
+    setTfaBusy(true);
+    try {
+      await disable2fa(disableCode);
+      setDisableCode('');
+      setTfaEnabled(false);
+      setTfaStep('idle');
+      updateUser({ totpEnabled: false });
+    } catch (e) {
+      setTfaError(e instanceof Error ? e.message : t('profile.security.tfa.errors.disableFailed'));
+    } finally {
+      setTfaBusy(false);
+    }
+  }
+
+  async function handleRegenerateBackupCodes(e: React.FormEvent) {
+    e.preventDefault();
+    setTfaError('');
+    setTfaBusy(true);
+    try {
+      const res = await regenerateBackupCodes(regenCode);
+      setNewBackupCodes(res.backupCodes);
+      setRegenCode('');
+      setBackupVisible(false);
+    } catch (e) {
+      setTfaError(e instanceof Error ? e.message : t('profile.security.tfa.errors.regenFailed'));
+    } finally {
+      setTfaBusy(false);
+    }
+  }
+
   return (
-    <>
-      <div className="page-header">
-        <h1>My Profile</h1>
-        <p>Manage your account settings</p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 520 }}>
 
-      <div className="page-body" style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 520 }}>
-
-        {/* ── Account info (read-only) ─────────────────────────────────────────── */}
+      {/* ── Account info (read-only) ─────────────────────────────────────────── */}
+      <div style={{
+        background: 'var(--surface-2, rgba(255,255,255,0.04))',
+        border: '1px solid var(--border)',
+        borderRadius: 10,
+        padding: '16px 20px',
+        display: 'flex', alignItems: 'center', gap: 14,
+      }}>
         <div style={{
-          background: 'var(--surface-2, rgba(255,255,255,0.04))',
-          border: '1px solid var(--border)',
-          borderRadius: 10,
-          padding: '16px 20px',
-          display: 'flex', alignItems: 'center', gap: 14,
+          width: 44, height: 44, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #3d75f5, #5a90f8)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
         }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #3d75f5, #5a90f8)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <User size={20} color="#fff" />
+          <User size={20} color="#fff" />
+        </div>
+        <div>
+          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+            {user?.email}
           </div>
-          <div>
-            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-              {user?.email}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
-              Role: <span style={{ color: 'var(--text-secondary)' }}>{user?.role}</span>
-            </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+            {t('profile.security.roleLabel')} <span style={{ color: 'var(--text-secondary)' }}>{user?.role}</span>
           </div>
         </div>
+      </div>
 
-        {/* ── Change password ────────────────────────────────────────────────── */}
-        <section>
-          <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 14 }}>
-            Change Password
-          </h3>
-          <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" htmlFor="p-cur-pw">Current Password</label>
-              <input
-                id="p-cur-pw"
-                type="password"
-                className="form-input"
-                value={pwForm.currentPassword}
-                onChange={e => setPwForm(f => ({ ...f, currentPassword: e.target.value }))}
-                required
-              />
-            </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" htmlFor="p-new-pw">New Password</label>
-              <input
-                id="p-new-pw"
-                type="password"
-                className="form-input"
-                value={pwForm.newPassword}
-                onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))}
-                placeholder="Minimum 8 characters"
-                required
-              />
-            </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" htmlFor="p-conf-pw">Confirm New Password</label>
-              <input
-                id="p-conf-pw"
-                type="password"
-                className="form-input"
-                value={pwForm.confirmPassword}
-                onChange={e => setPwForm(f => ({ ...f, confirmPassword: e.target.value }))}
-                required
-              />
-            </div>
-            {pwError && <div className="form-error">{pwError}</div>}
-            {pwSaved && <div style={{ padding: '8px 12px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.83rem', color: '#22c55e' }}>Password changed successfully.</div>}
+      {/* ── Change password ────────────────────────────────────────────────── */}
+      <section>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 14 }}>
+          {t('profile.security.password.heading')}
+        </h3>
+        <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" htmlFor="p-cur-pw">{t('profile.security.password.currentLabel')}</label>
+            <input
+              id="p-cur-pw"
+              type="password"
+              className="form-input"
+              value={pwForm.currentPassword}
+              onChange={e => setPwForm(f => ({ ...f, currentPassword: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" htmlFor="p-new-pw">{t('profile.security.password.newLabel')}</label>
+            <input
+              id="p-new-pw"
+              type="password"
+              className="form-input"
+              value={pwForm.newPassword}
+              onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))}
+              placeholder={t('profile.security.password.newPlaceholder')}
+              required
+            />
+          </div>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" htmlFor="p-conf-pw">{t('profile.security.password.confirmLabel')}</label>
+            <input
+              id="p-conf-pw"
+              type="password"
+              className="form-input"
+              value={pwForm.confirmPassword}
+              onChange={e => setPwForm(f => ({ ...f, confirmPassword: e.target.value }))}
+              required
+            />
+          </div>
+          {pwError && <div className="form-error">{pwError}</div>}
+          {pwSaved && <div style={{ padding: '8px 12px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.83rem', color: '#22c55e' }}>{t('profile.security.password.success')}</div>}
+          <div>
+            <button type="submit" className="btn btn-primary" disabled={pwSaving}>
+              {pwSaving
+                ? <><div className="spinner" style={{ width: 14, height: 14 }} /> {t('profile.security.password.saving')}</>
+                : <><Lock size={14} /> {t('profile.security.password.submit')}</>}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {/* ── Two-Factor Authentication ──────────────────────────────────────── */}
+      <section>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 14 }}>
+          {t('profile.security.tfa.heading')}
+        </h3>
+
+        {tfaError && <div className="form-error" style={{ marginBottom: 12 }}>{tfaError}</div>}
+
+        {tfaStep === 'idle' && !tfaEnabled && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+              {t('profile.security.tfa.notEnabled')}
+            </p>
             <div>
-              <button type="submit" className="btn btn-primary" disabled={pwSaving}>
-                {pwSaving
-                  ? <><div className="spinner" style={{ width: 14, height: 14 }} /> Saving…</>
-                  : <><Lock size={14} /> Change Password</>}
+              <button className="btn btn-primary" onClick={handleSetup2fa} disabled={tfaBusy}>
+                <ShieldCheck size={14} /> {t('profile.security.tfa.enableButton')}
               </button>
             </div>
-          </form>
-        </section>
+          </div>
+        )}
 
+        {tfaStep === 'setup' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+              {t('profile.security.tfa.scanInstructions')}
+            </p>
+            {tfaQrImage && (
+              /* ponytail: white padding so QR scans in dark mode */
+              <div style={{ alignSelf: 'flex-start', background: '#fff', padding: 8, borderRadius: 8, lineHeight: 0 }}>
+                <img src={tfaQrImage} alt={t('profile.security.tfa.qrAlt')} width={180} height={180} />
+              </div>
+            )}
+            <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+                {t('profile.security.tfa.addAccountInstructions')}
+              </p>
+              <ol style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
+                <li><Trans i18nKey="profile.security.tfa.setup.step1" components={{ strong: <strong /> }} /></li>
+                <li><Trans i18nKey="profile.security.tfa.setup.step2" components={{ strong: <strong /> }} /></li>
+                <li>{t('profile.security.tfa.setup.step3')}</li>
+              </ol>
+              {tfaQrUrl && (
+                <a
+                  href={tfaQrUrl}
+                  style={{ display: 'block', marginTop: 10, fontSize: '0.72rem', color: 'var(--accent)', wordBreak: 'break-all' }}
+                >
+                  {t('profile.security.tfa.mobileLink')}
+                </a>
+              )}
+            </div>
+            <div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+                {t('profile.security.tfa.manualEntryLabel')}
+              </p>
+              <code style={{ fontSize: '0.8rem', background: 'var(--surface-2)', padding: '4px 8px', borderRadius: 4, letterSpacing: '0.1em' }}>
+                {tfaSecret}
+              </code>
+            </div>
+            <div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>
+                {t('profile.security.tfa.saveBackupCodes')}
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}>
+                {tfaBackupCodes.map(c => (
+                  <code key={c} style={{ fontSize: '0.8rem', background: 'var(--surface-2)', padding: '4px 8px', borderRadius: 4 }}>{c}</code>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{ fontSize: '0.8rem' }}
+                onClick={() => void writeToClipboard(tfaBackupCodes.join('\n'))}
+              >
+                {t('profile.security.tfa.copyBackupCodes')}
+              </button>
+            </div>
+            <form onSubmit={handleConfirm2fa} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" htmlFor="tfa-confirm-code">{t('profile.security.tfa.confirmCodeLabel')}</label>
+                <input
+                  id="tfa-confirm-code"
+                  type="text"
+                  className="form-input"
+                  value={tfaCode}
+                  onChange={e => setTfaCode(e.target.value.trim())}
+                  placeholder="000000"
+                  maxLength={6}
+                  autoComplete="one-time-code"
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="submit" className="btn btn-primary" disabled={tfaBusy}>
+                  {tfaBusy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : t('profile.security.tfa.activate')}
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={() => { setTfaStep('idle'); setTfaError(''); }}>
+                  {t('profile.security.tfa.cancel')}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {(tfaStep === 'enabled' || tfaEnabled) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 12px', borderRadius: 8,
+              background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+            }}>
+              <ShieldCheck size={16} color="#22c55e" />
+              <span style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: 600 }}>{t('profile.security.tfa.enabledBadge')}</span>
+            </div>
+
+            {newBackupCodes.length > 0 ? (
+              <div>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>{t('profile.security.tfa.newBackupCodesLabel')}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}>
+                  {newBackupCodes.map(c => (
+                    <code key={c} style={{ fontSize: '0.8rem', background: 'var(--surface-2)', padding: '4px 8px', borderRadius: 4 }}>{c}</code>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ fontSize: '0.8rem' }}
+                  onClick={() => void writeToClipboard(newBackupCodes.join('\n'))}
+                >
+                  {t('profile.security.tfa.copy')}
+                </button>
+              </div>
+            ) : backupVisible ? (
+              <form onSubmit={handleRegenerateBackupCodes} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" htmlFor="regen-code">{t('profile.security.tfa.regenLabel')}</label>
+                  <input
+                    id="regen-code"
+                    type="text"
+                    className="form-input"
+                    value={regenCode}
+                    onChange={e => setRegenCode(e.target.value.trim())}
+                    placeholder="000000"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                    required
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="submit" className="btn btn-primary" disabled={tfaBusy}>
+                    {tfaBusy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : t('profile.security.tfa.regenerate')}
+                  </button>
+                  <button type="button" className="btn btn-ghost" onClick={() => { setBackupVisible(false); setTfaError(''); }}>{t('profile.security.tfa.cancel')}</button>
+                </div>
+              </form>
+            ) : (
+              <button type="button" className="btn btn-ghost" onClick={() => setBackupVisible(true)}>
+                {t('profile.security.tfa.regenerateBackupCodes')}
+              </button>
+            )}
+
+            <form onSubmit={handleDisable2fa} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" htmlFor="disable-code">{t('profile.security.tfa.disableLabel')}</label>
+                <input
+                  id="disable-code"
+                  type="text"
+                  className="form-input"
+                  value={disableCode}
+                  onChange={e => setDisableCode(e.target.value.trim())}
+                  placeholder="000000"
+                  maxLength={6}
+                  autoComplete="one-time-code"
+                  required
+                />
+              </div>
+              <div>
+                <button type="submit" className="btn" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }} disabled={tfaBusy}>
+                  <ShieldOff size={14} /> {t('profile.security.tfa.disable')}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+// ─── Tab bar (reuses RouterLayout pattern) ───────────────────────────────────
+
+function useTabs(t: (k: string) => string) {
+  return [
+    { id: 'profile', label: t('profile.tabs.profile'), to: '/dashboard/profile' },
+    { id: 'notifications', label: t('profile.tabs.notifications'), to: '/dashboard/profile/notifications' },
+    { id: 'mcp', label: t('profile.tabs.mcp'), to: '/dashboard/profile/mcp' },
+    { id: 'preferences', label: t('profile.tabs.preferences'), to: '/dashboard/profile/preferences' },
+  ] as const;
+}
+
+type TabId = ReturnType<typeof useTabs>[number]['id'];
+
+// ─── ProfilePage ──────────────────────────────────────────────────────────────
+
+export function ProfilePage({ initialTab = 'profile' }: { initialTab?: TabId }) {
+  const { t } = useTranslation();
+  const TABS = useTabs(t);
+  // In-app notifications are opt-in: the tab is shown only when the service
+  // reports a `dashboard` channel exists. Undefined while loading.
+  const [notifEnabled, setNotifEnabled] = useState<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    getNotificationInbox({ limit: 1 })
+      .then(res => setNotifEnabled(res.enabled))
+      .catch(() => setNotifEnabled(false));
+  }, []);
+
+  // Hide the notifications tab when disabled; fall back to the profile tab if the
+  // route was hit directly (do not render the disabled notifications view).
+  const tabs = notifEnabled ? TABS : TABS.filter(tab => tab.id !== 'notifications');
+  const requestedTab = initialTab === 'notifications' && !notifEnabled ? 'profile' : initialTab;
+  // Avoid a flash of the profile tab before the enabled flag resolves.
+  const activeTab: TabId = initialTab === 'notifications' && notifEnabled === undefined
+    ? 'notifications'
+    : requestedTab;
+
+  return (
+    <>
+      <div className="page-header" style={{ paddingBottom: 0 }}>
+        <div style={{ paddingBottom: 24 }}>
+          <h1 style={{ margin: 0 }}>{t('profile.header.title')}</h1>
+          <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            {t('profile.header.subtitle')}
+          </p>
+        </div>
+
+        {/* Tab navigation - same pattern as RouterLayout */}
+        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)' }}>
+          {tabs.map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <NavLink
+                key={tab.id}
+                to={tab.to}
+                style={{
+                  padding: '0 4px 12px',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  fontSize: '0.9rem', fontWeight: 500,
+                  color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+                  borderBottom: isActive ? '2px solid var(--primary)' : '2px solid transparent',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                  marginBottom: -1,
+                }}
+              >
+                {tab.label}
+              </NavLink>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="page-body" style={{ paddingTop: 32 }}>
+        {activeTab === 'notifications' && <ProfileNotificationsTab />}
+        {activeTab === 'mcp' && <ProfileMcpTab />}
+        {activeTab === 'preferences' && <ProfilePreferencesTab />}
+        {activeTab === 'profile' && <ProfileSecurityTab />}
       </div>
     </>
   );
 }
-

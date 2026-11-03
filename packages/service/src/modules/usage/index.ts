@@ -1,0 +1,85 @@
+import { defineModule, type Processor, type RouterlyModule } from '../../core/index.js'
+import { USAGE_TRACKER, PROXY_PIPELINE } from '../../core/tokens.js'
+import type { ProxyContext } from '../reverse-proxy/context.js'
+import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js'
+import { TRACE_COMPLETED_TOPIC, type TraceCompletedEvent } from '../trace/publish.js'
+import { readConfig } from '../config/loader.js'
+import { applyUsageRetention } from '../config/usageNdjson.js'
+import { flushTrace } from './pending.js'
+import { trackUsage } from './tracker.js'
+
+// Same shape as observability/index.ts's runner: a module-level unref'd
+// setInterval, cleared on stop(). Same 60s cadence as
+// observability/runner.ts's integration push — one existing precedent in
+// this codebase for "periodic background sweep interval", reused rather than
+// invented (RTR-06/AC3).
+let sweepTimer: NodeJS.Timeout | null = null
+
+async function runRetentionSweep(): Promise<void> {
+  try {
+    const { usageRetention } = await readConfig('settings')
+    if (!usageRetention) return
+    await applyUsageRetention(usageRetention)
+  } catch (_) {
+    // ponytail: sweep failures must not crash the server — same discipline as
+    // observability/runner.ts's silent catch around its periodic push.
+  }
+}
+
+export const usageModule: RouterlyModule = defineModule({
+  manifest: { id: 'usage', version: '0.6.0', dependsOn: { 'reverse-proxy': '^0.6.0', config: '^0.6.0' } },
+  register({ container, events }) {
+    container.register(USAGE_TRACKER, { trackUsage })
+
+    // The trace is complete here, so the records held for it can be written with
+    // the whole thing — recap included.
+    events.subscribe(TRACE_COMPLETED_TOPIC, (_topic, payload) => {
+      void flushTrace((payload as TraceCompletedEvent).traceId)
+    })
+
+    const finalize: Processor<ProxyContext> = {
+      id: 'usage.finalize',
+      phase: 'finalize',
+      async run(ctx) {
+        // Only the guardrail-blocked usage event lives here (today: trackBlockedRequest in routes/*.ts).
+        // Completion / stream / messages / passthrough usage is self-tracked upstream, do not re-record.
+        const blockedBy = ctx.blockedBy
+        if (!blockedBy) return
+        // usage attribution: still account for disabled-connection models
+        const models = await listEffectiveModelsIncludingDisabled()
+        const firstModelId = ctx.router.models?.[0]?.modelId
+        const model = firstModelId ? models.find((m) => m.id === firstModelId) : undefined
+        if (!model) return // ponytail: no router model to attribute to -> nothing to record
+        await trackUsage({
+          routerId: ctx.router.id,
+          model,
+          inputTokens: 0,
+          outputTokens: 0,
+          latencyMs: 0,
+          outcome: 'blocked',
+          callType: 'guardrail',
+          traceId: ctx.traceId,
+          guardrailTriggered: blockedBy,
+          blockedBy,
+          ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+        }).catch(() => {})
+      },
+    }
+
+    container.resolve(PROXY_PIPELINE).contribute(finalize)
+  },
+
+  // The retention sweep runs for as long as this module does: one immediate
+  // run on start (so a freshly-configured policy takes effect without
+  // waiting a full interval), then on the interval until stop().
+  async start() {
+    await runRetentionSweep()
+    // ponytail: unref'd — the listening socket is what keeps the process alive.
+    sweepTimer ??= setInterval(() => { void runRetentionSweep() }, 60_000).unref()
+  },
+
+  stop() {
+    if (sweepTimer) clearInterval(sweepTimer)
+    sweepTimer = null
+  },
+})

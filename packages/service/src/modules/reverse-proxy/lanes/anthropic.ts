@@ -1,0 +1,336 @@
+import { randomUUID } from 'node:crypto'
+import type { FastifyRequest, FastifyReply } from 'fastify'
+import type { MessagesRequest, ChatCompletionRequest, StreamChunk } from '@routerly/shared'
+import type { Processor } from '../../../core/index.js'
+import type { ProxyContext } from '../context.js'
+import { getProxyPipeline } from '../run.js'
+import { runCandidateLoop } from '../candidate-loop.js'
+import { forwardToRouter } from '../../routing/orchestrate.js'
+import { listEffectiveModels } from '../../provider/list-effective.js'
+import { llmChat, llmStream, loadEffectiveModel, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
+import type { LLMCallContext } from '../execute.js'
+import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
+import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
+import { traceEgress } from '../helpers.js'
+import { forwardAnthropicOAuth, forwardAnthropicApiKey, type PassthroughScrub, type UpstreamFailure } from './oauthForward.js'
+import { mergePolicies } from '../../pii/piiScrubber.js'
+import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
+import {
+  anthropicToChatRequest, openAIToAnthropicResponse, openAIChunksToAnthropicSSE,
+} from '../../provider/messages-compat.js'
+
+/** Convert a MessagesRequest to an OpenAI-compat ChatCompletionRequest for non-Anthropic providers. */
+const toChat = (body: MessagesRequest): ChatCompletionRequest => anthropicToChatRequest(body)
+
+export function buildAnthropicContext(req: FastifyRequest, reply: FastifyReply): ProxyContext {
+  const body = req.body as MessagesRequest
+  const conversationId = (req.headers['x-routerly-conversation-id'] as string | undefined) || undefined
+  return {
+    protocol: 'anthropic',
+    req,
+    reply,
+    log: req.log,
+    router: req.router,
+    routerId: req.router.id,
+    ...(req.token ? { token: req.token } : {}),
+    traceId: randomUUID(),
+    ...(conversationId ? { conversationId } : {}),
+    original: body,
+    request: body as unknown as ChatCompletionRequest, // canonical view built per-candidate via toChat
+    stream: body.stream === true,
+    passthrough: false,
+  }
+}
+
+// ─── upstream.prepare: merge guardrail request-injection (steering text) into the outgoing
+// system field, reproducing the pre-refactor merge from routes/anthropic.ts verbatim ───
+export const anthropicInject: Processor<ProxyContext> = {
+  id: 'anthropic:inject',
+  phase: 'upstream.prepare',
+  async run(ctx) {
+    if (ctx.protocol !== 'anthropic') return
+    if (ctx.result) return
+    if (ctx.requestInjectionApplied) return // one-shot: don't re-merge on fallback candidate retries
+    const injection = ctx.requestInjection
+    if (!injection) return
+    const body = ctx.original as MessagesRequest
+    if (typeof body.system === 'string' && body.system.trim()) body.system = `${body.system}\n\n${injection}`
+    else if (Array.isArray(body.system)) body.system.push({ type: 'text', text: injection })
+    else body.system = injection
+    ctx.requestInjectionApplied = true
+  },
+}
+
+/** Output PII policy for the verbatim pass-through (the pii.output processor never sees those bytes). */
+function outputScrub(ctx: ProxyContext): PassthroughScrub | undefined {
+  const policies = ctx.router.pii?.policies
+  if (!policies?.length) return undefined
+  const effective = mergePolicies(policies, 'output')
+  if (!(effective.entities?.length || effective.customPatterns?.length)) return undefined
+  return { effective, ...(ctx.emit ? { emit: ctx.emit } : {}) }
+}
+
+/**
+ * Verbatim forward result: a non-2xx answer with candidates still to try was not sent to the
+ * client. Record it as the attempt's failure so the candidate loop advances.
+ */
+function deferredFailure(ctx: ProxyContext, sent: unknown): boolean {
+  const f = sent as Partial<UpstreamFailure> | undefined
+  if (typeof f?.status !== 'number' || typeof f.message !== 'string') return false
+  ctx.attemptError = new Error(f.message)
+  ctx.attemptResponse = { status: f.status, body: f.body }
+  return true
+}
+
+/** True when a candidate other than the current one has not been tried yet (loop order: weight, descending). */
+function hasLaterCandidate(ctx: ProxyContext): boolean {
+  const ordered = [...(ctx.candidates ?? [])].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+  return ordered.findIndex((c) => c === ctx.attempt?.candidate) < ordered.length - 1
+}
+
+// ─── upstream.execute: passthrough forward OR toChat+llmChat/llmStream (anthropic.ts L220-286) ──
+export const anthropicUpstream: Processor<ProxyContext> = {
+  id: 'anthropic:upstream',
+  phase: 'upstream.execute',
+  async run(ctx) {
+    if (ctx.protocol !== 'anthropic') return
+    if (ctx.result) return
+    const attempt = ctx.attempt
+    if (!attempt) return
+    const model = attempt.model
+    const body = ctx.original as MessagesRequest
+    const req = ctx.req
+    const reply = ctx.reply
+    const log = ctx.log
+    const router = ctx.router
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
+    const endUserId = (body as any).user as string | undefined || undefined
+
+    // ── OAuth models: verbatim pass-through with OAuth token (anthropic.ts L221-224). ──
+    // listEffectiveModels() above is a static resolve (no live token fetch) — reload via
+    // loadEffectiveModel() so the OAuth token is decrypted and refreshed if near expiry,
+    // same as llmChat/llmStream already do for the SDK path (execute.ts). Without this the
+    // passthrough forwards `Bearer ` with no/stale token and every request 401s immediately.
+    if (model.provider === 'anthropic-oauth') {
+      ctx.passthrough = true
+      const liveModel = (await loadEffectiveModel(model.id)) ?? model
+      if (deferredFailure(ctx, await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx)))) { ctx.passthrough = false; return }
+      ctx.result = { kind: 'passthrough' }
+      return
+    }
+
+    // ── Anthropic API-key models: verbatim pass-through (anthropic.ts L229-232). ──
+    // anthropic-web is NOT forwarded: claude.ai exposes no /v1/messages, so it goes through
+    // the generic adapter path below (Anthropic -> chat -> anthropic-web -> Anthropic).
+    if (model.provider === 'anthropic') {
+      ctx.passthrough = true
+      const liveModel = (await loadEffectiveModel(model.id)) ?? model
+      if (deferredFailure(ctx, await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx)))) { ctx.passthrough = false; return }
+      ctx.result = { kind: 'passthrough' }
+      return
+    }
+
+    // ── openai-oauth speaks the Responses API only. streamOpenAIOAuthChunks maps it
+    //    back to OpenAI chunks, so tool calls and text render through the same egress
+    //    converter as every other non-Anthropic provider. ──
+    if (model.provider === 'openai-oauth') {
+      try {
+        const chunks = streamOpenAIOAuthChunks(toChat(body), model, log, {
+          traceId: ctx.traceId,
+          routerId: router.id,
+          ...(router.pii ? { pii: router.pii } : {}),
+          ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+          ...(ctx.emit ? { emit: ctx.emit } : {}),
+        })
+        if (!body.stream) {
+          const chatResp = await chunksToChatResponse(chunks, model.id)
+          ctx.result = { kind: 'json', body: openAIToAnthropicResponse(chatResp, body.model, `msg_${ctx.traceId}`) }
+          return
+        }
+        // Primed so an auth or upstream failure advances to the next candidate
+        // instead of opening a stream that turns out to be empty.
+        ctx.result = { kind: 'stream', body: await primeStream(chunks) }
+      } catch (err) {
+        log.warn({ err, modelId: model.id }, 'openai-oauth call failed, trying next candidate')
+        ctx.attemptError = err
+        const attemptResponse = upstreamResponseFromError(err)
+        if (attemptResponse !== undefined) ctx.attemptResponse = attemptResponse
+      }
+      return
+    }
+
+    // ── Non-Anthropic providers: convert format and call the executor. ──
+    // Provider response headers of the call that answers (a failed candidate's are overwritten).
+    let upstreamHeaders: Record<string, string> | undefined
+    const cctx: LLMCallContext = {
+      routerId: router.id,
+      router,
+      ...(ctx.token ? { token: ctx.token } : {}),
+      callType: 'completion',
+      traceId: ctx.traceId,
+      ...(ctx.emit ? { emit: ctx.emit } : {}),
+      log,
+      ...(endUserId ? { endUserId } : {}),
+      ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
+      ...(ctx.piiRedacted ? { piiRedacted: ctx.piiRedacted } : {}),
+      ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
+      ...(ctx.req?.experiment ? { experiment: ctx.req.experiment } : {}),
+      ...(ctx.conversationId ? { sessionId: ctx.conversationId } : {}),
+      ...(ctx.token?.tags ? { tags: ctx.token.tags } : {}),
+      ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
+      onUpstreamHeaders: (h) => { upstreamHeaders = h },
+    }
+
+    if (body.stream) {
+      try {
+        const streamResult = await llmStream(toChat(body), model, cctx)
+        ctx.result = { kind: 'stream', body: streamResult.chunks, ...(upstreamHeaders ? { headers: upstreamHeaders } : {}) }
+      } catch (err) {
+        if (!(err instanceof BudgetExceededError)) {
+          log.warn({ err, modelId: model.id }, 'Anthropic messages stream failed, trying next candidate')
+          // Task 7: stash for the routing.execute attempt loop to classify + record at the
+          // connection-level resilience key (never for BudgetExceededError, a local skip).
+          ctx.attemptError = err
+          const attemptResponse = upstreamResponseFromError(err)
+          if (attemptResponse !== undefined) ctx.attemptResponse = attemptResponse
+        }
+        // leave ctx.result unset -> anthropic:attempt advances
+      }
+      return
+    }
+
+    try {
+      const chatResp = await llmChat(toChat(body), model, cctx)
+      ctx.result = { kind: 'json', body: openAIToAnthropicResponse(chatResp, body.model, `msg_${ctx.traceId}`), ...(upstreamHeaders ? { headers: upstreamHeaders } : {}) }
+    } catch (err: unknown) {
+      if (!(err instanceof BudgetExceededError)) {
+        log.warn({ err, modelId: model.id }, 'Anthropic messages call failed, trying next candidate')
+        ctx.attemptError = err
+        const attemptResponse = upstreamResponseFromError(err)
+        if (attemptResponse !== undefined) ctx.attemptResponse = attemptResponse
+      }
+      // leave ctx.result unset -> anthropic:attempt advances
+    }
+  },
+}
+
+// ─── routing.execute: candidate fallback loop, NO events (anthropic.ts L216-292). ─────
+export const anthropicAttempt: Processor<ProxyContext> = {
+  id: 'anthropic:attempt',
+  phase: 'routing.execute',
+  async run(ctx) {
+    if (ctx.protocol !== 'anthropic') return
+    if (ctx.result) return
+    const pipeline = getProxyPipeline()
+
+    // Orchestrator: no models of its own — resolve via its candidate Routers instead of the
+    // plain-Router model loop below (RTR-02).
+    if (ctx.router.kind === 'orchestrator') {
+      await forwardToRouter(ctx.router, ctx, pipeline)
+      return
+    }
+
+    // execution: only route to models on enabled connections
+    const allModels = await listEffectiveModels()
+
+    // Last deterministic upstream 4xx (bad request, invalid key, forbidden): returned as-is when no
+    // candidate succeeds, instead of a generic 503, like a direct provider call.
+    let clientError: { status: number; body: unknown } | undefined
+
+    await runCandidateLoop(ctx.candidates ?? [], async (candidate) => {
+      const model = allModels.find((m) => m.id === candidate.model)
+      if (!model) return false
+      ctx.attempt = { model, candidate }
+      await pipeline.runPhase('upstream.prepare', ctx) // Plan 5 budget
+      if (ctx.result) return true
+      await pipeline.runPhase('upstream.execute', ctx)
+      if (ctx.result) { forgetUpstreamError(ctx.router.id); return true }
+      const ar = ctx.attemptResponse
+      if (ar && ar.status !== undefined && UPSTREAM_PASSTHROUGH_STATUS.includes(ar.status)) {
+        clientError = { status: ar.status, body: upstreamErrorBody('anthropic', ar.status, ar.body) }
+        rememberUpstreamError(ctx.router.id, ar.status, ar.body)
+      }
+      // The fault (if any) was already recorded once by handleProviderResult inside
+      // llmChat/llmStream — the single authoritative recorder. The loop only advances to the next
+      // candidate here; clearing the stash keeps it from leaking into the next iteration.
+      if (ctx.attemptError !== undefined) {
+        ctx.attemptError = undefined
+        delete ctx.attemptResponse
+      }
+      return false
+    }, () => {
+      // Exhausted, no events on the Anthropic lane (decision #8).
+      ctx.result = clientError
+        ? { kind: 'block', status: clientError.status, body: clientError.body }
+        : { kind: 'block', status: 503, body: { type: 'error', error: { type: 'overloaded_error', message: 'All candidate models are budget-exhausted or unavailable.' } } }
+    })
+  },
+}
+
+// ─── egress: writer. NO hijack, NO CORS on the streaming path (anthropic.ts L261-272). ──
+export const anthropicEgress: Processor<ProxyContext> = {
+  id: 'anthropic:egress',
+  phase: 'egress',
+  async run(ctx) {
+    if (ctx.protocol !== 'anthropic') return
+    const result = ctx.result
+    if (!result) return
+    const reply = ctx.reply
+
+    if (result.kind === 'passthrough') {
+      traceEgress(ctx, { kind: 'passthrough' }) // bytes piped upstream-to-client by anthropic:upstream
+      return
+    }
+
+    if (result.kind === 'json') {
+      if (result.status) reply.status(result.status)
+      // A pre-serialised Buffer keeps the provider's content-type as is; Fastify appends
+      // `; charset=utf-8` to application/json for an object payload.
+      if (result.headers) reply.headers(result.headers)
+      reply.send(result.headers?.['content-type'] ? Buffer.from(JSON.stringify(result.body)) : result.body)
+      traceEgress(ctx, { kind: 'json', status: result.status ?? 200 })
+      return
+    }
+
+    if (result.kind === 'block') {
+      if (result.body === undefined) {
+        traceEgress(ctx, { kind: 'block', encoding: 'sse', status: 200 })
+        return
+      }
+      reply.status(result.status ?? 200).send(result.body)
+      traceEgress(ctx, { kind: 'block', status: result.status ?? 200 })
+      return
+    }
+
+    // result.kind === 'stream', raw SSE headers, NO hijack, NO CORS (anthropic.ts L261-265).
+    const body = ctx.original as MessagesRequest
+    if (result.headers) {
+      // Provider headers go back as received: no Cache-Control / Connection of our own.
+      for (const [k, v] of Object.entries(result.headers)) reply.raw.setHeader(k, v)
+      if (!result.headers['content-type']) reply.raw.setHeader('Content-Type', 'text/event-stream')
+    } else {
+      reply.raw.setHeader('Content-Type', 'text/event-stream')
+      reply.raw.setHeader('Cache-Control', 'no-cache')
+      reply.raw.setHeader('Connection', 'keep-alive')
+    }
+    reply.raw.flushHeaders()
+    let frames = 0
+    let bytes = 0
+    let failure: string | undefined
+    try {
+      for await (const line of openAIChunksToAnthropicSSE(result.body as AsyncIterable<StreamChunk>, `msg_${ctx.traceId}`, body.model)) {
+        reply.raw.write(line)
+        frames++
+        bytes += line.length
+      }
+    } catch (err: unknown) {
+      // mid-stream error: nothing to write to the client, but the trace says so.
+      failure = err instanceof Error ? err.message : String(err)
+    }
+    // An aborted stream is closed abnormally so the client sees an error, not a complete response.
+    if (failure) reply.raw.destroy(); else reply.raw.end()
+    traceEgress(ctx, { kind: 'stream', encoding: 'anthropic-sse', frames, bytes, ...(failure ? { error: failure } : {}) })
+  },
+}
+
+export const anthropicTransportProcessors: Processor<ProxyContext>[] = [anthropicInject, anthropicUpstream, anthropicAttempt, anthropicEgress]

@@ -1,61 +1,529 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Send, Square, Paperclip, AlertCircle, Eye, EyeOff, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getProjects, type Project } from '../api';
-import { TraceEntryRenderer } from '../components/TraceEntryRenderer';
-import { MessageStatsCard } from '../components/MessageStatsCard';
-import { extractMessageStats } from '../utils/traceUtils';
+import {
+  Send, Square, Paperclip, AlertCircle, AlertTriangle, Eye, EyeOff, CheckCircle2,
+  ChevronLeft, ChevronRight, Code, Trash2, Save, BookOpen,
+  SplitSquareHorizontal, MessageSquare,
+} from 'lucide-react';
+import { blocksResponseStreaming } from '@routerly/shared';
+import { getRouters, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, streamTraces, getPlaygroundDebugLayout, setPlaygroundDebugLayout, type Router, type PlaygroundPreset, type TraceEntry } from '../api.js';
+import { TraceLog } from '../components/TraceLog.js';
+import { TraceSummary } from '../components/TraceSummary.js';
+import { SearchableSelect } from '../components/SearchableSelect.js';
+import { isCaptureMode } from '../utils/captureMode.js';
+import { uuid } from '../utils/uuid';
+import { clampDebugWidth, maxDebugWidth, minDebugWidth, DEBUG_DEFAULT } from '../utils/debugPanelLayout.js';
+
+// Fixed placeholder shown instead of the real measured per-message latency while capturing
+// documentation screenshots: the real value is wall-clock derived and differs between two
+// runs of the same commit. See ../utils/captureMode.
+const CAPTURE_MSG_LATENCY_MS = 380;
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface GuardrailBlock {
+  rule: string;
+  target: string;
+  action: string;
+  blockMessage?: string;
+}
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
-  content: string | any[];
+  content: string | ContentPart[];
   thinking?: string;
   model?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  /** Guardrail judge token usage for this turn, summed from the trace (shown even when blocked). */
+  guardrailInputTokens?: number;
+  guardrailOutputTokens?: number;
+  latencyMs?: number;
+  rawJson?: string;
+  blocked?: GuardrailBlock;
+  /** finish_reason from the final SSE chunk */
+  finishReason?: string;
 }
 
-export function TestPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [apiKey, setApiKey] = useState('');
-  const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'system', content: 'You are a helpful AI assistant.' },
-  ]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface ContentPart {
+  type: 'text' | 'image_url';
+  text?: string;
+  image_url?: { url: string };
+}
 
+type Mode = 'single' | 'compare';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function costEstimate(input: number, output: number): string {
+  // ponytail: generic pricing; no per-model lookup needed here
+  return `~$${((input * 0.000005) + (output * 0.000015)).toFixed(4)}`;
+}
+
+function MdContent({ children }: { children: string }) {
+  return (
+    <div className="md-content">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>
+    </div>
+  );
+}
+
+// value === null means "not sent": the provider applies its own default. Moving the
+// slider sets a value; unticking the checkbox (shown only when onClear is given) clears it.
+function ParamSlider({ label, value, min, max, step, onChange, onClear }: {
+  label: string; value: number | null; min: number; max: number; step: number;
+  onChange: (v: number) => void; onClear?: () => void;
+}) {
+  return (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+      {onClear && (
+        <input type="checkbox" aria-label={label} checked={value !== null}
+          onChange={e => e.target.checked ? onChange((min + max) / 2) : onClear()} />
+      )}
+      {label}
+      <input type="range" min={min} max={max} step={step} value={value ?? (min + max) / 2}
+        onChange={e => onChange(parseFloat(e.target.value))}
+        style={{ width: 80, accentColor: 'var(--primary)', opacity: value === null ? 0.4 : 1 }}
+      />
+      <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', minWidth: 36 }}>{value ?? '—'}</span>
+    </label>
+  );
+}
+
+// ── Compare panel ─────────────────────────────────────────────────────────────
+
+type PanelParams = { temperature: number | null; maxTokens: number; topP: number };
+const DEFAULT_PARAMS: PanelParams = { temperature: null, maxTokens: 1024, topP: 1 };
+
+function ComparePanel({
+  apiKey, apiKeyB, systemPrompt, availableModels,
+  compareModelA, compareModelB, setCompareModelA, setCompareModelB,
+}: {
+  apiKey: string; apiKeyB: string; systemPrompt: string;
+  availableModels: Array<{ modelId: string }>;
+  compareModelA: string; compareModelB: string;
+  setCompareModelA: (v: string) => void; setCompareModelB: (v: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [messagesA, setMessagesA] = useState<Message[]>([]);
+  const [messagesB, setMessagesB] = useState<Message[]>([]);
+  const [loadingA, setLoadingA] = useState(false);
+  const [loadingB, setLoadingB] = useState(false);
+  const [errorA, setErrorA] = useState<string | null>(null);
+  const [errorB, setErrorB] = useState<string | null>(null);
+  const [compareInput, setCompareInput] = useState('');
+  const abortARef = useRef<AbortController | null>(null);
+  const abortBRef = useRef<AbortController | null>(null);
+  const [paramsA, setParamsA] = useState<PanelParams>(DEFAULT_PARAMS);
+  const [paramsB, setParamsB] = useState<PanelParams>(DEFAULT_PARAMS);
+  const [traceHistoryA, setTraceHistoryA] = useState<unknown[][]>([]);
+  const [traceHistoryB, setTraceHistoryB] = useState<unknown[][]>([]);
+
+  async function sendToModel(
+    modelId: string,
+    content: string,
+    prevMsgs: Message[],
+    setMsgs: React.Dispatch<React.SetStateAction<Message[]>>,
+    setLoading: (v: boolean) => void,
+    setError: (v: string | null) => void,
+    abortRef: React.MutableRefObject<AbortController | null>,
+    key: string,
+    params: PanelParams,
+    setTraceHistory: React.Dispatch<React.SetStateAction<unknown[][]>>,
+  ) {
+    /* v8 ignore next */
+    if (!key) return;
+    setLoading(true);
+    setError(null);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const startMs = Date.now();
+    let finalContent = '';
+    let modelName = '';
+    let assistantAdded = false;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    const turnTraces: unknown[] = [];
+    // The trace never rides the LLM wire: the caller picks a correlation id, sends it
+    // on the request and reads its own entries on the management side channel.
+    const correlationId = uuid();
+    let traceId = '';
+    const stopTrace = await streamTraces({ correlationId }, ev => {
+      traceId = ev.traceId;
+      turnTraces.push(ev.entry);
+    });
+
+    const sysMsgs = systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : [];
+    const payload = {
+      model: modelId,
+      messages: [...sysMsgs, ...prevMsgs.filter(m => m.role !== 'system'), { role: 'user' as const, content }],
+      stream: true, ...(params.temperature !== null && { temperature: params.temperature }), max_tokens: params.maxTokens, top_p: params.topP,
+    };
+
+    try {
+      const cleanKey = key.trim().replace(/[''"""']/g, '');
+      const res = await fetch('/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': correlationId },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      if (!res.ok || !res.body) {
+        const body = await res.text();
+        let msg = `HTTP ${res.status}`;
+        try { const json = JSON.parse(body) as { error?: { message?: string } }; if (json.error?.message) msg = json.error.message; } catch {}
+        throw new Error(msg);
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      // ponytail: buffer incomplete SSE lines across TCP reads (cross-chunk fix)
+      let buffer = '';
+      function processLine(line: string) {
+        if (!line.startsWith('data: ')) return;
+        const dataStr = line.slice(6).trim();
+        /* v8 ignore next */
+        if (dataStr === '[DONE]' || !dataStr) return;
+        try {
+          const data = JSON.parse(dataStr);
+          /* v8 ignore next */
+          if (data.type === 'result') return;
+          /* v8 ignore next */
+          if (data.type === 'error' || data.error) throw new Error(data.message || 'Service error');
+          if (data.model && !modelName) modelName = data.model as string;
+          if (data.usage) {
+            inputTokens = data.usage.prompt_tokens ?? inputTokens;
+            outputTokens = data.usage.completion_tokens ?? outputTokens;
+          }
+          const delta: string = data.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            if (!assistantAdded) {
+              setMsgs(prev => [...prev, { role: 'assistant', content: '', model: modelName }]);
+              assistantAdded = true;
+            }
+            finalContent += delta;
+            setMsgs(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1]!, content: finalContent }; return u; });
+          }
+        } catch (e) {
+          if (!(e instanceof SyntaxError)) throw e;
+        }
+      }
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        /* v8 ignore next */
+        buffer = lines.pop() ?? '';
+        for (const line of lines) processLine(line);
+      }
+      // flush any complete trailing line after stream close
+      const tail = buffer.trim();
+      if (tail) processLine(tail);
+      const latencyMs = Date.now() - startMs;
+      setMsgs(prev => { const u = [...prev]; if (assistantAdded) u[u.length - 1] = { ...u[u.length - 1]!, inputTokens, outputTokens, latencyMs }; return u; });
+      let traceEntries: unknown[] = turnTraces;
+      if (traceId) {
+        try { const td = await getTrace(traceId); traceEntries = td.trace; } catch {}
+      }
+      setTraceHistory(prev => [...prev, traceEntries]);
+    } catch (e) {
+      if (e instanceof Error && e.name !== 'AbortError') {
+        setError(e.message);
+        setMsgs(prev => prev.slice(0, -1));
+      }
+    } finally {
+      stopTrace();
+      abortRef.current = null;
+      setLoading(false);
+    }
+  }
+
+  function handleSend() {
+    if (!compareInput.trim() || !apiKey) return;
+    const content = compareInput.trim();
+    setCompareInput('');
+    const userMsg: Message = { role: 'user', content };
+    setMessagesA(prev => [...prev, userMsg]);
+    setMessagesB(prev => [...prev, userMsg]);
+    const keyB = apiKeyB.trim() || apiKey; // ponytail: fall back to apiKey if apiKeyB empty
+    sendToModel(compareModelA, content, messagesA, setMessagesA, setLoadingA, setErrorA, abortARef, apiKey, paramsA, setTraceHistoryA);
+    sendToModel(compareModelB, content, messagesB, setMessagesB, setLoadingB, setErrorB, abortBRef, keyB, paramsB, setTraceHistoryB);
+  }
+
+  const cols = [
+    { label: 'A', model: compareModelA, setModel: setCompareModelA, msgs: messagesA, loading: loadingA, error: errorA, abortRef: abortARef, params: paramsA, setParams: setParamsA, traceHistory: traceHistoryA },
+    { label: 'B', model: compareModelB, setModel: setCompareModelB, msgs: messagesB, loading: loadingB, error: errorB, abortRef: abortBRef, params: paramsB, setParams: setParamsB, traceHistory: traceHistoryB },
+  ];
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', gap: 12, minHeight: 0, flex: 1 }}>
+        {cols.map(({ label, model, setModel, msgs, loading: colLoading, error: colError, abortRef, params, setParams, traceHistory }) => {
+          const display = msgs.filter(m => m.role !== 'system');
+          const assistantMsgs = display.filter(m => m.role === 'assistant');
+          /* v8 ignore next 2 */
+          const totalIn = assistantMsgs.reduce((s, m) => s + (m.inputTokens ?? 0), 0);
+          /* v8 ignore next */
+          const totalOut = assistantMsgs.reduce((s, m) => s + (m.outputTokens ?? 0), 0);
+          return (
+            <div key={label} className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
+              <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('playground.compare.modelLabel', { label })}</span>
+                  <SearchableSelect
+                    options={[{ value: '', label: t('playground.compare.modelSelectPlaceholder') }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
+                    value={model}
+                    onChange={setModel}
+                    placeholder={t('playground.compare.modelSelectPlaceholder')}
+                    style={{ flex: 1, fontSize: '0.78rem' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <ParamSlider label={t('playground.params.temp')} value={params.temperature} min={0} max={2} step={0.1} onChange={v => setParams((p: PanelParams) => ({ ...p, temperature: v }))} onClear={() => setParams((p: PanelParams) => ({ ...p, temperature: null }))} />
+                  <ParamSlider label={t('playground.params.maxTokens')} value={params.maxTokens} min={64} max={8192} step={64} onChange={v => setParams((p: PanelParams) => ({ ...p, maxTokens: v }))} />
+                  <ParamSlider label={t('playground.params.topP')} value={params.topP} min={0} max={1} step={0.05} onChange={v => setParams((p: PanelParams) => ({ ...p, topP: v }))} />
+                </div>
+                {assistantMsgs.length > 0 && (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', paddingTop: 4, borderTop: '1px solid var(--border)', fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                    <span>temp: {params.temperature ?? '—'}</span>
+                    <span>↑{totalIn} ↓{totalOut} tok</span>
+                    <span>{costEstimate(totalIn, totalOut)}</span>
+                  </div>
+                )}
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {display.length === 0 ? (
+                  <p style={{ margin: 'auto', fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'center' }}>{t('playground.compare.noMessages')}</p>
+                ) : (
+                  display.map((msg, i) => {
+                    const isAssistant = msg.role === 'assistant';
+                    return (
+                      <div key={i} style={{ alignSelf: isAssistant ? 'flex-start' : 'flex-end', maxWidth: '90%', display: 'flex', flexDirection: 'column', alignItems: isAssistant ? 'flex-start' : 'flex-end' }}>
+                        <div style={{
+                          background: isAssistant ? 'var(--bg-elevated)' : 'var(--primary)',
+                          color: isAssistant ? 'var(--text-primary)' : '#fff',
+                          padding: '8px 12px',
+                          borderRadius: isAssistant ? '14px 14px 14px 4px' : '14px 14px 4px 14px',
+                          border: isAssistant ? '1px solid var(--border)' : 'none',
+                          fontSize: '0.88rem', lineHeight: 1.5,
+                        }}>
+                        {isAssistant
+                            ? <MdContent>{msg.content as string}</MdContent>
+                            : <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content as string}</span>
+                          }
+                        </div>
+                        {isAssistant && (
+                          <div style={{ display: 'flex', gap: 6, marginTop: 3, fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                            {msg.latencyMs ? <span>{isCaptureMode() ? CAPTURE_MSG_LATENCY_MS : msg.latencyMs}ms</span> : null}
+                            {(msg.inputTokens || msg.outputTokens) ? (
+                              /* v8 ignore next 3 */
+                              <span style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace' }}>
+                                ↑{msg.inputTokens ?? 0} ↓{msg.outputTokens ?? 0} tok | {costEstimate(msg.inputTokens ?? 0, msg.outputTokens ?? 0)}
+                              </span>
+                            ) : null}
+                            {/* v8 ignore start */
+                            (msg.guardrailInputTokens || msg.guardrailOutputTokens) ? (
+                              <span title={t('playground.compare.guardrailTokensTitle')} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace' }}>
+                                guardrail ↑{msg.guardrailInputTokens ?? 0} ↓{msg.guardrailOutputTokens ?? 0} tok | {costEstimate(msg.guardrailInputTokens ?? 0, msg.guardrailOutputTokens ?? 0)}
+                              </span>
+                            ) : null /* v8 ignore stop */}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+                {colLoading && (
+                  <div style={{ alignSelf: 'flex-start', padding: '8px 12px', background: 'var(--bg-elevated)', borderRadius: '14px 14px 14px 4px', border: '1px solid var(--border)' }}>
+                    <span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} />
+                  </div>
+                )}
+                {colError && (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, overflowWrap: 'anywhere' }}>
+                    <AlertCircle size={12} style={{ flexShrink: 0 }} /> {colError}
+                  </div>
+                )}
+              </div>
+              {traceHistory.length > 0 && (
+                <details style={{ borderTop: '1px solid var(--border)' }}>
+                  <summary style={{ cursor: 'pointer', padding: '6px 14px', fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--bg-surface)', userSelect: 'none', display: 'list-item' }}>
+                    {t('playground.compare.debugTurns', { count: traceHistory.length })}
+                  </summary>
+                  <div style={{ maxHeight: 200, overflowY: 'auto', padding: 10, background: 'var(--bg-base)', fontSize: '0.82rem' }}>
+                    {[...traceHistory.entries()].reverse().map(([i, traces]) => (
+                      <div key={i} style={{ marginBottom: 8 }}>
+                        <TraceSummary
+                          trace={traces as TraceEntry[]}
+                          turn={i + 1}
+                          collapsible
+                          defaultOpen={i === traceHistory.length - 1}
+                        >
+                          <details>
+                            <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 8px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, userSelect: 'none', display: 'list-item' }}>{t('playground.debug.turnTraceLog', { turn: i + 1 })}</summary>
+                            <div style={{ marginTop: 4, padding: 8, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4 }}>
+                              <TraceLog entries={traces as TraceEntry[]} collapsed />
+                            </div>
+                          </details>
+                        </TraceSummary>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+              {colLoading && (
+                <div style={{ padding: '6px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center' }}>
+                  <button className="btn btn-danger" style={{ fontSize: '0.75rem', padding: '3px 8px', display: 'flex', gap: 4, alignItems: 'center' }} onClick={() => abortRef.current?.abort()}>
+                    <Square size={11} /> {t('playground.compare.stop')}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
+        <textarea
+          className="form-input"
+          rows={2}
+          placeholder={t('playground.compare.inputPlaceholder')}
+          style={{ flex: 1, resize: 'none', fontFamily: 'inherit' }}
+          value={compareInput}
+          onChange={e => setCompareInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+        />
+        <button className="btn btn-primary" onClick={handleSend} disabled={!compareInput.trim() || !apiKey || loadingA || loadingB}>
+          <Send size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
+export function TestPage() {
+  const { t } = useTranslation();
+  const [routers, setRouters] = useState<Router[]>([]);
+  const [apiKey, setApiKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
+  const [mode, setMode] = useState<Mode>('single');
+
+  // Single mode
+  const [systemPromptOpen, setSystemPromptOpen] = useState(false);
+  const [systemPrompt, setSystemPrompt] = useState('You are a helpful AI assistant.');
+  const [selectedModelId, setSelectedModelId] = useState('');
+  const [temperature, setTemperature] = useState<number | null>(null);
+  const [maxTokens, setMaxTokens] = useState(1024);
+  const [topP, setTopP] = useState(1);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showRaw, setShowRaw] = useState<Record<number, boolean>>({});
+  const abortRef = useRef<AbortController | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const debugTopRef = useRef<HTMLDivElement>(null);
+  const [debugTraceHistory, setDebugTraceHistory] = useState<(unknown[] | null)[]>([]);
+  const [showDebugSidebar, setShowDebugSidebar] = useState(() => !getPlaygroundDebugLayout().collapsed);
+  const [debugWidth, setDebugWidth] = useState(() => getPlaygroundDebugLayout().width ?? DEBUG_DEFAULT);
+  const [bodyWidth, setBodyWidth] = useState(1600);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  // The stored width is kept as chosen; the width in use is always re-limited to the current window.
+  const effectiveDebugWidth = clampDebugWidth(debugWidth, bodyWidth);
+  useEffect(() => { setPlaygroundDebugLayout({ width: debugWidth, collapsed: !showDebugSidebar }); }, [debugWidth, showDebugSidebar]);
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    // clientWidth includes the 32px side padding of the row
+    const measure = () => setBodyWidth(el.clientWidth ? el.clientWidth - 64 : 1600);
+    measure();
+    if (typeof ResizeObserver === 'undefined') { window.addEventListener('resize', measure); return () => window.removeEventListener('resize', measure); }
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const setDebugWidthClamped = (w: number) => setDebugWidth(clampDebugWidth(w, bodyWidth));
+  const startDebugResize = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const startX = e.clientX, startW = effectiveDebugWidth;
+    const target = e.currentTarget;
+    target.setPointerCapture?.(e.pointerId);
+    const move = (ev: PointerEvent) => setDebugWidthClamped(startW + (startX - ev.clientX));
+    const up = () => { target.removeEventListener('pointermove', move); target.removeEventListener('pointerup', up); target.removeEventListener('pointercancel', up); };
+    target.addEventListener('pointermove', move);
+    target.addEventListener('pointerup', up);
+    target.addEventListener('pointercancel', up);
+  };
+  const onDebugResizeKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = e.shiftKey ? 64 : 16;
+    if (e.key === 'ArrowLeft') setDebugWidthClamped(effectiveDebugWidth + step);
+    else if (e.key === 'ArrowRight') setDebugWidthClamped(effectiveDebugWidth - step);
+    else if (e.key === 'Home') setDebugWidthClamped(minDebugWidth(bodyWidth));
+    else if (e.key === 'End') setDebugWidthClamped(maxDebugWidth(bodyWidth));
+    else if (e.key === 'Enter') setDebugWidthClamped(DEBUG_DEFAULT);
+    else return;
+    e.preventDefault();
+  };
 
-  const [showKey, setShowKey] = useState(false);
-  const [debugTraceHistory, setDebugTraceHistory] = useState<(any[] | null)[]>([]);
-  const [showDebugSidebar, setShowDebugSidebar] = useState(true);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  // Stream toggle (disabled when streamingDisabled)
+  const [streamEnabled, setStreamEnabled] = useState(true);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const debugPanelEndRef = useRef<HTMLDivElement>(null);
+  // Compare mode
+  const [compareModelA, setCompareModelA] = useState('');
+  const [compareModelB, setCompareModelB] = useState('');
+  const [apiKeyB, setApiKeyB] = useState('');
+  const [showKeyB, setShowKeyB] = useState(false);
+
+  // Presets
+  const [showPresetsPanel, setShowPresetsPanel] = useState(false);
+  const [presets, setPresets] = useState<PlaygroundPreset[]>([]);
+  const [presetsLoading, setPresetsLoading] = useState(false);
+  const [savePresetName, setSavePresetName] = useState('');
+  const [showSaveForm, setShowSaveForm] = useState(false);
+
+  const { matchedRouter, matchedToken } = useMemo(() => {
+    if (!apiKey || apiKey.length < 10) return { matchedRouter: null, matchedToken: null };
+    const snippet = apiKey.trim().substring(0, 10);
+    for (const p of routers) {
+      const t = p.tokens?.find(tk => tk.tokenSnippet === snippet);
+      if (t) return { matchedRouter: p, matchedToken: t };
+    }
+    return { matchedRouter: null, matchedToken: null };
+  }, [apiKey, routers]);
+
+  const availableModels = useMemo(() => matchedRouter?.models ?? [], [matchedRouter]);
+
+  // ponytail: response-blocking rule => whole response must be buffered => no streaming
+  const streamingDisabled = useMemo(
+    () => blocksResponseStreaming(matchedRouter?.guardrails?.rules),
+    [matchedRouter],
+  );
+
+  useEffect(() => { getRouters().then(setRouters).catch(console.error); }, []);
 
   useEffect(() => {
-    getProjects().then(setProjects).catch(console.error);
-  }, []);
+    if (!matchedRouter) { setPresets([]); return; }
+    setPresetsLoading(true);
+    getPlaygroundPresets(matchedRouter.id)
+      .then(setPresets)
+      .catch(() => setPresets([]))
+      .finally(() => setPresetsLoading(false));
+  }, [matchedRouter?.id]);
 
-  const { matchedProject, matchedToken } = useMemo(() => {
-    if (!apiKey || apiKey.length < 10) return { matchedProject: null, matchedToken: null };
-    const snippet = apiKey.trim().substring(0, 10);
-    for (const p of projects) {
-      const t = p.tokens?.find(tk => tk.tokenSnippet === snippet);
-      if (t) return { matchedProject: p, matchedToken: t };
-    }
-    return { matchedProject: null, matchedToken: null };
-  }, [apiKey, projects]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
+  // The newest turn is at the top of the list, so that is where the debug panel goes.
+  useEffect(() => { debugTopRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [debugTraceHistory]);
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-  useEffect(() => { debugPanelEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [debugTraceHistory]);
+  // ── Send ───────────────────────────────────────────────────────────────────
 
   async function handleSend() {
     if ((!input.trim() && !attachedImage) || !apiKey || loading) return;
 
-    let userContent: any = input.trim();
+    let userContent: string | ContentPart[] = input.trim();
     if (attachedImage) {
       userContent = [
         { type: 'text', text: input.trim() },
@@ -63,8 +531,7 @@ export function TestPage() {
       ];
     }
 
-    const newMsg: Message = { role: 'user', content: userContent };
-    const newMessages = [...messages, newMsg];
+    const newMessages = [...messages, { role: 'user' as const, content: userContent }];
     setMessages(newMessages);
     setInput('');
     setAttachedImage(null);
@@ -72,452 +539,754 @@ export function TestPage() {
     setError(null);
 
     const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    const payload = {
-      model: matchedProject?.routingModelId || matchedProject?.models?.[0]?.modelId || '',
-      messages: newMessages,
-      stream: true,
-    };
-
+    abortRef.current = controller;
     const turnIndex = debugTraceHistory.length;
     setDebugTraceHistory(prev => [...prev, []]);
 
-    try {
-      const cleanKey = apiKey.trim().replace(/[\u2018\u2019\u201C\u201D"']/g, '');
+    // The trace never rides the LLM wire: the caller picks a correlation id, sends it
+    // on the request and reads its own entries on the management side channel.
+    const correlationId = uuid();
+    let traceId = '';
+    const stopTrace = await streamTraces({ correlationId }, ev => {
+      traceId = ev.traceId;
+      setDebugTraceHistory(prev => {
+        const u = [...prev];
+        /* v8 ignore next */
+        const cur = (u[turnIndex] as unknown[]) ?? [];
+        u[turnIndex] = [...cur, ev.entry];
+        return u;
+      });
+    });
 
+    const sysMsgs = systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : [];
+    const modelToUse = selectedModelId || matchedRouter?.routingModelId || matchedRouter?.models?.[0]?.modelId || '';
+
+    const payload = {
+      model: modelToUse,
+      messages: [...sysMsgs, ...newMessages],
+      // ponytail: streamingDisabled forces stream=false; otherwise respect user toggle
+      stream: streamingDisabled ? false : streamEnabled,
+      ...(temperature !== null && { temperature }), max_tokens: maxTokens, top_p: topP,
+    };
+
+    let finalContent = '';
+    let thinkingAccum = '';
+    let modelName = '';
+    let assistantAdded = false;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let finishReason = '';
+    let stopReason = '';
+    const rawChunks: string[] = [];
+    const startMs = Date.now();
+
+    try {
+      const cleanKey = apiKey.trim().replace(/[''"""']/g, '');
       const res = await fetch('/v1/chat/completions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${cleanKey}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': correlationId },
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
 
-      if (!res.ok && !res.body) throw new Error(`HTTP ${res.status}`);
-      if (!res.body) throw new Error('Response body is missing');
-
+      if (!res.ok || !res.body) {
+        const body = await res.text();
+        let msg = `HTTP ${res.status}`;
+        try { const json = JSON.parse(body) as { error?: { message?: string } }; if (json.error?.message) msg = json.error.message; } catch {}
+        throw new Error(msg);
+      }
+      // Non-streaming reply (stream:false, e.g. a response-blocking rule): one JSON body, not SSE.
+      const isJsonReply = (res.headers.get('content-type') ?? '').includes('application/json');
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let done = false;
-      let finalContent = '';
-      let thinkingAccum = '';
-      let modelName = '';
-      let assistantMessageAdded = false;
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        if (value) {
-          const chunkStr = decoder.decode(value, { stream: true });
-          const lines = chunkStr.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const dataStr = line.substring(6).trim();
-              if (dataStr === '[DONE]') continue;
-              if (dataStr) {
-                try {
-                  const data = JSON.parse(dataStr);
-
-                  if (data.type === 'trace') {
-                    setDebugTraceHistory(prev => {
-                      const updated = [...prev];
-                      const current = (updated[turnIndex] as any[]) ?? [];
-                      updated[turnIndex] = [...current, data.entry];
-                      return updated;
-                    });
-                    continue;
-                  }
-
-                  if (data.type === 'result') continue;
-
-                  if (data.type === 'error' || data.error) {
-                    throw new Error(data.message || data.error?.message || data.error || 'Service error');
-                  }
-
-                  if (data.model && !modelName) modelName = data.model as string;
-
-                  const thinkingDelta: string | undefined = data.choices?.[0]?.delta?.thinking;
-                  if (thinkingDelta) {
-                    if (!assistantMessageAdded) {
-                      setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: '', model: modelName }]);
-                      assistantMessageAdded = true;
-                    }
-                    thinkingAccum += thinkingDelta;
-                    setMessages(prev => {
-                      const updated = [...prev];
-                      const last = updated[updated.length - 1] as Message;
-                      updated[updated.length - 1] = { ...last, thinking: thinkingAccum };
-                      return updated;
-                    });
-                    continue;
-                  }
-
-                  const deltaContent = data.choices?.[0]?.delta?.content || '';
-                  if (deltaContent) {
-                    if (!assistantMessageAdded) {
-                      setMessages(prev => [...prev, { role: 'assistant', content: '', ...(thinkingAccum ? { thinking: thinkingAccum } : {}), model: modelName }]);
-                      assistantMessageAdded = true;
-                    }
-                    finalContent += deltaContent;
-                    setMessages(prev => {
-                      const updated = [...prev];
-                      const last = updated[updated.length - 1] as Message;
-                      updated[updated.length - 1] = { ...last, content: finalContent };
-                      return updated;
-                    });
-                  }
-                } catch (e) {
-                  if (e instanceof Error && e.message !== 'Unexpected end of JSON input') throw e;
-                  console.warn('Failed to parse SSE line', line, e);
-                }
-              }
-            }
+      // ponytail: buffer incomplete SSE lines across TCP reads (cross-chunk fix)
+      let buffer = '';
+      function processLine(line: string) {
+        if (!isJsonReply && !line.startsWith('data: ')) return;
+        const dataStr = (isJsonReply ? line : line.slice(6)).trim();
+        /* v8 ignore next */
+        if (dataStr === '[DONE]' || !dataStr) return;
+        try {
+          const data = JSON.parse(dataStr);
+          /* v8 ignore next */
+          if (data.type === 'result') return;
+          /* v8 ignore next */
+          if (data.type === 'error' || data.error) throw new Error(data.message || data.error?.message || 'Service error');
+          if (data.model && !modelName) modelName = data.model as string;
+          if (data.usage) {
+            inputTokens = data.usage.prompt_tokens ?? inputTokens;
+            outputTokens = data.usage.completion_tokens ?? outputTokens;
           }
+          rawChunks.push(dataStr);
+
+          // Track finish/stop reason for block detection
+          const fr: string | undefined = data.choices?.[0]?.finish_reason;
+          if (fr) finishReason = fr;
+          const sr: string | undefined = data.stop_reason;
+          if (sr) stopReason = sr;
+
+          const thinking: string | undefined = data.choices?.[0]?.delta?.thinking;
+          if (thinking) {
+            if (!assistantAdded) { setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: '', model: modelName }]); assistantAdded = true; }
+            thinkingAccum += thinking;
+            setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1]!, thinking: thinkingAccum }; return u; });
+            return;
+          }
+          const delta: string = data.choices?.[0]?.delta?.content || data.choices?.[0]?.message?.content || '';
+          if (delta) {
+            if (!assistantAdded) { setMessages(prev => [...prev, { role: 'assistant', content: '', model: modelName }]); assistantAdded = true; }
+            finalContent += delta;
+            setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1]!, content: finalContent }; return u; });
+          }
+        } catch (e) {
+          /* v8 ignore next */
+          if (!(e instanceof SyntaxError)) throw e;
         }
       }
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        /* v8 ignore next */
+        buffer = lines.pop() ?? '';
+        for (const line of lines) processLine(line);
+      }
+      // flush any complete trailing line after stream close
+      const tail = buffer.trim();
+      if (tail) processLine(tail);
+
+      const latencyMs = Date.now() - startMs;
+      const isBlocked = finishReason === 'content_filter' || stopReason === 'refusal';
+
+      // Fetch full trace from API (live entries may be incomplete; the stored trace is authoritative)
+      let traceEntries: TraceEntry[] = [];
+      if (traceId) {
+        try {
+          const traceData = await getTrace(traceId);
+          traceEntries = traceData.trace;
+          // Merge trace entries into debug sidebar (replace SSE-collected entries with full trace)
+          setDebugTraceHistory(prev => {
+            const u = [...prev];
+            u[turnIndex] = traceEntries;
+            return u;
+          });
+        } catch {
+          // Trace fetch failed — keep the entries collected live
+        }
+      }
+
+      // Extract guardrail block info from trace
+      let blocked: GuardrailBlock | undefined;
+      if (isBlocked) {
+        /* v8 ignore next */
+        const guardEntry = traceEntries.find(e => e.message === 'guardrail:triggered' || e.message === 'guardrail:response-triggered');
+        if (guardEntry?.details) {
+          const bk = guardEntry.details.block;
+          const lg = guardEntry.details.log;
+          /* v8 ignore next */
+          const action = [bk && 'block', lg && 'log'].filter(Boolean).join('+') || 'block';
+          /* v8 ignore next */
+          const bm = guardEntry.details.blockMessage ? String(guardEntry.details.blockMessage) : undefined;
+          /* v8 ignore next 6 */
+          blocked = {
+            rule: String(guardEntry.details.rule ?? '—'),
+            target: String(guardEntry.details.target ?? '—'),
+            action,
+            ...(bm ? { blockMessage: bm } : {}),
+          };
+        } else {
+          // No trace entry found — still mark as blocked with minimal info
+          blocked = { rule: '—', target: '—', action: 'block' };
+        }
+      }
+
+      // Sum guardrail judge token usage across evaluated rules (request + response), so the
+      // Playground surfaces guardrail cost per turn — including a blocked turn, which has no completion.
+      let guardrailIn = 0, guardrailOut = 0;
+      for (const e of traceEntries) {
+        if (e.message !== 'guardrail:evaluated') continue;
+        const rules = (e.details as { rules?: Array<{ usage?: { inputTokens?: number; outputTokens?: number } }> }).rules;
+        if (!Array.isArray(rules)) continue;
+        for (const r of rules) { guardrailIn += r.usage?.inputTokens ?? 0; guardrailOut += r.usage?.outputTokens ?? 0; }
+      }
+
+      const fullMsg: Message = {
+        role: 'assistant', content: finalContent, model: modelName,
+        inputTokens, outputTokens, latencyMs,
+        rawJson: rawChunks.join('\n'),
+        ...(thinkingAccum ? { thinking: thinkingAccum } : {}),
+        ...(blocked ? { blocked } : {}),
+        ...(finishReason ? { finishReason } : {}),
+        ...(guardrailIn || guardrailOut ? { guardrailInputTokens: guardrailIn, guardrailOutputTokens: guardrailOut } : {}),
+      };
+      setMessages(prev => { const u = [...prev]; if (assistantAdded) u[u.length - 1] = fullMsg; else u.push(fullMsg); return u; });
     } catch (e) {
-      if (e instanceof Error && e.name === 'AbortError') {
-        // Stop richiesto dall'utente
-      } else {
-        setError(e instanceof Error ? e.message : 'Unknown error occurred');
+      if (e instanceof Error && e.name !== 'AbortError') {
+        setError(e.message);
+        setMessages(prev => prev.slice(0, -1));
       }
     } finally {
-      abortControllerRef.current = null;
+      stopTrace();
+      abortRef.current = null;
       setLoading(false);
     }
   }
 
-  function handleStop() { abortControllerRef.current?.abort(); }
+  function handleStop() { abortRef.current?.abort(); }
 
   function handleFileAttach(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    /* v8 ignore next */
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setError('Only image attachments are supported for vision models currently.');
-      return;
-    }
+    if (!file.type.startsWith('image/')) { setError(t('playground.errors.onlyImages')); return; }
     const reader = new FileReader();
-    reader.onload = (event) => { setAttachedImage(event.target?.result as string); };
+    reader.onload = ev => setAttachedImage(ev.target?.result as string);
     reader.readAsDataURL(file);
+    /* v8 ignore next */
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
+
+  // ── Presets ────────────────────────────────────────────────────────────────
+
+  function loadPreset(preset: PlaygroundPreset) {
+    setSystemPrompt(preset.systemPrompt);
+    setSystemPromptOpen(true);
+    if (preset.messages) {
+      setMessages(preset.messages.map(m => ({ role: m.role, content: m.content })));
+    } else {
+      setMessages([]);
+    }
+    setShowPresetsPanel(false);
+  }
+
+  async function savePreset() {
+    /* v8 ignore next */
+    if (!matchedRouter || !savePresetName.trim()) return;
+    const convoMsgs = messages
+      .filter(m => m.role !== 'system' && typeof m.content === 'string')
+      .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content as string }));
+    try {
+      const presetData: { name: string; systemPrompt: string; messages?: Array<{ role: 'user' | 'assistant'; content: string }> } = {
+        name: savePresetName.trim(),
+        systemPrompt,
+      };
+      if (convoMsgs.length > 0) presetData.messages = convoMsgs;
+      const created = await createPlaygroundPreset(matchedRouter.id, presetData);
+      setPresets(prev => [...prev, created]);
+      setSavePresetName('');
+      setShowSaveForm(false);
+    } catch (e) { console.error('Failed to save preset', e); }
+  }
+
+  async function deletePreset(presetId: string) {
+    /* v8 ignore next */
+    if (!matchedRouter) return;
+    try {
+      await deletePlaygroundPreset(matchedRouter.id, presetId);
+      setPresets(prev => prev.filter(p => p.id !== presetId));
+    } catch (e) { console.error('Failed to delete preset', e); }
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  const displayMessages = messages.filter(m => m.role !== 'system');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 48px)', animation: 'fade-in 0.2s ease' }}>
 
-      {/* ── Page Header ── */}
-      <div className="page-header" style={{ paddingBottom: 20, flexShrink: 0 }}>
-        <h1 style={{ margin: 0 }}>Test</h1>
-        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          Invia richieste di test attraverso il gateway di routing.
-        </p>
-      </div>
+      {/* Header */}
+      <div className="page-header" style={{ paddingBottom: 16, flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h1 style={{ margin: 0 }}>{t('playground.title')}</h1>
+            <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              {t('playground.subtitle')}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Mode toggle */}
+            <div style={{ display: 'flex', borderRadius: 6, overflow: 'hidden', border: '1px solid var(--border)' }}>
+              {(['single', 'compare'] as Mode[]).map(m => (
+                <button key={m} onClick={() => setMode(m)} style={{
+                  padding: '6px 14px', border: 'none', cursor: 'pointer', fontSize: '0.8rem',
+                  background: mode === m ? 'var(--primary)' : 'var(--bg-surface)',
+                  color: mode === m ? '#fff' : 'var(--text-secondary)',
+                  display: 'flex', alignItems: 'center', gap: 5,
+                }}>
+                  {m === 'single' ? <MessageSquare size={13} /> : <SplitSquareHorizontal size={13} />}
+                  {t(`playground.mode.${m}`)}
+                </button>
+              ))}
+            </div>
 
-      {/* ── Body ── */}
-      <div style={{ display: 'flex', gap: 24, flex: 1, minHeight: 0, padding: '0 32px 24px' }}>
-
-          {/* ── Left Column: Chat Area ── */}
-          <div className="card" style={{ flex: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
-
-            {/* Chat Header */}
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Test Chat</h3>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Invia query di test attraverso il gateway.</p>
+            {/* Token input(s) */}
+            {mode === 'compare' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                {([
+                  { label: t('playground.token.labelA'), placeholder: t('playground.token.placeholder'), value: apiKey, set: setApiKey, show: showKey, setShow: setShowKey },
+                  { label: t('playground.token.labelB'), placeholder: t('playground.token.placeholderB'), value: apiKeyB, set: setApiKeyB, show: showKeyB, setShow: setShowKeyB },
+                ]).map(({ label, placeholder, value, set, show, setShow }) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{label}:</span>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <input
+                        type={show ? 'text' : 'password'}
+                        className="form-input"
+                        style={{ width: 180, padding: '5px 32px 5px 10px', fontSize: '0.82rem', fontFamily: 'monospace' }}
+                        placeholder={placeholder}
+                        value={value}
+                        onChange={e => set(e.target.value)}
+                        autoComplete="new-password"
+                      />
+                      <button type="button" onClick={() => setShow(!show)}
+                        style={{ position: 'absolute', right: 6, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2 }}>
+                        {show ? <EyeOff size={13} /> : <Eye size={13} />}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {apiKey.length >= 10 && (
+                  matchedRouter ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#10b981' }}>
+                      <CheckCircle2 size={12} /> {matchedRouter.name}
+                    </span>
+                  ) : (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#f59e0b' }}>
+                      <AlertCircle size={12} /> {t('playground.token.unknownToken')}
+                    </span>
+                  )
+                )}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Project Token:</span>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('playground.token.label')}</span>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <input
                     type={showKey ? 'text' : 'password'}
                     className="form-input"
-                    style={{ width: 270, padding: '6px 36px 6px 10px', fontSize: '0.85rem', fontFamily: 'monospace' }}
-                    placeholder="sk-rt-..."
+                    style={{ width: 220, padding: '5px 32px 5px 10px', fontSize: '0.82rem', fontFamily: 'monospace' }}
+                    placeholder={t('playground.token.placeholder')}
                     value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
+                    onChange={e => setApiKey(e.target.value)}
                     autoComplete="new-password"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowKey(!showKey)}
-                    style={{ position: 'absolute', right: 8, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: 4 }}
-                    title={showKey ? 'Hide Token' : 'Show Token'}
-                  >
-                    {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                  <button type="button" onClick={() => setShowKey(!showKey)}
+                    style={{ position: 'absolute', right: 6, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2 }}>
+                    {showKey ? <EyeOff size={13} /> : <Eye size={13} />}
                   </button>
                 </div>
-                </div>
-                {/* Token feedback */}
                 {apiKey.length >= 10 && (
-                  matchedProject ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', color: '#10b981' }}>
-                      <CheckCircle2 size={13} />
-                      <span>
-                        <strong>{matchedProject.name}</strong>
-                        {matchedToken?.labels && matchedToken.labels.length > 0 && (
-                          <span style={{ color: 'var(--text-muted)', marginLeft: 4 }}>({matchedToken.labels.join(', ')})</span>
-                        )}
-                      </span>
-                    </div>
+                  matchedRouter ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#10b981' }}>
+                      <CheckCircle2 size={12} />
+                      {matchedRouter.name}
+                      {matchedToken?.labels?.length ? <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>({matchedToken.labels.join(', ')})</span> : null}
+                    </span>
                   ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', color: '#f59e0b' }}>
-                      <AlertCircle size={13} />
-                      Token non riconosciuto
-                    </div>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#f59e0b' }}>
+                      <AlertCircle size={12} /> {t('playground.token.unknownToken')}
+                    </span>
                   )
                 )}
               </div>
-            </div>
+            )}
 
-            {/* Chat History */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {messages.length === 1 && messages[0]?.role === 'system' ? (
-                <div className="empty-state" style={{ padding: '40px 0', margin: 'auto' }}>
-                  <p style={{ margin: 0 }}>No messages yet.</p>
-                  {!apiKey ? (
-                    <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--text-secondary)' }}>ℹ Please enter a Project Token above to send a message.</p>
-                  ) : (
-                    <p style={{ fontSize: '0.8rem', marginTop: 4 }}>Type a message below to start testing.</p>
-                  )}
-                </div>
+            {/* Presets button */}
+            {matchedRouter && (
+              <button
+                className={`btn${showPresetsPanel ? ' btn-primary' : ''}`}
+                onClick={() => setShowPresetsPanel(!showPresetsPanel)}
+                style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 5 }}
+              >
+                <BookOpen size={13} /> {t('playground.presets.button')} {presets.length > 0 ? `(${presets.length})` : ''}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div ref={bodyRef} style={{ display: 'flex', gap: 16, flex: 1, minHeight: 0, padding: '0 32px 24px' }}>
+
+        {/* Presets sidebar */}
+        {showPresetsPanel && matchedRouter && (
+          <div className="card" style={{ width: 250, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0, flexShrink: 0 }}>
+            <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.84rem', fontWeight: 600 }}>{t('playground.presets.panelTitle')}</span>
+              <button
+                onClick={() => setShowSaveForm(!showSaveForm)}
+                className="btn"
+                style={{ fontSize: '0.72rem', padding: '3px 8px', display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                <Save size={11} /> {t('playground.presets.saveCurrent')}
+              </button>
+            </div>
+            {showSaveForm && (
+              <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', display: 'flex', gap: 6 }}>
+                <input
+                  className="form-input"
+                  style={{ flex: 1, padding: '4px 8px', fontSize: '0.78rem' }}
+                  placeholder={t('playground.presets.namePlaceholder')}
+                  value={savePresetName}
+                  onChange={e => setSavePresetName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') savePreset(); }}
+                  autoFocus
+                />
+                <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '0.72rem' }} onClick={savePreset} disabled={!savePresetName.trim()}>{t('playground.presets.save')}</button>
+              </div>
+            )}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '6px 8px' }}>
+              {presetsLoading ? (
+                <div style={{ textAlign: 'center', padding: 20 }}><span className="spinner" style={{ width: 14, height: 14 }} /></div>
+              ) : presets.length === 0 ? (
+                <p style={{ margin: 0, padding: '20px 8px', textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{t('playground.presets.empty')}</p>
               ) : (
-                messages.filter(m => m.role !== 'system').map((msg, i) => (
-                  <div key={i} style={{
-                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: '85%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  }}>
-                    {msg.role === 'assistant' && msg.thinking && (
-                      <details style={{ marginBottom: 6, width: '100%' }}>
-                        <summary style={{
-                          cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)',
-                          userSelect: 'none', padding: '4px 10px',
-                          background: 'var(--bg-surface)', border: '1px solid var(--border)',
-                          borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 5,
-                        }}>
-                          💭 Reasoning {loading && i === messages.filter(m => m.role !== 'system').length - 1 && <span className="spinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} />}
-                        </summary>
-                        <div style={{
-                          marginTop: 4, padding: '10px 14px',
-                          background: 'var(--bg-surface)', border: '1px solid var(--border)',
-                          borderRadius: 8, fontSize: '0.82rem', color: 'var(--text-secondary)',
-                          fontStyle: 'italic', whiteSpace: 'pre-wrap', lineHeight: 1.55,
-                        }}>
-                          {msg.thinking}
-                        </div>
-                      </details>
-                    )}
-                    <div style={{
-                      background: msg.role === 'user' ? 'var(--primary)' : 'var(--bg-elevated)',
-                      color: msg.role === 'user' ? '#fff' : 'var(--text-primary)',
-                      padding: '10px 14px',
-                      borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                      border: msg.role === 'user' ? 'none' : '1px solid var(--border)',
-                      fontSize: '0.9rem',
-                      lineHeight: 1.5,
-                      ...(msg.role === 'user' ? { whiteSpace: 'pre-wrap' as const, display: 'flex' as const, flexDirection: 'column' as const, gap: 8 } : {}),
-                    }}>
-                      {msg.role === 'assistant' ? (
-                        typeof msg.content === 'string'
-                          ? <div className="md-content"><ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown></div>
-                          : <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                              {(msg.content as any[]).map((c, idx) => {
-                                if (c.type === 'text') return <div key={idx} className="md-content"><ReactMarkdown remarkPlugins={[remarkGfm]}>{c.text}</ReactMarkdown></div>;
-                                if (c.type === 'image_url') return <img key={idx} src={c.image_url.url} alt="Attached" style={{ maxWidth: 200, borderRadius: 8 }} />;
-                                return null;
-                              })}
-                            </div>
-                      ) : (
-                        typeof msg.content === 'string' ? msg.content : (
-                          <>
-                            {(msg.content as any[]).map((c, idx) => {
-                              if (c.type === 'text') return <span key={idx}>{c.text}</span>;
-                              if (c.type === 'image_url') return <img key={idx} src={c.image_url.url} alt="Attached" style={{ maxWidth: 200, borderRadius: 8 }} />;
-                              return null;
-                            })}
-                          </>
-                        )
-                      )}
-                    </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4, textTransform: 'capitalize', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {msg.role}
-                      {msg.role === 'assistant' && msg.model && (
-                        <span style={{ textTransform: 'none', fontFamily: 'monospace', fontSize: '0.68rem', color: 'var(--text-muted)', opacity: 0.8 }}>
-                          — {msg.model}
-                        </span>
-                      )}
-                    </div>
+                presets.map(p => (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 6px', borderRadius: 5, marginBottom: 2 }}
+                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--bg-elevated)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'transparent'}
+                  >
+                    <button onClick={() => loadPreset(p)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', flex: 1, fontSize: '0.8rem', color: 'var(--text-primary)', padding: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.name}
+                    </button>
+                    <button onClick={() => deletePreset(p.id)} className="btn-icon danger" style={{ padding: 3, flexShrink: 0 }} title={t('playground.presets.delete')}>
+                      <Trash2 size={11} />
+                    </button>
                   </div>
                 ))
               )}
-
-              {loading && (
-                <div style={{ alignSelf: 'flex-start', padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: '16px 16px 16px 4px', border: '1px solid var(--border)' }}>
-                  <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
-                </div>
-              )}
-
-              {error && (
-                <div style={{ alignSelf: 'center', background: 'rgba(239,68,68,0.1)', color: 'var(--danger)', padding: '8px 12px', borderRadius: 8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <AlertCircle size={14} /> {error}
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Chat Input */}
-            <div style={{ padding: 16, borderTop: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
-              {attachedImage && (
-                <div style={{ marginBottom: 12, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <img src={attachedImage} alt="Attachment" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }} />
-                    <button
-                      className="btn-icon danger"
-                      style={{ position: 'absolute', top: -6, right: -6, padding: 2, background: 'var(--bg-elevated)' }}
-                      onClick={() => setAttachedImage(null)}
-                    >
-                      <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>×</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                <input type="file" accept="image/*" style={{ display: 'none' }} ref={fileInputRef} onChange={handleFileAttach} />
-                <button className="btn-icon" title="Attach image" onClick={() => fileInputRef.current?.click()}>
-                  <Paperclip size={18} />
-                </button>
-                <textarea
-                  className="form-input"
-                  rows={2}
-                  placeholder="Type a message..."
-                  style={{ flex: 1, resize: 'none', fontFamily: 'inherit' }}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
-                  }}
-                />
-                {loading ? (
-                  <button className="btn btn-danger" title="Stop generation" onClick={handleStop}>
-                    <Square size={16} />
-                  </button>
-                ) : (
-                  <button className="btn btn-primary" title="Send (Enter)" onClick={handleSend} disabled={!input.trim() || !apiKey}>
-                    <Send size={16} />
-                  </button>
-                )}
-              </div>
             </div>
           </div>
+        )}
 
-          {/* ── Right Column: Debug Sidebar ── */}
-          {showDebugSidebar && (
-            <div className="card" style={{ width: 420, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
-              <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Debug</h3>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  {debugTraceHistory.length > 0 && (
-                    <button
-                      onClick={() => setDebugTraceHistory([])}
-                      style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
-                    >
-                      Clear
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowDebugSidebar(false)}
-                    className="btn-icon"
-                    style={{ padding: 4 }}
-                    title="Hide debug sidebar"
+        {/* Main area */}
+        {mode === 'single' ? (
+          <>
+            {/* Chat card */}
+            <div className="card" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
+              {/* Streaming-disabled banner */}
+              {streamingDisabled && (
+                <div
+                  data-testid="streaming-disabled-banner"
+                  style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10,
+                    padding: '10px 16px',
+                    background: 'color-mix(in srgb, #f59e0b 10%, transparent)',
+                    borderBottom: '1px solid color-mix(in srgb, #f59e0b 40%, transparent)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <AlertTriangle size={15} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                    <strong style={{ color: '#b45309' }}>{t('playground.streamingDisabled.banner')}</strong> — {t('playground.streamingDisabled.bannerBody')}
+                  </p>
+                </div>
+              )}
+              {/* Controls */}
+              <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', flexShrink: 0 }}>
+                <button onClick={() => setSystemPromptOpen(!systemPromptOpen)}
+                  style={{ width: '100%', padding: '8px 16px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontWeight: 600 }}>{t('playground.systemPrompt')}</span>
+                  <span style={{ transform: systemPromptOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', display: 'inline-block', fontSize: '0.65rem' }}>▶</span>
+                </button>
+                {systemPromptOpen && (
+                  <div style={{ padding: '0 16px 10px' }}>
+                    <textarea className="form-input" rows={3}
+                      style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.85rem', boxSizing: 'border-box' }}
+                      value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)} />
+                  </div>
+                )}
+                <div style={{ padding: '6px 16px 10px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('playground.model')}</label>
+                    <SearchableSelect
+                      options={[{ value: '', label: t('playground.modelPlaceholder') }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
+                      value={selectedModelId}
+                      onChange={setSelectedModelId}
+                      placeholder={t('playground.modelPlaceholder')}
+                      style={{ fontSize: '0.78rem', minWidth: 180 }}
+                    />
+                  </div>
+                  <ParamSlider label={t('playground.params.temp')} value={temperature} min={0} max={2} step={0.1} onChange={setTemperature} onClear={() => setTemperature(null)} />
+                  <ParamSlider label={t('playground.params.maxTokens')} value={maxTokens} min={64} max={8192} step={64} onChange={setMaxTokens} />
+                  <ParamSlider label={t('playground.params.topP')} value={topP} min={0} max={1} step={0.05} onChange={setTopP} />
+                  <label
+                    title={streamingDisabled ? t('playground.streamingDisabled.tooltip') : undefined}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      fontSize: '0.75rem',
+                      color: streamingDisabled ? 'var(--text-muted)' : 'var(--text-secondary)',
+                      cursor: streamingDisabled ? 'not-allowed' : 'pointer',
+                      opacity: streamingDisabled ? 0.55 : 1,
+                    }}
                   >
-                    <ChevronRight size={16} />
-                  </button>
+                    <input
+                      type="checkbox"
+                      data-testid="stream-toggle"
+                      checked={streamingDisabled ? false : streamEnabled}
+                      disabled={streamingDisabled}
+                      onChange={e => setStreamEnabled(e.target.checked)}
+                      style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: streamingDisabled ? 'not-allowed' : 'pointer' }}
+                    />
+                    {t('playground.stream')}
+                    {streamingDisabled && (
+                      <AlertTriangle size={12} style={{ color: '#f59e0b' }} aria-label={t('playground.streamingDisabled.ariaLabel')} />
+                    )}
+                  </label>
+                  {messages.length > 0 && (
+                    <button className="btn" style={{ fontSize: '0.73rem', marginLeft: 'auto' }} onClick={() => { setMessages([]); setShowRaw({}); setDebugTraceHistory([]); }}>{t('playground.clear')}</button>
+                  )}
                 </div>
               </div>
 
-              <div style={{ flex: 1, overflowY: 'auto', padding: 16, background: 'var(--bg-base)' }}>
-                {debugTraceHistory.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-                    <p style={{ margin: 0, fontSize: '0.85rem' }}>No debug data yet.</p>
-                    <p style={{ margin: '8px 0 0', fontSize: '0.75rem' }}>Send a message to see routing and model details.</p>
+              {/* Messages */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {displayMessages.length === 0 ? (
+                  <div className="empty-state" style={{ margin: 'auto' }}>
+                    <p style={{ margin: 0 }}>{t('playground.empty.noMessages')}</p>
+                    {!apiKey && <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--text-secondary)' }}>{t('playground.empty.enterToken')}</p>}
                   </div>
                 ) : (
-                  debugTraceHistory.map((traces, i) => {
-                    if (!traces) return null;
-                    const stats = extractMessageStats(traces);
+                  displayMessages.map((msg, i) => {
+                    const isAssistant = msg.role === 'assistant';
+                    const showRawThis = showRaw[i] ?? false;
                     return (
-                      <div key={i} style={{ marginBottom: 16 }}>
-                        <MessageStatsCard stats={stats} turnNumber={i + 1} />
-                        
-                        {/* Technical Details - Collapsible */}
-                        <details style={{ marginTop: 8 }}>
-                          <summary style={{
-                            cursor: 'pointer',
-                            fontSize: '0.8rem',
-                            color: 'var(--text-muted)',
-                            padding: '8px 12px',
-                            background: 'var(--bg-elevated)',
-                            border: '1px solid var(--border)',
-                            borderRadius: 6,
-                            userSelect: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                          }}>
-                            🔧 Technical Details
-                          </summary>
-                          <div style={{
-                            marginTop: 8,
-                            padding: 12,
-                            background: 'var(--bg-surface)',
-                            border: '1px solid var(--border)',
-                            borderRadius: 6,
-                            fontSize: '0.85rem',
-                          }}>
-                            {traces.map((entry, j) => (
-                              <div key={j} style={{ marginBottom: j < traces.length - 1 ? 12 : 0 }}>
-                                <TraceEntryRenderer entry={entry} />
-                              </div>
-                            ))}
-                          </div>
-                        </details>
+                      <div key={i} style={{ alignSelf: isAssistant ? 'flex-start' : 'flex-end', maxWidth: '85%', display: 'flex', flexDirection: 'column', alignItems: isAssistant ? 'flex-start' : 'flex-end' }}>
+                        {isAssistant && msg.thinking && (
+                          <details style={{ marginBottom: 5, width: '100%' }}>
+                            <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '3px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 4, userSelect: 'none' }}>
+                              {t('playground.reasoning')} {loading && i === displayMessages.length - 1 && <span className="spinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} />}
+                            </summary>
+                            <div style={{ marginTop: 4, padding: '10px 14px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: '0.82rem', color: 'var(--text-secondary)', fontStyle: 'italic', whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>
+                              {msg.thinking}
+                            </div>
+                          </details>
+                        )}
+                        <div style={{
+                          background: isAssistant ? 'var(--bg-elevated)' : 'var(--primary)',
+                          color: isAssistant ? 'var(--text-primary)' : '#fff',
+                          padding: '10px 14px',
+                          borderRadius: isAssistant ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
+                          border: isAssistant ? '1px solid var(--border)' : 'none',
+                          fontSize: '0.9rem', lineHeight: 1.5,
+                        }}>
+                          {isAssistant ? (
+                            /* v8 ignore start */
+                            // ponytail: blocked with no content → show blockMessage as plain text
+                            (msg.blocked && !msg.content)
+                              ? <span style={{ whiteSpace: 'pre-wrap' }}>{msg.blocked.blockMessage ?? t('playground.blockedDefault')}</span>
+                              : (typeof msg.content === 'string'
+                                  ? (showRawThis
+                                      ? <pre style={{ margin: 0, fontSize: '0.75rem', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{msg.rawJson ?? msg.content}</pre>
+                                      : <MdContent>{msg.content}</MdContent>)
+                                  : <MdContent>{(msg.content as ContentPart[]).filter(c => c.type === 'text').map(c => c.text!).join('')}</MdContent>)
+                            /* v8 ignore stop */
+                          ) : (
+                            typeof msg.content === 'string'
+                              ? <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</span>
+                              : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                  {(msg.content as ContentPart[]).map((c, idx) => (
+                                    c.type === 'text' ? <span key={idx}>{c.text}</span> :
+                                    /* v8 ignore next */
+                                    c.type === 'image_url' ? <img key={idx} src={c.image_url!.url} alt={t('playground.attachedImageAlt')} style={{ maxWidth: 200, borderRadius: 8 }} /> : null
+                                  ))}
+                                </div>
+                              )
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontSize: '0.7rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                          <span style={{ textTransform: 'capitalize' }}>{isAssistant && msg.model ? msg.model : msg.role}</span>
+                          {isAssistant && (msg.inputTokens || msg.outputTokens) ? (
+                            /* v8 ignore next 3 */
+                            <span style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', fontFamily: 'monospace' }}>
+                              tokens: {(msg.inputTokens ?? 0) + (msg.outputTokens ?? 0)} | {costEstimate(msg.inputTokens ?? 0, msg.outputTokens ?? 0)}
+                            </span>
+                          ) : null}
+                          {isAssistant && (msg.guardrailInputTokens || msg.guardrailOutputTokens) ? (
+                            /* v8 ignore next 3 */
+                            <span title={t('playground.compare.guardrailTokensTitle')} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', fontFamily: 'monospace' }}>
+                              guardrail: {(msg.guardrailInputTokens ?? 0) + (msg.guardrailOutputTokens ?? 0)} | {costEstimate(msg.guardrailInputTokens ?? 0, msg.guardrailOutputTokens ?? 0)}
+                            </span>
+                          ) : null}
+                          {isAssistant && msg.latencyMs ? <span>{isCaptureMode() ? CAPTURE_MSG_LATENCY_MS : msg.latencyMs}ms</span> : null}
+                          {/* Truncation badge — response cut off by max_tokens */}
+                          {isAssistant && msg.finishReason === 'length' && (
+                            <span
+                              data-testid="truncation-badge"
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 3,
+                                background: 'color-mix(in srgb, #f59e0b 12%, transparent)',
+                                border: '1px solid color-mix(in srgb, #f59e0b 40%, transparent)',
+                                borderRadius: 4, padding: '1px 6px',
+                                color: '#b45309', fontWeight: 600,
+                              }}
+                            >
+                              <AlertTriangle size={10} /> {t('playground.truncated')}
+                            </span>
+                          )}
+                          {/* Buffered-by-guardrail note */}
+                          {isAssistant && streamingDisabled && !msg.blocked && (
+                            <span
+                              data-testid="buffered-note"
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 3,
+                                background: 'color-mix(in srgb, #f59e0b 8%, transparent)',
+                                border: '1px solid color-mix(in srgb, #f59e0b 30%, transparent)',
+                                borderRadius: 4, padding: '1px 6px',
+                                color: 'var(--text-muted)',
+                              }}
+                            >
+                              <AlertTriangle size={10} style={{ color: '#f59e0b' }} /> {t('playground.bufferedNote')}
+                            </span>
+                          )}
+                          {isAssistant && msg.rawJson && (
+                            <button
+                              onClick={() => setShowRaw(prev => ({ ...prev, [i]: !prev[i] }))}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3, padding: 0, fontSize: '0.7rem' }}
+                            >
+                              <Code size={11} /> {showRawThis ? t('playground.rawToggle.rendered') : t('playground.rawToggle.raw')}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })
                 )}
-                <div ref={debugPanelEndRef} />
+                {loading && (
+                  <div style={{ alignSelf: 'flex-start', padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: '16px 16px 16px 4px', border: '1px solid var(--border)' }}>
+                    <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
+                  </div>
+                )}
+                {error && (
+                  <div style={{ alignSelf: 'center', background: 'rgba(239,68,68,0.1)', color: 'var(--danger)', padding: '8px 12px', borderRadius: 8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6, maxWidth: '100%', minWidth: 0, overflowWrap: 'anywhere' }}>
+                    <AlertCircle size={14} style={{ flexShrink: 0 }} /> {error}
+                  </div>
+                )}
+                <div ref={endRef} />
+              </div>
+
+              {/* Input */}
+              <div style={{ padding: 16, borderTop: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+                {attachedImage && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <img src={attachedImage} alt={t('playground.attachmentAlt')} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)' }} />
+                      <button className="btn-icon danger" style={{ position: 'absolute', top: -5, right: -5, padding: 2, background: 'var(--bg-elevated)' }} onClick={() => setAttachedImage(null)}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>×</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                  <input type="file" accept="image/*" style={{ display: 'none' }} ref={fileInputRef} onChange={handleFileAttach} />
+                  <button className="btn-icon" title={t('playground.attachImage')} onClick={() => fileInputRef.current?.click()}><Paperclip size={17} /></button>
+                  <textarea
+                    className="form-input"
+                    rows={2}
+                    placeholder={t('playground.inputPlaceholder')}
+                    style={{ flex: 1, resize: 'none', fontFamily: 'inherit' }}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                  />
+                  {loading
+                    ? <button className="btn btn-danger" onClick={handleStop}><Square size={15} /></button>
+                    : <button className="btn btn-primary" data-testid="playground-send-button" onClick={handleSend} disabled={!input.trim() || !apiKey}><Send size={15} /></button>
+                  }
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Toggle button when sidebar is collapsed */}
-          {!showDebugSidebar && (
-            <button
-              onClick={() => setShowDebugSidebar(true)}
-              className="btn-icon"
-              style={{
-                position: 'fixed',
-                right: 24,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                padding: 8,
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              }}
-              title="Show debug sidebar"
-            >
-              <ChevronLeft size={20} />
-            </button>
-          )}
-
+            {/* Debug sidebar */}
+            {showDebugSidebar && (
+              <>
+                <div
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label={t('playground.debug.resize')}
+                  aria-valuemin={minDebugWidth(bodyWidth)}
+                  aria-valuemax={maxDebugWidth(bodyWidth)}
+                  aria-valuenow={effectiveDebugWidth}
+                  tabIndex={0}
+                  data-testid="debug-resize-handle"
+                  title={t('playground.debug.resize')}
+                  onPointerDown={startDebugResize}
+                  onKeyDown={onDebugResizeKey}
+                  onDoubleClick={() => setDebugWidthClamped(DEBUG_DEFAULT)}
+                  style={{ width: 8, margin: '0 -12px', cursor: 'col-resize', flexShrink: 0, touchAction: 'none', alignSelf: 'stretch', zIndex: 1, display: 'flex', justifyContent: 'center' }}
+                >
+                  <div style={{ width: 2, height: '100%', background: 'var(--border)', borderRadius: 2 }} />
+                </div>
+                <div className="card" data-testid="debug-panel" style={{ width: effectiveDebugWidth, flexShrink: 0, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>{t('playground.debug.title')}</h3>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {debugTraceHistory.length > 0 && (
+                        <button onClick={() => setDebugTraceHistory([])} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>{t('playground.debug.clear')}</button>
+                      )}
+                      <button onClick={() => setShowDebugSidebar(false)} className="btn-icon" style={{ padding: 4 }} title={t('playground.debug.hide')} aria-label={t('playground.debug.hide')} data-testid="debug-collapse"><ChevronRight size={15} /></button>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 12, background: 'var(--bg-base)', minWidth: 0, overflowWrap: 'break-word' }}>
+                    <div ref={debugTopRef} />
+                    {debugTraceHistory.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
+                        <p style={{ margin: 0, fontSize: '0.82rem' }}>{t('playground.debug.empty')}</p>
+                        <p style={{ margin: '6px 0 0', fontSize: '0.75rem' }}>{t('playground.debug.emptyHint')}</p>
+                      </div>
+                    ) : (
+                      // Newest turn first: the one you just sent is the one you want to read.
+                      [...debugTraceHistory.entries()].reverse().map(([i, traces]) => {
+                        /* v8 ignore next */
+                        if (!traces) return null;
+                        return (
+                          <div key={i} style={{ marginBottom: 14 }}>
+                            <TraceSummary
+                              trace={traces as TraceEntry[]}
+                              turn={i + 1}
+                              collapsible
+                              defaultOpen={i === debugTraceHistory.length - 1}
+                            >
+                              <details>
+                                <summary style={{ cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-muted)', padding: '6px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, userSelect: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                  {t('playground.debug.turnTraceLog', { turn: i + 1 })}
+                                </summary>
+                                <div style={{ marginTop: 6, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.83rem' }}>
+                                  <TraceLog entries={traces as TraceEntry[]} collapsed />
+                                </div>
+                              </details>
+                            </TraceSummary>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+            {!showDebugSidebar && (
+              <button onClick={() => setShowDebugSidebar(true)} className="card" data-testid="debug-expand"
+                style={{ flexShrink: 0, width: 36, padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}
+                title={t('playground.debug.show')} aria-label={t('playground.debug.show')}>
+                <ChevronLeft size={18} />
+              </button>
+            )}
+          </>
+        ) : (
+          <ComparePanel
+            apiKey={apiKey}
+            apiKeyB={apiKeyB}
+            systemPrompt={systemPrompt}
+            availableModels={availableModels}
+            compareModelA={compareModelA}
+            compareModelB={compareModelB}
+            setCompareModelA={setCompareModelA}
+            setCompareModelB={setCompareModelB}
+          />
+        )}
       </div>
     </div>
   );

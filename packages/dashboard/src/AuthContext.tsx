@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { login as apiLogin } from './api';
+import { login as apiLogin, getMe } from './api';
 
-interface AuthUser { id: string; email: string; role: string; permissions?: string[]; }
+interface AuthUser { id: string; email: string; role: string; permissions?: string[]; totpEnabled?: boolean; language?: string; }
 interface AuthCtx {
   user: AuthUser | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ requiresTotp: true; userId: string } | void>;
   loginDirect: (token: string, user: AuthUser) => void;
   logout: () => void;
   updateUser: (partial: Partial<AuthUser>) => void;
@@ -27,6 +27,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         try {
           setUser(JSON.parse(stored) as AuthUser);
+          // The cached permissions are from login time: refresh them once per session load.
+          getMe()
+            .then(me => setUser(prev => {
+              if (!prev) return prev;
+              const next = { ...prev, role: me.roleId, ...(me.permissions ? { permissions: me.permissions } : {}) };
+              localStorage.setItem('lr_user', JSON.stringify(next));
+              return next;
+            }))
+            .catch(/* v8 ignore next */ () => { /* offline or expired: keep the cached user */ });
         } catch (err) {
           console.error('Failed to parse user from localStorage:', err);
           localStorage.removeItem('lr_user');
@@ -36,8 +45,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  async function login(email: string, password: string) {
-    const { token, refreshToken, user } = await apiLogin(email, password);
+  async function login(email: string, password: string): Promise<{ requiresTotp: true; userId: string } | void> {
+    const result = await apiLogin(email, password);
+    if (result.requiresTotp) {
+      return { requiresTotp: true, userId: result.userId! };
+    }
+    const { token, refreshToken, user } = result;
     localStorage.setItem('lr_token', token);
     localStorage.setItem('lr_user', JSON.stringify(user));
     // Persist refresh token and expiry for silent renewal

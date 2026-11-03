@@ -19,23 +19,60 @@ export interface AnthropicImageBlock {
   source: AnthropicImageSource;
 }
 
-export type AnthropicContentBlock = AnthropicTextBlock | AnthropicImageBlock;
+/** Assistant-side tool invocation. `input` is the fully-formed tool argument object. */
+export interface AnthropicToolUseBlock {
+  type: 'tool_use';
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+}
+
+/** User-side reply to a tool_use, carrying the tool's output. */
+export interface AnthropicToolResultBlock {
+  type: 'tool_result';
+  tool_use_id: string;
+  content?: string | Array<{ type: string; text?: string; [key: string]: unknown }>;
+  is_error?: boolean;
+}
+
+export type AnthropicContentBlock =
+  | AnthropicTextBlock
+  | AnthropicImageBlock
+  | AnthropicToolUseBlock
+  | AnthropicToolResultBlock;
 
 export interface AnthropicMessage {
   role: AnthropicRole;
   content: string | AnthropicContentBlock[];
 }
 
+/** Tool definition as sent by Anthropic clients (Claude Code included). */
+export interface AnthropicTool {
+  name: string;
+  description?: string;
+  input_schema?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export type AnthropicToolChoice =
+  | { type: 'auto' | 'any' | 'none' }
+  | { type: 'tool'; name: string };
+
+/** A system prompt is either plain text or a list of text blocks (optionally cache-controlled). */
+export type AnthropicSystem = string | Array<{ type: string; text?: string; [key: string]: unknown }>;
+
 export interface MessagesRequest {
   model: string;
   messages: AnthropicMessage[];
   max_tokens: number;
-  system?: string;
+  system?: AnthropicSystem;
   stream?: boolean;
   temperature?: number;
   top_p?: number;
   top_k?: number;
   stop_sequences?: string[];
+  tools?: AnthropicTool[];
+  tool_choice?: AnthropicToolChoice;
   [key: string]: unknown;
 }
 
@@ -53,7 +90,15 @@ export type AnthropicStopReason =
   | 'max_tokens'
   | 'stop_sequence'
   | 'tool_use'
+  | 'refusal'
   | null;
+
+/** Detail for a refusal stop, surfaced when a guardrail blocks the response (#77). */
+export interface AnthropicStopDetails {
+  type: 'refusal';
+  category?: string;
+  explanation?: string;
+}
 
 export interface MessagesResponse {
   id: string;
@@ -62,6 +107,8 @@ export interface MessagesResponse {
   content: AnthropicContentBlock[];
   model: string;
   stop_reason: AnthropicStopReason;
-  stop_sequence: string | null;
+  /** Present on refusal stops (guardrail block, #77). */
+  stop_details?: AnthropicStopDetails;
+  stop_sequence?: string | null;
   usage: AnthropicUsage;
 }

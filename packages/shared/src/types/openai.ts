@@ -8,24 +8,36 @@ export interface ContentPart {
   image_url?: { url: string; detail?: 'auto' | 'low' | 'high' };
 }
 
+/** Assistant tool invocation in the OpenAI chat-completions wire format. */
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: { name: string; arguments: string };
+}
+
 export interface Message {
   role: Role;
-  content: string | ContentPart[];
+  content: string | ContentPart[] | null;
   name?: string;
   tool_call_id?: string;
+  tool_calls?: ToolCall[];
+}
+
+/** Tool definition in the OpenAI chat-completions wire format. */
+export interface ToolDefinition {
+  type: 'function';
+  function: { name: string; description?: string; parameters?: Record<string, unknown> };
 }
 
 export interface ChatCompletionRequest {
   model: string;
   messages: Message[];
-  input?: Message[]; // /v1/responses compatibility
   stream?: boolean;
   temperature?: number;
   top_p?: number;
   n?: number;
   max_tokens?: number;
   max_completion_tokens?: number;
-  max_output_tokens?: number;
   stop?: string | string[];
   presence_penalty?: number;
   frequency_penalty?: number;
@@ -58,15 +70,24 @@ export interface ChatCompletionResponse {
 
 // ─── Streaming ────────────────────────────────────────────────────────────────
 
+/** Streamed slice of a tool call: `index` identifies which call the fragment belongs to. */
+export interface ToolCallDelta {
+  index: number;
+  id?: string;
+  type?: 'function';
+  function?: { name?: string; arguments?: string };
+}
+
 export interface ChoiceDelta {
   role?: Role;
   content?: string | null;
+  tool_calls?: ToolCallDelta[];
 }
 
 export interface StreamChoice {
   index: number;
   delta: ChoiceDelta;
-  finish_reason: 'stop' | 'length' | null;
+  finish_reason: 'stop' | 'length' | 'tool_calls' | 'content_filter' | null;
 }
 
 export interface StreamChunk {

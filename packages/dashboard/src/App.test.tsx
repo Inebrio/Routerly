@@ -1,0 +1,698 @@
+/**
+ * Tests for App.tsx — covers ProtectedLayout, SetupGuard, Sidebar, and
+ * ThemeCycleButton branches.
+ *
+ * Strategy: mock every page and heavy component so tests focus on App-level logic.
+ */
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+// ── Page mocks — all pages render their route name only ────────────────────────
+vi.mock('./pages/LoginPage', () => ({ LoginPage: () => <div>LoginPage</div> }));
+vi.mock('./pages/SetupPage', () => ({ SetupPage: () => <div>SetupPage</div> }));
+vi.mock('./pages/OverviewPage', () => ({ OverviewPage: () => <div>OverviewPage</div> }));
+vi.mock('./pages/ModelsPage', () => ({ ModelsPage: () => <div>ModelsPage</div> }));
+vi.mock('./pages/ModelFormPage', () => ({ ModelFormPage: () => <div>ModelFormPage</div> }));
+vi.mock('./pages/ModelDiscoveryPage', () => ({ ModelDiscoveryPage: () => <div>ModelDiscoveryPage</div> }));
+vi.mock('./pages/RoutersPage', () => ({ RoutersPage: () => <div>RoutersPage</div> }));
+vi.mock('./pages/router/RouterLayout', () => ({ RouterLayout: () => <div>RouterLayout</div> }));
+vi.mock('./pages/router/RouterGeneralTab', () => ({ RouterGeneralTab: () => <div>RouterGeneralTab</div> }));
+vi.mock('./pages/router/RouterRoutingTab', () => ({ RouterRoutingTab: () => <div>RouterRoutingTab</div> }));
+vi.mock('./pages/router/RouterTokenTab', () => ({ RouterTokenTab: () => <div>RouterTokenTab</div> }));
+vi.mock('./pages/router/RouterUsersTab', () => ({ RouterUsersTab: () => <div>RouterUsersTab</div> }));
+vi.mock('./pages/router/RouterLogsTab', () => ({ RouterLogsTab: () => <div>RouterLogsTab</div> }));
+vi.mock('./pages/router/RouterSecurityTab', () => ({ RouterSecurityTab: () => <div>RouterSecurityTab</div> }));
+vi.mock('./pages/router/RouterTokenCreatePage', () => ({ RouterTokenCreatePage: () => <div>RouterTokenCreatePage</div> }));
+vi.mock('./pages/router/RouterTokenEditPage', () => ({ RouterTokenEditPage: () => <div>RouterTokenEditPage</div> }));
+vi.mock('./pages/UsersPage', () => ({ UsersPage: () => <div>UsersPage</div> }));
+vi.mock('./pages/UsagePage', () => ({ UsagePage: () => <div>UsagePage</div> }));
+vi.mock('./pages/UsageRecordPage', () => ({ UsageRecordPage: () => <div>UsageRecordPage</div> }));
+vi.mock('./pages/TestPage', () => ({ TestPage: () => <div>TestPage</div> }));
+vi.mock('./pages/SettingsPage', () => ({
+  SettingsPage: () => <div>SettingsPage</div>,
+  SettingsGeneralTab: () => <div>SettingsGeneralTab</div>,
+  SettingsSecurityTab: () => <div>SettingsSecurityTab</div>,
+  SettingsIntegrationsTab: () => <div>SettingsIntegrationsTab</div>,
+  SettingsCatalogTab: () => <div>SettingsCatalogTab</div>,
+  SettingsAboutTab: () => <div>SettingsAboutTab</div>,
+}));
+vi.mock('./pages/NotificationChannelListPage', () => ({ NotificationChannelListPage: () => <div>NotificationChannelListPage</div> }));
+vi.mock('./pages/NotificationChannelEditPage', () => ({ NotificationChannelEditPage: () => <div>NotificationChannelEditPage</div> }));
+vi.mock('./pages/NotificationChannelCreatePage', () => ({ NotificationChannelCreatePage: () => <div>NotificationChannelCreatePage</div> }));
+vi.mock('./pages/RolesPage', () => ({ RolesPage: () => <div>RolesPage</div> }));
+vi.mock('./pages/ProfilePage', () => ({ ProfilePage: () => <div>ProfilePage</div> }));
+vi.mock('./pages/UserEditPage', () => ({ UserEditPage: () => <div>UserEditPage</div> }));
+vi.mock('./pages/HelpPage', () => ({ HelpPage: () => <div>HelpPage</div> }));
+vi.mock('./pages/AuditPage', () => ({ AuditPage: () => <div>AuditPage</div> }));
+
+// ── Component mocks ────────────────────────────────────────────────────────────
+vi.mock('./components/Logo', () => ({ Logo: () => <span>Logo</span> }));
+vi.mock('./components/NotificationBell', () => ({
+  ProfileNotificationBadge: () => <span data-testid="notif-badge" />,
+}));
+
+// ── API mocks ─────────────────────────────────────────────────────────────────
+vi.mock('./api', () => ({
+  checkSetupStatus: vi.fn(),
+  getSystemInfo: vi.fn(),
+  getSettings: vi.fn(),
+  updateSettings: vi.fn(),
+  getClients: vi.fn(),
+  getExperiments: vi.fn(),
+  getPermissionStatus: vi.fn(),
+  fixPermissions: vi.fn(),
+  getMe: vi.fn().mockResolvedValue({}),
+  updateMyLanguage: vi.fn(),
+}));
+
+// ── AuthContext mock ───────────────────────────────────────────────────────────
+vi.mock('./AuthContext', () => ({ useAuth: vi.fn() }));
+
+import App, { __resetPermissionCheckForTests } from './App';
+import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getClients, getExperiments, getPermissionStatus, fixPermissions, updateMyLanguage } from './api';
+import { useAuth } from './AuthContext';
+
+const mockCheckSetup = vi.mocked(checkSetupStatus as () => Promise<unknown>);
+const mockGetSystemInfo = vi.mocked(getSystemInfo as () => Promise<unknown>);
+const mockGetSettings = vi.mocked(getSettings as () => Promise<unknown>);
+const mockUpdateSettings = vi.mocked(updateSettings as (...a: unknown[]) => Promise<unknown>);
+const mockGetClients = vi.mocked(getClients as () => Promise<unknown>);
+const mockGetExperiments = vi.mocked(getExperiments as () => Promise<unknown>);
+const mockGetPermissionStatus = vi.mocked(getPermissionStatus as () => Promise<unknown>);
+const mockFixPermissions = vi.mocked(fixPermissions as () => Promise<unknown>);
+const mockUseAuth = vi.mocked(useAuth);
+
+const adminUser = { id: 'u1', email: 'admin@test.com', role: 'admin', totpEnabled: false };
+const logoutFn = vi.fn();
+const _navigateFn = vi.fn();
+
+// ponytail: useNavigate is internal to react-router; we can't easily mock it here,
+// so we test via actual routing. Keep tests at the branch level.
+
+beforeEach(() => {
+  mockCheckSetup.mockResolvedValue({ needsSetup: false });
+  mockGetSystemInfo.mockResolvedValue({ isDocker: false });
+  mockGetSettings.mockResolvedValue({ telemetry: true, requireMfa: false });
+  mockUpdateSettings.mockResolvedValue(undefined);
+  mockGetClients.mockRejectedValue(Object.assign(new Error('Not found'), { status: 404 }));
+  mockGetExperiments.mockRejectedValue(Object.assign(new Error('module_disabled'), { status: 403 }));
+  mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+  mockFixPermissions.mockResolvedValue({ fixed: [] });
+  mockUseAuth.mockReturnValue({
+    user: adminUser,
+    isLoading: false,
+    login: vi.fn(),
+    loginDirect: vi.fn(),
+    logout: logoutFn,
+    updateUser: vi.fn(),
+    can: vi.fn().mockReturnValue(true),
+  });
+  // Reset localStorage
+  localStorage.clear();
+});
+
+afterEach(() => vi.clearAllMocks());
+
+function renderApp() {
+  return render(<App />);
+}
+
+// ── SetupGuard ─────────────────────────────────────────────────────────────────
+
+describe('SetupGuard', () => {
+  it('shows spinner while checking setup', async () => {
+    // checkSetupStatus never resolves during this test
+    mockCheckSetup.mockReturnValue(new Promise(() => {}));
+    renderApp();
+    // spinner should be present
+    expect(document.querySelector('.spinner')).toBeTruthy();
+  });
+
+  it('renders OverviewPage after setup check passes', async () => {
+    mockCheckSetup.mockResolvedValue({ needsSetup: false });
+    renderApp();
+    await waitFor(() => expect(screen.queryByText('OverviewPage')).toBeTruthy(), { timeout: 3000 });
+  });
+
+  it('continues to normal flow when checkSetupStatus throws', async () => {
+    mockCheckSetup.mockRejectedValue(new Error('network'));
+    renderApp();
+    // Should still render after catch (spinner goes away, then OverviewPage)
+    await waitFor(() => screen.queryByText('OverviewPage'), { timeout: 3000 });
+  });
+
+  it('shows loading center when isLoading is true', async () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isLoading: true,
+      login: vi.fn(),
+      loginDirect: vi.fn(),
+      logout: vi.fn(),
+      updateUser: vi.fn(),
+      can: vi.fn(),
+    });
+    renderApp();
+    await waitFor(() => expect(document.querySelector('.spinner')).toBeTruthy());
+  });
+});
+
+// ── ProtectedLayout — banners ─────────────────────────────────────────────────
+
+describe('ProtectedLayout — update banner', () => {
+  it('shows the current version under the sign-out link', async () => {
+    mockGetSystemInfo.mockResolvedValue({ isDocker: false, version: '9.8.7' });
+    renderApp();
+    await waitFor(() => expect(screen.getByTestId('sidebar-version').textContent).toBe('v9.8.7'));
+  });
+
+  it('shows update banner when update is available (non-docker admin)', async () => {
+    mockGetSystemInfo.mockResolvedValue({
+      isDocker: false,
+      updateInfo: { available: true, latestVersion: '1.2.0', currentVersion: '1.0.0' },
+    });
+    renderApp();
+    // Banner text spans multiple elements because version is wrapped in <strong>
+    await waitFor(() => expect(screen.getByText('Update in Settings')).toBeTruthy(), { timeout: 3000 });
+  });
+
+  it('does not show update banner when isDocker is true', async () => {
+    mockGetSystemInfo.mockResolvedValue({
+      isDocker: true,
+      updateInfo: { available: true, latestVersion: '1.2.0', currentVersion: '1.0.0' },
+    });
+    renderApp();
+    await waitFor(() => screen.queryByText('OverviewPage'));
+    expect(screen.queryByText(/1\.2\.0 is available/)).toBeNull();
+  });
+
+  it('dismisses update banner when × clicked', async () => {
+    mockGetSystemInfo.mockResolvedValue({
+      isDocker: false,
+      updateInfo: { available: true, latestVersion: '1.2.0', currentVersion: '1.0.0' },
+    });
+    renderApp();
+    await waitFor(() => screen.getByText('Update in Settings'));
+    const dismissBtn = Array.from(document.querySelectorAll('button')).find(b => b.title === 'Dismiss');
+    expect(dismissBtn).toBeTruthy();
+    await userEvent.click(dismissBtn!);
+    expect(screen.queryByText('Update in Settings')).toBeNull();
+  });
+
+  it('does not show update banner when already dismissed (localStorage)', async () => {
+    localStorage.setItem('lr-update-banner-dismissed', 'true');
+    mockGetSystemInfo.mockResolvedValue({
+      isDocker: false,
+      updateInfo: { available: true, latestVersion: '1.2.0', currentVersion: '1.0.0' },
+    });
+    renderApp();
+    await waitFor(() => screen.queryByText('OverviewPage'));
+    expect(screen.queryByText(/1\.2\.0 is available/)).toBeNull();
+  });
+});
+
+describe('ProtectedLayout — MFA banner', () => {
+  it('shows MFA banner when requireMfa and user has no 2FA', async () => {
+    mockGetSettings.mockResolvedValue({ telemetry: true, requireMfa: true });
+    // user has totpEnabled: false (default in adminUser)
+    renderApp();
+    await waitFor(() => expect(screen.getByText(/Two-factor authentication is required/)).toBeTruthy(), { timeout: 3000 });
+  });
+
+  it('shows MFA banner when the service refuses getSettings with 403 mfa_required', async () => {
+    mockGetSettings.mockRejectedValue(Object.assign(new Error('Two-factor authentication is required'), { status: 403, code: 'mfa_required' }));
+    renderApp();
+    await waitFor(() => expect(screen.getByText(/Two-factor authentication is required/)).toBeTruthy(), { timeout: 3000 });
+  });
+
+  it('does not show MFA banner when user has 2FA enabled', async () => {
+    mockGetSettings.mockResolvedValue({ telemetry: true, requireMfa: true });
+    mockUseAuth.mockReturnValue({
+      user: { ...adminUser, totpEnabled: true },
+      isLoading: false,
+      login: vi.fn(),
+      loginDirect: vi.fn(),
+      logout: vi.fn(),
+      updateUser: vi.fn(),
+      can: vi.fn(),
+    });
+    renderApp();
+    await waitFor(() => screen.queryByText('OverviewPage'));
+    expect(screen.queryByText(/Two-factor authentication is required/)).toBeNull();
+  });
+});
+
+describe('ProtectedLayout — telemetry banner', () => {
+  it('shows telemetry prompt when admin and telemetry is undefined', async () => {
+    mockGetSettings.mockResolvedValue({ requireMfa: false }); // telemetry key missing
+    renderApp();
+    await waitFor(() => expect(screen.getByText(/anonymous install metrics/)).toBeTruthy(), { timeout: 3000 });
+  });
+
+  it('lets the telemetry banner wrap on narrow screens (ROUT-429)', async () => {
+    mockGetSettings.mockResolvedValue({ requireMfa: false });
+    renderApp();
+    const body = await screen.findByText(/anonymous install metrics/);
+    const text = body.closest('span') as HTMLElement;
+    expect((text.parentElement as HTMLElement).style.flexWrap).toBe('wrap');
+    expect(text.style.flex).toBe('1 1 240px');
+  });
+
+  it('does not show telemetry prompt for non-admin users', async () => {
+    mockGetSettings.mockResolvedValue({ requireMfa: false }); // telemetry undefined
+    mockUseAuth.mockReturnValue({
+      user: { ...adminUser, role: 'member' },
+      isLoading: false,
+      login: vi.fn(),
+      loginDirect: vi.fn(),
+      logout: vi.fn(),
+      updateUser: vi.fn(),
+      can: vi.fn(),
+    });
+    renderApp();
+    await waitFor(() => screen.queryByText('OverviewPage'));
+    expect(screen.queryByText(/anonymous install metrics/)).toBeNull();
+  });
+
+  it('dismisses telemetry prompt when "Yes, help out" clicked', async () => {
+    mockGetSettings.mockResolvedValue({ requireMfa: false });
+    renderApp();
+    await waitFor(() => screen.getByText(/Yes, help out/));
+    await userEvent.click(screen.getByText(/Yes, help out/));
+    await waitFor(() => expect(screen.queryByText(/anonymous install metrics/)).toBeNull());
+    expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ telemetry: expect.objectContaining({ enabled: true }) }));
+  });
+
+  it('dismisses telemetry prompt when "No thanks" clicked', async () => {
+    mockGetSettings.mockResolvedValue({ requireMfa: false });
+    renderApp();
+    await waitFor(() => screen.getByText(/No thanks/));
+    await userEvent.click(screen.getByText(/No thanks/));
+    await waitFor(() => expect(screen.queryByText(/anonymous install metrics/)).toBeNull());
+    expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ telemetry: expect.objectContaining({ enabled: false }) }));
+  });
+});
+
+// ── Permission guard (RTR-04) ──────────────────────────────────────────────────
+// The "checked once per session" flag lives at module scope in App.tsx;
+// __resetPermissionCheckForTests() clears it between cases so each test can
+// observe the first-check behaviour and prove a second mount does not re-fetch.
+// Must run before any test that navigates the router away from '/dashboard'
+// (e.g. Sign Out further down) since the router instance is a module singleton.
+
+describe('ProtectedLayout — permission warning banner', () => {
+  beforeEach(() => {
+    __resetPermissionCheckForTests();
+    // The router is a module singleton: the MFA banner test above navigates it
+    // to /dashboard/profile as a side effect, which otherwise leaks into every
+    // test that runs after it in this file. Restore a known route first.
+    window.history.pushState({}, '', '/dashboard/overview');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+
+  it('shows a warning banner once for general-severity unsafe files, and does not re-fetch on remount', async () => {
+    mockGetPermissionStatus.mockResolvedValue({
+      blocked: false,
+      bypassActive: false,
+      unsafe: [{ file: 'settings', path: '/x/settings.json', mode: '644', severity: 'general' }],
+    });
+
+    const first = render(<App />);
+    await waitFor(() => expect(screen.getByText(/permissive access/)).toBeTruthy(), { timeout: 3000 });
+    expect(screen.getByText(/settings/)).toBeTruthy();
+    first.unmount();
+
+    // Second mount (simulated navigation/remount): banner still shows from the
+    // cached module-level result, but the API is not called again (EC4).
+    render(<App />);
+    await waitFor(() => expect(screen.getByText(/permissive access/)).toBeTruthy());
+    expect(mockGetPermissionStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears the banner by itself when the files are fixed outside the dashboard (polling)', async () => {
+    mockGetPermissionStatus
+      .mockResolvedValueOnce({
+        blocked: false,
+        bypassActive: false,
+        unsafe: [{ file: 'settings', path: '/x/settings.json', mode: '644', severity: 'general' }],
+      })
+      .mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+    render(<App />);
+    await waitFor(() => screen.getByText(/permissive access/));
+    await waitFor(() => expect(screen.queryByText(/permissive access/)).toBeNull(), { timeout: 12_000 });
+  }, 15_000);
+
+  it('does not call permissions or settings without settings:read', async () => {
+    mockUseAuth.mockReturnValue({
+      user: adminUser, isLoading: false, login: vi.fn(), loginDirect: vi.fn(), logout: logoutFn, updateUser: vi.fn(),
+      can: vi.fn().mockReturnValue(false),
+    });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+    expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    expect(mockGetSettings).not.toHaveBeenCalled();
+  });
+
+  it('does not poll permission status without settings:read', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      mockUseAuth.mockReturnValue({
+        user: adminUser, isLoading: false, login: vi.fn(), loginDirect: vi.fn(), logout: logoutFn, updateUser: vi.fn(),
+        can: vi.fn().mockReturnValue(false),
+      });
+      mockGetPermissionStatus.mockRejectedValue(new Error('403'));
+      render(<App />);
+      await waitFor(() => screen.getByText('OverviewPage'));
+      await vi.advanceTimersByTimeAsync(35_000);
+      expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('shows no banner when permissions are safe (AC8)', async () => {
+    mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+    expect(screen.queryByText(/permissive access/)).toBeNull();
+  });
+
+  it('dismisses the warning banner without needing a re-fetch', async () => {
+    mockGetPermissionStatus.mockResolvedValue({
+      blocked: false,
+      bypassActive: false,
+      unsafe: [{ file: 'settings', path: '/x/settings.json', mode: '644', severity: 'general' }],
+    });
+    render(<App />);
+    await waitFor(() => screen.getByText(/permissive access/));
+    const dismissBtn = Array.from(document.querySelectorAll('button')).find(b => b.title === 'Dismiss' && b.textContent === '×');
+    await userEvent.click(dismissBtn!);
+    expect(screen.queryByText(/permissive access/)).toBeNull();
+  });
+});
+
+describe('ProtectedLayout — permission-blocked modal', () => {
+  beforeEach(() => __resetPermissionCheckForTests());
+
+  it('opens the modal when the lr-permission-blocked event fires, and closes it on successful fix', async () => {
+    mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+    mockFixPermissions.mockResolvedValue({ fixed: ['users'] });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+
+    // Re-dispatch until observed: the listener may not be attached yet on a cold, loaded run.
+    const fire = () => window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+      detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
+    }));
+    await waitFor(() => { fire(); expect(screen.getByText(/users.json is unsafe/)).toBeTruthy(); });
+    expect(screen.getByText('users')).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fix now' }));
+    await waitFor(() => expect(screen.queryByText(/users.json is unsafe/)).toBeNull());
+    expect(mockFixPermissions).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the modal on Cancel without calling fixPermissions', async () => {
+    mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+
+    // Re-dispatch until observed: the listener may not be attached yet on a cold, loaded run.
+    const fire = () => window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+      detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
+    }));
+    await waitFor(() => { fire(); expect(screen.getByText(/users.json is unsafe/)).toBeTruthy(); });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByText(/users.json is unsafe/)).toBeNull();
+    expect(mockFixPermissions).not.toHaveBeenCalled();
+  });
+
+  it('shows a neutral notice and no modal without settings:write', async () => {
+    mockUseAuth.mockReturnValue({
+      user: adminUser, isLoading: false, login: vi.fn(), loginDirect: vi.fn(), logout: logoutFn, updateUser: vi.fn(),
+      can: vi.fn((p: string) => p !== 'settings:write'),
+    });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+
+    // Re-dispatch until observed: the listener may not be attached yet on a cold, loaded run.
+    const fire = () => window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+      detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
+    }));
+    await waitFor(() => { fire(); expect(screen.getByText(/temporarily unavailable/)).toBeTruthy(); });
+    expect(screen.queryByText(/users.json is unsafe/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fix now' })).toBeNull();
+
+    await userEvent.click(screen.getByTitle('Dismiss'));
+    expect(screen.queryByText(/temporarily unavailable/)).toBeNull();
+  });
+});
+
+// ── Sidebar ────────────────────────────────────────────────────────────────────
+
+describe('Sidebar', () => {
+  it('renders nav links', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    expect(screen.getByText('Models')).toBeTruthy();
+    expect(screen.getByText('Routers')).toBeTruthy();
+    expect(screen.getByText('Usage')).toBeTruthy();
+  });
+
+  it('offers Experiments only when the module answers', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    expect(screen.queryByText('Experiments')).toBeNull();
+
+    mockGetExperiments.mockResolvedValue([]);
+    cleanup();
+    renderApp();
+    await waitFor(() => expect(screen.getByText('Experiments')).toBeTruthy());
+  });
+
+  it('lists the nav flat, in setup then measure order, Playground last', async () => {
+    // Both optional modules on, so the whole intended order is visible at once.
+    mockGetClients.mockResolvedValue([]);
+    mockGetExperiments.mockResolvedValue([]);
+    renderApp();
+    await waitFor(() => screen.getByText('Connect app'));
+    await waitFor(() => screen.getByText('Experiments'));
+    const labels = Array.from(document.querySelectorAll('.sidebar-nav .nav-label')).map(el => el.textContent);
+    expect(labels).toEqual([
+      'Overview', 'Providers', 'Models', 'Profiles', 'Routers',
+      'Experiments', 'Usage', 'Playground',
+    ]);
+    // Connect app is a setup step, not a daily destination: it sits with Settings.
+    const footer = Array.from(document.querySelectorAll('.sidebar-footer .nav-label')).map(el => el.textContent);
+    expect(footer).toContain('Connect app');
+  });
+
+  it('toggles collapsed state on toggle button click', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    const appShell = document.querySelector('.app-shell');
+    expect(appShell?.classList.contains('sidebar-collapsed')).toBe(false);
+    const toggleBtn = document.querySelector('.sidebar-toggle');
+    expect(toggleBtn).toBeTruthy();
+    await userEvent.click(toggleBtn!);
+    expect(appShell?.classList.contains('sidebar-collapsed')).toBe(true);
+  });
+
+  it('persists collapsed state to localStorage', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    const toggleBtn = document.querySelector('.sidebar-toggle');
+    await userEvent.click(toggleBtn!);
+    expect(localStorage.getItem('lr-sidebar')).toBe('collapsed');
+  });
+
+  it('reads collapsed state from localStorage on mount', async () => {
+    localStorage.setItem('lr-sidebar', 'collapsed');
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    const appShell = document.querySelector('.app-shell');
+    expect(appShell?.classList.contains('sidebar-collapsed')).toBe(true);
+  });
+
+  it('sets localStorage to "expanded" when uncollapsing sidebar', async () => {
+    localStorage.setItem('lr-sidebar', 'collapsed');
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    const toggleBtn = document.querySelector('.sidebar-toggle');
+    await userEvent.click(toggleBtn!); // collapse → expand
+    expect(localStorage.getItem('lr-sidebar')).toBe('expanded');
+  });
+
+  it('shows ThemeCycleButton when collapsed', async () => {
+    localStorage.setItem('lr-sidebar', 'collapsed');
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    // ThemeCycleButton shows a nav-item button with theme title
+    const themeBtn = document.querySelector('button[title^="Theme:"]');
+    expect(themeBtn).toBeTruthy();
+  });
+});
+
+// ── ThemeCycleButton and ThemeSelector ────────────────────────────────────────
+
+describe('Sidebar — ThemeCycleButton', () => {
+  it('cycles theme when ThemeCycleButton clicked (collapsed sidebar)', async () => {
+    localStorage.setItem('lr-sidebar', 'collapsed');
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    const themeBtn = document.querySelector('button[title^="Theme:"]') as HTMLButtonElement;
+    expect(themeBtn).toBeTruthy();
+    // Click it to cycle theme (auto → dark)
+    await userEvent.click(themeBtn);
+    // Title changes to next theme
+    const updatedBtn = document.querySelector('button[title^="Theme:"]') as HTMLButtonElement;
+    expect(updatedBtn.title).toContain('Theme:');
+  });
+});
+
+describe('Sidebar — ThemeSelector', () => {
+  it('renders theme selector buttons when sidebar is expanded', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    // ThemeSelector renders Auto/Dark/Light buttons
+    expect(screen.getByTitle('Auto')).toBeTruthy();
+    expect(screen.getByTitle('Dark')).toBeTruthy();
+    expect(screen.getByTitle('Light')).toBeTruthy();
+  });
+
+  it('sets theme when ThemeSelector button clicked', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    await userEvent.click(screen.getByTitle('Dark'));
+    // Dark button becomes active
+    expect(screen.getByTitle('Dark').classList.contains('active')).toBe(true);
+  });
+});
+
+// ── Sidebar NavLink active state — Settings and Help (lines 151, 159) ────────
+
+describe('Sidebar — Settings and Help NavLink active class', () => {
+  it('Settings NavLink gets active class when on settings route (line 151 true branch)', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    // sidebar is expanded → title is undefined, use nav-label text
+    const settingsLink = Array.from(document.querySelectorAll('a.nav-item')).find(el => el.textContent?.includes('Settings')) as HTMLElement | undefined;
+    expect(settingsLink).toBeTruthy();
+    await userEvent.click(settingsLink!);
+    await waitFor(() => expect(settingsLink!.className).toContain('active'));
+  });
+
+  it('Help NavLink gets active class when on help route (line 159 true branch)', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    const helpLink = Array.from(document.querySelectorAll('a.nav-item')).find(el => el.textContent?.includes('Help')) as HTMLElement | undefined;
+    expect(helpLink).toBeTruthy();
+    await userEvent.click(helpLink!);
+    await waitFor(() => expect(helpLink!.className).toContain('active'));
+  });
+});
+
+describe('Sidebar — Sign Out', () => {
+  it('calls logout and navigates to login on Sign Out click', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    await userEvent.click(screen.getByTitle('Sign Out'));
+    expect(logoutFn).toHaveBeenCalled();
+    // After logout, LoginPage (mocked) should render
+    await waitFor(() => expect(screen.getByText('LoginPage')).toBeTruthy());
+  });
+});
+
+// ── Unauthenticated redirect ───────────────────────────────────────────────────
+
+describe('ProtectedLayout — unauthenticated', () => {
+  it('redirects to login when user is null', async () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isLoading: false,
+      login: vi.fn(),
+      loginDirect: vi.fn(),
+      logout: vi.fn(),
+      updateUser: vi.fn(),
+      can: vi.fn(),
+    });
+    renderApp();
+    await waitFor(() => expect(screen.getByText('LoginPage')).toBeTruthy(), { timeout: 3000 });
+  });
+
+  it('sends no authenticated request before the redirect (no 401 noise)', async () => {
+    __resetPermissionCheckForTests();
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isLoading: false,
+      login: vi.fn(),
+      loginDirect: vi.fn(),
+      logout: vi.fn(),
+      updateUser: vi.fn(),
+      can: vi.fn(),
+    });
+    renderApp();
+    await waitFor(() => expect(screen.getByText('LoginPage')).toBeTruthy(), { timeout: 3000 });
+    expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    expect(mockGetSettings).not.toHaveBeenCalled();
+  });
+});
+
+// ── SetupGuard — needsSetup: true (line 333) — MUST BE LAST (corrupts router state) ──
+
+describe('SetupGuard — needsSetup true', () => {
+  it('navigates to /dashboard/setup when needsSetup is true', async () => {
+    mockCheckSetup.mockResolvedValue({ needsSetup: true });
+    renderApp();
+    await waitFor(() => expect(screen.queryByText('SetupPage')).toBeTruthy(), { timeout: 3000 });
+  });
+});
+
+
+// ── Language selector (S3) ─────────────────────────────────────────────────────
+describe('Sidebar language selector', () => {
+  beforeEach(() => {
+    __resetPermissionCheckForTests();
+    window.history.pushState({}, '', '/dashboard/overview');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  const mockUpdateLang = vi.mocked(updateMyLanguage as (c: string) => Promise<unknown>);
+  const pick = async (name: string | RegExp) => {
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('combobox', { name: 'Language' }));
+    await user.click(await screen.findByRole('option', { name }));
+  };
+
+  it('AC9 lists every language by its own name and marks the current one', async () => {
+    renderApp();
+    await userEvent.setup().click(await screen.findByRole('combobox', { name: 'Language' }));
+    const opts = await screen.findAllByRole('option');
+    expect(opts.length).toBeGreaterThan(20);
+    expect(screen.getByRole('option', { name: /Deutsch/ })).toBeInTheDocument();
+    expect(opts.filter(o => o.getAttribute('aria-selected') === 'true')).toHaveLength(1);
+  });
+
+  it('AC1 switches immediately and saves', async () => {
+    mockUpdateLang.mockResolvedValue({ language: 'de' });
+    renderApp();
+    await pick(/Deutsch/);
+    await waitFor(() => expect(mockUpdateLang).toHaveBeenCalledWith('de'));
+    await waitFor(() => expect(screen.getByRole('combobox', { name: /Sprache|Language/ })).toHaveTextContent('Deutsch'));
+  });
+
+  it('EC1 failed save shows an error and restores the previous language', async () => {
+    mockUpdateLang.mockRejectedValue(new Error('boom'));
+    renderApp();
+    await pick(/Deutsch/);
+    await screen.findByRole('alert');
+    expect(screen.getByRole('combobox', { name: 'Language' })).toHaveTextContent('English');
+  });
+
+  it('EC7 selecting the active language does not save', async () => {
+    renderApp();
+    await pick(/English/);
+    expect(mockUpdateLang).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+});

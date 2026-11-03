@@ -19,7 +19,7 @@ In your LibreChat `librechat.yaml` configuration file, add a custom endpoint ent
 endpoints:
   custom:
     - name: "Routerly"
-      apiKey: "sk-rt-YOUR_PROJECT_TOKEN"
+      apiKey: "sk-rt-YOUR_ROUTER_TOKEN"
       baseURL: "http://localhost:3000/v1"
       models:
         default: ["gpt-5-mini"]
@@ -32,7 +32,7 @@ endpoints:
       dropParams: []
 ```
 
-Replace `sk-rt-YOUR_PROJECT_TOKEN` with a valid project token from your Routerly dashboard (**Projects → your project → Tokens**).
+Replace `sk-rt-YOUR_ROUTER_TOKEN` with a valid router token from your Routerly dashboard (**Routers → your router → Tokens**).
 
 ### 2. Restart LibreChat
 
@@ -55,13 +55,13 @@ models:
   fetch: true
 ```
 
-Routerly returns the models registered in the project associated with the token. Users will see exactly the models you have configured in that project.
+Routerly returns the models registered in the router associated with the token. Users will see exactly the models you have configured in that router.
 
 ---
 
 ## Tips
 
-- **Multiple projects**: Add one `custom` entry per Routerly project token, each with a distinct `name`.
+- **Multiple routers**: Add one `custom` entry per Routerly router token, each with a distinct `name`.
 - **Routing transparency**: Each request goes through Routerly's full routing stack — routing policies, budget enforcement, and cost tracking all apply.
 - **API compatibility**: LibreChat uses the OpenAI `/v1/chat/completions` format. Anthropic-format models registered in Routerly are also available because Routerly normalises all requests internally.
 
@@ -71,4 +71,4 @@ Routerly returns the models registered in the project associated with the token.
 
 - [Open WebUI](./open-webui) — another self-hosted chat UI that works the same way
 - [API — LLM Proxy](../api/llm-proxy) — full endpoint reference
-- [Concepts — Projects](../concepts/projects) — how project tokens work
+- [Concepts — Routers](../concepts/routers) — how Router tokens work

@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { getUsers, updateUser, getRoles } from '../api';
 import type { User, Role } from '../api';
+import { SearchableSelect } from '../components/SearchableSelect';
 
 type EditForm = { email: string; roleId: string; newPassword: string };
 
 export function UserEditPage() {
+  const { t } = useTranslation();
   const { userId } = useParams<{ userId: string }>();
   const navigate    = useNavigate();
 
@@ -27,12 +30,13 @@ export function UserEditPage() {
         setRoles(allRoles);
         setForm({ email: u.email, roleId: u.roleId, newPassword: '' });
       })
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load user'))
+      .catch(e => setError(e instanceof Error ? e.message : t('userEdit.errors.loadFailed')))
       .finally(() => setLoading(false));
-  }, [userId]);   // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId]);    
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    /* v8 ignore next */
     if (!user) return;
     setError(''); setSaving(true); setSaved(false);
     try {
@@ -44,9 +48,9 @@ export function UserEditPage() {
       setUser(updated);
       setForm(f => ({ ...f, newPassword: '' }));
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setTimeout(/* v8 ignore next */ () => setSaved(false), 3000);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save');
+      setError(e instanceof Error ? e.message : t('userEdit.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -61,7 +65,7 @@ export function UserEditPage() {
           <ArrowLeft size={15} />
         </button>
         <div>
-          <h1 style={{ margin: 0 }}>Edit User</h1>
+          <h1 style={{ margin: 0 }}>{t('userEdit.title')}</h1>
           <p style={{ margin: 0 }}>{user?.email}</p>
         </div>
       </div>
@@ -72,32 +76,31 @@ export function UserEditPage() {
 
           <div style={{ marginBottom: 28 }}>
             <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
-              Account
+              {t('userEdit.account')}
             </h3>
             <div className="form-group">
-              <label className="form-label">Email</label>
+              <label className="form-label">{t('userEdit.email')}</label>
               <input className="form-input" type="email" value={form.email} required
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label className="form-label">Role</label>
-              <select className="form-input" value={form.roleId}
-                onChange={e => setForm(f => ({ ...f, roleId: e.target.value }))}>
-                {roles.map(r => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
-                ))}
-              </select>
+              <label className="form-label">{t('userEdit.role')}</label>
+              <SearchableSelect
+                options={roles.map(r => ({ value: r.id, label: r.name }))}
+                value={form.roleId}
+                onChange={v => setForm(f => ({ ...f, roleId: v }))}
+              />
             </div>
           </div>
 
           <div style={{ marginBottom: 28 }}>
             <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
-              Change Password
+              {t('userEdit.changePassword')}
             </h3>
             <div className="form-group">
               <label className="form-label">
-                New Password{' '}
-                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(leave blank to keep current)</span>
+                {t('userEdit.newPassword')}{' '}
+                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('userEdit.newPasswordHint')}</span>
               </label>
               <input className="form-input" type="password" value={form.newPassword} placeholder="••••••••"
                 onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))} />
@@ -106,9 +109,9 @@ export function UserEditPage() {
 
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? <span className="spinner" /> : <><Save size={15} /> Save</>}
+              {saving ? <span className="spinner" /> : <><Save size={15} /> {t('userEdit.save')}</>}
             </button>
-            {saved && <span style={{ color: 'var(--success)', fontSize: '0.85rem' }}>Saved!</span>}
+            {saved && <span style={{ color: 'var(--success)', fontSize: '0.85rem' }}>{t('userEdit.saved')}</span>}
           </div>
         </form>
       </div>

@@ -10,23 +10,38 @@ export function makeUserCommand(): Command {
   // ── user list ──
   cmd.command('list')
     .description('List all users')
+    .option('--json', 'Output as JSON')
     .addHelpText('after', `
 Examples:
-  # Show all dashboard users with their roles and project access
+  # Show all dashboard users with their roles and router access
   routerly user list
+
+  # Machine-readable output (id, email, roleId, routerIds, language)
+  routerly user list --json
 `)
-    .action(async () => {
+    .action(async (opts: { json?: boolean }) => {
       try {
         const users = await api<UserConfig[]>('GET', '/api/users');
+        if (opts.json) {
+          // Whitelist: the raw record carries secret-bearing fields that must not reach stdout.
+          console.log(JSON.stringify(users.map(u => ({
+            id: u.id,
+            email: u.email,
+            roleId: u.roleId,
+            routerIds: u.routerIds,
+            language: u.language ?? null,
+          })), null, 2));
+          return;
+        }
         if (users.length === 0) {
           console.log(chalk.yellow('No users yet. Use `routerly user add` to create one.'));
           return;
         }
         const table = new Table({
-          head: ['ID', 'Email', 'Role', 'Projects'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Email', 'Role', 'Routers'].map(h => chalk.cyan(h)),
         });
         for (const u of users) {
-          table.push([u.id, u.email, u.roleId, u.projectIds.join(', ') || 'all']);
+          table.push([u.id, u.email, u.roleId, u.routerIds.join(', ') || 'all']);
         }
         console.log(table.toString());
       } catch (err) {
@@ -46,17 +61,17 @@ Examples:
   # Create an admin user
   routerly user add --email admin@example.com --password secret --role admin
 
-  # Create a user restricted to specific projects
+  # Create a user restricted to specific routers
   routerly user add \\
     --email dev@example.com --password secret \\
-    --role developer --projects proj-1,proj-2
+    --role developer --routers proj-1,proj-2
 `)
     .requiredOption('--email <email>', 'User email')
     .option('--password <password>', 'Initial password')
     .option('--password-stdin', 'Read password from ROUTERLY_USER_PASSWORD env var')
     .option('--role <roleId>', 'Role ID to assign', 'viewer')
-    .option('--projects <ids>', 'Comma-separated project IDs this user can access (empty = all)')
-    .action(async (opts: { email: string; password?: string; passwordStdin?: boolean; role: string; projects?: string }) => {
+    .option('--routers <ids>', 'Comma-separated router IDs this user can access (empty = all)')
+    .action(async (opts: { email: string; password?: string; passwordStdin?: boolean; role: string; routers?: string }) => {
       let password = opts.password;
       if (opts.passwordStdin) {
         password = process.env.ROUTERLY_USER_PASSWORD;
@@ -69,7 +84,7 @@ Examples:
         email: opts.email,
         password,
         roleId: opts.role,
-        projectIds: (opts.projects ?? '').split(',').map((s: string) => s.trim()).filter(Boolean),
+        routerIds: (opts.routers ?? '').split(',').map((s: string) => s.trim()).filter(Boolean),
       };
 
       try {
@@ -81,6 +96,55 @@ Examples:
         } else {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         }
+        process.exit(1);
+      }
+    });
+
+  // ── user 2fa ──
+  const tfaCmd = cmd.command('2fa').description('Manage user two-factor authentication (admin only)');
+
+  tfaCmd.command('status <email>')
+    .description('Show 2FA status for a user')
+    .addHelpText('after', `
+Examples:
+  routerly user 2fa status alice@example.com
+`)
+    .action(async (email: string) => {
+      try {
+        const users = await api<UserConfig[]>('GET', '/api/users');
+        const user = users.find(u => u.email === email);
+        if (!user) {
+          console.error(chalk.red(`User "${email}" not found.`));
+          process.exit(1);
+          return;
+        }
+        const enabled = (user as UserConfig & { totpEnabled?: boolean }).totpEnabled === true;
+        console.log(`2FA for ${chalk.cyan(email)}: ${enabled ? chalk.green('enabled') : chalk.yellow('disabled')}`);
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  tfaCmd.command('reset <email>')
+    .description('Reset (disable) 2FA for a user — admin action')
+    .addHelpText('after', `
+Examples:
+  routerly user 2fa reset alice@example.com
+`)
+    .action(async (email: string) => {
+      try {
+        const users = await api<UserConfig[]>('GET', '/api/users');
+        const user = users.find(u => u.email === email);
+        if (!user) {
+          console.error(chalk.red(`User "${email}" not found.`));
+          process.exit(1);
+          return;
+        }
+        await api<{ ok: boolean }>('POST', `/api/users/${encodeURIComponent(user.id)}/2fa/reset`);
+        console.log(chalk.green(`✓ 2FA reset for "${email}".`));
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });

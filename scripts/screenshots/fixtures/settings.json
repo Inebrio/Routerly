@@ -1,0 +1,32 @@
+{
+  "port": 0,
+  "host": "127.0.0.1",
+  "dashboardEnabled": true,
+  "logLevel": "info",
+  "publicUrl": "http://127.0.0.1:0",
+  "channel": "latest",
+  "metricsEnabled": false,
+  "telemetry": { "enabled": false, "installId": "00000000-0000-0000-0000-000000000000" },
+  "requireMfa": false,
+  "notifications": {
+    "channels": [
+      {
+        "id": "channel-smtp-demo",
+        "provider": "smtp",
+        "name": "Ops Mailer",
+        "fromAddress": "alerts@acme-demo.example",
+        "fromName": "Acme Demo Alerts",
+        "host": "smtp.acme-demo.example",
+        "port": 587,
+        "secure": false,
+        "username": "alerts@acme-demo.example",
+        "password": "not-a-real-password"
+      },
+      {
+        "id": "channel-dashboard-demo",
+        "provider": "dashboard",
+        "name": "In-app inbox"
+      }
+    ]
+  }
+}

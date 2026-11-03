@@ -1,0 +1,161 @@
+import OpenAI from 'openai';
+import type {
+  ChatCompletionRequest,
+  ChatCompletionResponse,
+  ModelConfig,
+  StreamChunk,
+  MessagesRequest,
+  MessagesResponse,
+} from '@routerly/shared';
+import type { ProviderAdapter } from './types.js';
+import { forwardableResponseHeaders, developerAsSystem, type CallOptions } from './passthrough.js';
+import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages-compat.js';
+
+/**
+ * Error carrying the SDK-style `status`/`headers`/`error` shape so the resilience
+ * classifier sees the real HTTP status and retry-after instead of a generic fault.
+ */
+async function upstreamError(response: Response): Promise<Error> {
+  const text = await response.text().catch(() => '');
+  let body: unknown;
+  try { body = JSON.parse(text); } catch { /* non-JSON body */ }
+  return Object.assign(new Error(`Custom provider returned ${response.status}: ${text}`), {
+    status: response.status,
+    headers: Object.fromEntries(response.headers),
+    ...(body !== undefined ? { error: body } : {}),
+  });
+}
+
+/**
+ * Generic adapter for any provider that exposes an OpenAI-compatible API.
+ * `developer` messages are sent as `system`: DeepSeek and most compatible servers reject the role.
+ * Requires a custom endpoint in ModelConfig.
+ *
+ * chatCompletion and streamCompletion use raw fetch to guarantee 100%
+ * wire-format transparency — the OpenAI SDK may normalize/strip non-standard
+ * fields (e.g. DeepSeek reasoning_content) before sending.
+ */
+export class CustomAdapter implements ProviderAdapter {
+  // Resolve the model identifier to send to the upstream API.
+  // Prefers the explicit upstreamModelId field; falls back to stripping the provider prefix.
+  // e.g. upstreamModelId="deepseek-reasoner" → "deepseek-reasoner"
+  // e.g. id="deepseek/deepseek-r1" (no upstreamModelId) → "deepseek-r1"
+  private getUpstreamModelId(model: ModelConfig): string {
+    if (model.upstreamModelId) return model.upstreamModelId;
+    if (model.id.includes('/')) {
+      return model.id.split('/').slice(1).join('/');
+    }
+    return model.id;
+  }
+
+  async chatCompletion(
+    request: ChatCompletionRequest,
+    model: ModelConfig,
+    opts?: CallOptions,
+  ): Promise<ChatCompletionResponse> {
+    if (!model.endpoint) {
+      throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
+    }
+    const upstreamModel = this.getUpstreamModelId(model);
+    const { stream: _stream, ...rest } = request;
+    const response = await fetch(`${model.endpoint}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        ...opts?.headers,
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
+      },
+      // `stream` stays exactly as the client sent it.
+      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), ...(request.stream === false ? { stream: false } : {}), model: upstreamModel }),
+      signal: AbortSignal.timeout(model.timeout ?? 60000),
+    });
+    opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
+    if (!response.ok) {
+      throw await upstreamError(response);
+    }
+    return response.json() as Promise<ChatCompletionResponse>;
+  }
+
+  async *streamCompletion(
+    request: ChatCompletionRequest,
+    model: ModelConfig,
+    opts?: CallOptions,
+  ): AsyncIterable<StreamChunk> {
+    if (!model.endpoint) {
+      throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
+    }
+    const upstreamModel = this.getUpstreamModelId(model);
+    const { stream: _stream, ...rest } = request;
+    // Timeout covers the wait for the response headers only; an established stream may run longer.
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(new DOMException('Request timed out.', 'TimeoutError')), model.timeout ?? 60000);
+    const response = await fetch(`${model.endpoint}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        ...opts?.headers,
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
+      },
+      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), model: upstreamModel, stream: true }),
+      signal: ctl.signal,
+    }).finally(() => clearTimeout(timer));
+    opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
+    if (!response.ok) {
+      throw await upstreamError(response);
+    }
+    if (!response.body) {
+      throw new Error('Custom provider returned no response body for streaming.');
+    }
+    // Parse SSE frames from the response body.
+    const decoder = new TextDecoder();
+    let buf = '';
+    for await (const raw of response.body as unknown as AsyncIterable<Uint8Array>) {
+      buf += decoder.decode(raw, { stream: true });
+      const lines = buf.split('\n');
+      // split() always returns ≥1 element so pop() never returns undefined.
+      buf = lines.pop()!;
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') return;
+        try {
+          yield JSON.parse(data) as StreamChunk;
+        } catch {
+          // Skip malformed SSE frames.
+        }
+      }
+    }
+    // Flush any remaining buffer content.
+    if (buf.startsWith('data: ')) {
+      const data = buf.slice(6).trim();
+      if (data && data !== '[DONE]') {
+        try { yield JSON.parse(data) as StreamChunk; } catch { /* skip */ }
+      }
+    }
+  }
+
+  async messages(request: MessagesRequest, model: ModelConfig): Promise<MessagesResponse> {
+    // ponytail: messages() uses the SDK — it converts Anthropic→OpenAI format anyway,
+    // so SDK normalization is harmless here; reasoning_content issue is OpenAI-format only.
+    if (!model.endpoint) {
+      throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
+    }
+    const client = new OpenAI({ apiKey: model.apiKey ?? 'custom', baseURL: model.endpoint, timeout: model.timeout ?? 60000, maxRetries: 0 });
+    const upstreamModel = this.getUpstreamModelId(model);
+    const { messages, system } = anthropicToOpenAIMessages(request);
+    const openAIMessages = system
+      ? [{ role: 'system' as const, content: system }, ...messages]
+      : messages;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
+    const { stream: _stream, ...rest } = request as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response: any = await client.chat.completions.create({
+      ...rest,
+      messages: openAIMessages,
+      model: upstreamModel,
+      stream: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
+    } as any);
+    return openAIToAnthropicResponse(response, upstreamModel);
+  }
+}

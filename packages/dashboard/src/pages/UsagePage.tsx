@@ -1,9 +1,32 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useNavigate } from 'react-router-dom';
-import { getUsage, getProjects, type UsageStats, type Project } from '../api';
+import { Star, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { CALL_TYPES, REQUEST_TYPES, requestTypeLabel, type RequestType } from '@routerly/shared';
+import { useAuth } from '../AuthContext.js';
+import { getUsage, getRouters, getModels, type UsageStats, type Router, type Model } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
-import { DateRangePicker, PRESETS, RECENT_PRESETS, type DateRange } from '../components/DateRangePicker';
+import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker';
+import { CostCard, SavingsCard, TokensCard, savingsSeriesData, type SavingsMetric } from '../components/savings';
 import { useFilterState } from '../hooks/useFilterState';
+import { tokenLabel } from '../utils/tokenLabel';
+import { useProviderLabels } from '../hooks/useProviderLabels';
+import { isCaptureMode } from '../utils/captureMode';
+
+type ModelSortKey = 'rank' | 'model' | 'provider' | 'calls' | 'errors' | 'successRate'
+  | 'avgLatency' | 'p95Latency' | 'inputTokens' | 'outputTokens' | 'costPer1k' | 'cost';
+
+/** Rows the model ranking shows before it has to be expanded. */
+const MODEL_ROWS_COLLAPSED = 10;
+type SortDir = 'asc' | 'desc';
+
+function SortIcon({ col, sortKey, sortDir }: { col: ModelSortKey; sortKey: ModelSortKey; sortDir: SortDir }) {
+  if (col !== sortKey) return <ChevronsUpDown size={13} style={{ opacity: 0.35, marginLeft: 4, flexShrink: 0 }} />;
+  return sortDir === 'asc'
+    ? <ChevronUp size={13} style={{ marginLeft: 4, flexShrink: 0, color: 'var(--accent)' }} />
+    : <ChevronDown size={13} style={{ marginLeft: 4, flexShrink: 0, color: 'var(--accent)' }} />;
+}
 
 function FilterLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -13,58 +36,131 @@ function FilterLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+function fmtCost(n: number): string {
+  if (n === 0) return '$0';
+  if (n < 0.01) return `$${n.toFixed(4)}`;
+  return `$${n.toFixed(n < 1 ? 3 : 2)}`;
+}
+
+/**
+ * A single call costs a fraction of a cent, and eight fixed decimals turn the
+ * column into a wall of zeros. Three significant digits keep the number
+ * readable and still non-zero down to a millionth of a dollar.
+ */
+function fmtCallCost(n: number): string {
+  if (!n) return '$0';
+  if (n < 0.000001) return '<$0.000001';
+  return `$${Number(n.toPrecision(3))}`;
+}
+
+/** Who made the call: the client, or Routerly on its own behalf (routing, guardrail, experiment judge). */
+function callerFilterLabel(t: TFunction, key: 'all' | 'completion' | 'routing' | 'guardrail' | 'judge'): string {
+  return t(`usage.page.caller.${key}`);
+}
+/** Only the calls Routerly makes on its own behalf are colour-coded: most rows
+ *  are completions, so badging those too would just tint the whole table. */
+const CALLER_COLORS: Record<string, string> = { routing: 'var(--accent)', guardrail: '#ef4444', judge: 'var(--warning)' };
+
+/** Numbers read as a column only when they are right-aligned and same-width. */
+const numTh: React.CSSProperties = { textAlign: 'right' };
+const numTd: React.CSSProperties = { textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
+
+/** The window the page opens on, taken from the presets so label and dates agree. */
+const THIS_MONTH = PRESETS.find(p => p.label === 'This month');
+const ALL_TIME: DateRange = { from: '', to: '', label: 'All time' };
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export function UsagePage() {
+  const { t } = useTranslation();
+  const providerLabel = useProviderLabels();
+  const { can } = useAuth();
+  const canReport = can('report:read');
   const [stats, setStats]               = useState<UsageStats | null>(null);
-  const [projects, setProjects]         = useState<Project[]>([]);
-  const [dateRange, setDateRange]       = useFilterState<DateRange>({ key: 'usage-filters-dateRange', defaultValue: { from: '', to: '', label: 'This month' } });
-  const [projectIds, setProjectIds]     = useFilterState<string[]>({ key: 'usage-filters-projectIds', defaultValue: [] });
+  const [routers, setRouters]         = useState<Router[]>([]);
+  const [allModels, setAllModels]       = useState<Model[]>([]);
+  // "This month" is the default, and it has to arrive as a real range: an empty
+  // one used to be filled in on mount, which overwrote a stored "All time" on
+  // every reload and lost the filter the user had picked.
+  const [dateRange, setDateRange]       = useFilterState<DateRange>({ key: 'usage-filters-dateRange', defaultValue: THIS_MONTH?.range() ?? ALL_TIME, deserialize: parseStoredRange });
+  const [routerIds, setRouterIds]     = useFilterState<string[]>({ key: 'usage-filters-routerIds', defaultValue: [] });
   const [modelIds, setModelIds]         = useFilterState<string[]>({ key: 'usage-filters-modelIds', defaultValue: [] });
-  const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing'>({ key: 'usage-filters-callType', defaultValue: 'all' });
-  const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
+  const [tokenIds, setTokenIds]         = useFilterState<string[]>({ key: 'usage-filters-tokenIds', defaultValue: [] });
+  const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail' | 'judge'>({ key: 'usage-filters-callType', defaultValue: 'all' });
+  const [requestTypeFilter, setRequestTypeFilter] = useFilterState<'all' | RequestType>({ key: 'usage-filters-requestType', defaultValue: 'all' });
+  const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error' | 'blocked'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
+  const [sessionId, setSessionId]     = useFilterState<string>({ key: 'usage-filters-sessionId', defaultValue: '' });
+  const [endUserId, setEndUserId]     = useFilterState<string>({ key: 'usage-filters-endUserId', defaultValue: '' });
+  const [tagFilter, setTagFilter]     = useFilterState<string>({ key: 'usage-filters-tag', defaultValue: '' });
+  // The savings layer rides a fetch of its own: the counterfactual is expensive
+  // and the record table polls every 2s, so it follows the filters and nothing
+  // else (T209).
+  const [savingsStats, setSavingsStats] = useState<UsageStats | null>(null);
+  const [savingsMetric, setSavingsMetric] = useFilterState<SavingsMetric>({ key: 'usage-filters-savingsMetric', defaultValue: 'cost' });
   const [loading, setLoading]           = useState(true);
   const [fetchError, setFetchError]     = useState<string | null>(null);
   const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
-  const [pollInterval, setPollInterval] = useFilterState<number>({ key: 'usage-filters-pollInterval', defaultValue: 30_000 });
+  const [pollInterval, setPollInterval] = useFilterState<number>({ key: 'usage-filters-pollInterval', defaultValue: 2_000 });
+  // Live mode and the poll interval are two halves of one choice, so they are
+  // remembered together: restoring one without the other showed "30s" selected
+  // while the page was really polling every 2s.
+  const [liveMode, setLiveMode]         = useFilterState<boolean>({ key: 'usage-filters-liveMode', defaultValue: true });
   const [refreshing, setRefreshing]     = useState(false);
   const [page, setPage]                 = useState(1);
   const [pageSize]                      = useState(100);
+  const [modelSortKey, setModelSortKey] = useFilterState<ModelSortKey>({ key: 'usage-filters-modelSortKey', defaultValue: 'rank' });
+  const [modelSortDir, setModelSortDir] = useFilterState<SortDir>({ key: 'usage-filters-modelSortDir', defaultValue: 'asc' });
+  const [newRowIds, setNewRowIds]       = useState<ReadonlySet<string>>(new Set());
+  // A gateway with many models makes this ranking longer than the page: it opens
+  // on the head of the current sort and expands on demand.
+  const [showAllModels, setShowAllModels] = useState(false);
+  const latestTimestampRef              = useRef<string | null>(null);
   const navigate = useNavigate();
 
   const POLL_OPTIONS: { label: string; value: number }[] = [
-    { label: 'Off',  value: 0 },
-    { label: '5s',   value: 5_000 },
-    { label: '15s',  value: 15_000 },
-    { label: '30s',  value: 30_000 },
-    { label: '1m',   value: 60_000 },
-    { label: '5m',   value: 300_000 },
+    { label: t('usage.page.poll.off'), value: 0 },
+    { label: t('usage.page.poll.5s'),  value: 5_000 },
+    { label: t('usage.page.poll.15s'), value: 15_000 },
+    { label: t('usage.page.poll.30s'), value: 30_000 },
+    { label: t('usage.page.poll.1m'),  value: 60_000 },
+    { label: t('usage.page.poll.5m'),  value: 300_000 },
   ];
 
-  // Initialize date range to "This month" if not already set,
-  // or re-apply stale relative presets (e.g. "Questo mese" saved on a previous day).
+  const handleToggleLive = useCallback(() => {
+    setLiveMode(prev => {
+      const next = !prev;
+      setPollInterval(next ? 2_000 : 30_000);
+      return next;
+    });
+  }, [setPollInterval]);
+
+  // A relative preset stored yesterday still says "This month" but holds
+  // yesterday's dates: re-apply it so the label and the window agree again.
+  // Anything else the user picked, custom range or All time, is left alone.
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
-    // Check if this is a recent (minutes/hours) preset — those are always recalculated on fetch
-    const isRecentPreset = RECENT_PRESETS.some(p => p.label === dateRange.label);
-    if (isRecentPreset) return; // will be recalculated by fetchStats
-
-    if (!dateRange.from && !dateRange.to) {
-      // First visit: default to this month
-      const now = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-      setDateRange({ from, to: today, label: 'Questo mese' });
-    } else if (dateRange.to && dateRange.to.slice(0, 10) < today) {
-      // Stale "to" date — if this was a relative preset, recompute it
-      const preset = PRESETS.find(p => p.label === dateRange.label);
-      if (preset) setDateRange(preset.range());
-    }
+    if (RECENT_PRESETS.some(p => p.label === dateRange.label)) return;
+    if (!dateRange.to || dateRange.to.slice(0, 10) >= today) return;
+    const preset = PRESETS.find(p => p.label === dateRange.label);
+    if (preset) setDateRange(preset.range());
   }, []);
 
   useEffect(() => {
-    getProjects().then(setProjects).catch(console.error);
+    getRouters().then(setRouters).catch(console.error);
+    // ponytail: fetch stable model list once for filter options so the dropdown
+    // does not collapse when a model filter is active (server-filtered records
+    // would otherwise shrink the option list)
+    if (can('model:read')) getModels().then(setAllModels).catch(console.error);
   }, []);
 
-  const fetchStats = useCallback(() => {
-    // For recent (minutes/hours) presets, recalculate the range on every fetch
+  useEffect(() => {
+    latestTimestampRef.current = null;
+    setNewRowIds(new Set());
+  }, [dateRange, page, pageSize, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter, sessionId, endUserId, tagFilter]);
+
+  const fetchStats = useCallback((): Promise<void> => {
+    if (!canReport) return Promise.resolve();
+    const prevMax = latestTimestampRef.current;
     let from = dateRange.from || undefined;
     let to = dateRange.to || undefined;
     const recentPreset = RECENT_PRESETS.find(p => p.label === dateRange.label);
@@ -74,14 +170,38 @@ export function UsagePage() {
       to = fresh.to;
     }
     const period = from || to ? 'custom' : 'all';
-    return getUsage(period, undefined, from, to, page, pageSize)
-      .then(data => { setStats(data); setLastUpdated(new Date()); setFetchError(null); })
+    return getUsage(period, undefined, from, to, page, pageSize, {
+      routerIds,
+      modelIds,
+      tokenIds,
+      callType: callTypeFilter,
+      requestType: requestTypeFilter,
+      outcome: outcomeFilter,
+      sessionId: sessionId.trim(),
+      endUserId: endUserId.trim(),
+      tag: tagFilter.trim(),
+    })
+      .then(data => {
+        if (prevMax !== null) {
+          const ids = new Set(data.records.filter(r => r.timestamp > prevMax).map(r => r.id));
+          if (ids.size > 0) {
+            setNewRowIds(ids);
+            setTimeout(() => setNewRowIds(new Set()), 3_000);
+          }
+        }
+        const maxTs = data.records.reduce<string>((max, r) => r.timestamp > max ? r.timestamp : max, '');
+        if (maxTs) latestTimestampRef.current = maxTs;
+
+        setStats(data);
+        setLastUpdated(new Date());
+        setFetchError(null);
+      })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
         setFetchError(msg);
         console.error('Failed to load usage stats:', msg);
       });
-  }, [dateRange, page, pageSize]);
+  }, [dateRange, page, pageSize, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter, sessionId, endUserId, tagFilter]);
 
   const handleRefreshNow = useCallback(() => {
     setRefreshing(true);
@@ -96,134 +216,358 @@ export function UsagePage() {
     return () => clearInterval(id);
   }, [fetchStats, pollInterval]);
 
-  // Reset page when filters change
-  useEffect(() => { setPage(1); }, [dateRange, projectIds, modelIds, callTypeFilter, outcomeFilter]);
+  useEffect(() => { setPage(1); }, [dateRange, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter, sessionId, endUserId, tagFilter]);
 
-  // Available model options — derived from all records in the current period
-  const modelOptions = useMemo(() => {
-    if (!stats) return [];
-    const ids = Array.from(new Set(stats.records.map(r => r.modelId))).sort();
-    return ids.map(id => ({ value: id, label: id }));
-  }, [stats]);
+  // Savings over the same window and the same filters, one page of records asked
+  // for because only the aggregates are read here (T209).
+  useEffect(() => {
+    if (!canReport) return;
+    let from = dateRange.from || undefined;
+    let to = dateRange.to || undefined;
+    const recentPreset = RECENT_PRESETS.find(p => p.label === dateRange.label);
+    if (recentPreset) {
+      const fresh = recentPreset.range();
+      from = fresh.from;
+      to = fresh.to;
+    }
+    const period = from || to ? 'custom' : 'all';
+    getUsage(period, undefined, from, to, 1, 1, {
+      routerIds,
+      modelIds,
+      tokenIds,
+      callType: callTypeFilter,
+      requestType: requestTypeFilter,
+      outcome: outcomeFilter,
+      sessionId: sessionId.trim(),
+      endUserId: endUserId.trim(),
+      tag: tagFilter.trim(),
+      series: true,
+      savings: true,
+    })
+      .then(setSavingsStats)
+      .catch(() => setSavingsStats(null));
+  }, [dateRange, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter, sessionId, endUserId, tagFilter]);
 
-  const projectOptions = useMemo(
-    () => projects.map(p => ({ value: p.id, label: p.name })),
-    [projects],
+  const savingsData = useMemo(() => savingsSeriesData(savingsStats?.series), [savingsStats]);
+
+  // Both type filters are built from what the window actually holds (T210): the
+  // static lists offered nine buttons where the traffic had two, and a filter
+  // whose every button but one returns nothing is noise. A filter still renders
+  // while it is set, otherwise picking the only value would hide the way back.
+  const callerOptions = useMemo(
+    () => CALL_TYPES.filter(t => (stats?.byCallType?.[t] ?? 0) > 0),
+    [stats],
+  );
+  const requestTypeOptions = useMemo(
+    () => REQUEST_TYPES.filter(t => (stats?.byRequestType?.[t] ?? 0) > 0),
+    [stats],
   );
 
-  const filteredRecords = useMemo(() => {
-    if (!stats) return [];
-    return stats.records.filter(r => {
-      if (projectIds.length > 0 && !projectIds.includes(r.projectId)) return false;
-      if (modelIds.length > 0 && !modelIds.includes(r.modelId)) return false;
-      if (callTypeFilter !== 'all' && (r.callType ?? 'completion') !== callTypeFilter) return false;
-      if (outcomeFilter !== 'all' && r.outcome !== outcomeFilter) return false;
-      return true;
-    });
-  }, [stats, projectIds, modelIds, callTypeFilter, outcomeFilter]);
+  // ponytail: model options sourced from getModels() (stable, unfiltered) so
+  // the dropdown does not shrink when a model filter is active
+  const modelOptions = useMemo(
+    () => allModels.map(m => ({ value: m.id, label: m.id })),
+    [allModels],
+  );
 
-  const hasActiveFilters = projectIds.length > 0 || modelIds.length > 0 || callTypeFilter !== 'all' || outcomeFilter !== 'all';
+  const routerOptions = useMemo(
+    () => routers.map(p => ({ value: p.id, label: p.name })),
+    [routers],
+  );
+
+  // Tokens are named per client, so filtering by one answers "what is this caller
+  // doing" without the caller sending anything. Scoped to the selected routers
+  // when there are any, otherwise the list is every token the gateway knows.
+  const tokenOptions = useMemo(() => {
+    const scope = routerIds.length > 0 ? routers.filter(p => routerIds.includes(p.id)) : routers;
+    return scope.flatMap(p =>
+      (p.tokens ?? []).map(t => ({
+        value: t.id,
+        label: routerIds.length === 1 ? tokenLabel(t) : `${p.name} / ${tokenLabel(t)}`,
+      })),
+    );
+  }, [routers, routerIds]);
+
+  /** Token name by id, for the caller shown under each call's router. */
+  const tokenNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const p of routers) for (const t of p.tokens ?? []) map[t.id] = tokenLabel(t);
+    return map;
+  }, [routers]);
+
+  // Server now filters; records are already consistent with active filters.
+  const displayRecords = stats?.records ?? [];
+
+  const hasActiveFilters = routerIds.length > 0 || modelIds.length > 0 || tokenIds.length > 0 || callTypeFilter !== 'all' || requestTypeFilter !== 'all' || outcomeFilter !== 'all' || sessionId !== '' || endUserId !== '' || tagFilter !== '';
   const hasReset = hasActiveFilters;
+
+  function handleModelSort(key: ModelSortKey) {
+    if (key === modelSortKey) setModelSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setModelSortKey(key); setModelSortDir('asc'); }
+  }
+
+  // Compute stable rank (cost-performance) over the full byModel set once.
+  // rank metric = costPer1k / successRate; lower = better. Missing data → last.
+  const rankedRows = useMemo(() => {
+    if (!stats) return [];
+    const entries = Object.entries(stats.byModel).map(([modelId, v]) => {
+      const totalTok = v.inputTokens + v.outputTokens;
+      const successRate = v.calls > 0 ? v.success / v.calls : 0;
+      const costPer1k = totalTok > 0 ? (v.cost * 1000) / totalTok : Infinity;
+      // metric: lower is better; Infinity for zero-success or zero-token models
+      const metric = successRate > 0 && totalTok > 0 ? costPer1k / successRate : Infinity;
+      // ponytail: authoritative source first; split fallback only for slash-ids
+      const provider: string = allModels.find(m => m.id === modelId)?.provider
+        ?? (modelId.includes('/') ? (modelId.split('/')[0] ?? modelId) : modelId);
+      return { modelId, v, totalTok, successRate, costPer1k, metric, provider };
+    });
+    // Stable sort by metric to assign rank (ties share the same rank)
+    const sorted = [...entries].sort((a, b) => a.metric - b.metric);
+    let rank = 1;
+    sorted.forEach((row, i) => {
+      if (i > 0 && row.metric !== sorted[i - 1]!.metric) rank = i + 1;
+      (row as typeof row & { rank: number }).rank = row.metric === Infinity ? Infinity : rank;
+    });
+    return entries.map(row => ({
+      ...row,
+      rank: (row as typeof row & { rank: number }).rank,
+    }));
+  }, [stats, allModels]);
+
+  // The summary carries no token totals, but the per-model breakdown does, and it
+  // covers exactly the same filtered window: adding it up is the whole widget.
+  const tokenTotals = useMemo(() => {
+    const rows = Object.values(stats?.byModel ?? {});
+    return {
+      input: rows.reduce((sum, v) => sum + v.inputTokens, 0),
+      output: rows.reduce((sum, v) => sum + v.outputTokens, 0),
+      cached: rows.reduce((sum, v) => sum + v.cachedInputTokens, 0),
+    };
+  }, [stats]);
+
+  // Best = rank 1 (lowest metric among finite ranks)
+  const bestModelId = useMemo(() => {
+    const best = rankedRows.find(r => r.rank === 1);
+    return best?.modelId ?? null;
+  }, [rankedRows]);
+
+  const sortedModelRows = useMemo(() => {
+    return [...rankedRows].sort((a, b) => {
+      // missing/Infinity values always sink to bottom regardless of direction
+      const sentinel = (v: number) => v === Infinity || isNaN(v) ? Infinity : v;
+      const strOrLast = (s: string) => s;
+      let cmp = 0;
+      switch (modelSortKey) {
+        case 'rank':         cmp = sentinel(a.rank) - sentinel(b.rank); break;
+        case 'model':        cmp = strOrLast(a.modelId).localeCompare(strOrLast(b.modelId)); break;
+        case 'provider':     cmp = a.provider.localeCompare(b.provider); break;
+        case 'calls':        cmp = a.v.calls - b.v.calls; break;
+        case 'errors':       cmp = a.v.errors - b.v.errors; break;
+        case 'successRate':  cmp = a.successRate - b.successRate; break;
+        case 'avgLatency':   cmp = a.v.avgLatencyMs - b.v.avgLatencyMs; break;
+        case 'p95Latency':   cmp = a.v.p95LatencyMs - b.v.p95LatencyMs; break;
+        case 'inputTokens':  cmp = a.v.inputTokens - b.v.inputTokens; break;
+        case 'outputTokens': cmp = a.v.outputTokens - b.v.outputTokens; break;
+        case 'costPer1k':    cmp = sentinel(a.costPer1k) - sentinel(b.costPer1k); break;
+        case 'cost':         cmp = a.v.cost - b.v.cost; break;
+      }
+      // For numeric sentinels: Infinity rows always sink to bottom
+      if (modelSortKey !== 'model' && modelSortKey !== 'provider') {
+        const aInf = sentinel(
+          modelSortKey === 'rank' ? a.rank :
+          modelSortKey === 'costPer1k' ? a.costPer1k : 0
+        ) === Infinity;
+        const bInf = sentinel(
+          modelSortKey === 'rank' ? b.rank :
+          modelSortKey === 'costPer1k' ? b.costPer1k : 0
+        ) === Infinity;
+        if (aInf && bInf) return 0;
+        if (aInf) return 1;
+        if (bInf) return -1;
+      }
+      return modelSortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [rankedRows, modelSortKey, modelSortDir]);
+
+  if (!canReport) {
+    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>{t('overview.noPermission')}</div>;
+  }
 
   return (
     <>
       <div className="page-header">
-        <h1>Usage</h1>
-        <p>
-          Detailed call logs and per-model breakdown
-          {lastUpdated && (
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 12 }}>
-              · aggiornato alle {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
-          <span style={{ marginLeft: 16, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <h1 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {t('usage.page.title')}
+              {liveMode && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em',
+                  padding: '3px 10px', borderRadius: 99,
+                  background: 'rgba(239,68,68,0.12)',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239,68,68,0.35)',
+                  animation: 'live-pulse 2s ease-in-out infinite',
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+                  LIVE
+                </span>
+              )}
+            </h1>
+            <p style={{ margin: 0 }}>
+              {t('usage.page.subtitle')}
+              {lastUpdated && (
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: 8 }}>
+                  {/* Fixed placeholder while capturing documentation screenshots: the real
+                      clock is wall-clock derived and differs between two runs of the same
+                      commit. See ../utils/captureMode. */}
+                  {t('usage.page.updatedAt', { time: isCaptureMode() ? '12:00:00 PM' : lastUpdated.toLocaleTimeString() })}
+                </span>
+              )}
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, paddingTop: 4 }}>
             {POLL_OPTIONS.map(o => (
               <button
                 key={o.value}
-                className={`btn btn-sm ${pollInterval === o.value ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setPollInterval(o.value)}
-              >
+                className={`btn btn-sm ${!liveMode && pollInterval === o.value ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => { setLiveMode(false); setPollInterval(o.value); }}
+                  >
                 {o.label}
               </button>
             ))}
             <button
+              className={`btn btn-sm ${liveMode ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={handleToggleLive}
+              style={{
+                marginLeft: 4,
+                ...(liveMode ? { background: '#ef4444', borderColor: '#ef4444', color: 'white' } : {}),
+              }}
+              title={liveMode ? t('usage.page.liveButtonTitle.disable') : t('usage.page.liveButtonTitle.enable')}
+            >
+              {t('usage.page.liveButton')}
+            </button>
+            <button
               className="btn btn-sm btn-secondary"
               onClick={handleRefreshNow}
               disabled={refreshing}
-              title="Aggiorna subito"
+              title={t('usage.page.refreshNowTitle')}
               style={{ marginLeft: 4 }}
             >
-              {refreshing ? '…' : '↻ Now'}
+              {refreshing ? '…' : t('usage.page.refreshNow')}
             </button>
-          </span>
-        </p>
+          </div>
+        </div>
       </div>
-      <div className="page-body">
+      <div className="page-body" style={{ paddingTop: 24 }}>
         {/* Filters */}
         <div className="card" style={{ padding: '14px 18px', marginBottom: 20, position: 'relative', zIndex: 10 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
 
-            {/* Date range picker */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <FilterLabel>Period</FilterLabel>
+              <FilterLabel>{t('usage.page.filters.period')}</FilterLabel>
               <DateRangePicker value={dateRange} onChange={setDateRange} />
             </div>
 
-            {/* Project multi-select */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
-              <FilterLabel>Project</FilterLabel>
+              <FilterLabel>{t('usage.page.filters.router')}</FilterLabel>
               <MultiSelect
-                options={projectOptions}
-                value={projectIds}
-                onChange={setProjectIds}
-                placeholder="All Projects"
+                options={routerOptions}
+                value={routerIds}
+                onChange={setRouterIds}
+                placeholder={t('usage.page.filters.allRouters')}
               />
             </div>
 
-            {/* Model multi-select */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
-              <FilterLabel>Model</FilterLabel>
+              <FilterLabel>{t('usage.page.filters.model')}</FilterLabel>
               <MultiSelect
                 options={modelOptions}
                 value={modelIds}
                 onChange={setModelIds}
-                placeholder="All Models"
+                placeholder={t('usage.page.filters.allModels')}
               />
             </div>
 
-            {/* Call type */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <FilterLabel>Type</FilterLabel>
-              <div style={{ display: 'flex', gap: 4 }}>
-                {(['all', 'completion', 'routing'] as const).map(f => (
-                  <button key={f} className={`btn btn-sm ${callTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setCallTypeFilter(f)}>
-                    {f === 'all' ? 'All' : f === 'completion' ? 'Completion' : 'Router'}
-                  </button>
-                ))}
+            {(tokenOptions.length > 1 || tokenIds.length > 0) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
+                <FilterLabel>{t('usage.page.filters.token')}</FilterLabel>
+                <MultiSelect
+                  options={tokenOptions}
+                  value={tokenIds}
+                  onChange={setTokenIds}
+                  placeholder={t('usage.page.filters.allTokens')}
+                />
               </div>
-            </div>
+            )}
 
-            {/* Outcome */}
+            {(callerOptions.length > 1 || callTypeFilter !== 'all') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <FilterLabel>{t('usage.page.filters.caller')}</FilterLabel>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {(['all', ...callerOptions] as const).map(f => (
+                    <button key={f} className={`btn btn-sm ${callTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => setCallTypeFilter(f)}>
+                      {callerFilterLabel(t, f)}
+                      {f !== 'all' && <span style={{ opacity: 0.6, marginLeft: 5 }}>{stats?.byCallType?.[f] ?? 0}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(requestTypeOptions.length > 1 || requestTypeFilter !== 'all') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <FilterLabel>{t('usage.page.filters.type')}</FilterLabel>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {(['all', ...requestTypeOptions] as const).map(f => (
+                    <button key={f} className={`btn btn-sm ${requestTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => setRequestTypeFilter(f)}>
+                      {f === 'all' ? t('usage.page.filters.all') : requestTypeLabel(f)}
+                      {f !== 'all' && <span style={{ opacity: 0.6, marginLeft: 5 }}>{stats?.byRequestType?.[f] ?? 0}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <FilterLabel>Status</FilterLabel>
+              <FilterLabel>{t('usage.page.filters.status')}</FilterLabel>
               <div style={{ display: 'flex', gap: 4 }}>
-                {(['all', 'success', 'error'] as const).map(f => (
+                {(['all', 'success', 'blocked', 'error'] as const).map(f => (
                   <button key={f} className={`btn btn-sm ${outcomeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setOutcomeFilter(f)}>
-                    {f === 'all' ? 'All' : f === 'success' ? 'Success' : 'Error'}
+                    {f === 'all' ? t('usage.page.filters.all') : f === 'success' ? t('usage.page.filters.success') : f === 'blocked' ? t('usage.page.filters.blocked') : t('usage.page.filters.error')}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Reset */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 160 }}>
+              <FilterLabel>{t('usage.page.filters.sessionId')}</FilterLabel>
+              <input className="form-input" value={sessionId} onChange={e => setSessionId(e.target.value)}
+                placeholder={t('usage.page.filters.sessionIdPlaceholder')} aria-label={t('usage.page.filters.sessionId')} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 160 }}>
+              <FilterLabel>{t('usage.page.filters.endUser')}</FilterLabel>
+              <input className="form-input" value={endUserId} onChange={e => setEndUserId(e.target.value)}
+                placeholder={t('usage.page.filters.endUserPlaceholder')} aria-label={t('usage.page.filters.endUser')} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 160 }}>
+              <FilterLabel>{t('usage.page.filters.tag')}</FilterLabel>
+              <input className="form-input" value={tagFilter} onChange={e => setTagFilter(e.target.value)}
+                placeholder={t('usage.page.filters.tagPlaceholder')} aria-label={t('usage.page.filters.tag')} />
+            </div>
+
             {hasReset && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <FilterLabel>&nbsp;</FilterLabel>
                 <button className="btn btn-sm btn-secondary"
-                  onClick={() => { setProjectIds([]); setModelIds([]); setCallTypeFilter('all'); setOutcomeFilter('all'); }}>
-                  Reset filters
+                  onClick={() => { setRouterIds([]); setModelIds([]); setTokenIds([]); setCallTypeFilter('all'); setRequestTypeFilter('all'); setOutcomeFilter('all'); setSessionId(''); setEndUserId(''); setTagFilter(''); }}>
+                  {t('usage.page.filters.resetFilters')}
                 </button>
               </div>
             )}
@@ -234,26 +578,27 @@ export function UsagePage() {
           <div className="loading-center"><div className="spinner" /></div>
         ) : fetchError ? (
           <div className="empty-state" style={{ color: 'var(--danger)' }}>
-            <p>Failed to load usage data: <strong>{fetchError}</strong></p>
-            <button className="btn btn-sm btn-secondary" style={{ marginTop: 8 }} onClick={handleRefreshNow}>Retry</button>
+            <p>{t('usage.page.errors.loadFailedPrefix')} <strong>{fetchError}</strong></p>
+            <button className="btn btn-sm btn-secondary" style={{ marginTop: 8 }} onClick={handleRefreshNow}>{t('usage.page.errors.retry')}</button>
           </div>
         ) : !stats ? null : (
           <>
             {/* Summary */}
             <div className="stats-grid" style={{ marginBottom: 24 }}>
+              {/* Same reading as the Overview: what routing saved belongs to the
+                  number it changed, not to a card of its own (T201/T209). */}
+              <CostCard totalCost={stats.summary.totalCost} {...(savingsStats?.savings ? { savings: savingsStats.savings } : {})} />
+              <TokensCard inputTokens={tokenTotals.input} outputTokens={tokenTotals.output} cachedTokens={tokenTotals.cached}
+                {...(savingsStats?.savings ? { savings: savingsStats.savings } : {})} />
               <div className="stat-card">
-                <div className="stat-label">Total Cost</div>
-                <div className="stat-value">${stats.summary.totalCost.toFixed(4)}</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-label">Total Calls</div>
+                <div className="stat-label">{t('usage.page.stats.totalCalls')}</div>
                 <div className="stat-value">{stats.summary.totalCalls}</div>
               </div>
               <div className="stat-card" style={{ cursor: 'pointer', outline: callTypeFilter === 'completion' ? '2px solid var(--primary)' : 'none', outlineOffset: 2 }}
                 onClick={() => setCallTypeFilter(f => f === 'completion' ? 'all' : 'completion')}>
                 <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', display: 'inline-block' }} />
-                  Completion Calls
+                  {t('usage.page.stats.completionCalls')}
                 </div>
                 <div className="stat-value">{stats.summary.completionCalls ?? stats.summary.totalCalls}</div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>${(stats.summary.completionCost ?? stats.summary.totalCost).toFixed(4)}</div>
@@ -262,57 +607,141 @@ export function UsagePage() {
                 onClick={() => setCallTypeFilter(f => f === 'routing' ? 'all' : 'routing')}>
                 <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />
-                  Router Calls
+                  {t('usage.page.stats.routerCalls')}
                 </div>
                 <div className="stat-value">{stats.summary.routingCalls ?? 0}</div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>${(stats.summary.routingCost ?? 0).toFixed(4)}</div>
               </div>
+              {(stats.summary.guardrailCalls ?? 0) > 0 && (
+                <div className="stat-card">
+                  <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+                    {t('usage.page.stats.guardrailCalls')}
+                  </div>
+                  <div className="stat-value">{stats.summary.guardrailCalls}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>${(stats.summary.guardrailCost ?? 0).toFixed(4)}</div>
+                </div>
+              )}
+              {(stats.summary.blockedCalls ?? 0) > 0 && (
+                <div className="stat-card">
+                  <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-warning, #f59e0b)', display: 'inline-block' }} />
+                    {t('usage.page.stats.blockedCalls')}
+                  </div>
+                  <div className="stat-value">{stats.summary.blockedCalls}</div>
+                </div>
+              )}
               <div className="stat-card">
-                <div className="stat-label">Errors</div>
+                <div className="stat-label">{t('usage.page.stats.errors')}</div>
                 <div className="stat-value" style={{ color: stats.summary.errorCalls > 0 ? 'var(--danger)' : 'var(--success)' }}>
                   {stats.summary.errorCalls}
                 </div>
               </div>
             </div>
 
-            {/* Per-model table */}
-            {Object.keys(stats.byModel).length > 0 && (
-              <div className="table-wrap" style={{ marginBottom: 24 }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Model</th><th>Calls</th><th>Errors</th>
-                      <th>Input Tokens</th><th>Output Tokens</th><th>Cost (USD)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(stats.byModel).map(([model, v]) => (
-                      <tr key={model}>
-                        <td><span className="mono">{model}</span></td>
-                        <td>{v.calls}</td>
-                        <td style={{ color: v.errors > 0 ? 'var(--danger)' : 'inherit' }}>{v.errors}</td>
-                        <td>{v.inputTokens.toLocaleString()}</td>
-                        <td>{v.outputTokens.toLocaleString()}</td>
-                        <td className="mono">${v.cost.toFixed(8)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            {/* What routing saved over the filtered window, the same chart the Overview carries (T209) */}
+            {savingsData.length > 0 && (
+              <SavingsCard
+                key={dateRange.label}
+                data={savingsData}
+                baselineIds={savingsStats?.series?.baselineModelIds ?? []}
+                {...(savingsStats?.savings ? { savings: savingsStats.savings } : {})}
+                metric={savingsMetric}
+                onMetric={setSavingsMetric}
+                resetKey={dateRange.label}
+              />
             )}
+
+            {/* Per-model table — enriched with performance columns + Rank */}
+            {sortedModelRows.length > 0 && (() => {
+              const hidden = sortedModelRows.length - MODEL_ROWS_COLLAPSED;
+              const visibleRows = showAllModels ? sortedModelRows : sortedModelRows.slice(0, MODEL_ROWS_COLLAPSED);
+              const thS: React.CSSProperties = { cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' };
+              const th = (label: string, key: ModelSortKey, align?: 'right') => (
+                <th style={align ? { ...thS, textAlign: align } : thS}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: align === 'right' ? 'flex-end' : undefined }}
+                    onClick={() => handleModelSort(key)}>
+                    {label}<SortIcon col={key} sortKey={modelSortKey} sortDir={modelSortDir} />
+                  </span>
+                </th>
+              );
+              return (
+                <div className="table-wrap" style={{ marginBottom: 24 }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        {th(t('usage.page.table.rank'), 'rank')}
+                        {th(t('usage.page.table.model'), 'model')}
+                        {th(t('usage.page.table.provider'), 'provider')}
+                        {th(t('usage.page.table.calls'), 'calls', 'right')}
+                        {th(t('usage.page.table.errors'), 'errors', 'right')}
+                        {th(t('usage.page.table.successRate'), 'successRate', 'right')}
+                        {th(t('usage.page.table.avgLatency'), 'avgLatency', 'right')}
+                        {th(t('usage.page.table.p95Latency'), 'p95Latency', 'right')}
+                        {th(t('usage.page.table.inputTokens'), 'inputTokens', 'right')}
+                        {th(t('usage.page.table.outputTokens'), 'outputTokens', 'right')}
+                        {th(t('usage.page.table.costPer1k'), 'costPer1k', 'right')}
+                        {th(t('usage.page.table.cost'), 'cost', 'right')}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleRows.map(({ modelId, v, totalTok, successRate, costPer1k, rank, provider }) => {
+                        const isBest = modelId === bestModelId;
+                        const displayRank = rank === Infinity ? '—' : String(rank);
+                        return (
+                          <tr key={modelId}>
+                            <td style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                              {isBest
+                                ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                    <Star size={13} fill="var(--warning)" color="var(--warning)" aria-label={t('usage.page.table.bestCostPerformance')} />
+                                    {displayRank}
+                                  </span>
+                                : displayRank}
+                            </td>
+                            <td><span className="mono">{modelId}</span></td>
+                            <td style={{ color: 'var(--text-secondary)' }}>{providerLabel(provider)}</td>
+                            <td style={{ textAlign: 'right' }}>{v.calls}</td>
+                            <td style={{ textAlign: 'right', color: v.errors > 0 ? 'var(--danger)' : 'inherit' }}>{v.errors}</td>
+                            <td style={{ textAlign: 'right' }}>{(successRate * 100).toFixed(1)}%</td>
+                            <td style={{ textAlign: 'right' }}>{Math.round(v.avgLatencyMs)} ms</td>
+                            <td style={{ textAlign: 'right' }}>{Math.round(v.p95LatencyMs)} ms</td>
+                            <td style={{ textAlign: 'right' }}>{v.inputTokens.toLocaleString()}</td>
+                            <td style={{ textAlign: 'right' }}>{v.outputTokens.toLocaleString()}</td>
+                            <td style={{ textAlign: 'right' }} className="mono">
+                              {totalTok > 0 ? fmtCost(costPer1k) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                            </td>
+                            <td style={{ textAlign: 'right' }} className="mono">{fmtCallCost(v.cost ?? 0)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {hidden > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllModels(v => !v)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, width: '100%', justifyContent: 'center', background: 'none', border: 'none', borderTop: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 500, padding: '8px 0' }}
+                    >
+                      <ChevronDown size={14} style={{ transform: showAllModels ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
+                      {showAllModels ? t('usage.page.showFewerModels') : t('usage.page.showMoreModels', { count: hidden })}
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Recent calls */}
             <>
               <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>
-                Recent Calls
+                {t('usage.page.recentCalls.title')}
                 <span style={{ fontWeight: 400, marginLeft: 8, color: 'var(--text-muted)' }}>
-                  ({stats.pagination ? `${filteredRecords.length} / ${stats.pagination.totalRecords}` : filteredRecords.length})
+                  ({stats.pagination ? `${displayRecords.length} / ${stats.pagination.totalRecords}` : displayRecords.length})
                 </span>
               </h3>
 
-              {filteredRecords.length === 0 ? (
+              {displayRecords.length === 0 ? (
                 <div className="empty-state">
-                  <p>{stats.records.length === 0 ? 'No usage records for this period.' : 'No records match the active filters.'}</p>
+                  <p>{t('usage.page.recentCalls.empty')}</p>
                 </div>
               ) : (
                 <>
@@ -320,45 +749,69 @@ export function UsagePage() {
                   <table>
                     <thead>
                       <tr>
-                        <th>Time</th><th>Project</th><th>Model</th><th>Type</th><th>In</th><th>Out</th>
-                        <th>Cost</th><th>Latency</th><th>TTFT</th><th>Tok/s</th><th>Status</th>
+                        <th>{t('usage.page.recentCalls.columns.time')}</th><th>{t('usage.page.recentCalls.columns.router')}</th><th>{t('usage.page.recentCalls.columns.model')}</th><th>{t('usage.page.recentCalls.columns.type')}</th><th>{t('usage.page.recentCalls.columns.caller')}</th>
+                        <th style={numTh}>{t('usage.page.recentCalls.columns.in')}</th><th style={numTh}>{t('usage.page.recentCalls.columns.out')}</th><th style={numTh}>{t('usage.page.recentCalls.columns.cost')}</th>
+                        <th style={numTh}>{t('usage.page.recentCalls.columns.latency')}</th><th style={numTh}>{t('usage.page.recentCalls.columns.ttft')}</th><th style={numTh}>{t('usage.page.recentCalls.columns.tokensPerSec')}</th>
+                        <th>{t('usage.page.recentCalls.columns.status')}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredRecords.map((r, i) => {
-                        const isRouting = (r.callType ?? 'completion') === 'routing';
+                      {displayRecords.map((r) => {
+                        // Records written before callType existed were all completions.
+                        const caller = r.callType ?? 'completion';
+                        const callerColor = CALLER_COLORS[caller];
+                        const isNew = liveMode && newRowIds.has(r.id);
                         return (
                           <tr
-                            key={i}
-                            style={{ cursor: 'pointer' }}
+                            key={r.id}
+                            className={isNew ? 'row-new' : undefined}
+                            style={{
+                              cursor: 'pointer',
+                              borderLeft: `3px solid ${callerColor ?? 'transparent'}`,
+                            }}
                             onClick={() => navigate(`/dashboard/usage/${r.id}`, { state: { record: r } })}
                           >
                             <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                               {new Date(r.timestamp).toLocaleString()}
                             </td>
                             <td style={{ fontSize: '0.78rem' }}>
-                              {projects.find(p => p.id === r.projectId)?.name ?? <span className="mono" style={{ fontSize: '0.72rem' }}>{r.projectId}</span>}
+                              {routers.find(p => p.id === r.routerId)?.name ?? <span className="mono" style={{ fontSize: '0.72rem' }}>{r.routerId}</span>}
+                              {r.tokenId && (
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                  {tokenNames[r.tokenId] ?? r.tokenId}
+                                </div>
+                              )}
                             </td>
                             <td><span className="mono" style={{ fontSize: '0.78rem' }}>{r.modelId}</span></td>
-                            <td>
-                              <span style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 4,
-                                fontSize: '0.72rem', fontWeight: 600, padding: '2px 7px',
-                                borderRadius: 99,
-                                background: isRouting ? 'rgba(99,102,241,0.12)' : 'rgba(59,130,246,0.12)',
-                                color: isRouting ? 'var(--accent)' : 'var(--primary)',
-                              }}>
-                                {isRouting ? 'router' : 'completion'}
-                              </span>
+                            <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                              {/* Records written before requestType existed were all chat calls. */}
+                              {requestTypeLabel(r.requestType ?? 'chat')}
                             </td>
-                            <td>{r.inputTokens}</td>
-                            <td>{r.outputTokens}</td>
-                        <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(8)}</td>
-                            <td style={{ color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
-                            <td style={{ color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
-                            <td style={{ color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>
                             <td>
-                              <span className={`badge ${r.outcome === 'success' ? 'badge-success' : 'badge-error'}`}>
+                              {callerColor ? (
+                                <span style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                                  fontSize: '0.72rem', fontWeight: 600, padding: '2px 7px',
+                                  borderRadius: 99,
+                                  background: 'var(--bg-surface)',
+                                  color: callerColor,
+                                }}>
+                                  {t(`usage.page.callerBadge.${caller}`)}
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                  {t(`usage.page.callerBadge.${caller}`)}
+                                </span>
+                              )}
+                            </td>
+                            <td style={numTd}>{r.inputTokens}</td>
+                            <td style={numTd}>{r.outputTokens}</td>
+                            <td className="mono" style={{ ...numTd, fontSize: '0.78rem' }}>{r.cost == null ? 'Unknown' : fmtCallCost(r.cost)}</td>
+                            <td style={{ ...numTd, color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
+                            <td style={{ ...numTd, color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
+                            <td style={{ ...numTd, color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>
+                            <td>
+                              <span className={`badge ${r.outcome === 'success' ? 'badge-success' : r.outcome === 'blocked' ? 'badge-warning' : 'badge-error'}`}>
                                 {r.outcome}
                               </span>
                             </td>
@@ -380,12 +833,12 @@ export function UsagePage() {
                       disabled={page <= 1}
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                     >
-                      ← Precedente
+                      {t('usage.page.pagination.previous')}
                     </button>
                     <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                      Pagina {stats.pagination.page} di {stats.pagination.totalPages}
+                      {t('usage.page.pagination.pageOf', { page: stats.pagination.page, totalPages: stats.pagination.totalPages })}
                       <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
-                        ({stats.pagination.totalRecords} record totali)
+                        {t('usage.page.pagination.totalRecords', { count: stats.pagination.totalRecords })}
                       </span>
                     </span>
                     <button
@@ -393,7 +846,7 @@ export function UsagePage() {
                       disabled={page >= stats.pagination.totalPages}
                       onClick={() => setPage(p => p + 1)}
                     >
-                      Successiva →
+                      {t('usage.page.pagination.next')}
                     </button>
                   </div>
                 )}

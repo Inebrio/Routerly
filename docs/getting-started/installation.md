@@ -37,18 +37,26 @@ curl -fsSL https://www.routerly.ai/install.sh | bash -s -- \
   --public-url https://routerly.example.com  # External URL of the service
   --no-service              # Skip service installation (CLI only)
   --no-daemon               # Skip auto-start setup
-  --channel stable          # Update channel: latest | stable | develop (default: stable)
+  --no-linger               # Linux user scope: do not run `loginctl enable-linger`
+  --channel current         # Update channel: latest | current | next | stable | develop (default: current)
   --version v0.2.0          # Install a specific version tag (overrides --channel)
 ```
 
-By default, the installer fetches the **`stable`** channel — the latest production-ready release. Use `--channel latest` to get the most recent release (including pre-releases), or `--version vX.Y.Z` to pin an exact version.
+By default, the installer fetches the **`current`** channel — the newest production-ready release. `latest` resolves to the same release; `next` tracks the validated pre-release line; `stable` installs the release explicitly promoted to stable (it moves only on promotion, so it can lag behind `current`); `develop` tracks the bleeding-edge, unreviewed line. Use `--version vX.Y.Z` to pin an exact version.
+
+:::warning Breaking change
+`develop` is not an alias for `next`: it is its own channel, the bleeding-edge line. An instance that had `develop` persisted under the old meaning now tracks the bleeding-edge line instead of `next`.
+:::
 
 ```bash
-# Install the stable release (default)
+# Install the current release (default)
 curl -fsSL https://www.routerly.ai/install.sh | bash
 
-# Install the latest release
-curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --channel latest
+# Track the validated pre-release line
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --channel next
+
+# Track the bleeding-edge line
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --channel develop
 
 # Install a specific version
 curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.2.0
@@ -79,11 +87,12 @@ Regardless of scope, each user's CLI credentials (JWT tokens, refresh tokens) ar
 ### Windows
 
 ```powershell
-# Stable release (default)
+# Current release (default)
 powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
 
 # Specific channel or version
-powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Channel latest"
+powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Channel next"
+powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Channel develop"
 powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Version v0.2.0"
 ```
 
@@ -91,8 +100,10 @@ This installs Routerly as a Windows Service and adds the CLI to your PATH.
 
 | Parameter | Description |
 |-----------|-------------|
-| `-Channel` | `latest` \| `stable` \| `develop` (default: `stable`) |
+| `-Channel` | `latest` \| `current` \| `next` \| `stable` \| `develop` (default: `current`) |
 | `-Version` | Specific version tag, e.g. `v0.2.0` (overrides `-Channel`) |
+
+`develop` is a real channel in its own right (the bleeding-edge line), not an alias for `next`.
 
 ---
 
@@ -111,7 +122,7 @@ Create a `docker-compose.yml`:
 ```yaml
 services:
   routerly:
-    image: inebrio/routerly:latest
+    image: inebrio/routerly:v0.5.3
     ports:
       - "3000:3000"
     volumes:
@@ -142,7 +153,7 @@ docker run -d \
   -v routerly_data:/data \
   -e ROUTERLY_HOME=/data \
   --restart unless-stopped \
-  inebrio/routerly:latest
+  inebrio/routerly:v0.5.3
 ```
 
 ### Option 2 — Build from source
@@ -246,7 +257,7 @@ curl -fsSL https://www.routerly.ai/install.sh | bash
 powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
 ```
 
-The wizard will walk you through the same questions as a fresh install, pre-filling your existing answers. All accounts, projects, models and usage history are preserved.
+The wizard will walk you through the same questions as a fresh install, pre-filling your existing answers. All accounts, routers, models and usage history are preserved.
 
 ---
 
@@ -286,6 +297,8 @@ The installer can configure Routerly to start automatically on boot:
 | macOS | system | launchd LaunchDaemon | `/Library/LaunchDaemons/ai.routerly.service.plist` |
 | Windows | — | Windows Service | via `sc.exe` |
 
+On Linux with user scope the installer also runs `loginctl enable-linger <user>`, so the service keeps running after you log out and starts at boot. Pass `--no-linger` to skip it, or run the command yourself if it failed. The uninstaller leaves linger as it is, because other user services may depend on it (`loginctl disable-linger <user>` to undo).
+
 To start/stop manually:
 
 ```bash
@@ -312,4 +325,4 @@ You should see the service URL, version, and a reachability check. Then open the
 http://localhost:3000/dashboard
 ```
 
-→ Continue to [Quick Start](./quick-start.md) to set up your first model and project.
+→ Continue to [Quick Start](./quick-start.md) to set up your first model and router.

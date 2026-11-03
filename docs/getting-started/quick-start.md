@@ -12,21 +12,21 @@ From zero to your first routed AI response in under 5 minutes.
 ## Step 1: Install Routerly
 
 ```bash
-# macOS / Linux — installs the stable release
-curl -fsSL https://www.routerly.ai/install.sh | bash
+# macOS / Linux — installs v0.5.3
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.5.3
 
-# Windows (PowerShell) — installs the stable release
-powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
+# Windows (PowerShell) — installs v0.5.3
+powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Version v0.5.3"
 ```
 
-The installer defaults to the **`stable`** channel — the latest production-ready release. To install a different channel or a specific version:
+The installer defaults to the **`current`** channel — the latest production-ready release. To install a different channel or a specific version:
 
 ```bash
 # Latest release (may include pre-releases)
 curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --channel latest
 
 # Pin to a specific version
-curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.2.0
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.5.2
 ```
 
 After the installer finishes, start the service if it isn't already running:
@@ -51,7 +51,9 @@ On first launch you will see the **Setup** screen. Enter an email address and pa
 
 ## Step 3: Register a Model
 
-A **model** is a specific LLM available through a provider. You register it once with its API key; Routerly reuses it across all projects.
+![Models page — add a model by clicking + Add Model or use Discover to pre-fill from the catalog](../assets/screenshot-models.png)
+
+A **model** is a specific LLM available through a provider. You register it once with its API key; Routerly reuses it across all routers.
 
 **Via CLI:**
 
@@ -72,28 +74,28 @@ Built-in pricing presets are available for well-known model IDs. If a preset is 
 
 ---
 
-## Step 4: Create a Project
+## Step 4: Create a Router
 
-A **project** is an isolated workspace. It gets its own Bearer token and its own routing configuration.
+A **router** is an isolated workspace. It gets its own Bearer token and its own routing configuration.
 
 ```bash
-routerly project add \
-  --name "My App" \
-  --slug my-app \
-  --models gpt-5-mini
+routerly router create --name "My App"
+routerly router model add "My App" gpt-5-mini
 ```
 
-The command prints your **project token** — a string starting with `sk-rt-`. Save it; you'll use it in your application.
+`router create` makes an empty router; target models are attached one at a time with `router model add`, which is also where you set the priority and the routing guidance for that model.
+
+`router create` prints your **router token**, a string starting with `sk-rt-`. Save it; you'll use it in your application.
 
 :::warning Token visibility
-The project token is shown **only once** after creation. Store it securely. You can generate a new token from the dashboard at any time.
+The router token is shown **only once** after creation. Store it securely. You can generate a new token from the dashboard at any time.
 :::
 
 ---
 
 ## Step 5: Make Your First API Call
 
-Point any OpenAI-compatible SDK at Routerly and use your project token as the API key.
+Point any OpenAI-compatible SDK at Routerly and use your router token as the API key.
 
 ### Python
 
@@ -102,7 +104,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:3000/v1",
-    api_key="sk-rt-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_ROUTER_TOKEN",
 )
 
 response = client.chat.completions.create(
@@ -119,7 +121,7 @@ import OpenAI from 'openai';
 
 const client = new OpenAI({
   baseURL: 'http://localhost:3000/v1',
-  apiKey: 'sk-rt-YOUR_PROJECT_TOKEN',
+  apiKey: 'sk-rt-YOUR_ROUTER_TOKEN',
 });
 
 const response = await client.chat.completions.create({
@@ -133,7 +135,7 @@ console.log(response.choices[0].message.content);
 
 ```bash
 curl http://localhost:3000/v1/chat/completions \
-  -H "Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN" \
+  -H "Authorization: Bearer sk-rt-YOUR_ROUTER_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"model":"gpt-5-mini","messages":[{"role":"user","content":"Hello!"}]}'
 ```
@@ -141,6 +143,8 @@ curl http://localhost:3000/v1/chat/completions \
 ---
 
 ## Step 6: Check Usage
+
+![Usage page showing total cost, call counts, per-model breakdown, and request log](../assets/screenshot-usage.png)
 
 Open **Usage** in the dashboard or use the CLI:
 

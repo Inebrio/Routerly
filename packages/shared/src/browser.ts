@@ -7,6 +7,83 @@
 import providersConf from './conf/providers.json' with { type: 'json' };
 export { providersConf };
 
+// Static notification event list and secret-field map (safe for browser — plain data)
+export {
+  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, isCompletionCall, blocksResponseStreaming,
+  suggestConnectionLabel, isConnectionLabelTaken, suggestRouterSlug,
+  UPDATE_CHANNELS, normalizeUpdateChannel,
+  isValidUpdateChannel, UPDATE_CHANNEL_ERROR, LOG_LEVELS,
+} from './types/config.js';
+export type { NotificationEvent, UpdateChannel, NormalizedUpdateChannel } from './types/config.js';
+
+// Readable catalog for those events (T51) — plain data plus pure functions
+export {
+  NOTIFICATION_CATEGORIES,
+  NOTIFICATION_EVENT_CATALOG,
+  notificationTitle,
+  notificationCategory,
+  notificationCause,
+} from './types/notifications.js';
+export type { NotificationCategory, NotificationEventMeta } from './types/notifications.js';
+
+// Usage request types (T60) — plain data plus pure functions
+export { REQUEST_TYPES, requestTypeFromPath, requestTypeLabel } from './types/usage.js';
+export type {
+  RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary, UsageSeries, UsageSeriesPoint,
+} from './types/usage.js';
+
+// Experiments (T70) — plain data plus pure functions
+export {
+  EXPERIMENT_ROTATIONS,
+  STICKY_KEYS,
+  ROTATION_CATALOG,
+  STICKY_KEY_CATALOG,
+  DEFAULT_MIN_SAMPLES_PER_VARIANT,
+  rotationLabel,
+  rotationDescription,
+  variantShares,
+} from './types/experiments.js';
+export type {
+  ExperimentConfig,
+  ExperimentRotation,
+  ExperimentRotationMeta,
+  ExperimentStickyKey,
+  ExperimentVariant,
+  ExperimentJudge,
+  ExperimentJudgeTally,
+  ExperimentVariantMetrics,
+  ExperimentMetrics,
+} from './types/experiments.js';
+
+// Optimizer catalog (T63) — plain data plus pure functions
+export {
+  OPTIMIZER_CATALOG,
+  optimizerLabel,
+  optimizerThreshold,
+  LLMLINGUA_CHECKPOINTS,
+  DEFAULT_LLMLINGUA_CHECKPOINT,
+  llmLinguaCheckpoint,
+} from './types/optimizers.js';
+export type {
+  OptimizerClass,
+  OptimizerId,
+  OptimizerResult,
+  OptimizerStep,
+  OptimizerConfig,
+  OptimizerCallStat,
+  OptimizerThresholdSpec,
+  OptimizerMeta,
+  LlmLinguaCheckpoint,
+} from './types/optimizers.js';
+
+// Shipped preview conversations — plain data, no real prompt is ever recorded.
+export { OPTIMIZER_FIXTURES, optimizerFixture } from './optimizer-fixtures.js';
+export type { OptimizerFixture } from './optimizer-fixtures.js';
+
+// Client registry: plain data plus pure string builders, no Node.js APIs.
+export { AUTO_MODEL, CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './clients/index.js';
+export type { SupportState, WireFormat, ConnectMode, ClientMeta } from './clients/index.js';
+
 // Re-export all types (erased at compile time, no runtime cost)
 export type {
   Provider,
@@ -14,29 +91,57 @@ export type {
   TokenCost,
   BudgetThresholds,
   ModelConfig,
-  ProjectModelRef,
-  ProjectConfig,
-  ProjectToken,
-  ProjectMember,
-  ProjectRole,
+  RouterModelRef,
+  RouterConfig,
+  RouterToken,
+  RouterMember,
+  RouterRole,
   TokenModelRef,
   RoutingPolicy,
   RoutingPolicyType,
+  SelectorType,
+  FallbackStrategyType,
   IntentDefinition,
   SemanticIntentConfig,
   IntentClassification,
   UserConfig,
+  McpToken,
   RoleConfig,
   Permission,
   Settings,
   CallOutcome,
   UsageRecord,
+  UsageByModelEntry,
+  // Notification channel types (U5)
+  EmailProvider,
+  NativeProvider,
+  ChannelProvider,
+  ChannelTargets,
+  NotificationsConfig,
+  NotificationChannel,
+  NotificationInboxItem,
+  NotificationIncidentEvent,
+  NotificationSeverity,
+  DashboardChannelConfig,
+  SmtpChannelConfig,
+  SesChannelConfig,
+  SendGridChannelConfig,
+  AzureChannelConfig,
+  GoogleChannelConfig,
+  WebhookChannelConfig,
+  SlackChannelConfig,
+  TeamsChannelConfig,
+  PagerDutyChannelConfig,
+  DiscordChannelConfig,
 } from './types/config.js';
 
 export type {
   Role,
   ContentPart,
   Message,
+  ToolCall,
+  ToolDefinition,
+  ToolCallDelta,
   ChatCompletionRequest,
   UsageInfo,
   Choice,
@@ -54,6 +159,11 @@ export type {
   AnthropicImageSource,
   AnthropicImageBlock,
   AnthropicContentBlock,
+  AnthropicToolUseBlock,
+  AnthropicToolResultBlock,
+  AnthropicTool,
+  AnthropicToolChoice,
+  AnthropicSystem,
   AnthropicMessage,
   MessagesRequest,
   AnthropicUsage,

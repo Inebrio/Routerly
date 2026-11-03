@@ -1,6 +1,6 @@
 ---
 title: Users & Roles
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 # Dashboard: Users & Roles
@@ -13,13 +13,32 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 
 | Permission | Description |
 |-----------|-------------|
-| `project:read` | View projects and their configuration |
-| `project:write` | Create, edit, and delete projects |
+| `router:read` | View all routers and their configuration (global: not limited by router membership) |
+| `router:write` | Create, edit, and delete routers |
 | `model:read` | View registered models |
 | `model:write` | Create, edit, and delete models |
 | `user:read` | View dashboard users |
-| `user:write` | Create, edit, and delete users, assign roles |
+| `user:write` | Create, edit, and delete users, assign roles. You can only grant, edit or remove users and roles whose permissions you hold yourself; otherwise the action is refused with 403 |
 | `report:read` | View usage analytics and request logs |
+| `settings:read` | View global settings |
+| `settings:write` | Change global settings |
+| `notification:write` | Manage notification channels and rules |
+| `token:read` | View router tokens (the token list in router responses is hidden without `token:read`, `token:write` or `router:write`) |
+| `token:write` | Create, edit and revoke router tokens (also granted by `router:write`) |
+| `role:write` | Create, edit, and delete custom roles (also granted by `user:write`) |
+| `audit:read` | Read the audit log |
+| `modules:read` | View which modules are installed and enabled |
+| `modules:manage` | Enable and disable modules |
+| `connections:read` | View provider connections |
+| `connections:manage` | Create, edit, and delete provider connections |
+| `resilience:read` | View retry, timeout, and fallback settings |
+| `resilience:manage` | Change retry, timeout, and fallback settings |
+| `profiles:read` | View [routing profiles](./profiles.md) |
+| `profiles:manage` | Create, edit, and delete routing profiles |
+| `optimizers:read` | View the [optimizer](../concepts/optimizers.md) catalog, samples, and previews |
+| `optimizers:manage` | Change a router's optimizer pipeline |
+| `experiments:read` | View [experiments](./experiments.md) and their metrics |
+| `experiments:manage` | Create, edit, and delete experiments, manage their tokens |
 
 ---
 
@@ -28,12 +47,14 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 | Role | Permissions |
 |------|-------------|
 | `admin` | All permissions |
-| `operator` | `project:read`, `project:write`, `model:read`, `model:write`, `report:read` |
-| `viewer` | `project:read`, `model:read`, `report:read` |
+| `operator` | Everything except `user:write`, `role:write`, `settings:write`, `audit:read`, `modules:manage`, `resilience:*` |
+| `viewer` | `router:read`, `model:read`, `report:read`, `settings:read`, `token:read`, `audit:read`, `modules:read`, `connections:read`, `profiles:read`, `optimizers:read`, `experiments:read` |
 
 ---
 
 ## Managing Users
+
+![Users list showing email, role badge, and action buttons](../assets/screenshot-settings-users.png)
 
 ### Adding a User
 
@@ -46,7 +67,8 @@ The new user can log in immediately.
 
 ### Editing a User
 
-Click the **Edit** icon to change the user's email, password, or role.
+Click a row, or its **Edit** icon, to change the user's email, password, or
+role. With `user:write` missing the row is inert and the icon is hidden.
 
 ### Removing a User
 
@@ -55,6 +77,8 @@ Click the **Delete** icon and confirm. The user's session is invalidated immedia
 ---
 
 ## Custom Roles
+
+![Roles page showing built-in roles and their permission badges](../assets/screenshot-settings-roles.png)
 
 Custom roles let you define granular permission sets for specific team members.
 
@@ -76,9 +100,9 @@ Click **Delete** to remove the role. Users who had this role will lose their das
 
 ---
 
-## Project-Level User Assignment
+## Router-Level User Assignment
 
-Users can also be assigned to specific projects (from the project's **Users** tab). This limits their access to that project without changing their global role.
+Users can also be assigned to specific routers (from the router's **Users** tab). This limits their access to that router without changing their global role.
 
 ---
 

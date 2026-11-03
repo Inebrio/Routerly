@@ -4,17 +4,42 @@ import staticFiles from '@fastify/static';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
-import authPlugin from './plugins/auth.js';
-import { loadSecret } from './plugins/jwt.js';
-import { openaiRoutes } from './routes/openai.js';
-import { anthropicRoutes } from './routes/anthropic.js';
-import { apiRoutes } from './routes/api.js';
-import { initConfigDirs, readConfig, writeConfig } from './config/loader.js';
-import { pingTelemetry } from './telemetry.js';
-import { updateChecker } from './update-checker.js';
+import authPlugin from './modules/auth/auth.js';
+import { loadSecret } from './modules/auth/jwt.js';
+import { loadCredentialKey } from './lib/crypto-cred.js';
+import { openaiRoutes } from './modules/api-reverse-proxy/openai.js';
+import { anthropicRoutes } from './modules/api-reverse-proxy/anthropic.js';
+import { passthroughHandler } from './modules/api-reverse-proxy/passthrough.js';
+import { routerPassthroughRoutes } from './modules/api-reverse-proxy/router-passthrough.js';
+import { mcpHttpRoutes } from './modules/mcp/http.js';
+import { apiRoutes } from './modules/api/api.js';
+import { metricsRoutes } from './modules/observability/metrics.js';
+import { initConfigDirs, readConfig, writeConfig, effectivePort } from './modules/config/loader.js';
+import { migrateRouterStorage, migrateUsageToNdjson, reenableModules } from './modules/config/migrate.js';
+import { enforceStartupGuard } from './modules/config/permission-guard.js';
+import { pingTelemetry } from './modules/telemetry/telemetry.js';
+import { updateChecker } from './modules/update-checker/update-checker.js';
+import { protocolError, protocolForUrl } from './lib/protocol-errors.js';
+import { bootstrap } from './bootstrap/index.js';
+import type { Kernel } from './core/index.js';
+
+// The modular kernel (0.4.0) is decorated onto the Fastify instance so later
+// refactory plans can reach its container/events. Routes still call
+// config/loader.ts directly, but apiRoutes (modules/api/api.ts) reads
+// fastify.kernel to mount route contributions from API_ROUTES.
+declare module 'fastify' {
+  interface FastifyInstance {
+    kernel: Kernel;
+  }
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
+
+// `routerly mcp serve` runs the service as a stdio MCP server: stdout is the
+// JSON-RPC channel, so nothing else may write to it and no port may be bound
+// (the regular service is usually already listening on the same host).
+const isMcpStdio = () => process.env['ROUTERLY_MCP_STDIO'] === '1';
 
 export async function buildServer() {
   const settings = await readConfig('settings');
@@ -22,7 +47,9 @@ export async function buildServer() {
   const fastify = Fastify({
     logger: {
       level: settings.logLevel,
-      ...(process.env['NODE_ENV'] !== 'production'
+      ...(isMcpStdio()
+        ? { stream: process.stderr }
+        : process.env['NODE_ENV'] !== 'production'
         ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
         : {}),
     },
@@ -30,8 +57,31 @@ export async function buildServer() {
     bodyLimit: 256 * 1024 * 1024, // 256 MB — support large files, vision, and 2M-token contexts
   });
 
+  // ─── Modular kernel (0.4.0) ───────────────────────────────────────────────
+  // Boots alongside Fastify; registers the config, provider, and catalog modules
+  // so modules/config/loader.ts, modules/provider/registry.ts, and
+  // modules/catalog/fetcher.ts+sync.ts are reachable via CONFIG_STORE,
+  // PROVIDER_REGISTRY, and CATALOG for later plans. loadSecret()/
+  // initConfigDirs() already ran in startServer() before buildServer(); none
+  // of the three modules does IO at register time, so this is order-safe.
+  // Additive only, no existing registration is touched.
+  const kernel = await bootstrap();
+  fastify.decorate('kernel', kernel);
+  fastify.addHook('onClose', async () => {
+    await kernel.stop();
+  });
+
   // ─── Plugins ─────────────────────────────────────────────────────────────────
-  await fastify.register(cors, { origin: true, exposedHeaders: ['x-routerly-trace-id'] });
+  await fastify.register(cors, { origin: true });
+  // Non-browser SDK calls on the proxy lanes (no Origin header) get the provider's
+  // headers back unaltered: drop the `Vary: Origin` the CORS plugin would add.
+  fastify.addHook('onSend', async (req, reply) => {
+    const proxied = (req.method === 'POST' && req.url.startsWith('/v1/')) || req.url.startsWith('/passthrough/');
+    if (proxied && !req.headers.origin
+        && String(reply.getHeader('vary')).toLowerCase() === 'origin') {
+      reply.removeHeader('vary');
+    }
+  });
 
   // ─── Dashboard static files (served before auth plugin) ───────────────────
   if (settings.dashboardEnabled) {
@@ -61,17 +111,40 @@ export async function buildServer() {
   // ─── Dashboard REST API (auth handled inside the plugin) ─────────────────
   await fastify.register(apiRoutes);
 
+  // /v1/* errors that never reach a route (malformed JSON, oversized body, ...) get the
+  // provider-shaped body instead of Fastify's default; everything else keeps default handling.
+  fastify.setErrorHandler(async (err, req, reply) => {
+    const status = (err as { statusCode?: number }).statusCode;
+    if (!req.url.startsWith('/v1/') || !status || status < 400 || status >= 500) throw err;
+    return reply.status(status).send(protocolError(protocolForUrl(req.url), status, (err as Error).message));
+  });
+
   // ─── LLM Proxy auth (only for /v1/* routes) ───────────────────────────────
   await fastify.register(authPlugin);
+
+  // ─── Catch-all: unmatched paths are forwarded to the router's provider ───
+  // Raw bytes in so non-JSON bodies (files, audio) reach the upstream verbatim.
+  // Encapsulated plugins (passthrough routers, dashboard) keep their own parsers/404 handlers.
+  fastify.addContentTypeParser('*', { parseAs: 'buffer' }, (_req, body, done) => done(null, body));
+  fastify.setNotFoundHandler(passthroughHandler);
 
   // ─── LLM Proxy routes ────────────────────────────────────────────────────
   await fastify.register(openaiRoutes);
   await fastify.register(anthropicRoutes);
 
+  // ─── Passthrough routers (RTR-03, self-authenticating — in auth skip list) ──
+  await fastify.register(routerPassthroughRoutes);
+
+  // ─── MCP Streamable HTTP endpoint (self-authenticating, in auth skip list) ──
+  await fastify.register(mcpHttpRoutes);
+
   // ─── Root redirect ────────────────────────────────────────────────────────
   fastify.get('/', async (_req, reply) => {
     return reply.redirect('/dashboard/');
   });
+
+  // ─── Prometheus metrics (#93, public — in auth skip list) ─────────────────
+  await fastify.register(metricsRoutes);
 
   // ─── Health check ─────────────────────────────────────────────────────────
   fastify.get('/health', async () => ({
@@ -84,8 +157,48 @@ export async function buildServer() {
 }
 
 export async function startServer() {
+  if (isMcpStdio()) console.log = console.error;
   await initConfigDirs();
+
+  // Permission guard runs first, before anything else reads or writes a
+  // config file (including both migrations below) — an unsafe secrets file
+  // must block startup before its content is ever touched.
+  await enforceStartupGuard();
+
+  // Runs here, before anything else touches CONFIG_PATHS.routers, and
+  // deliberately NOT inside configModule.migrate() (which the kernel wraps in
+  // a best-effort try/catch that logs and continues for every other
+  // migration). On malformed projects.json this throws (EC3) and that throw
+  // must propagate out of startServer() to stop the boot — a service that
+  // silently starts with an empty routers.json also permanently defeats this
+  // migration's own idempotency check ("routers.json already exists = already
+  // migrated") on every future restart, even once the operator fixes the
+  // file. See validator report .claude/specs/0.4.1/03-validation/RTR-01.md,
+  // iteration 2, finding B2.
+  const storageMigrated = await migrateRouterStorage();
+  if (storageMigrated !== undefined) {
+     
+    console.log(`[startup] migrated ${storageMigrated} router(s) from projects.json to routers.json`);
+  }
+
+  // Same reasoning and same placement as migrateRouterStorage() above,
+  // deliberately NOT inside configModule.migrate() — a corrupted legacy
+  // usage.json must fail loudly (EC2) and stop the boot, not start the
+  // service on partial/corrupted usage data. See RTR-06 remediation,
+  // .claude/specs/0.4.1/03-validation/RTR-06.md, finding B1.
+  const migratedUsage = await migrateUsageToNdjson();
+  if (migratedUsage > 0) {
+     
+    console.log(`[startup] migrated ${migratedUsage} usage record(s) from usage.json to usage.ndjson`);
+  }
+
+  const reenabled = await reenableModules();
+  if (reenabled.length > 0) {
+    process.stdout.write(`[startup] re-enabled ${reenabled.length} module(s): ${reenabled.join(', ')} (all modules are always active)\n`);
+  }
+
   await loadSecret();
+  await loadCredentialKey();
   const settings = await readConfig('settings');
 
   if (settings.telemetry?.enabled === true) {
@@ -96,19 +209,33 @@ export async function startServer() {
       null;
 
     if (event !== null) {
-      pingTelemetry(installId, event);
-      await writeConfig('settings', {
-        ...settings,
-        telemetry: { ...settings.telemetry, lastPingedVersion: pkgVersion },
-      });
+      const ok = await pingTelemetry(installId, event);
+      if (ok) {
+        await writeConfig('settings', {
+          ...settings,
+          telemetry: { ...settings.telemetry, lastPingedVersion: pkgVersion },
+        });
+      }
     }
   }
 
   const server = await buildServer();
 
+  if (isMcpStdio()) return;
+
   try {
-    await server.listen({ port: settings.port, host: settings.host });
-    updateChecker.start(pkgVersion, settings.channel ?? 'latest');
+    await server.listen({ port: effectivePort(settings), host: settings.host });
+    // The 60s integration push is started by the observability module (kernel start).
+    // Skipped outside production by default: a dev checkout's package.json version
+    // is never bumped by semantic-release on develop/main (see docs/contributing/
+    // releasing.md's "unstamped tag" note), so it always lags the tag a release just
+    // cut — comparing it would flag the instance actively building that release as
+    // "outdated". ROUTERLY_FORCE_UPDATE_CHECK opts back in for testing the checker itself.
+    const updateCheckWanted = process.env['NODE_ENV'] === 'production' || process.env['ROUTERLY_FORCE_UPDATE_CHECK'] === 'true';
+    updateChecker.configure(pkgVersion, settings.channel ?? 'latest');
+    if (updateCheckWanted && process.env['ROUTERLY_DISABLE_UPDATE_CHECK'] !== 'true') {
+      updateChecker.start(pkgVersion, settings.channel ?? 'latest');
+    }
   } catch (err) {
     server.log.error(err);
     process.exit(1);

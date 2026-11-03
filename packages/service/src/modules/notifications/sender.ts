@@ -1,0 +1,280 @@
+import { randomUUID } from 'node:crypto';
+import nodemailer from 'nodemailer';
+import type {
+  SmtpChannelConfig,
+  SesChannelConfig,
+  SendGridChannelConfig,
+  AzureChannelConfig,
+  GoogleChannelConfig,
+  WebhookChannelConfig,
+  NotificationChannel,
+} from '@routerly/shared';
+import { sendSlack }     from './channels/slack.js';
+import { sendTeams }     from './channels/teams.js';
+import { sendPagerDuty } from './channels/pagerduty.js';
+import { sendDiscord }   from './channels/discord.js';
+import { validateWebhookUrl } from './url-guard.js';
+import { appendToInbox } from './emitter.js';
+
+interface SendResult {
+  ok: boolean;
+  message: string;
+  /** Set when test succeeded only after flipping the secure flag */
+  fixedSecure?: boolean;
+}
+
+const TEST_SUBJECT = 'Routerly – Test notification';
+const TEST_BODY    = 'This is a test message sent from Routerly to verify your notification channel is configured correctly.';
+
+/** Subject/body for the message being sent — defaults to the test content. */
+interface MessageContent {
+  subject: string;
+  text: string;
+  /** Structured payload sent to webhook channels */
+  payload?: Record<string, unknown>;
+}
+const TEST_CONTENT: MessageContent = { subject: TEST_SUBJECT, text: TEST_BODY };
+
+// ── SMTP ─────────────────────────────────────────────────────────────────────────────
+async function sendSmtp(cfg: SmtpChannelConfig, to: string, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
+  const mail = {
+    from: cfg.fromName ? `"${cfg.fromName}" <${cfg.fromAddress}>` : cfg.fromAddress,
+    to,
+    subject: content.subject,
+    text: content.text,
+  };
+
+  const tryTransport = async (secure: boolean) => {
+    const t = nodemailer.createTransport({
+      host:   cfg.host,
+      port:   cfg.port,
+      secure,
+      tls:    { rejectUnauthorized: false },
+      ...(cfg.username ? { auth: { user: cfg.username, pass: cfg.password ?? '' } } : {}),
+    });
+    await t.sendMail(mail);
+  };
+
+  try {
+    await tryTransport(cfg.secure);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const isSslMismatch = msg.includes('wrong version number') || msg.includes('ssl3_get_record') || msg.includes('ECONNRESET');
+    if (isSslMismatch) {
+      try {
+        await tryTransport(!cfg.secure);
+        const correctedSecure = !cfg.secure;
+        const hint = correctedSecure
+          ? `TLS setting auto-corrected: enable "Use TLS/SSL" in settings (port ${cfg.port} uses direct SSL).`
+          : `TLS setting auto-corrected: disable "Use TLS/SSL" in settings (port ${cfg.port} uses STARTTLS).`;
+        return { ok: true, message: hint, fixedSecure: correctedSecure };
+      } catch {
+        throw new Error(`Cannot connect to ${cfg.host}:${cfg.port} — tried both SSL and STARTTLS. Check host/port.`);
+      }
+    }
+    throw e;
+  }
+  return { ok: true, message: 'Test email sent via SMTP.' };
+}
+
+// ── Amazon SES (via SMTP endpoint) ────────────────────────────────────────────────────
+async function sendSes(cfg: SesChannelConfig, to: string, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
+  const host = `email-smtp.${cfg.region}.amazonaws.com`;
+  const transport = nodemailer.createTransport({
+    host,
+    port:   465,
+    secure: true,
+    ...(cfg.accessKeyId ? { auth: { user: cfg.accessKeyId, pass: cfg.secretAccessKey ?? '' } } : {}),
+  });
+  await transport.sendMail({
+    from: cfg.fromName ? `"${cfg.fromName}" <${cfg.fromAddress}>` : cfg.fromAddress,
+    to,
+    subject: content.subject,
+    text: content.text,
+  });
+  return { ok: true, message: 'Test email sent via Amazon SES.' };
+}
+
+// ── SendGrid ────────────────────────────────────────────────────────────────────────
+async function sendSendGrid(cfg: SendGridChannelConfig, to: string, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
+  const transport = nodemailer.createTransport({
+    host:   'smtp.sendgrid.net',
+    port:   587,
+    secure: false,
+    auth:   { user: 'apikey', pass: cfg.apiKey },
+  });
+  await transport.sendMail({
+    from: cfg.fromName ? `"${cfg.fromName}" <${cfg.fromAddress}>` : cfg.fromAddress,
+    to,
+    subject: content.subject,
+    text: content.text,
+  });
+  return { ok: true, message: 'Test email sent via SendGrid.' };
+}
+
+// ── Azure Communication Services ──────────────────────────────────────────────────
+async function sendAzure(cfg: AzureChannelConfig, to: string, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
+  const parts = Object.fromEntries(
+    cfg.connectionString.split(';').map((p: string) => {
+      const idx = p.indexOf('=');
+      return [p.slice(0, idx).toLowerCase().trim(), p.slice(idx + 1).trim()];
+    })
+  );
+  const endpoint  = parts['endpoint']?.replace(/\/$/, '');
+  const accessKey = parts['accesskey'];
+  if (!endpoint || !accessKey) throw new Error('Invalid Azure connection string');
+
+  const now    = new Date().toUTCString();
+  const body   = JSON.stringify({
+    senderAddress: cfg.fromAddress,
+    content: { subject: content.subject, plainText: content.text },
+    recipients: { to: [{ address: to }] },
+  });
+
+  const { createHmac, createHash } = await import('node:crypto');
+  const contentHash = createHash('sha256').update(body).digest('base64');
+  const url         = new URL(`${endpoint}/emails:send?api-version=2023-03-31`);
+  const strToSign   = `POST\n${url.pathname}${url.search}\n${now};${url.hostname};${contentHash}`;
+  const signature   = createHmac('sha256', Buffer.from(accessKey, 'base64')).update(strToSign).digest('base64');
+
+  const res = await fetch(url.toString(), {
+    method: 'POST',
+    headers: {
+      'Content-Type':        'application/json',
+      'x-ms-date':           now,
+      'x-ms-content-sha256': contentHash,
+      Authorization:         `HMAC-SHA256 SignedHeaders=x-ms-date;host;x-ms-content-sha256&Signature=${signature}`,
+    },
+    body,
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Azure API error ${res.status}: ${err}`);
+  }
+  return { ok: true, message: 'Test email sent via Azure Communication Services.' };
+}
+
+// ── Google / Gmail OAuth2 ──────────────────────────────────────────────────────────
+async function sendGoogle(cfg: GoogleChannelConfig, to: string, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
+  const transport = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      type:         'OAuth2',
+      user:         cfg.fromAddress,
+      clientId:     cfg.clientId,
+      clientSecret: cfg.clientSecret,
+      refreshToken: cfg.refreshToken,
+    },
+  });
+  await transport.sendMail({
+    from: cfg.fromName ? `"${cfg.fromName}" <${cfg.fromAddress}>` : cfg.fromAddress,
+    to,
+    subject: content.subject,
+    text: content.text,
+  });
+  return { ok: true, message: 'Test email sent via Google / Gmail.' };
+}
+
+// ── Webhook ───────────────────────────────────────────────────────────────────────────
+async function sendWebhook(cfg: WebhookChannelConfig, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
+  validateWebhookUrl(cfg.url);
+  const payload = content.payload ?? { event: 'test', source: 'Routerly', timestamp: new Date().toISOString() };
+  const body    = JSON.stringify(payload);
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (cfg.secret) {
+    const { createHmac } = await import('node:crypto');
+    headers['X-Routerly-Signature'] = `sha256=${createHmac('sha256', cfg.secret).update(body).digest('hex')}`;
+  }
+  const method = cfg.method ?? 'POST';
+  const res = await fetch(cfg.url, {
+    method,
+    ...(method === 'POST' ? { headers, body } : {}),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Webhook responded HTTP ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return { ok: true, message: `Webhook ping OK — server responded HTTP ${res.status}.` };
+}
+
+const testNativePayload = () => ({
+  event:     'test',
+  severity:  'info' as const,
+  timestamp: new Date().toISOString(),
+  details:   { source: 'Routerly', message: 'Test notification' },
+});
+
+// ── Public dispatcher ──────────────────────────────────────────────────────────────
+export async function sendTestNotification(
+  channel: NotificationChannel,
+  to: string,
+  testRecipientUserId?: string,
+): Promise<SendResult> {
+  switch (channel.provider) {
+    case 'smtp':      return sendSmtp(channel, to);
+    case 'ses':       return sendSes(channel, to);
+    case 'sendgrid':  return sendSendGrid(channel, to);
+    case 'azure':     return sendAzure(channel, to);
+    case 'google':    return sendGoogle(channel, to);
+    case 'webhook':   return sendWebhook(channel);
+    case 'slack':     await sendSlack(channel, testNativePayload());
+                      return { ok: true, message: 'Test message sent via Slack.' };
+    case 'teams':     await sendTeams(channel, testNativePayload());
+                      return { ok: true, message: 'Test message sent via Microsoft Teams.' };
+    case 'pagerduty': await sendPagerDuty(channel, testNativePayload());
+                      return { ok: true, message: 'Test event triggered via PagerDuty.' };
+    case 'discord':   await sendDiscord(channel, testNativePayload());
+                      return { ok: true, message: 'Test message sent via Discord.' };
+    case 'dashboard': {
+      await appendToInbox({
+        id: randomUUID(),
+        event: 'notification.test',
+        severity: 'info',
+        timestamp: new Date().toISOString(),
+        details: { channelId: channel.id, channelName: (channel as unknown as { name?: string }).name ?? '' },
+        readBy: [],
+        recipients: testRecipientUserId ? [testRecipientUserId] : [],
+      });
+      return { ok: true, message: 'Test notification delivered to the in-app inbox.' };
+    }
+    default:          throw new Error(`Unknown provider: ${String((channel as { provider: string }).provider)}`);
+  }
+}
+
+/**
+ * Dispatches a real system event to a configured channel (#89/#90, targets U5).
+ * Email channels send to the resolved target emails (`recipients`, comma-joined)
+ * or fall back to their own `fromAddress` when untargeted. Webhook/native
+ * delivery endpoints are fixed — `recipients` does not change their delivery.
+ * Throws on failure (caller should catch per-channel).
+ */
+export async function dispatchNotification(
+  channel: NotificationChannel,
+  payload: { event: string; severity: string; timestamp: string; details: Record<string, unknown> },
+  recipients?: string[],
+): Promise<SendResult> {
+  const subject = `Routerly [${payload.severity}] ${payload.event}`;
+  const text    = `${payload.event} (${payload.severity}) at ${payload.timestamp}\n\n${JSON.stringify(payload.details, null, 2)}`;
+  const content: MessageContent = { subject, text, payload: payload as unknown as Record<string, unknown> };
+  const native = payload as Parameters<typeof sendSlack>[1];
+  switch (channel.provider) {
+    case 'smtp':     return sendSmtp(channel, emailTo(channel.fromAddress, recipients), content);
+    case 'ses':      return sendSes(channel, emailTo(channel.fromAddress, recipients), content);
+    case 'sendgrid': return sendSendGrid(channel, emailTo(channel.fromAddress, recipients), content);
+    case 'azure':    return sendAzure(channel, emailTo(channel.fromAddress, recipients), content);
+    case 'google':   return sendGoogle(channel, emailTo(channel.fromAddress, recipients), content);
+    case 'webhook':  return sendWebhook(channel, content); // targets ignored for delivery
+    case 'slack':     await sendSlack(channel, native);     return { ok: true, message: 'Message sent via Slack.' };
+    case 'teams':     await sendTeams(channel, native);     return { ok: true, message: 'Message sent via Microsoft Teams.' };
+    case 'pagerduty': await sendPagerDuty(channel, native); return { ok: true, message: 'Event triggered via PagerDuty.' };
+    case 'discord':   await sendDiscord(channel, native);   return { ok: true, message: 'Message sent via Discord.' };
+    // dashboard never reaches here (handled by emitter inbox)
+    default:         throw new Error(`Unknown provider: ${String((channel as { provider: string }).provider)}`);
+  }
+}
+
+/** Comma-joined recipient list, or the channel's fromAddress when untargeted. */
+function emailTo(fromAddress: string, recipients?: string[]): string {
+  return recipients && recipients.length > 0 ? recipients.join(', ') : fromAddress;
+}
+

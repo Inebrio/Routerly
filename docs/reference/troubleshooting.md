@@ -45,10 +45,10 @@ Fix the reported file by hand or restore from a backup.
 
 **Likely causes:**
 - Missing `Authorization: Bearer sk-rt-…` header
-- The project token was rotated or deleted
+- The router token was rotated or deleted
 - The token was typed incorrectly
 
-**Fix:** Verify the token in the dashboard under **Projects → Tokens**. Generate a new token if needed; old tokens cannot be recovered.
+**Fix:** Verify the token in the dashboard under **Routers → Tokens**. Generate a new token if needed; old tokens cannot be recovered.
 
 ### 401 on the management API — "JWT expired"
 
@@ -98,7 +98,7 @@ Dashboard sessions expire after 24 hours. The CLI persists credentials and promp
 **Symptom:** Requests return HTTP 503 with `"Budget limit reached"`.
 
 **Fixes:**
-1. Open the dashboard → **Projects → [Project] → Tokens** to see which budget was hit and when it resets.
+1. Open the dashboard → **Routers → [Router] → Tokens** to see which budget was hit and when it resets.
 2. Increase the budget limit or wait for the current window to reset.
 3. If a **Global** budget is the issue, an admin must adjust it in the dashboard → **Overview** or **Settings**.
 
@@ -110,13 +110,13 @@ Dashboard sessions expire after 24 hours. The CLI persists credentials and promp
 
 **Symptom:** The routing policy is set to `random` or `round-robin`, but the same model is always selected.
 
-**Fix:** Check that more than one model is assigned to the project. A project with only one model always routes to that model regardless of policy.
+**Fix:** Check that more than one model is assigned to the router. A router with only one model always routes to that model regardless of policy.
 
 ### Preferred model is never selected
 
 **Symptom:** The `preferred` or `priority` policy is configured, but a different model is chosen.
 
-**Fix:** Verify that the preferred model is **enabled** (not disabled) and assigned to the project.
+**Fix:** Verify that the preferred model is **enabled** (not disabled) and assigned to the router.
 
 ---
 

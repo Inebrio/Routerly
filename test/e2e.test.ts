@@ -15,7 +15,10 @@
  *   ROUTERLY_TEST_TOKEN=sk-rt-... ROUTERLY_TEST_ADMIN_EMAIL=... ROUTERLY_TEST_ADMIN_PASSWORD=... npm test
  *
  * When ROUTERLY_TEST_TOKEN is not set, all tests in this file are skipped
- * silently — the regular unit/integration suite still runs normally.
+ * silently -- the regular unit/integration suite still runs normally.
+ *
+ * To prevent e2e test LLM calls from writing to ~/.routerly/data/usage.json,
+ * start the local Routerly server with ROUTERLY_SKIP_TRACKING=1.
  */
 
 import { describe, it, expect, beforeAll } from 'vitest'
@@ -136,7 +139,7 @@ describe.skipIf(!TOKEN)('E2E · LLM Proxy', () => {
       const res = await post(
         '/v1/chat/completions',
         { model: 'auto', messages: [{ role: 'user', content: 'Ping.' }], max_tokens: 10, stream: true },
-        auth(TOKEN!),
+        { ...auth(TOKEN!), 'x-routerly-trace': '1' },
       )
       expect(res.status).toBe(200)
       expect(res.headers.get('content-type')).toContain('text/event-stream')

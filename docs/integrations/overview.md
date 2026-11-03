@@ -6,7 +6,7 @@ sidebar_position: 1
 
 # Integrations
 
-Routerly is compatible with any tool that speaks the OpenAI or Anthropic API. Point the tool at your Routerly instance, set your project token as the API key, and everything works — routing, budget enforcement, and cost tracking included.
+Routerly is compatible with any tool that speaks the OpenAI or Anthropic API. Point the tool at your Routerly instance, set your router token as the API key, and everything works — routing, budget enforcement, and cost tracking included.
 
 ---
 
@@ -32,6 +32,33 @@ Native integrations for popular development environments.
 | [Continue.dev](./continue) | Open-source AI code assistant for VS Code and JetBrains |
 | [Cline](./cline) | Autonomous coding agent with file and terminal access |
 | [VS Code](./vscode) | GitHub Copilot-compatible AI coding assistant |
+
+---
+
+## Connect a client
+
+Routerly keeps a registry of the AI clients it knows how to talk to. For
+each one the `routerly clients` CLI command group either writes the config
+file for you (with an automatic backup and undo) or prints the manual steps.
+The dashboard shows the same steps, read-only, under
+[Connect](../dashboard/connect.md).
+
+**Modes**: `llm` means the client sends its model traffic through Routerly,
+`mcp` means it loads Routerly as an MCP server and gets its tools.
+
+| Client | Setup | Modes |
+|--------|-------|-------|
+| [Claude Code](./clients/claude-code) | CLI writes the config | llm + mcp |
+| [Codex](./clients/codex) | CLI writes the config | llm + mcp |
+| [OpenCode](./clients/opencode) | CLI writes the config | llm + mcp |
+| [Continue.dev](./clients/continue) | CLI writes the config | llm |
+| [Claude Desktop](./clients/claude-desktop) | Manual, MCP only | mcp |
+| [OpenClaw](./openclaw) | Manual | llm + mcp |
+| [Cline](./clients/cline) | Manual, VS Code Settings UI | llm + mcp |
+| [Cursor](./cursor) | Manual, in-app Settings | llm + mcp |
+| [Zed](./clients/zed) | Manual, `settings.json` | llm + mcp |
+| [Any OpenAI SDK app](./generic-openai) | Manual, environment variables | llm |
+| [Any Anthropic SDK app](./generic-anthropic) | Manual, environment variables | llm |
 
 ---
 
@@ -74,7 +101,7 @@ Interactive computing environments.
 Every integration follows the same two-step pattern:
 
 1. **Set the base URL** to your Routerly instance — `http://localhost:3000/v1` for local, or your production URL.
-2. **Set the API key** to your project token — `sk-rt-YOUR_PROJECT_TOKEN`.
+2. **Set the API key** to your router token — `sk-rt-YOUR_ROUTER_TOKEN`.
 
 Routerly looks like OpenAI or Anthropic to any client. No SDK patches, no plugins.
 
