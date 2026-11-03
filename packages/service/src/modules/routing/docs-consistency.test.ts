@@ -59,11 +59,12 @@ describe('README and docs intro stay aligned with the product', () => {
   })
   it('README names every hosted provider and the CLI help lists every registered provider id', () => {
     const registry = read('packages/service/src/modules/provider/registry.ts')
-    const hosted = /for \(const id of \[([^\]]+)\]/.exec(registry)![1].match(/'([a-z0-9-]+)'/g)!.map(s => s.slice(1, -1))
-    const ids = [...registry.matchAll(/contribute\(\{ id: '([a-z0-9-]+)'/g)].map(m => m[1]).filter(id => !id.endsWith('-web'))
-    const providersSection = /## Supported Providers([\s\S]*?)\n---/.exec(readme)![1].toLowerCase()
+    const hosted: string[] = /for \(const id of \[([^\]]+)\]/.exec(registry)?.[1]?.match(/'([a-z0-9-]+)'/g)?.map(s => s.slice(1, -1)) ?? []
+    expect(hosted.length).toBeGreaterThan(0)
+    const ids = [...registry.matchAll(/contribute\(\{ id: '([a-z0-9-]+)'/g)].map(m => m[1] ?? '').filter(id => id && !id.endsWith('-web'))
+    const providersSection = /## Supported Providers([\s\S]*?)\n---/.exec(readme)?.[1]?.toLowerCase() ?? ''
     for (const id of hosted) expect(providersSection, id).toContain(id)
-    const help = /'Provider: ([^']+)'/.exec(read('packages/cli/src/commands/model.ts'))![1]
+    const help = /'Provider: ([^']+)'/.exec(read('packages/cli/src/commands/model.ts'))?.[1] ?? ''
     for (const id of [...ids, ...hosted]) expect(help, id).toContain(id)
   })
 })
