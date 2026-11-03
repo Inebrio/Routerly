@@ -1137,7 +1137,8 @@
         "checkFailed": "확인 실패",
         "updateFailed": "업데이트 실패"
       },
-      "channel": "채널"
+      "channel": "채널",
+      "channelNote": "current는 새 안정 릴리스를 모두 따라가고, stable은 릴리스가 승격될 때만 이동하므로 둘은 다를 수 있습니다."
     },
     "security": {
       "authentication": "인증",

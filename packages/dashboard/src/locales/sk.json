@@ -1137,7 +1137,8 @@
         "checkFailed": "Kontrola zlyhala",
         "updateFailed": "Aktualizácia zlyhala"
       },
-      "channel": "Kanál"
+      "channel": "Kanál",
+      "channelNote": "current sleduje každé nové stabilné vydanie; stable sa posunie len pri povýšení vydania, takže sa môžu líšiť."
     },
     "security": {
       "authentication": "Autentifikácia",

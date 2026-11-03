@@ -1137,7 +1137,8 @@
         "checkFailed": "Verificação falhou",
         "updateFailed": "Atualização falhou"
       },
-      "channel": "Canal"
+      "channel": "Canal",
+      "channelNote": "current acompanha cada nova versão estável; stable só muda quando uma versão é promovida, então os dois podem divergir."
     },
     "security": {
       "authentication": "Autenticação",

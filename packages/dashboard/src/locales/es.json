@@ -1137,7 +1137,8 @@
         "checkFailed": "Error en la comprobación",
         "updateFailed": "Error en la actualización"
       },
-      "channel": "Canal"
+      "channel": "Canal",
+      "channelNote": "current sigue cada nueva versión estable; stable solo se mueve cuando se promueve una versión, así que pueden diferir."
     },
     "security": {
       "authentication": "Autenticación",

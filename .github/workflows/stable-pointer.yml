@@ -1,0 +1,56 @@
+name: Stable pointer
+
+# Moves the `stable` update channel to an existing release. Manual only: the
+# promotion rule (release is already `current`, no open regressions attributed
+# to it, explicit OK) is enforced by `rtr release promote-stable`, which
+# dispatches this workflow. See docs/contributing/releasing.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release to promote, e.g. v0.6.0'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  stable-pointer:
+    name: Move the stable pointer
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Check the release can be promoted
+        run: |
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::'$VERSION' is not a vX.Y.Z tag"; exit 1; }
+          gh release view "$VERSION" >/dev/null || { echo "::error::release $VERSION does not exist"; exit 1; }
+          newest="$(gh release list --limit 100 --json tagName --jq '.[].tagName' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)"
+          [ "$newest" = "$VERSION" ] || { echo "::error::$VERSION is not current (newest release is $newest)"; exit 1; }
+
+      - name: Force-move the channel-stable tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f channel-stable "$VERSION"
+          git push origin refs/tags/channel-stable --force
+
+      - name: Recreate the stable pointer release
+        run: |
+          gh release delete channel-stable --yes 2>/dev/null || true
+          # shellcheck disable=SC2016  # the printf format string is deliberately single-quoted, %s is the interpolation point
+          gh release create channel-stable \
+            --title "Routerly stable (→ $VERSION)" \
+            --prerelease \
+            --notes "$(printf 'Stable channel release. Points to **%s**.\n\nInstall:\n```bash\ncurl -fsSL https://routerly.ai/install.sh | bash -s -- --channel=stable\n```' "$VERSION")" \
+            scripts/install.sh \
+            scripts/install.ps1 \
+            scripts/install.mjs

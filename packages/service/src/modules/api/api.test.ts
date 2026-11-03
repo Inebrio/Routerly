@@ -916,7 +916,7 @@ describe('GET /api/system/info', () => {
     expect(typeof body.nodeVersion).toBe('string')
   })
 
-  it('reports a stored, now-retired alias verbatim with no silent correction (RMT-2 EC1)', async () => {
+  it('reports a persisted stable channel verbatim and never rewrites the config', async () => {
     mockReadConfig.mockResolvedValue({ channel: 'stable' } as any)
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/system/info' })
@@ -925,6 +925,7 @@ describe('GET /api/system/info', () => {
     const body = JSON.parse(res.body)
     expect(body.channel).toBe('stable')
     expect(body.rawChannel).toBe('stable')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 
   it('reports channel and rawChannel identically for a stored canonical channel (RC-4 AC2)', async () => {
@@ -3872,33 +3873,8 @@ describe('PUT /api/settings', () => {
     expect(written.telemetry.enabled).toBe(false)
   })
 
-  it('rejects the retired "stable" alias with 400, persisting nothing (RMT-2 AC2/EC1)', async () => {
-    setupAdminAuth()
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [adminUser]
-      if (t === 'roles') return []
-      if (t === 'settings') return { channel: 'latest' }
-      return []
-    })
-    mockWriteConfig.mockResolvedValue(undefined)
-
-    const { updateChecker } = await import('../update-checker/update-checker.js')
-    vi.mocked(updateChecker.updateChannel).mockClear()
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'PUT', url: '/api/settings',
-      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ channel: 'stable' }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(400)
-    expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.' })
-    expect(mockWriteConfig).not.toHaveBeenCalled()
-    expect(vi.mocked(updateChecker.updateChannel)).not.toHaveBeenCalled()
-  })
-
   describe('channel validation', () => {
-    for (const value of ['latest', 'current', 'next', 'develop', 'v0.4.0']) {
+    for (const value of ['latest', 'current', 'next', 'stable', 'develop', 'v0.4.0']) {
       it(`accepts "${value}" with no deprecation warning`, async () => {
         setupAdminAuth()
         mockReadConfig.mockImplementation(async (t: string) => {
@@ -3928,32 +3904,6 @@ describe('PUT /api/settings', () => {
       })
     }
 
-    it('rejects the retired "stable" alias with 400 (RMT-2 AC2)', async () => {
-      setupAdminAuth()
-      mockReadConfig.mockImplementation(async (t: string) => {
-        if (t === 'users') return [adminUser]
-        if (t === 'roles') return []
-        if (t === 'settings') return { channel: 'latest' }
-        return []
-      })
-      mockWriteConfig.mockResolvedValue(undefined)
-      const { updateChecker } = await import('../update-checker/update-checker.js')
-      vi.mocked(updateChecker.updateChannel).mockClear()
-
-      const app = await buildApp()
-      const res = await app.inject({
-        method: 'PUT', url: '/api/settings',
-        headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-        payload: JSON.stringify({ channel: 'stable' }),
-      })
-      await app.close()
-
-      expect(res.statusCode).toBe(400)
-      expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.' })
-      expect(mockWriteConfig).not.toHaveBeenCalled()
-      expect(vi.mocked(updateChecker.updateChannel)).not.toHaveBeenCalled()
-    })
-
     it('rejects an invalid channel with 400 and the exact error message, without persisting or calling updateChannel', async () => {
       setupAdminAuth()
       mockReadConfig.mockImplementation(async (t: string) => {
@@ -3975,7 +3925,7 @@ describe('PUT /api/settings', () => {
       await app.close()
 
       expect(res.statusCode).toBe(400)
-      expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.' })
+      expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, stable, develop, or a version tag such as v0.4.0.' })
       expect(mockWriteConfig).not.toHaveBeenCalled()
       expect(vi.mocked(updateChecker.updateChannel)).not.toHaveBeenCalled()
     })
@@ -8658,7 +8608,7 @@ describe('PUT /api/settings — channel null (line 917)', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(400)
-    expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.' })
+    expect(JSON.parse(res.body)).toEqual({ error: 'Invalid channel. Accepted values: latest, current, next, stable, develop, or a version tag such as v0.4.0.' })
     expect(mockWriteConfig).not.toHaveBeenCalled()
     expect(vi.mocked(updateChecker.updateChannel)).not.toHaveBeenCalled()
   })

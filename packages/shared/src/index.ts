@@ -195,7 +195,7 @@ export {
 export type { NotificationEvent } from './types/config.js';
 export type { PermissionCheckStatus } from './types/config.js';
 
-// Update channel vocabulary: 'latest' | 'current' | 'next' | 'develop'
+// Update channel vocabulary: 'latest' | 'current' | 'next' | 'stable' | 'develop'
 export {
   UPDATE_CHANNELS, normalizeUpdateChannel,
   isValidUpdateChannel, UPDATE_CHANNEL_ERROR, LOG_LEVELS,

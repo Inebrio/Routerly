@@ -1137,7 +1137,8 @@
         "checkFailed": "Kuchukuza kushindwa",
         "updateFailed": "Kuboreshwa kushindwa"
       },
-      "channel": "Njia"
+      "channel": "Njia",
+      "channelNote": "current hufuata kila toleo jipya thabiti; stable husogea tu toleo linapopandishwa, kwa hivyo hivi viwili vinaweza kutofautiana."
     },
     "security": {
       "authentication": "Uthibitishaji",

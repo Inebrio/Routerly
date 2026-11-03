@@ -1137,7 +1137,8 @@
         "checkFailed": "Nabigo ang pagsusuri",
         "updateFailed": "Nabigo ang update"
       },
-      "channel": "Channel"
+      "channel": "Channel",
+      "channelNote": "Sinusundan ng current ang bawat bagong stable na release; gumagalaw lang ang stable kapag may na-promote na release, kaya maaaring magkaiba ang dalawa."
     },
     "security": {
       "authentication": "Authentication",

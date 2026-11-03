@@ -1137,7 +1137,8 @@
         "checkFailed": "Verificarea a eșuat",
         "updateFailed": "Actualizarea a eșuat"
       },
-      "channel": "Canal"
+      "channel": "Canal",
+      "channelNote": "current urmează fiecare versiune stabilă nouă; stable se mută doar când o versiune este promovată, deci cele două pot diferi."
     },
     "security": {
       "authentication": "Autentificare",

@@ -1137,7 +1137,8 @@
         "checkFailed": "Kontrola nie powiodła się",
         "updateFailed": "Aktualizacja nie powiodła się"
       },
-      "channel": "Kanał"
+      "channel": "Kanał",
+      "channelNote": "current podąża za każdym nowym wydaniem stabilnym; stable przesuwa się tylko po awansie wydania, więc oba mogą się różnić."
     },
     "security": {
       "authentication": "Uwierzytelnianie",

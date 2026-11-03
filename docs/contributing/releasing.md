@@ -144,19 +144,33 @@ semantic-release actually computed on `main` under this pipeline was
 from RC-1's dry run, not a hypothetical.
 
 **Channel names.** The CLI, the config, the management API and the
-installers accept exactly four values: `latest`, `current`, `next`,
-`develop`, or a version tag such as `v0.4.0`. There are no aliases: every
-value is validated and persisted verbatim.
+installers accept exactly five values: `latest`, `current`, `next`,
+`stable`, `develop`, or a version tag such as `v0.4.0`. There are no
+aliases: every value is validated and persisted verbatim.
 
 :::warning Breaking change
-`stable` and `develop` used to be accepted as deprecated aliases for
-`current` and `next`. Both are retired: `stable` is now rejected outright
-(400 from the management API, non-zero exit from the CLI and installers),
-and `develop` is now a real channel in its own right — the bleeding-edge
-line — not an alias for `next`. An instance that had `"develop"` persisted
-under the old meaning now tracks the bleeding-edge line instead of `next`
-the next time it checks for updates.
+`develop` used to be accepted as a deprecated alias for `next`. It is now a
+real channel in its own right, the bleeding-edge line. An instance that had
+`"develop"` persisted under the old meaning now tracks the bleeding-edge
+line instead of `next` the next time it checks for updates.
 :::
+
+**The `stable` channel.** `stable` is a permanent channel with its own
+release pointer, independent from `current`/`latest`. It is served like
+`next` and `develop`: a rolling `channel-stable` prerelease whose title
+`Routerly stable (→ vX.Y.Z)` carries the version. Rule:
+
+- `current` follows every new stable release automatically.
+- `stable` moves only on explicit promotion, `rtr release promote-stable
+  X.Y.Z`, which dispatches the `stable-pointer` workflow
+  (`.github/workflows/stable-pointer.yml`).
+- Promotion refuses a release that is not already `current` or that has
+  open regressions attributed to it. There is no age limit. It needs
+  Carlo's approval and the `--conferma` flag.
+- Until the first promotion (0.6.0, last step of ROUT-540) `channel-stable`
+  does not exist: the update checker reports an error for `stable` and the
+  installers fail with "Could not fetch channel 'stable'". There is no
+  silent fallback to `current`.
 
 The documentation site's own versioning is unrelated to the three update
 channels above, and keeps only two live states, not three:

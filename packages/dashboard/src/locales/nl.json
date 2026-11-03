@@ -1137,7 +1137,8 @@
         "checkFailed": "Controle mislukt",
         "updateFailed": "Update mislukt"
       },
-      "channel": "Kanaal"
+      "channel": "Kanaal",
+      "channelNote": "current volgt elke nieuwe stabiele release; stable verschuift alleen wanneer een release wordt gepromoveerd, dus de twee kunnen verschillen."
     },
     "security": {
       "authentication": "Verificatie",

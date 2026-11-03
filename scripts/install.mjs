@@ -64,10 +64,10 @@ const FLAG_HOST      = getArg('host')        ?? process.env.ROUTERLY_HOST       
 const FLAG_URL       = getArg('public-url')  ?? process.env.ROUTERLY_PUBLIC_URL  ?? '';
 const INSTALL_VERSION = getArg('version') ?? ''; // set by install.sh/ps1 via --version=vX.Y.Z
 const INSTALL_PINNED = hasFlag('pinned'); // install.sh/ps1 pass --pinned only when the user asked for an explicit --version
-let INSTALL_CHANNEL = getArg('channel') ?? 'current'; // set by install.sh/ps1 via --channel= (latest | current | next | develop)
+let INSTALL_CHANNEL = getArg('channel') ?? 'current'; // set by install.sh/ps1 via --channel= (latest | current | next | stable | develop)
 
-if (!['latest', 'current', 'next', 'develop'].includes(INSTALL_CHANNEL)) {
-  die(`Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next, develop`);
+if (!['latest', 'current', 'next', 'stable', 'develop'].includes(INSTALL_CHANNEL)) {
+  die(`Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next, stable, develop`);
 }
 const FLAG_NO_TELEMETRY = hasFlag('no-telemetry') || process.env.CI === '1' || process.env.CI === 'true';
 

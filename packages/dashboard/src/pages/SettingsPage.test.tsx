@@ -2023,7 +2023,7 @@ describe('SettingsCatalogTab', () => {
 describe('SettingsAboutTab', () => {
   beforeEach(() => {
     mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current', 'next', 'develop'], versions: [] } as never);
+    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current', 'next', 'stable', 'develop'], versions: [] } as never);
     mockCheckForUpdates.mockResolvedValue({ available: false, currentVersion: '0.3.0', latestVersion: '0.3.0', checkedAt: new Date().toISOString() } as never);
     mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
     mockTriggerUpdate.mockResolvedValue({ message: 'Update started' } as never);
@@ -2277,12 +2277,12 @@ describe('SettingsAboutTab', () => {
     expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
-  it('ChannelSelector: dropdown lists only latest, current, next and custom — no old names', async () => {
+  it('ChannelSelector: dropdown lists latest, current, next, stable, develop and custom', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     const sel = screen.getByRole('combobox') as HTMLSelectElement;
     const values = Array.from(sel.options).map(o => o.value);
-    expect(values).toEqual(['latest', 'current', 'next', 'develop', '__custom']);
+    expect(values).toEqual(['latest', 'current', 'next', 'stable', 'develop', '__custom']);
   });
 
   it('ChannelSelector: selecting a known channel calls updateSettings', async () => {
@@ -2318,7 +2318,7 @@ describe('SettingsAboutTab', () => {
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'v0.2.5' }));
   });
 
-  it('ChannelSelector: custom input still accepts a retired alias name verbatim (RMT-2 EC1)', async () => {
+  it('ChannelSelector: custom input accepts a free-text value verbatim', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
@@ -2383,17 +2383,21 @@ describe('SettingsAboutTab', () => {
     await waitFor(() => expect(screen.queryByText('Saved')).not.toBeNull());
   });
 
-  it('ChannelSelector: a stored, now-retired "stable" value is unknown and falls back to the free-text input (RMT-2 EC1)', async () => {
+  it('ChannelSelector: a stored "stable" channel selects itself as a known option and shows its pointed version', async () => {
     mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'stable', rawChannel: 'stable' } as never);
+    mockGetAvailableReleases.mockResolvedValue({
+      channels: ['latest', 'current', 'next', 'stable', 'develop'], versions: [],
+      channelVersions: { current: '0.6.1', stable: '0.6.0' },
+    } as never);
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    // 'stable' is no longer a recognised channel, so it is not in the dropdown
-    // options — the selector falls back to the custom free-text input, not a
-    // silent resolution to any canonical channel.
-    await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).not.toBeNull());
-    const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
-    expect(customInput.value).toBe('stable');
+    await waitFor(() => expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('stable'));
+    const labels = Array.from((screen.getByRole('combobox') as HTMLSelectElement).options).map(o => o.textContent);
+    expect(labels).toContain('stable · 0.6.0');
+    expect(labels).toContain('current · 0.6.1');
+    expect(screen.queryByPlaceholderText('v0.2.0')).toBeNull();
     expect(screen.queryByText(/deprecated/)).toBeNull();
+    expect(screen.getByText(/stable moves only when a release is promoted/)).toBeTruthy();
   });
 
   it('ChannelSelector: stored "develop" channel selects itself as a known option, no hint (RMT-2 AC3)', async () => {

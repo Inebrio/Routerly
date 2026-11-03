@@ -1137,7 +1137,8 @@
         "checkFailed": "जांच विफल",
         "updateFailed": "अपडेट विफल"
       },
-      "channel": "चैनल"
+      "channel": "चैनल",
+      "channelNote": "current हर नए स्थिर रिलीज़ का अनुसरण करता है; stable केवल तब बदलता है जब कोई रिलीज़ प्रमोट की जाती है, इसलिए दोनों अलग हो सकते हैं।"
     },
     "security": {
       "authentication": "प्रमाणीकरण",

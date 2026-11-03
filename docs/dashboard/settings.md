@@ -388,26 +388,19 @@ System information about the running instance:
 
 ### Update Channel
 
-The channel selector lets you choose which release stream Routerly follows when checking for updates:
+The channel selector lets you choose which release stream Routerly follows when checking for updates. Each option shows the version the channel currently points to (for example `stable · 0.6.0`), and a note under the selector reminds you that `current` follows every new stable release while `stable` moves only when a release is promoted, so the two can differ:
 
 | Channel | Description |
 |---------|-------------|
 | `latest` | Newest production-ready release |
 | `current` | Newest production-ready release (same as `latest`) |
 | `next` | Validated pre-release line, promoted from `develop` |
+| `stable` | Release explicitly promoted to stable; moves only on promotion, so it can lag behind `current` |
 | `develop` | Bleeding-edge, unreviewed release line |
 | Custom version | Pin to a specific release tag (e.g. `v0.2.0`) |
 
 :::warning Breaking change
-`stable` is no longer an alias for `current` — selecting it (from this
-dropdown's custom-value field, the CLI, or an installer) is rejected with
-an error naming the four channels above. `develop` is no longer an alias
-for `next`: it is now a real, distinct channel, the bleeding-edge line, and
-selecting it resolves to itself with no deprecation message. An instance
-that already had `stable` or `develop` persisted as its channel is affected
-by this: `stable` now fails validation on the next change, and a persisted
-`develop` now tracks the new bleeding-edge line instead of the old
-validated pre-release line.
+`develop` is not an alias for `next`: it is its own channel, the bleeding-edge line. An instance that had `develop` persisted under the old meaning now tracks the bleeding-edge line instead of `next`.
 :::
 
 Changing the channel takes effect immediately — the running service is notified without a restart.

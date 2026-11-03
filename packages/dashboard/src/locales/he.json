@@ -1137,7 +1137,8 @@
         "checkFailed": "הבדיקה נכשלה",
         "updateFailed": "העדכון נכשל"
       },
-      "channel": "ערוץ"
+      "channel": "ערוץ",
+      "channelNote": "current עוקב אחרי כל גרסה יציבה חדשה; stable זז רק כשגרסה מקודמת, ולכן השניים יכולים להיות שונים."
     },
     "security": {
       "authentication": "אימות",

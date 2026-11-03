@@ -8,6 +8,7 @@
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --scope=system
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=current
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=next
+#   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=stable
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=develop
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --version=v0.2.0
 #
@@ -21,7 +22,7 @@ GITHUB_REPO="Routerly"
 REQUIRED_NODE_MAJOR=20
 
 # ── Channel / version defaults ────────────────────────────────────────────────
-INSTALL_CHANNEL="current"  # latest | current | next | develop
+INSTALL_CHANNEL="current"  # latest | current | next | stable | develop
 INSTALL_VERSION=""         # e.g. v0.2.0 — overrides INSTALL_CHANNEL when set
 
 # ── Colors ────────────────────────────────────────────────────────────────────
@@ -323,19 +324,19 @@ resolve_download_url() {
           release_json="$(http_get "${api_base}/latest")"
         fi
         ;;
-      next|develop)
+      next|stable|develop)
         info "Resolving channel ${BOLD}${INSTALL_CHANNEL}${RESET}..."
         release_json="$(http_get "${api_base}/tags/channel-${INSTALL_CHANNEL}")"
         # Releases published before the pointer tags were renamed use the bare name.
         [ -n "$release_json" ] || release_json="$(http_get "${api_base}/tags/${INSTALL_CHANNEL}")"
         ;;
       *)
-        die "Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next, develop"
+        die "Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next, stable, develop"
         ;;
     esac
   fi
 
-  # The pointer releases (channel-next/develop) carry no tag of their own: the
+  # The pointer releases (channel-next/stable/develop) carry no tag of their own: the
   # real version is in the title "Routerly next (→ vX.Y.Z)".
   RELEASE_TAG=""
   if [ -n "$release_json" ]; then

@@ -1,6 +1,6 @@
 /**
  * Update checker — polls GitHub Releases API to compare the running version
- * against the configured channel (latest, current, next, develop, or a
+ * against the configured channel (latest, current, next, stable, develop, or a
  * specific tag), normalised via `@routerly/shared`.
  *
  * Design:
@@ -115,7 +115,7 @@ function fetchAllReleases(): Promise<GithubRelease[]> {
 // with the branches of the same name (`next`, `develop`) — see release.yml's
 // next-pointer/develop-pointer jobs. Until those jobs have run, only the legacy
 // release tagged `next` exists, so it stays as a fallback.
-const ROLLING_CHANNEL_TAGS: Record<string, string> = { next: 'channel-next', develop: 'channel-develop' };
+const ROLLING_CHANNEL_TAGS: Record<string, string> = { next: 'channel-next', stable: 'channel-stable', develop: 'channel-develop' };
 
 /**
  * `latest`/`current`: the highest plain `vX.Y.Z` release. GitHub's
@@ -135,6 +135,12 @@ async function fetchNewestRelease(channel: string): Promise<GithubRelease> {
     if (best) return best;
   } catch { /* fall through to /releases/latest */ }
   return githubGet<GithubRelease>(`${REPO_API}/releases/latest`, failure);
+}
+
+/** Version a release stands for: its tag, or for a pointer release the one in its title ("Routerly stable (→ v0.6.0)"). */
+function releaseVersion(release: GithubRelease): string {
+  const rawTag = release.tag_name.startsWith('v') ? release.tag_name.slice(1) : release.tag_name;
+  return parseSemver(rawTag) ? rawTag : (release.name?.match(/(\d+\.\d+\.\d+)/)?.[1] ?? rawTag);
 }
 
 async function fetchRelease(channel: string): Promise<GithubRelease> {
@@ -199,12 +205,7 @@ export class UpdateChecker {
     if (!this._enabled) return this.disabledInfo();
     try {
       const release = await fetchRelease(channel);
-      const rawTag = release.tag_name.startsWith('v') ? release.tag_name.slice(1) : release.tag_name;
-      // For rolling channels (develop, stable) the tag_name is not semver.
-      // Extract version from the release title, e.g. "Routerly 0.3.0 (develop channel)".
-      const latestVersion = parseSemver(rawTag)
-        ? rawTag
-        : (release.name?.match(/(\d+\.\d+\.\d+)/)?.[1] ?? rawTag);
+      const latestVersion = releaseVersion(release);
 
       const result: UpdateInfo = {
         available: isNewer(latestVersion, this._currentVersion),
@@ -303,6 +304,17 @@ export class UpdateChecker {
     }
   }
 
+  /** Version each named channel points to; a channel that fails to resolve is left out. */
+  private async channelVersions(): Promise<Record<string, string>> {
+    const out: Record<string, string> = {};
+    // `latest` and `current` are the same lookup: resolve once to spare the GitHub rate limit.
+    await Promise.all(UPDATE_CHANNELS.filter(ch => ch !== 'latest').map(async ch => {
+      try { out[ch] = releaseVersion(await fetchRelease(ch)); } catch { /* unresolved: omitted */ }
+    }));
+    if (out['current']) out['latest'] = out['current'];
+    return out;
+  }
+
   /** Fetch available channels from GitHub Releases, always including the base set. */
   async getAvailableReleases(): Promise<AvailableReleases> {
     const base: string[] = [...UPDATE_CHANNELS];
@@ -313,13 +325,13 @@ export class UpdateChecker {
       for (const r of releases) {
         if (r.draft) continue;
         const tag = r.tag_name;
-        if (!parseSemver(tag) && !excluded.has(tag)) {
+        if (!parseSemver(tag) && !excluded.has(tag) && !tag.startsWith('channel-')) {
           extra.push(tag);
         }
       }
-      return { channels: [...base, ...extra], versions: [] };
+      return { channels: [...base, ...extra], versions: [], channelVersions: await this.channelVersions() };
     } catch {
-      return { channels: base, versions: [] };
+      return { channels: base, versions: [], channelVersions: await this.channelVersions() };
     }
   }
 

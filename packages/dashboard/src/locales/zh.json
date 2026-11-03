@@ -1137,7 +1137,8 @@
         "checkFailed": "检查失败",
         "updateFailed": "更新失败"
       },
-      "channel": "频道"
+      "channel": "频道",
+      "channelNote": "current 跟随每个新的稳定版本；stable 仅在某个版本被提升时才会移动，因此两者可能不同。"
     },
     "security": {
       "authentication": "认证",

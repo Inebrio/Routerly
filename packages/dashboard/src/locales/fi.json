@@ -1137,7 +1137,8 @@
         "checkFailed": "Tarkistus epäonnistui",
         "updateFailed": "Päivitys epäonnistui"
       },
-      "channel": "Kanava"
+      "channel": "Kanava",
+      "channelNote": "current seuraa jokaista uutta vakaata julkaisua; stable siirtyy vain, kun julkaisu ylennetään, joten ne voivat poiketa toisistaan."
     },
     "security": {
       "authentication": "Tunnistautuminen",

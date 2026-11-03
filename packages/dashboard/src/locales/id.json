@@ -1137,7 +1137,8 @@
         "checkFailed": "Pemeriksaan gagal",
         "updateFailed": "Pembaruan gagal"
       },
-      "channel": "Saluran"
+      "channel": "Saluran",
+      "channelNote": "current mengikuti setiap rilis stabil baru; stable hanya berpindah saat sebuah rilis dipromosikan, sehingga keduanya bisa berbeda."
     },
     "security": {
       "authentication": "Autentikasi",

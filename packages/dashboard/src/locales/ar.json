@@ -1137,7 +1137,8 @@
         "checkFailed": "فشل الفحص",
         "updateFailed": "فشل التحديث"
       },
-      "channel": "القناة"
+      "channel": "القناة",
+      "channelNote": "يتبع current كل إصدار مستقر جديد؛ أما stable فلا يتحرك إلا عند ترقية إصدار، لذا قد يختلف الاثنان."
     },
     "security": {
       "authentication": "المصادقة",

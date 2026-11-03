@@ -1137,7 +1137,8 @@
         "checkFailed": "確認に失敗しました",
         "updateFailed": "更新に失敗しました"
       },
-      "channel": "チャネル"
+      "channel": "チャネル",
+      "channelNote": "current は新しい安定版リリースごとに追従します。stable はリリースが昇格されたときだけ移動するため、両者は異なる場合があります。"
     },
     "security": {
       "authentication": "認証",
