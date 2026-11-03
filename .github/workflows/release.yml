@@ -210,14 +210,14 @@ jobs:
           GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
         run: |
           set -e
-          GIT_INDEX_FILE="$(mktemp)"
+          GIT_INDEX_FILE="$(mktemp -u)"
           export GIT_INDEX_FILE
           git add -- website/versioned_docs website/versioned_sidebars website/versions.json
           TREE=$(git write-tree)
           if [ "${{ steps.layer.outputs.exists }}" = "true" ]; then
-            COMMIT=$(git commit-tree "$TREE" -p "${{ steps.layer.outputs.parent }}" -m "chore(docs): cut documentation version ${{ needs.release.outputs.version }}")
+            COMMIT=$(git commit-tree "$TREE" -p "${{ steps.layer.outputs.parent }}" -m "ci(docs): cut documentation version ${{ needs.release.outputs.version }}")
           else
-            COMMIT=$(git commit-tree "$TREE" -m "chore(docs): cut documentation version ${{ needs.release.outputs.version }}")
+            COMMIT=$(git commit-tree "$TREE" -m "ci(docs): cut documentation version ${{ needs.release.outputs.version }}")
           fi
           git push origin "${COMMIT}:refs/heads/docs-versions"
           rm -f "$GIT_INDEX_FILE"
