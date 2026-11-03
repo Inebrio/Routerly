@@ -46,7 +46,8 @@ export default {
       ],
     }],
     ['@semantic-release/exec', {
-      addChannelCmd: 'gh release edit ${nextRelease.gitTag} --latest',
+      // --latest is rejected (HTTP 422) on a prerelease: only main is stable.
+      addChannelCmd: 'if [ "${branch.name}" = main ]; then gh release edit ${nextRelease.gitTag} --latest; fi',
     }],
     // RC-2: single source of the branch → channel → docker-tag mapping the
     // release-pipeline.yml workflow's downstream jobs key off of. That hook

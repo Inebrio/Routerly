@@ -213,6 +213,25 @@ describe('RC-1, AC5 (Task 7 fix): promoted releases are re-marked latest', () =>
     expect(options.addChannelCmd).toContain('--latest')
   })
 
+  it('runs `gh release edit --latest` only on main (prereleases reject it)', async () => {
+    const config = await loadReleaseConfig()
+    const entry = config.plugins.find(
+      (e: unknown) =>
+        Array.isArray(e) &&
+        e[0] === '@semantic-release/exec' &&
+        ((e[1] as Record<string, string>)?.addChannelCmd ?? '').includes('--latest'),
+    ) as [string, { addChannelCmd: string }]
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-gh-'))
+    fs.writeFileSync(path.join(dir, 'gh'), '#!/bin/sh\necho "gh $*"\n', { mode: 0o755 })
+    const run = (branch: string) =>
+      spawnSync('sh', ['-c', entry[1].addChannelCmd.replace('${branch.name}', branch).replace('${nextRelease.gitTag}', 'v0.6.0')], {
+        env: { ...process.env, PATH: `${dir}:${process.env.PATH}` },
+      }).stdout.toString()
+    expect(run('main')).toBe('gh release edit v0.6.0 --latest\n')
+    expect(run('next')).toBe('')
+    expect(run('develop')).toBe('')
+  })
+
   it('the make-latest exec entry is positioned after @semantic-release/github in the plugin array', async () => {
     // Order matters (blueprint task 7): the flag flip must run after
     // @semantic-release/github's own addChannel PATCH, not before it.
