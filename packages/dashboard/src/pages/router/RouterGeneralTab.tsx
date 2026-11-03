@@ -8,6 +8,7 @@ import { useRouter } from './RouterLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { CopyBlock } from '../../components/CopyBlock';
+import { ReadOnlyFieldset } from '../../components/ProfileDraftControls';
 import { AUTO_MODEL, PLACEHOLDER_TOKEN } from '../connectShared';
 import { DEFAULT_ROUTER_TIMEOUT_MS } from '@routerly/shared';
 
@@ -43,6 +44,7 @@ export function RouterGeneralTab() {
   // Needs settings:read; without it the connect snippets use window.location.origin.
   const { can } = useAuth();
   const canReadSettings = can('settings:read');
+  const canWrite = can('router:write');
   useEffect(() => {
     if (!canReadSettings) return;
     getSettings().then(s => {
@@ -308,6 +310,7 @@ message = client.messages.create(
           </div>
         </div>
 
+        <ReadOnlyFieldset readOnly={!canWrite}>
         <div className="form-group">
           <label className="form-label">{t('routers.general.form.routerName')}</label>
           <input
@@ -318,6 +321,7 @@ message = client.messages.create(
             required
           />
         </div>
+        </ReadOnlyFieldset>
 
         {router.kind === 'passthrough' && (
           <div className="form-group">
@@ -342,6 +346,7 @@ message = client.messages.create(
           </button>
 
           {showAdvanced && (
+            <ReadOnlyFieldset readOnly={!canWrite}>
             <div style={{ marginTop: 16 }}>
               <div className="form-group">
                 <label className="form-label">{t('routers.general.form.ttftTimeout')}</label>
@@ -398,14 +403,17 @@ message = client.messages.create(
               )}
 
             </div>
+            </ReadOnlyFieldset>
           )}
         </div>
 
-        <div style={{ marginTop: 24 }}>
-          <button type="submit" className="btn btn-primary" disabled={saving || !isDirty}>
-            {saving ? <span className="spinner" /> : t('routers.general.form.saveChanges')}
-          </button>
-        </div>
+        {canWrite && (
+          <div style={{ marginTop: 24 }}>
+            <button type="submit" className="btn btn-primary" disabled={saving || !isDirty}>
+              {saving ? <span className="spinner" /> : t('routers.general.form.saveChanges')}
+            </button>
+          </div>
+        )}
       </form>
 
       {isBlocked && <UnsavedChangesModal onConfirm={proceed} onCancel={reset} />}

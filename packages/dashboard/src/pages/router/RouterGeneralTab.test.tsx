@@ -72,7 +72,7 @@ beforeEach(() => {
   mockGetSettings.mockResolvedValue({ publicUrl: 'https://api.example.com', port: 3000 });
   mockUpdateRouter.mockResolvedValue({ ...mockRouter });
   mockGetChannels.mockRejectedValue(new Error('403'));
-  allow('notification:write', 'settings:read');
+  allow('notification:write', 'settings:read', 'router:write');
   mockCreateRouter.mockResolvedValue({ id: 'proj-new', name: 'New', models: [], token: 'sk-rt-abc123' });
   mockUseUnsavedChanges.mockReturnValue({ isBlocked: false, proceed: vi.fn(), reset: vi.fn() });
 });
@@ -136,6 +136,14 @@ describe('RouterGeneralTab — edit mode render', () => {
     await waitFor(() =>
       expect(screen.queryByText('How to connect')).not.toBeNull()
     );
+  });
+
+  it('is read-only without router:write: inputs disabled, no Save button', async () => {
+    allow('settings:read');
+    renderTab();
+    const name = await screen.findByDisplayValue('Test Router');
+    expect(name.closest('fieldset')?.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: /Save Changes/i })).toBeNull();
   });
 
   it('does not call getSettings without settings:read', async () => {

@@ -20,6 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Router General tab read-only without `router:write`.** Name, advanced settings and Save are disabled/hidden for users lacking the permission, like the other router tabs (ROUT-574).
 - **Usage history no longer pruned at startup.** The service (and `routerly mcp serve`) no longer deletes usage records whose router was removed each time it starts; the history is only reduced by the retention setting (ROUT-552).
 
 ### Added
