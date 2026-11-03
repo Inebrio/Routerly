@@ -20,6 +20,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Docs version cut publishes on release.** The `Publish documentation cut to docs-versions` step uses `mktemp -u` for the temporary git index (git rejects an empty index file) and commits with the non-releasable `ci(docs):` type (ROUT-577).
+
 - **Release on `next` no longer fails.** The `addChannel` step runs `gh release edit --latest` only on `main`; GitHub rejects `--latest` on a prerelease with HTTP 422 (ROUT-576).
 - **Router General tab read-only without `router:write`.** Name, advanced settings and Save are disabled/hidden for users lacking the permission, like the other router tabs (ROUT-574).
 - **Usage history no longer pruned at startup.** The service (and `routerly mcp serve`) no longer deletes usage records whose router was removed each time it starts; the history is only reduced by the retention setting (ROUT-552).
@@ -31,6 +33,8 @@ the change itself — never reconstructed after the fact. See
 - **OpenCode doc: model selection.** `docs/integrations/clients/opencode.md` now shows `opencode run -m routerly/routerly/ada` and where to pick the model in the TUI (ROUT-528).
 
 ### Fixed
+
+
 
 - **Documentation build.** `--router <name|id>` in CLI report tables no longer breaks the MDX compilation of `docs/cli/commands.md` (ROUT-539).
 - **semantic-intent embedding cost uses the registered price.** The routing usage row for the embedding call looked the price up in the catalog by registry id (`openai/text-embedding-3-small`) and recorded 0; it now uses the registered model's price, falling back to the catalog by upstream name (ROUT-534).
@@ -89,6 +93,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+
+
 - **Web-session connections require their token.** The dashboard form no longer submits `openai-web`/`anthropic-web` connections without a token, and `POST /api/connections` answers 400 `cookie_required` (also for the CLI). (ROUT-507)
 - **Re-adding a removed model no longer leaves a stale connection.** `POST /api/models` with inline credentials now replaces a leftover `conn-for-<id>` connection instead of appending a duplicate id. (ROUT-504)
 - **Optimizer preview runs the assigned profile.** The router Optimizer tab, `routerly optimizers preview` and `POST /api/optimizers/preview` ran the router's custom steps even when an optimizer profile was assigned. With a profile assigned the preview now runs that profile's steps, exactly as live traffic does; in Custom mode it runs the current (unsaved) steps. `steps` is optional in the preview request when `routerId` is given, and the response and both surfaces name the pipeline that ran (`pipeline`).
@@ -124,6 +130,8 @@ the change itself — never reconstructed after the fact. See
 - **README and docs introduction refreshed for 0.5.x.** Positioning as the decision and control layer, all 11 routing policies, current quick start (`router create`, `auth login`), update channels, providers and capabilities, and a dated comparison with LiteLLM, Bifrost, Portkey and OpenRouter (cells sourced from each project's public documentation). A consistency test now keeps the README, the docs introduction and the routing page aligned on policy names and count. Install commands pin `--version v0.5.3` until the default channel resolves to a 0.5.x release. Docker examples use the `v0.5.3` image tag (`latest` still points at 0.2.0).
 
 ### Fixed
+
+
 
 - **Web-session connections require their token.** The dashboard form no longer submits `openai-web`/`anthropic-web` connections without a token, and `POST /api/connections` answers 400 `cookie_required` (also for the CLI). (ROUT-507)
 - **Re-adding a removed model no longer leaves a stale connection.** `POST /api/models` with inline credentials now replaces a leftover `conn-for-<id>` connection instead of appending a duplicate id. (ROUT-504)
@@ -209,6 +217,8 @@ the change itself — never reconstructed after the fact. See
 - Dashboard sidebar shows the running Routerly version (small, low contrast) under the sign-out link, so it is visible without opening Settings → About.
 
 ### Fixed
+
+
 
 - **Web-session connections require their token.** The dashboard form no longer submits `openai-web`/`anthropic-web` connections without a token, and `POST /api/connections` answers 400 `cookie_required` (also for the CLI). (ROUT-507)
 - **Re-adding a removed model no longer leaves a stale connection.** `POST /api/models` with inline credentials now replaces a leftover `conn-for-<id>` connection instead of appending a duplicate id. (ROUT-504)
