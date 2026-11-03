@@ -19,6 +19,7 @@ the change itself — never reconstructed after the fact. See
 - **Version 0.6.0.** The next release is numbered 0.6.0: while the major is 0, `release.config.mjs` maps a BREAKING CHANGE to a minor bump instead of 1.0.0. The breaking change in this release is that `develop` is now its own channel instead of an alias for `next` (ROUT-539).
 
 ### Fixed
+
 - **Docs version cut publishes on release.** The `Publish documentation cut to docs-versions` step uses `mktemp -u` for the temporary git index (git rejects an empty index file) and commits with the non-releasable `ci(docs):` type (ROUT-577).
 
 - **Release on `next` no longer fails.** The `addChannel` step runs `gh release edit --latest` only on `main`; GitHub rejects `--latest` on a prerelease with HTTP 422 (ROUT-576).
@@ -32,6 +33,7 @@ the change itself — never reconstructed after the fact. See
 - **OpenCode doc: model selection.** `docs/integrations/clients/opencode.md` now shows `opencode run -m routerly/routerly/ada` and where to pick the model in the TUI (ROUT-528).
 
 ### Fixed
+
 
 
 - **Documentation build.** `--router <name|id>` in CLI report tables no longer breaks the MDX compilation of `docs/cli/commands.md` (ROUT-539).
@@ -92,6 +94,7 @@ the change itself — never reconstructed after the fact. See
 ### Fixed
 
 
+
 - **Web-session connections require their token.** The dashboard form no longer submits `openai-web`/`anthropic-web` connections without a token, and `POST /api/connections` answers 400 `cookie_required` (also for the CLI). (ROUT-507)
 - **Re-adding a removed model no longer leaves a stale connection.** `POST /api/models` with inline credentials now replaces a leftover `conn-for-<id>` connection instead of appending a duplicate id. (ROUT-504)
 - **Optimizer preview runs the assigned profile.** The router Optimizer tab, `routerly optimizers preview` and `POST /api/optimizers/preview` ran the router's custom steps even when an optimizer profile was assigned. With a profile assigned the preview now runs that profile's steps, exactly as live traffic does; in Custom mode it runs the current (unsaved) steps. `steps` is optional in the preview request when `routerId` is given, and the response and both surfaces name the pipeline that ran (`pipeline`).
@@ -127,6 +130,7 @@ the change itself — never reconstructed after the fact. See
 - **README and docs introduction refreshed for 0.5.x.** Positioning as the decision and control layer, all 11 routing policies, current quick start (`router create`, `auth login`), update channels, providers and capabilities, and a dated comparison with LiteLLM, Bifrost, Portkey and OpenRouter (cells sourced from each project's public documentation). A consistency test now keeps the README, the docs introduction and the routing page aligned on policy names and count. Install commands pin `--version v0.5.3` until the default channel resolves to a 0.5.x release. Docker examples use the `v0.5.3` image tag (`latest` still points at 0.2.0).
 
 ### Fixed
+
 
 
 - **Web-session connections require their token.** The dashboard form no longer submits `openai-web`/`anthropic-web` connections without a token, and `POST /api/connections` answers 400 `cookie_required` (also for the CLI). (ROUT-507)
@@ -213,6 +217,7 @@ the change itself — never reconstructed after the fact. See
 - Dashboard sidebar shows the running Routerly version (small, low contrast) under the sign-out link, so it is visible without opening Settings → About.
 
 ### Fixed
+
 
 
 - **Web-session connections require their token.** The dashboard form no longer submits `openai-web`/`anthropic-web` connections without a token, and `POST /api/connections` answers 400 `cookie_required` (also for the CLI). (ROUT-507)
