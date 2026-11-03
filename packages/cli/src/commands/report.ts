@@ -476,7 +476,7 @@ Examples:
           `${savings.comparedInputTokens.toLocaleString()} in / ${savings.comparedOutputTokens.toLocaleString()} out`);
         if (savings.cache.inputTokens > 0) {
           console.log(chalk.gray('Prompt cache:   ') +
-            `${savings.cache.inputTokens.toLocaleString()} tokens served from cache, $${savings.cache.cost.toFixed(6)} saved`);
+            `${savings.cache.inputTokens.toLocaleString()} tokens served from cache, $${(savings.cache.cost ?? 0).toFixed(6)} saved`);
         }
 
         if (savings.baselines.length === 0) {

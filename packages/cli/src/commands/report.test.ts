@@ -531,6 +531,12 @@ describe('report savings', () => {
     expect(text).toContain('$0.000900 saved');
   });
 
+  it('prints a zero cache saving when the service reports a null cost', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, cache: { inputTokens: 400, cost: null } } });
+    const { out } = await run('savings');
+    expect(out.join('\n')).toContain('$0.000000 saved');
+  });
+
   it('lists one counterfactual per target, priced and never timed', async () => {
     mockApi.mockResolvedValue(savingsFixture);
     const { out } = await run('savings');
