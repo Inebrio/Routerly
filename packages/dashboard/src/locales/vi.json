@@ -1137,7 +1137,8 @@
         "checkFailed": "Kiểm tra không thành công",
         "updateFailed": "Cập nhật không thành công"
       },
-      "channel": "Kênh"
+      "channel": "Kênh",
+      "channelNote": "current theo mọi bản phát hành ổn định mới; stable chỉ dịch chuyển khi một bản phát hành được nâng cấp, nên hai kênh có thể khác nhau."
     },
     "security": {
       "authentication": "Xác thực",

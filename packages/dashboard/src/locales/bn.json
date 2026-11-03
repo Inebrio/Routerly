@@ -1137,7 +1137,8 @@
         "checkFailed": "চেক ব্যর্থ",
         "updateFailed": "আপডেট ব্যর্থ"
       },
-      "channel": "চ্যানেল"
+      "channel": "চ্যানেল",
+      "channelNote": "current প্রতিটি নতুন স্থিতিশীল রিলিজ অনুসরণ করে; stable কেবল কোনো রিলিজ প্রোমোট করা হলে সরে, তাই দুটি ভিন্ন হতে পারে।"
     },
     "security": {
       "authentication": "প্রমাণীকরণ",

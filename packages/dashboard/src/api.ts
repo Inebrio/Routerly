@@ -739,7 +739,7 @@ export interface Settings {
   /** Public base URL of the service — used in "How to connect" when dashboard runs on a different host. */
   publicUrl?: string;
   notifications?: NotificationsConfig;
-  /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
+  /** Distribution channel for updates: 'latest' | 'current' | 'next' | 'stable' | 'develop' | vX.Y.Z tag */
   channel?: string;
   /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
   telemetry?: TelemetryConfig;
@@ -811,6 +811,8 @@ export const triggerUpdate = () => request<{ message: string }>('/system/update'
 export interface AvailableReleases {
   channels: string[];
   versions: string[];
+  /** Version each named channel currently points to; unresolved channels are omitted. */
+  channelVersions?: Record<string, string>;
 }
 export const getAvailableReleases = () => request<AvailableReleases>('/system/releases');
 

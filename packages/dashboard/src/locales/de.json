@@ -1137,7 +1137,8 @@
         "checkFailed": "Prüfung fehlgeschlagen",
         "updateFailed": "Update fehlgeschlagen"
       },
-      "channel": "Kanal"
+      "channel": "Kanal",
+      "channelNote": "current folgt jedem neuen stabilen Release; stable wird nur verschoben, wenn ein Release befördert wird, daher können sich beide unterscheiden."
     },
     "security": {
       "authentication": "Authentifizierung",

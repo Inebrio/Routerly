@@ -1137,7 +1137,8 @@
         "checkFailed": "Kontrollen misslyckades",
         "updateFailed": "Uppdateringen misslyckades"
       },
-      "channel": "Kanal"
+      "channel": "Kanal",
+      "channelNote": "current följer varje ny stabil version; stable flyttas bara när en version befordras, så de två kan skilja sig åt."
     },
     "security": {
       "authentication": "Autentisering",

@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { api, ApiError } from '../api.js';
-import { normalizeUpdateChannel } from '@routerly/shared';
+import { normalizeUpdateChannel, UPDATE_CHANNELS, type AvailableReleases } from '@routerly/shared';
 
 interface UpdateInfo {
   available: boolean;
@@ -75,7 +75,7 @@ Examples:
   // ── channel ─────────────────────────────────────────────────────────────────
   cmd
     .command('channel [name]')
-    .description('Show or change the update channel (latest | current | next | develop | vX.Y.Z)')
+    .description('Show or change the update channel (latest | current | next | stable | develop | vX.Y.Z)')
     .action(async (name: string | undefined) => {
       try {
         if (!name) {
@@ -83,7 +83,14 @@ Examples:
           const normalized = normalizeUpdateChannel(settings.channel);
           console.log();
           console.log(`  Current channel: ${chalk.cyan(normalized.channel)}`);
-          console.log(chalk.gray(`  Valid values: latest, current, next, develop, or a specific tag (e.g. v0.4.0)`));
+          const releases = await api<AvailableReleases>('GET', '/api/system/releases').catch(() => null);
+          console.log();
+          for (const ch of UPDATE_CHANNELS) {
+            const v = releases?.channelVersions?.[ch];
+            console.log(`  ${ch.padEnd(8)} ${v ? `v${v}` : chalk.gray('unavailable')}${ch === normalized.channel ? chalk.cyan('  ← selected') : ''}`);
+          }
+          console.log(chalk.gray(`  current follows every new stable release; stable moves only when a release is promoted, so the two can differ.`));
+          console.log(chalk.gray(`  Valid values: ${UPDATE_CHANNELS.join(', ')}, or a specific tag (e.g. v0.4.0)`));
           console.log();
           return;
         }

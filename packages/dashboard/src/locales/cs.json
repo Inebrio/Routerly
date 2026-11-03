@@ -1137,7 +1137,8 @@
         "checkFailed": "Kontrola se nezdařila",
         "updateFailed": "Aktualizace se nezdařila"
       },
-      "channel": "Kanál"
+      "channel": "Kanál",
+      "channelNote": "current sleduje každé nové stabilní vydání; stable se posune jen při povýšení vydání, takže se obě mohou lišit."
     },
     "security": {
       "authentication": "Ověřování",

@@ -1137,7 +1137,8 @@
         "checkFailed": "Sjekk mislyktes",
         "updateFailed": "Oppdatering mislyktes"
       },
-      "channel": "Kanal"
+      "channel": "Kanal",
+      "channelNote": "current følger hver nye stabile utgivelse; stable flyttes bare når en utgivelse forfremmes, så de to kan avvike."
     },
     "security": {
       "authentication": "Autentisering",

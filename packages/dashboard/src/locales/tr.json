@@ -1137,7 +1137,8 @@
         "checkFailed": "Kontrol başarısız oldu",
         "updateFailed": "Güncelleme başarısız oldu"
       },
-      "channel": "Kanal"
+      "channel": "Kanal",
+      "channelNote": "current her yeni kararlı sürümü izler; stable yalnızca bir sürüm terfi ettirildiğinde değişir, bu yüzden ikisi farklı olabilir."
     },
     "security": {
       "authentication": "Kimlik Doğrulaması",

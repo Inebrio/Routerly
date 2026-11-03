@@ -825,7 +825,7 @@ export interface ProviderRepo {
 // ─── Update channels ─────────────────────────────────────────────────────────
 
 /** Update channels an instance can follow, by their current names. */
-export const UPDATE_CHANNELS = ['latest', 'current', 'next', 'develop'] as const;
+export const UPDATE_CHANNELS = ['latest', 'current', 'next', 'stable', 'develop'] as const;
 export type UpdateChannel = (typeof UPDATE_CHANNELS)[number];
 
 /** What may legally sit in `Settings.channel`: a channel name, or a version tag. */
@@ -856,7 +856,7 @@ export function isValidUpdateChannel(value: string): boolean {
 }
 
 /** The rejection message, so service and CLI cannot drift. */
-export const UPDATE_CHANNEL_ERROR = 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.';
+export const UPDATE_CHANNEL_ERROR = 'Invalid channel. Accepted values: latest, current, next, stable, develop, or a version tag such as v0.4.0.';
 
 export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'] as const;
 export type LogLevel = (typeof LOG_LEVELS)[number];
@@ -876,7 +876,7 @@ export interface Settings {
   publicUrl?: string;
   /** Optional notification channels configuration */
   notifications?: NotificationsConfig;
-  /** Distribution channel for updates: 'latest' | 'current' | 'next' | 'develop' | vX.Y.Z tag */
+  /** Distribution channel for updates: 'latest' | 'current' | 'next' | 'stable' | 'develop' | vX.Y.Z tag */
   channel?: UpdateChannelSetting;
   /** Whether to expose the Prometheus-compatible /metrics endpoint (default true) */
   metricsEnabled?: boolean;
@@ -908,8 +908,10 @@ export interface UsageRetentionConfig {
 
 /** Available channels and version tags from GitHub Releases. */
 export interface AvailableReleases {
-  /** Named channels (e.g. 'latest', 'current', 'next', 'develop') */
+  /** Named channels (e.g. 'latest', 'current', 'next', 'stable', 'develop') */
   channels: string[];
+  /** Version each named channel points to right now (e.g. { stable: '0.6.0' }); a channel that cannot be resolved is omitted */
+  channelVersions?: Record<string, string>;
   /** Semver version tags (e.g. 'v0.2.0', 'v0.1.5') */
   versions: string[];
 }

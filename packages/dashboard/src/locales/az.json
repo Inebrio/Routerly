@@ -1137,7 +1137,8 @@
         "checkFailed": "Yoxlama alınmadı",
         "updateFailed": "Yenilənmə alınmadı"
       },
-      "channel": "Kanal"
+      "channel": "Kanal",
+      "channelNote": "current hər yeni stabil buraxılışı izləyir; stable yalnız buraxılış irəli çəkiləndə dəyişir, ona görə ikisi fərqli ola bilər."
     },
     "security": {
       "authentication": "Autentifikasiya",

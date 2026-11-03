@@ -3042,7 +3042,7 @@ Show or change the update channel.
 routerly update channel [name]
 ```
 
-With no argument, prints the current channel. With an argument, updates the channel immediately - the running service is notified without a restart.
+With no argument, prints the current channel and, for every channel, the version it points to. With an argument, updates the channel immediately - the running service is notified without a restart.
 
 Valid values:
 
@@ -3051,17 +3051,12 @@ Valid values:
 | `latest` | Newest production-ready release |
 | `current` | Newest production-ready release (same as `latest`) |
 | `next` | Validated pre-release line, promoted from `develop` |
+| `stable` | Release explicitly promoted to stable; moves only on promotion, so it can lag behind `current` |
 | `develop` | Bleeding-edge, unreviewed release line |
 | `vX.Y.Z` | Pin to a specific version tag (e.g. `v0.2.0`) |
 
 :::warning Breaking change
-`stable` is no longer accepted as an alias for `current` — it is rejected
-outright, with an error naming the four values above. `develop` is no
-longer an alias for `next`: it is now its own real channel, the
-bleeding-edge line, and resolves to itself with no deprecation warning. Any
-instance that had `stable` or `develop` persisted as its channel is
-affected — see [Update Channel](../dashboard/settings.md#update-channel)
-for what changes for an existing install.
+`develop` is not an alias for `next`: it is its own channel, the bleeding-edge line. An instance that had `develop` persisted under the old meaning now tracks the bleeding-edge line instead of `next`. See [Update Channel](../dashboard/settings.md#update-channel).
 :::
 
 ```bash
@@ -3069,6 +3064,7 @@ routerly update channel           # show current channel
 routerly update channel latest    # switch to latest
 routerly update channel current   # switch to current
 routerly update channel next      # switch to the validated pre-release line
+routerly update channel stable    # switch to the promoted stable release
 routerly update channel develop   # switch to the bleeding-edge line
 routerly update channel v0.2.0    # pin to a specific version
 ```

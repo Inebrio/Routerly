@@ -1137,7 +1137,8 @@
         "checkFailed": "तपास अपयशी",
         "updateFailed": "अपडेट अपयशी"
       },
-      "channel": "Channel"
+      "channel": "Channel",
+      "channelNote": "current प्रत्येक नवीन स्थिर रिलीझला अनुसरतो; stable फक्त रिलीझ प्रमोट केल्यावरच हलतो, त्यामुळे दोन्ही वेगळे असू शकतात."
     },
     "security": {
       "authentication": "Authentication",

@@ -1138,7 +1138,8 @@
         "checkFailed": "Controllo non riuscito",
         "updateFailed": "Aggiornamento non riuscito"
       },
-      "channel": "Canale"
+      "channel": "Canale",
+      "channelNote": "current segue ogni nuova release stabile; stable si sposta solo quando una release viene promossa, quindi i due possono differire."
     },
     "security": {
       "authentication": "Autenticazione",

@@ -1137,7 +1137,8 @@
         "checkFailed": "Az ellenőrzés sikertelen",
         "updateFailed": "A frissítés sikertelen"
       },
-      "channel": "Csatorna"
+      "channel": "Csatorna",
+      "channelNote": "A current minden új stabil kiadást követ; a stable csak kiadás előléptetésekor mozdul, ezért a kettő eltérhet."
     },
     "security": {
       "authentication": "Hitelesítés",

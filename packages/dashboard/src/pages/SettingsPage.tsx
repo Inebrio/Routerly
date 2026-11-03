@@ -1942,7 +1942,7 @@ export function SettingsCatalogTab() {
 
 // ── About tab ────────────────────────────────────────────────────────────────
 
-const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'current', 'next', 'develop'], versions: [] };
+const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'current', 'next', 'stable', 'develop'], versions: [] };
 
 function ChannelSelector({
   current,
@@ -1992,7 +1992,8 @@ function ChannelSelector({
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
+    <div style={{ padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <span style={{ fontSize: '0.83rem', color: 'var(--text-muted)', flexShrink: 0, marginRight: 20 }}>{t('settings.about.channel')}</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {err && <span style={{ fontSize: '0.72rem', color: 'var(--error, #e53e3e)' }}>{err}</span>}
@@ -2023,17 +2024,19 @@ function ChannelSelector({
           </>
         ) : (
           <SearchableSelect
-            style={{ fontSize: '0.83rem', width: 130 }}
+            style={{ fontSize: '0.83rem', width: 170 }}
             value={isKnown ? selectValue : '__custom'}
             onChange={handleSelectChange}
             disabled={saving}
             options={[
-              ...releases.channels.map(ch => ({ value: ch, label: ch })),
+              ...releases.channels.map(ch => ({ value: ch, label: releases.channelVersions?.[ch] ? `${ch} · ${releases.channelVersions[ch]}` : ch })),
               { value: '__custom', label: 'custom...' },
             ]}
           />
         )}
       </div>
+    </div>
+    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>{t('settings.about.channelNote')}</p>
     </div>
   );
 }

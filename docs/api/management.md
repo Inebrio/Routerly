@@ -2127,7 +2127,7 @@ PUT /api/settings
 **Fields:**
 - `logLevel` must be one of `fatal`, `error`, `warn`, `info`, `debug`, `trace`; anything else answers `400`.
 - `port`, `logLevel`, `publicUrl`, `requireMfa` - service configuration (optional). `publicUrl` must be an `http://`/`https://` URL (trailing slash removed) or `""` to clear it; `usageRetention.maxAgeDays`/`maxSizeMb` must be positive integers; otherwise `400`. When `requireMfa` is `true`, every management route except `/api/me`, `/api/me/language`, `POST /api/auth/2fa/setup` and `POST /api/auth/2fa/confirm` answers `403 {"error":"mfa_required"}` to a user who has not enabled 2FA
-- `channel` - update channel: `latest`, `current`, `next`, `develop`, or a version tag such as `v0.4.0` (optional)
+- `channel` - update channel: `latest`, `current`, `next`, `stable`, `develop`, or a version tag such as `v0.4.0` (optional)
 - `providerRepos` - array of provider repository objects (optional)
 
 **ProviderRepo object:**
@@ -2135,10 +2135,10 @@ PUT /api/settings
 - `enabled` - whether the repo is active (optional, default `true`)
 - `channel` - named channel to prefer (optional, e.g. `stable`, `latest`) — this is the provider catalog's own channel concept, unrelated to the update channel above
 
-**Errors**: `400 { "error": "Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0." }` when `channel` is not one of the four names above or a version tag.
+**Errors**: `400 { "error": "Invalid channel. Accepted values: latest, current, next, stable, develop, or a version tag such as v0.4.0." }` when `channel` is not one of the five names above or a version tag.
 
 :::warning Breaking change
-`stable` is no longer accepted as a deprecated alias for `current` — it now returns `400` with the error above. `develop` is no longer an alias for `next`: it is a real, distinct channel (the bleeding-edge line) and is accepted and persisted as itself, with no deprecation warning. An instance with `"channel": "stable"` already persisted keeps that literal on disk (no migration runs) but fails this validation on its next `PUT`; an instance with `"channel": "develop"` already persisted is unaffected on disk, but the update checker now resolves it against the new bleeding-edge channel instead of the old validated pre-release channel.
+`develop` is not an alias for `next`: it is its own channel, the bleeding-edge line. An instance that had `develop` persisted under the old meaning now tracks the bleeding-edge line instead of `next`. No migration runs on disk. A persisted `"channel": "stable"` stays valid and is never rewritten.
 :::
 
 ### Get Available Releases
@@ -3072,7 +3072,7 @@ No authentication required.
 }
 ```
 
-`updateInfo` is `null` if no check has completed yet (first 24 hours after boot). `isDocker` is `true` when the service is running inside a Docker container. `channel` is the stored value as-is; `rawChannel` is kept for compatibility and always equals `channel` — neither is ever silently substituted, so a persisted value that is no longer a recognized channel (e.g. the retired `stable` alias, see [Update Settings](#update-settings)) is reported back verbatim rather than corrected.
+`updateInfo` is `null` if no check has completed yet (first 24 hours after boot). `isDocker` is `true` when the service is running inside a Docker container. `channel` is the stored value as-is; `rawChannel` is kept for compatibility and always equals `channel` — neither is ever silently substituted, so a persisted value is reported back verbatim rather than corrected (see [Update Settings](#update-settings)).
 
 ---
 

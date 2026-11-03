@@ -7,6 +7,7 @@
 #   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Yes"
 #   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel current"
 #   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel next"
+#   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel stable"
 #   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel develop"
 #   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Version v0.2.0"
 #
@@ -22,7 +23,7 @@ param(
   [switch]$NoCli,
   [switch]$NoDashboard,
   [switch]$NoDaemon,
-  [string]$Channel       = "current",  # latest | current | next | develop
+  [string]$Channel       = "current",  # latest | current | next | stable | develop
   [string]$Version       = ""         # e.g. v0.2.0 — overrides -Channel when set
 )
 
@@ -161,7 +162,7 @@ function Resolve-DownloadUrl {
         Where-Object { $_.tag_name -match '^v\d+\.\d+\.\d+$' } |
         Sort-Object { [version]$_.tag_name.Substring(1) } -Descending | Select-Object -First 1
       $release = if ($newest) { $newest } else { Invoke-RestMethod -Uri "$apiBase/latest" -Headers $headers -ErrorAction Stop }
-    } elseif ($Channel -ceq "next" -or $Channel -ceq "develop") {
+    } elseif ($Channel -ceq "next" -or $Channel -ceq "stable" -or $Channel -ceq "develop") {
       Write-Info "Resolving channel $Channel..."
       try {
         $release = Invoke-RestMethod -Uri "$apiBase/tags/channel-$Channel" -Headers $headers -ErrorAction Stop
@@ -170,7 +171,7 @@ function Resolve-DownloadUrl {
         $release = Invoke-RestMethod -Uri "$apiBase/tags/$Channel" -Headers $headers -ErrorAction Stop
       }
     } else {
-      Die "Unknown channel: '$Channel'. Valid values: latest, current, next, develop"
+      Die "Unknown channel: '$Channel'. Valid values: latest, current, next, stable, develop"
     }
     # Pointer releases carry no version tag of their own: it is in the title.
     $tag = $release.tag_name
