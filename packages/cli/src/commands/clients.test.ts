@@ -533,6 +533,24 @@ describe('clients configure', () => {
     expect(out).toContain(fakeValidate.message);
   });
 
+  it('masks the token in the printed plan and in --json, but applies the real plan', async () => {
+    const tokenPlan = { ...fakePlan, after: 'experimental_bearer_token = "sk-rt-SECRET123456"\n' };
+    for (const json of [false, true]) {
+      mockApi.mockResolvedValueOnce([baseRouter]);
+      mockRequireAccount.mockResolvedValueOnce(account);
+      mockAcquireToken.mockResolvedValueOnce('sk-rt-SECRET123456');
+      claudeCodeMock.plan.mockResolvedValueOnce(tokenPlan);
+      claudeCodeMock.apply.mockResolvedValueOnce(fakeApply);
+      claudeCodeMock.validate.mockResolvedValueOnce(fakeValidate);
+      const lines = collectLog();
+      await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--router', 'my-api', '--yes', ...(json ? ['--json'] : [])]);
+      const out = lines.join('\n');
+      expect(out).not.toContain('SECRET123456');
+      expect(out).toContain('sk-rt-***');
+      expect(claudeCodeMock.apply).toHaveBeenLastCalledWith(tokenPlan);
+    }
+  });
+
   it('outputs a parseable JSON result with --json', async () => {
     mockApi.mockResolvedValueOnce([baseRouter]);
     mockRequireAccount.mockResolvedValueOnce(account);

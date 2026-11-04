@@ -258,20 +258,24 @@ Examples:
 
         const target = { baseUrl: account.serverUrl, token, wireFormat: meta.wireFormat };
         const plan = await integration.plan(target);
+        // Display-only copy: the real token is written to the file, never printed.
+        const masked = token.length > 0 ? `${token.slice(0, 6)}***` : token;
+        const hide = (text: string): string => (token.length > 0 ? text.split(token).join(masked) : text);
+        const shown = { ...plan, before: hide(plan.before), after: hide(plan.after) };
 
         if (!opts.json) {
           console.log(chalk.bold(`\nPlan for ${integration.label} (${plan.filePath}):`));
           console.log(chalk.gray('--- before ---'));
-          console.log(plan.before || chalk.gray('(file does not exist)'));
+          console.log(shown.before || chalk.gray('(file does not exist)'));
           console.log(chalk.gray('--- after ----'));
-          console.log(plan.after);
+          console.log(shown.after);
         }
 
         const applied = await integration.apply(plan);
         const validated = await integration.validate();
 
         if (opts.json) {
-          console.log(JSON.stringify({ plan, applied, validated }, null, 2));
+          console.log(JSON.stringify({ plan: shown, applied, validated }, null, 2));
           return;
         }
 
