@@ -193,6 +193,15 @@ export {
   suggestConnectionLabel, isConnectionLabelTaken, suggestRouterSlug,
 } from './types/config.js';
 export type { NotificationEvent } from './types/config.js';
+
+// Call configuration (effort / max output tokens / verbosity by request complexity)
+export {
+  CALL_SETTINGS, CALL_TIERS, CALL_MAX_OUTPUT_TOKENS_MIN, CALL_MAX_OUTPUT_TOKENS_MAX, CALL_DEFAULT_THRESHOLDS,
+} from './types/config.js';
+export type {
+  CallSettingId, CallTier, CallLevel, CallClientPolicy, CallSettings, CallConfig,
+  CallSkipReason, CallSettingSkip, AppliedCallConfig,
+} from './types/config.js';
 export type { PermissionCheckStatus } from './types/config.js';
 
 // Update channel vocabulary: 'latest' | 'current' | 'next' | 'stable' | 'develop'
