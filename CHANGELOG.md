@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Fixed
+
+- **Anthropic `/v1/messages` non-stream id.** Responses from providers that natively speak OpenAI (e.g. anthropic-web) now carry a `msg_…` id instead of `chatcmpl-…`, consistent with the stream (ROUT-480).
+
 ### Changed
 
 - **CLI test suite stable under load.** `packages/cli` sets `testTimeout` to 30s so cold dynamic imports no longer fail `auth login` / `router pii add` tests on a busy machine (ROUT-556).

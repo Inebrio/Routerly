@@ -89,6 +89,12 @@ describe('anthropicToOpenAIMessages', () => {
 })
 
 describe('openAIToAnthropicResponse', () => {
+  it('replaces an OpenAI-style upstream id with the msg_ fallbackId, keeps a msg_ id', () => {
+    const base = { choices: [{ message: { content: 'hi' }, finish_reason: 'stop' }] }
+    expect(openAIToAnthropicResponse({ ...base, id: 'chatcmpl-abc' }, 'm', 'msg_trace').id).toBe('msg_trace')
+    expect(openAIToAnthropicResponse({ ...base, id: 'msg_up' }, 'm', 'msg_trace').id).toBe('msg_up')
+  })
+
   it('converts a basic OpenAI response to Anthropic format', () => {
     const openAIRes = {
       id: 'chatcmpl-123',
