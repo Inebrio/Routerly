@@ -9,7 +9,7 @@ export { providersConf };
 
 // Static notification event list and secret-field map (safe for browser — plain data)
 export {
-  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, isCompletionCall, blocksResponseStreaming,
+  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, CALL_SETTINGS, CALL_TIERS, CALL_MAX_OUTPUT_TOKENS_MIN, CALL_MAX_OUTPUT_TOKENS_MAX, CALL_DEFAULT_THRESHOLDS, isCompletionCall, blocksResponseStreaming,
   suggestConnectionLabel, isConnectionLabelTaken, suggestRouterSlug,
   UPDATE_CHANNELS, normalizeUpdateChannel,
   isValidUpdateChannel, UPDATE_CHANNEL_ERROR, LOG_LEVELS,

@@ -1,17 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  CALL_SETTINGS, CALL_TIERS, CALL_MAX_OUTPUT_TOKENS_MIN, CALL_MAX_OUTPUT_TOKENS_MAX, CALL_DEFAULT_THRESHOLDS,
   type CallClientPolicy, type CallConfig, type CallLevel, type CallSettingId, type CallSettings, type CallSettingSkip, type CallTier,
 } from '@routerly/shared';
 import { SearchableSelect } from './SearchableSelect';
-
-// Mirrors CALL_* in packages/shared/src/types/config.ts. The dashboard resolves @routerly/shared to
-// browser.ts, which does not re-export these values (types only come through); the server re-validates.
-const CALL_SETTINGS: CallSettingId[] = ['effort', 'maxOutputTokens', 'verbosity'];
-const CALL_TIERS: CallTier[] = ['low', 'medium', 'high'];
-const CALL_MAX_OUTPUT_TOKENS_MIN = 16;
-const CALL_MAX_OUTPUT_TOKENS_MAX = 1_000_000;
-const CALL_DEFAULT_THRESHOLDS = { mediumFromTokens: 2000, highFromTokens: 16000 } as const;
 
 const LEVELS: CallLevel[] = ['low', 'medium', 'high'];
 
