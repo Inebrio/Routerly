@@ -21,6 +21,12 @@ export default defineConfig({
     // a broken assertion, and the file that times out changes every run.
     testTimeout: 30000,
     hookTimeout: 30000,
+    // vitest hard-codes a 60s limit for a worker to start; forks (one process
+    // each, re-importing React per file) miss it on a loaded host and the run
+    // stalls with "Timeout waiting for worker to respond". Threads start faster.
+    pool: 'threads',
+    maxWorkers: 2,
+    teardownTimeout: 30000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
