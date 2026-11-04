@@ -202,7 +202,7 @@ Ollama models require a running Ollama server. The default base URL is `http://l
 
 ## Custom / Self-hosted
 
-Use provider ID `custom` for any OpenAI-compatible endpoint (vLLM, LM Studio, LocalAI, etc.):
+Use provider ID `custom` for any OpenAI-compatible endpoint (vLLM, LM Studio, LocalAI, OmniRoute, etc.). For OmniRoute see [Use OmniRoute as an upstream](../guides/omniroute.md):
 
 ```bash
 routerly model add \

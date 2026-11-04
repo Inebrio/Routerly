@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- **OmniRoute as an upstream.** New guide `docs/guides/omniroute.md`: register an OmniRoute instance as a `custom` connection (`--provider-name omniroute`) and route to its models from any Routerly router (ROUT-547).
+
 ### Changed
 
 - **Release gate: no overwrite without a real-test proof.** `stable-pointer` and `docker-rebuild` (on an already-tagged version) now refuse unless `scripts/release-proof.mjs` finds a proof tag recorded for that exact version and commit, at most 7 days old (ROUT-602).
