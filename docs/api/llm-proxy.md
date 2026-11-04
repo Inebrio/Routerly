@@ -314,6 +314,8 @@ ANY /<provider-path>
 
 **Model selection:** if the request body contains a `model` field, Routerly matches it against the router's configured models. If no match, the first router model is used.
 
+**`model` in the body is not rewritten.** Routerly uses `model` only to pick which of the router's models (and therefore which provider endpoint and key) receives the request; the body goes upstream unchanged. Send the provider's own model name, for example `text-embedding-3-small`. A Routerly model id such as `openai/text-embedding-3-small` is accepted for selection but the provider rejects it with `400` (invalid model ID). This differs from chat completions and Anthropic Messages, where Routerly translates the id to the provider's model name.
+
 **Reserved paths** (`/`, `/health`, `/api/*`, `/dashboard*`) are never proxied.
 
 See [Service — Pass-Through Proxy](../service/endpoints#pass-through-proxy) for the full reference.
