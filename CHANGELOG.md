@@ -23,6 +23,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Upstream errors are clearer.** When a provider rejects a call with no error body (Vertex 401), the client error now says `Upstream provider returned HTTP <status> with no error body` instead of «Upstream provider error»; native OpenAI-compatible providers (deepseek, groq, …) name themselves in the error instead of «Custom provider»; the provider mock's `/__mock/requests` log records the response status (ROUT-476).
 - **Pass-through docs: `model` is forwarded unchanged.** `docs/api/llm-proxy.md` states that catch-all endpoints (embeddings, audio, …) need the provider's own model name in the body, not the Routerly model id; the body is not rewritten, preserving wire-format transparency (ROUT-374).
 - **`clients configure` no longer prints the router token.** The plan shown (and the `--json` `plan`) masks the token as `sk-rt-***`; the file written still holds the real token (ROUT-598).
 - **Installer no longer deletes files it did not install.** `scripts/install.mjs` records the copied files in `.routerly-manifest`; updates and uninstall remove only manifest files (plus `node_modules`, `dist` and `tsconfig.tsbuildinfo`), not other content of `/opt/routerly`. An existing `/opt/routerly` without a Routerly install no longer selects the `system` scope with `--yes`, `--scope user` (with a space) is honoured like `--scope=user`, and an invalid scope fails with an error (ROUT-579).

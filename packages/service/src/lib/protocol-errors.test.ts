@@ -26,7 +26,8 @@ describe('protocol-errors', () => {
     const a = { type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key' } };
     expect(upstreamErrorBody('openai', 401, a)).toEqual(protocolError('openai', 401, 'invalid x-api-key'));
     expect(upstreamErrorBody('anthropic', 403, { error: { message: 'nope' } })).toEqual(protocolError('anthropic', 403, 'nope'));
-    expect(upstreamErrorBody('openai', 403, undefined)).toEqual(protocolError('openai', 403, 'Upstream provider error'));
+    expect(upstreamErrorBody('openai', 403, undefined)).toEqual(protocolError('openai', 403, 'Upstream provider returned HTTP 403 with no error body'));
+    expect(upstreamErrorBody('anthropic', 401, undefined)).toEqual(protocolError('anthropic', 401, 'Upstream provider returned HTTP 401 with no error body'));
   });
   it('wraps the flat inner error object the OpenAI SDK exposes', () => {
     const inner = { message: 'Incorrect API key', type: 'invalid_request_error', param: null, code: 'invalid_api_key' };
