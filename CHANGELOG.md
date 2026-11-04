@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- **Installer sandbox.** `install.mjs --sandbox <dir>` (or `ROUTERLY_INSTALL_SANDBOX`) runs install and uninstall entirely under `<dir>`: no daemon, no sudo, no real folders. With `ROUTERLY_INSTALL_TEST=1` the installer refuses to run without a sandbox, and it never installs into a non-empty folder that is not a Routerly install. `scripts/backup-code.sh` and `scripts/restore-code.sh` back up and restore the working-code folders (documented in `docs/contributing/installer-testing.md`).
+
 ### Changed
 
 - **`/v1/messages` message id in Anthropic shape.** Non-stream responses converted from a chat completion (e.g. via anthropic-web) return `msg_…` instead of `chatcmpl-…` (ROUT-488).

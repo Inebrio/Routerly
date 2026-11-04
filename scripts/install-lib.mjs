@@ -63,3 +63,28 @@ export function uninstallPaths(dir, fallbackFiles) {
   }
   return out;
 }
+
+/** Marker file that makes a folder a valid sandbox for installer tests. */
+export const SANDBOX_MARKER = '.routerly-sandbox';
+/** Real locations an installer test must never use, nor contain. */
+const PROTECTED = ['/', '/opt/routerly', '/var/lib/routerly', '/usr/local', '/usr', '/etc', '/root', '/home', 'C:\\Routerly', 'C:\\ProgramData\\Routerly'];
+
+/** Error text when the sandbox is unusable, null when dir is safe: absolute, empty or marked, and neither a real location nor one of its parents. */
+export function sandboxProblem(dir, realHome) {
+  if (!dir || !path.isAbsolute(dir)) return `--sandbox needs an absolute path (got "${dir ?? ''}")`;
+  const d = path.resolve(dir);
+  for (const p of [...PROTECTED, realHome]) {
+    const r = path.relative(d, path.resolve(p));
+    if (r === '' || (!r.startsWith('..') && !path.isAbsolute(r))) return `${d} is, or contains, a real location (${p}): refusing to use it as a sandbox`;
+  }
+  if (fs.existsSync(d) && fs.readdirSync(d).length > 0 && !fs.existsSync(path.join(d, SANDBOX_MARKER))) return `${d} is not empty and is not a sandbox created by the installer`;
+  return null;
+}
+
+/** Error text when dir must not receive an install: it holds files that are not a Routerly install, or a git work tree. */
+export function targetProblem(dir) {
+  if (!fs.existsSync(dir) || isRouterlyInstall(dir)) return null;
+  if (fs.existsSync(path.join(dir, '.git'))) return `${dir} is a git work tree, not an install folder`;
+  if (fs.readdirSync(dir).length > 0) return `${dir} is not empty and is not a Routerly install`;
+  return null;
+}

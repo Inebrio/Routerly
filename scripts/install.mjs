@@ -16,7 +16,7 @@ import * as fsp           from 'node:fs/promises';
 import * as path          from 'node:path';
 import * as os            from 'node:os';
 import * as http          from 'node:http';
-import { argValue, isRouterlyInstall, listSourceFiles, SKIP_DIRS, staleFiles, uninstallPaths, MANIFEST } from './install-lib.mjs';
+import { argValue, isRouterlyInstall, listSourceFiles, SKIP_DIRS, staleFiles, uninstallPaths, MANIFEST, SANDBOX_MARKER, sandboxProblem, targetProblem } from './install-lib.mjs';
 
 const exec = promisify(execCb);
 
@@ -51,8 +51,10 @@ const YES            = hasFlag('yes') || process.env.ROUTERLY_YES === '1';
 const FLAG_NO_SVC    = hasFlag('no-service');
 const FLAG_NO_CLI    = hasFlag('no-cli');
 const FLAG_NO_DASH   = hasFlag('no-dashboard');
-const FLAG_NO_DAEMON = hasFlag('no-daemon');
-const FLAG_NO_LINGER = hasFlag('no-linger');
+// --sandbox <dir>: every path (home, app, data, bin) lives under <dir>; host services and the real folders are never touched.
+const SANDBOX        = getArg('sandbox') ?? process.env.ROUTERLY_INSTALL_SANDBOX ?? '';
+const FLAG_NO_DAEMON = hasFlag('no-daemon') || !!SANDBOX;
+const FLAG_NO_LINGER = hasFlag('no-linger') || !!SANDBOX;
 // true once systemd user lingering is on, so the user service survives logout and starts at boot
 let lingerEnabled = false;
 const FLAG_SCOPE     = getArg('scope')       ?? process.env.ROUTERLY_SCOPE       ?? '';
@@ -66,7 +68,7 @@ let INSTALL_CHANNEL = getArg('channel') ?? 'current'; // set by install.sh/ps1 v
 if (!['latest', 'current', 'next', 'stable', 'develop'].includes(INSTALL_CHANNEL)) {
   die(`Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next, stable, develop`);
 }
-const FLAG_NO_TELEMETRY = hasFlag('no-telemetry') || process.env.CI === '1' || process.env.CI === 'true';
+const FLAG_NO_TELEMETRY = hasFlag('no-telemetry') || process.env.CI === '1' || process.env.CI === 'true' || !!SANDBOX;
 
 // From env vars (--yes mode)
 const ENV_INSTALL_SVC  = process.env.ROUTERLY_INSTALL_SERVICE;
@@ -76,7 +78,16 @@ const ENV_DAEMON       = process.env.ROUTERLY_DAEMON;
 
 // ─── Platform ─────────────────────────────────────────────────────────────────
 const PLATFORM = process.platform; // 'linux' | 'darwin' | 'win32'
-const HOME     = os.homedir();
+const REAL_HOME = os.homedir();
+// Install and uninstall tests set ROUTERLY_INSTALL_TEST=1: they must run in a sandbox, never on the real machine.
+if (process.env.ROUTERLY_INSTALL_TEST === '1' && !SANDBOX) die('ROUTERLY_INSTALL_TEST=1 requires --sandbox <dir>: install tests never run on the real folders.');
+if (SANDBOX) {
+  const bad = sandboxProblem(SANDBOX, REAL_HOME);
+  if (bad) die(bad);
+  fs.mkdirSync(path.join(SANDBOX, 'home'), { recursive: true });
+  fs.writeFileSync(path.join(SANDBOX, SANDBOX_MARKER), '');
+}
+const HOME     = SANDBOX ? path.join(path.resolve(SANDBOX), 'home') : REAL_HOME;
 
 // ─── Interactive readline ─────────────────────────────────────────────────────
 // When launched via pipe (curl | bash) stdin is the pipe, not the terminal.
@@ -154,7 +165,7 @@ const cliHome = path.join(HOME, '.routerly');
 //   system scope (Windows) → C:\ProgramData\Routerly\config\settings.json
 //   system scope (macOS)   → /Library/Application Support/Routerly/config/settings.json
 //   system scope (Linux)   → /var/lib/routerly/config/settings.json
-const _systemServiceHome =
+const _systemServiceHome = SANDBOX ? cliHome :
   PLATFORM === 'win32'   ? path.join('C:\\ProgramData', 'Routerly') :
   PLATFORM === 'darwin'  ? '/Library/Application Support/Routerly' :
                            '/var/lib/routerly';
@@ -193,6 +204,7 @@ async function removeDir(dir, needsSudo) {
 
 /** Restart the Routerly system daemon (for updates) */
 async function restartDaemon(scope) {
+  if (SANDBOX) return;
   if (PLATFORM === 'linux') {
     const unit = 'routerly.service';
     const sudo = scope === 'system' ? SUDO : '';
@@ -232,6 +244,7 @@ async function restartDaemon(scope) {
 
 /** Stop the Routerly daemon without removing it (for update/reinstall) */
 async function stopDaemon(scope) {
+  if (SANDBOX) return;
   if (PLATFORM === 'linux') {
     const unit = 'routerly.service';
     const sudo = scope === 'system' ? SUDO : '';
@@ -271,6 +284,7 @@ async function stopDaemon(scope) {
 
 /** Stop and remove the Routerly system daemon */
 async function removeDaemon(scope) {
+  if (SANDBOX) return;
   if (PLATFORM === 'linux') {
     const unit = scope === 'system' ? 'routerly.service' : 'routerly.service';
     const sudo = scope === 'system' ? SUDO : '';
@@ -298,7 +312,7 @@ async function removeDaemon(scope) {
 // Read existing install scope from APP_DIR symlink/path heuristic
 function detectExistingScope() {
   // Check for system-level paths (app dirs + service home dirs)
-  const systemPaths = [
+  const systemPaths = SANDBOX ? [] : [
     '/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly',
   ];
   // An existing folder is not enough: it must hold a Routerly install.
@@ -308,8 +322,10 @@ function detectExistingScope() {
   return 'user';
 }
 
+const SYSTEM_APP_DIRS = SANDBOX ? [] : ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
+
 function detectExistingAppDir() {
-  const systemPaths = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
+  const systemPaths = SYSTEM_APP_DIRS;
   for (const p of systemPaths) {
     if (isRouterlyInstall(p)) return p;
   }
@@ -373,7 +389,7 @@ if (isExistingInstall && YES) {
     const needsSudo = detectedScope === 'system' && PLATFORM !== 'win32';
 
     // Remove app dir
-    const systemAppDirs = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
+    const systemAppDirs = SYSTEM_APP_DIRS;
     // Only what the installer put there: foreign files in the folder stay.
     for (const d of systemAppDirs) {
       if (isRouterlyInstall(d)) { await removeInstalled(d, needsSudo); success(`Removed Routerly files from ${d}`); }
@@ -403,7 +419,7 @@ if (isExistingInstall && YES) {
       path.join(HOME, '.routerly', 'bin', 'routerly'),
       path.join(HOME, '.routerly', 'bin', 'routerly.cmd'),
     ];
-    for (const b of binPaths) {
+    for (const b of binPaths.filter(b => !SANDBOX || b.startsWith(HOME))) {
       if (fs.existsSync(b)) {
         try {
           fs.unlinkSync(b);
@@ -481,6 +497,7 @@ if (FLAG_SCOPE) {
 if (scope !== 'user' && scope !== 'system') {
   die(`Invalid scope "${scope}". Must be "user" or "system".`);
 }
+if (SANDBOX && scope !== 'user') die('--sandbox supports only --scope=user.');
 success(`Scope: ${c.bold(scope)}`);
 
 // ── Windows admin check ───────────────────────────────────────────────────────
@@ -745,6 +762,8 @@ info(`Copying source from ${c.dim(SOURCE_DIR)} to ${c.dim(APP_DIR)}...`);
 // Drop files of the previous version that the new source no longer has
 // (stale files can break the build, e.g. on downgrade). Only files listed in the
 // previous install's manifest are removed, never anything else in APP_DIR.
+const bad = targetProblem(APP_DIR);
+if (bad) die(bad);
 const sourceFiles = listSourceFiles(SOURCE_DIR);
 for (const f of staleFiles(APP_DIR, sourceFiles)) await removeDir(path.join(APP_DIR, f), needsSudo);
 await copyDir(SOURCE_DIR, APP_DIR, needsSudo);
