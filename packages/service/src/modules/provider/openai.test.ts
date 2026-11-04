@@ -231,3 +231,45 @@ describe('OpenAIAdapter.getClient — fallback branches (lines 15-18)', () => {
     expect(create).toHaveBeenCalled();
   });
 });
+
+describe('OpenAIAdapter callSettings (ROUT-306)', () => {
+  const base: ChatCompletionRequest = { model: 'auto', messages: [{ role: 'user', content: 'Hello' }] };
+  const body = () => create.mock.calls[0]?.[0] as Record<string, unknown>;
+
+  it('without callSettings the upstream body carries no effort or verbosity', async () => {
+    create.mockResolvedValue(makeResponse());
+    await new OpenAIAdapter().chatCompletion(base, makeModel({ id: 'openai/gpt-5' }));
+    expect(body()).not.toHaveProperty('reasoning_effort');
+    expect(body()).not.toHaveProperty('verbosity');
+  });
+
+  it('empty applied settings leave the body identical to the no-settings body', async () => {
+    create.mockResolvedValue(makeResponse());
+    const adapter = new OpenAIAdapter();
+    await adapter.chatCompletion(base, makeModel({ id: 'openai/gpt-5' }));
+    await adapter.chatCompletion(base, makeModel({ id: 'openai/gpt-5' }), { callSettings: {} });
+    expect(create.mock.calls[1]?.[0]).toEqual(create.mock.calls[0]?.[0]);
+  });
+
+  it('writes reasoning_effort and verbosity on chat and stream calls, even for gpt-5 (after normalization)', async () => {
+    create.mockResolvedValue(makeResponse());
+    const adapter = new OpenAIAdapter();
+    await adapter.chatCompletion(base, makeModel({ id: 'openai/gpt-5' }), { callSettings: { effort: 'high', verbosity: 'low' } });
+    expect(body()).toMatchObject({ reasoning_effort: 'high', verbosity: 'low' });
+
+    create.mockClear();
+    create.mockResolvedValue((async function* () { /* empty stream */ })());
+    for await (const _ of adapter.streamCompletion(base, makeModel({ id: 'openai/gpt-5' }), { callSettings: { effort: 'medium' } })) { void _; }
+    expect(body()).toMatchObject({ reasoning_effort: 'medium', stream: true });
+    expect(body()).not.toHaveProperty('verbosity');
+  });
+
+  it('maxOutputTokens alone does not add effort or verbosity and does not touch the request', async () => {
+    create.mockResolvedValue(makeResponse());
+    const request = { ...base, max_tokens: 50 };
+    const snapshot = JSON.stringify(request);
+    await new OpenAIAdapter().chatCompletion(request, makeModel({ id: 'openai/gpt-5' }), { callSettings: { maxOutputTokens: 99 } });
+    expect(body()).not.toHaveProperty('reasoning_effort');
+    expect(JSON.stringify(request)).toBe(snapshot);
+  });
+});
