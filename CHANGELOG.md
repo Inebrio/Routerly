@@ -22,7 +22,7 @@ the change itself — never reconstructed after the fact. See
 - **Release gate: no overwrite without a real-test proof.** `stable-pointer` and `docker-rebuild` (on an already-tagged version) now refuse unless `scripts/release-proof.mjs` finds a proof tag recorded for that exact version and commit, at most 7 days old (ROUT-602).
 - **Release versions are chosen by hand.** `release.yml` takes a required `version` input (`gh workflow run release.yml --ref <branch> -f version=X.Y.Z`) instead of computing it from commits; semantic-release and `release.config.mjs` are removed. Tag, GitHub Release (tarball, install scripts, git-cliff notes), Docker, docs and channel pointers behave as before; a version not above the latest reachable tag is refused, an existing tag is promoted to the dispatched channel (ROUT-548).
 - **`/v1/messages` message id in Anthropic shape.** Non-stream responses converted from a chat completion (e.g. via anthropic-web) return `msg_…` instead of `chatcmpl-…` (ROUT-488).
-- **CLI test suite stable under load.** `packages/cli` sets `testTimeout` to 30s so cold dynamic imports no longer fail `auth login` / `router pii add` tests on a busy machine (ROUT-556).
+- **CLI test suite stable under load.** `packages/cli` sets `testTimeout` to 120s (ROUT-426, was 30s in ROUT-556) so cold dynamic imports no longer fail `auth login` / `router pii add` tests on a busy machine (ROUT-556).
 - **Dashboard test suite stable under load.** `packages/dashboard` test setup raises the Testing Library `waitFor` timeout from 1s to 10s so `App.test` no longer times out on a busy machine (ROUT-559).
 - **Dashboard permission-blocked modal tests no longer flake.** The `App.test` cases for the `lr-permission-blocked` event re-dispatch it until the listener observes it, so a cold, loaded run cannot lose the event (ROUT-561).
 - **Version 0.6.0.** The next release is numbered 0.6.0: while the major is 0, `release.config.mjs` maps a BREAKING CHANGE to a minor bump instead of 1.0.0. The breaking change in this release is that `develop` is now its own channel instead of an alias for `next` (ROUT-539).
@@ -31,6 +31,7 @@ the change itself — never reconstructed after the fact. See
 
 - **Vertex AI: the Google error message is no longer lost.** Google wraps Vertex errors in a JSON array, so the Test button showed `401 status code (no body)` and the router returned a generic error. Vertex now unwraps the array like Gemini does, so the real Google message reaches Test and the router response (ROUT-489).
 
+- **`/v1/embeddings` accepts the registered model id.** A pass-through request whose `model` is the full registered id (e.g. `vendor/name`) now reaches the provider with the upstream model name instead of failing with `model not found` (ROUT-491).
 - **RA-09 docs-version tests no longer time out under load.** The two happy-path tests in `test/docs-version.test.ts` now allow 300 s instead of 120 s. Tests only (ROUT-522).
 - **Service test suite no longer flaky under load.** `packages/service/vitest.config.ts` now sets `testTimeout`/`hookTimeout` to 60 s (was the 5 s default), so `api.test` and `profiles.test` stop timing out on a loaded machine (ROUT-615).
 - **Router Orchestrator tab is read-only without `router:write`.** Controls are disabled and the Save button is hidden, as on the Routing tab.
