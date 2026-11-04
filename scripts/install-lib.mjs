@@ -58,7 +58,8 @@ export function uninstallPaths(dir, fallbackFiles) {
   const out = [...tops];
   const pk = path.join(dir, 'packages');
   if (fs.existsSync(pk)) {
-    for (const p of fs.readdirSync(pk)) for (const g of ['node_modules', 'dist']) out.push(`packages/${p}/${g}`);
+    // tsbuildinfo too: left behind, tsc would skip re-emitting dist on a reinstall.
+    for (const p of fs.readdirSync(pk)) for (const g of ['node_modules', 'dist', 'tsconfig.tsbuildinfo']) out.push(`packages/${p}/${g}`);
   }
   return out;
 }

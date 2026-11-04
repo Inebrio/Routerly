@@ -50,7 +50,7 @@ describe('stale and uninstall paths', () => {
   it('uninstallPaths never includes foreign entries', () => {
     const d = tmp(); write(d, MANIFEST, 'package.json\npackages/cli/a.ts\n'); write(d, 'datiutente/file'); write(d, 'packages/cli/dist/x.js')
     const p = uninstallPaths(d, [])
-    expect(p).toContain('packages/cli/a.ts'); expect(p).toContain('packages/cli/dist'); expect(p).toContain('node_modules')
+    expect(p).toContain('packages/cli/a.ts'); expect(p).toContain('packages/cli/dist'); expect(p).toContain('packages/cli/tsconfig.tsbuildinfo'); expect(p).toContain('node_modules')
     expect(p.some((x: string) => x.startsWith('datiutente'))).toBe(false)
   })
   it('listSourceFiles skips node_modules and .git', () => {
