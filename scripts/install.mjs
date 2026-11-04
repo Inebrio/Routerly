@@ -45,7 +45,10 @@ const args   = process.argv.slice(2);
 const getArg = (name) => {
   const prefix = `--${name}=`;
   const entry  = args.find(a => a.startsWith(prefix));
-  return entry ? entry.slice(prefix.length) : null;
+  if (entry) return entry.slice(prefix.length);
+  // also accept the space-separated form: --name value
+  const i = args.indexOf(`--${name}`);
+  return i >= 0 && args[i + 1] !== undefined && !args[i + 1].startsWith('--') ? args[i + 1] : null;
 };
 const hasFlag = (name) => args.includes(`--${name}`);
 
@@ -184,6 +187,12 @@ if (fs.existsSync(existingCliConfigPath)) {
   try { existingCliConfig = JSON.parse(fs.readFileSync(existingCliConfigPath, 'utf-8')); } catch { /* ignore */ }
 }
 
+/** True only for a directory the installer created: it holds the Routerly package.json. */
+function isRouterlyAppDir(dir) {
+  try { return JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8')).name === 'routerly'; }
+  catch { return false; }
+}
+
 /** Remove a path recursively, using sudo on POSIX if needed */
 async function removeDir(dir, needsSudo) {
   if (!fs.existsSync(dir)) return;
@@ -301,8 +310,9 @@ async function removeDaemon(scope) {
 // Read existing install scope from APP_DIR symlink/path heuristic
 function detectExistingScope() {
   // Check for system-level paths (app dirs + service home dirs)
+  const systemAppPaths = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
+  if (systemAppPaths.some(isRouterlyAppDir)) return 'system';
   const systemPaths = [
-    '/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly',
     '/var/lib/routerly',
     '/Library/Application Support/Routerly',
     path.join('C:\\ProgramData', 'Routerly'),
@@ -316,7 +326,7 @@ function detectExistingScope() {
 function detectExistingAppDir() {
   const systemPaths = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
   for (const p of systemPaths) {
-    if (fs.existsSync(p)) return p;
+    if (isRouterlyAppDir(p)) return p;
   }
   return path.join(HOME, '.routerly', 'app');
 }
@@ -380,14 +390,15 @@ if (isExistingInstall && YES) {
     // Remove app dir
     const systemAppDirs = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
     for (const d of systemAppDirs) {
-      if (fs.existsSync(d)) { await removeDir(d, needsSudo); success(`Removed ${d}`); }
+      if (isRouterlyAppDir(d)) { await removeDir(d, needsSudo); success(`Removed ${d}`); }
+      else if (fs.existsSync(d)) warn(`Skipped ${d}: not created by the Routerly installer`);
     }
     const userAppDir = path.join(HOME, '.routerly', 'app');
     if (fs.existsSync(userAppDir)) { await removeDir(userAppDir, false); success(`Removed ${userAppDir}`); }
 
     // Remove system-scope service home (config/settings written here on system installs)
     // Always use sudo for system paths on POSIX, even if detectExistingScope said 'user'
-    if (_systemServiceHome !== cliHome && fs.existsSync(_systemServiceHome)) {
+    if (_systemServiceHome !== cliHome && fs.existsSync(path.join(_systemServiceHome, 'config', 'settings.json'))) {
       const sysNeedsSudo = PLATFORM !== 'win32';
       await removeDir(_systemServiceHome, sysNeedsSudo);
       success(`Removed ${_systemServiceHome}`);
@@ -747,7 +758,7 @@ step('3', 'Copying files & installing dependencies');
 info(`Copying source from ${c.dim(SOURCE_DIR)} to ${c.dim(APP_DIR)}...`);
 // Drop files of the previous version that the new source no longer has
 // (stale files can break the build, e.g. on downgrade). Only touches APP_DIR.
-if (fs.existsSync(path.join(APP_DIR, 'package.json'))) {
+if (isRouterlyAppDir(APP_DIR)) {
   await pruneStale(SOURCE_DIR, APP_DIR, needsSudo);
 }
 await copyDir(SOURCE_DIR, APP_DIR, needsSudo);

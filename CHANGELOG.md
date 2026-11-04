@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Fixed
+
+- **Installer respects `--scope user` and never deletes folders it did not create.** `install.mjs` now accepts `--scope user` as well as `--scope=user`, detects a system install only from a real Routerly directory (not any existing `/opt/routerly`), and prunes/uninstalls app directories only when they hold the Routerly `package.json` (ROUT-581).
+
 ### Changed
 
 - **CLI test suite stable under load.** `packages/cli` sets `testTimeout` to 30s so cold dynamic imports no longer fail `auth login` / `router pii add` tests on a busy machine (ROUT-556).
