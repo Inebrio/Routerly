@@ -29,7 +29,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
-- **Service test suite no longer flaky under load.** `packages/service/vitest.config.ts` now sets `testTimeout`/`hookTimeout` to 30 s (was the 5 s default), so `api.test` and `profiles.test` stop timing out on a loaded machine (ROUT-615).
+- **Service test suite no longer flaky under load.** `packages/service/vitest.config.ts` now sets `testTimeout`/`hookTimeout` to 60 s (was the 5 s default), so `api.test` and `profiles.test` stop timing out on a loaded machine (ROUT-615).
 - **OpenAI adapter forwards `reasoning_effort` to gpt-5 models.** `reasoning_effort`/`reasoning_summary` were dropped for everything except the o-series; gpt-5 reasoning models now receive the client's value, while `gpt-5*-chat*` and older GPT models still have it stripped.
 - **Upstream errors are clearer.** When a provider rejects a call with no error body (Vertex 401), the client error now says `Upstream provider returned HTTP <status> with no error body` instead of «Upstream provider error»; native OpenAI-compatible providers (deepseek, groq, …) name themselves in the error instead of «Custom provider»; the provider mock's `/__mock/requests` log records the response status (ROUT-476).
 - **Pass-through docs: `model` is forwarded unchanged.** `docs/api/llm-proxy.md` states that catch-all endpoints (embeddings, audio, …) need the provider's own model name in the body, not the Routerly model id; the body is not rewritten, preserving wire-format transparency (ROUT-374).
