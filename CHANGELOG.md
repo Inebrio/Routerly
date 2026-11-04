@@ -11,6 +11,11 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- **Call configuration by request complexity.** A router or routing profile can opt in to choosing reasoning effort, output token cap and verbosity per request from its size, tools and message count (low / medium / high tiers, configurable thresholds). Settings are applied per candidate model on every attempt, only where the model's provider documents them (Anthropic `output_config.effort`, OpenAI `reasoning_effort` / `verbosity`, Responses `reasoning.effort` / `text.verbosity`, `max_tokens`); unknown models and providers get nothing. A value the client already sent is kept unless the policy is `override`. With no config, or `enabled: false`, the request is forwarded byte-identical (ROUT-306).
+- **Management API: `callConfig` on routers and routing profiles.** `POST/PUT /api/routers` and profile create/patch accept `callConfig` (`{ enabled, tiers, clientValues?, thresholds? }`); `null` clears it, an invalid shape returns 400, permissions are unchanged. `UsageRecord.callConfig` (`{ tier, source, applied, skipped? }`) records what was sent per call, the `model:request` trace entry carries `callSettings`, the `router:call-config` trace entry shows the decision, and the MCP `route_preview` tool returns `callConfig` (ROUT-306).
+
 ### Changed
 
 - **Release gate: no overwrite without a real-test proof.** `stable-pointer` and `docker-rebuild` (on an already-tagged version) now refuse unless `scripts/release-proof.mjs` finds a proof tag recorded for that exact version and commit, at most 7 days old (ROUT-602).
