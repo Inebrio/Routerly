@@ -69,7 +69,6 @@ async function buildApp(): Promise<FastifyInstance> {
       email: 'u@example.com',
       roleId: 'r',
       permissions: currentPermissions,
-      routerIds: null,
     }
   })
   await app.register(mcpApiRoutes)

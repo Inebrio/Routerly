@@ -7,7 +7,6 @@ import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { pingTelemetry } from '../telemetry/telemetry.js';
-import { scopedRouters } from '../mcp/tokens.js';
 import { readConfig, writeConfig, updateConfig, ConfigUpdateAbort, effectivePort } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
@@ -283,7 +282,7 @@ async function verifyPassword(
 // ── Module augmentation ───────────────────────────────────────────────────────
 declare module 'fastify' {
   interface FastifyRequest {
-    dashUser: { id: string; email: string; roleId: string; permissions: Permission[]; routerIds: Set<string> | null } | null;
+    dashUser: { id: string; email: string; roleId: string; permissions: Permission[] } | null;
   }
 }
 
@@ -351,13 +350,6 @@ function toRouterResponse(router: RouterConfig, routers: RouterConfig[], showTok
     tokens: showTokens ? router.tokens?.map(t => ({ ...t, token: undefined })) || [] : [],
     ...(kind === 'orchestrator' ? { candidates: resolveCandidatesForResponse(candidates, routers) } : {}),
   };
-}
-
-/** Usage records of the routers the caller may reach (ROUT-596). */
-async function scopedUsage(req: FastifyRequest) {
-  const ids = req.dashUser?.routerIds;
-  const records = await readConfig('usage');
-  return ids ? records.filter(r => ids.has(r.routerId)) : records;
 }
 
 function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply, alsoAllowed: Permission[] = []): boolean {
@@ -724,14 +716,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!user) return reply.status(401).send({ error: 'Unauthorized' });
 
     const allRoles = getEffectiveRoles(customRoles);
-    const reachable = await scopedRouters(user);
-    req.dashUser = { id: userId, email: user.email, roleId: user.roleId, permissions: resolvePermissions(user.roleId, allRoles), routerIds: reachable && new Set(reachable.map(p => p.id)) };
-
-    // A user assigned to specific routers cannot touch the others (ROUT-596).
-    const target = /^\/api\/routers\/([^/?]+)/.exec(req.url)?.[1];
-    if (target && req.dashUser.routerIds && !req.dashUser.routerIds.has(target) && (await readConfig('routers')).some(p => p.id === target)) {
-      return reply.status(403).send({ error: 'Forbidden', message: 'Router not assigned to this user' });
-    }
+    req.dashUser = { id: userId, email: user.email, roleId: user.roleId, permissions: resolvePermissions(user.roleId, allRoles) };
 
     // requireMfa: a user without 2FA may only reach identity + 2FA enrolment routes.
     if (!user.totpEnabled && !MFA_ENROLMENT_PATHS.test(req.url.split('?')[0]!)) {
@@ -1288,7 +1273,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const showTokens = ['token:read', 'token:write', 'router:write'].some(p => req.dashUser?.permissions.includes(p as Permission));
     // Strip the full token; clients use tokenSnippet for display. Orchestrators
     // additionally get their candidates opacity-limited (AC7).
-    return reply.send(routers.filter(p => req.dashUser?.routerIds?.has(p.id) ?? true).map(p => toRouterResponse(p, routers, showTokens)));
+    return reply.send(routers.map(p => toRouterResponse(p, routers, showTokens)));
   });
 
   fastify.post<{
@@ -2125,7 +2110,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get<{ Querystring: { period?: string; routerId?: string; routerIds?: string; modelIds?: string; tokenIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; savings?: string; series?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
-    const records = await scopedUsage(req);
+    const records = await readConfig('usage');
     const { period = 'monthly', routerId, routerIds, modelIds, tokenIds, callType, requestType, outcome, from, to, endUserId, sessionId } = req.query;
     const page = Math.max(1, parseInt(req.query.page ?? '1', 10) || 1);
     const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '100', 10) || 100));
@@ -2342,7 +2327,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // ─── GET /api/usage/:id ────────────────────────────────────────────────────
-  fastify.get<{ Params: { id: string } }>('/api/usage/:id', async (req, reply) => {    if (!requirePerm(req, 'report:read', reply)) return;    const records = await scopedUsage(req);
+  fastify.get<{ Params: { id: string } }>('/api/usage/:id', async (req, reply) => {    if (!requirePerm(req, 'report:read', reply)) return;    const records = await readConfig('usage');
     // Also resolvable by trace id, so a notification carrying only `traceId` can
     // link straight to the request that produced it (T53).
     const record = records.find(r => r.id === req.params.id) ??
@@ -2354,7 +2339,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── GET /api/sessions (#94) ──────────────────────────────────────────────
   fastify.get<{ Querystring: { routerId?: string; limit?: string; cursor?: string } }>('/api/sessions', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
-    const records = await scopedUsage(req);
+    const records = await readConfig('usage');
     const { routerId, limit: limitStr, cursor } = req.query;
     const limit = Math.min(100, Math.max(1, parseInt(limitStr ?? '20', 10) || 20));
 
@@ -2382,7 +2367,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── GET /api/sessions/:id/requests (#94) ────────────────────────────────
   fastify.get<{ Params: { id: string } }>('/api/sessions/:id/requests', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
-    const records = await scopedUsage(req);
+    const records = await readConfig('usage');
     const requests = records
       .filter(r => r.sessionId === req.params.id)
       .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
@@ -2902,7 +2887,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/health/providers', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     // health/observability: must still account for disabled models
-    const [models, records] = await Promise.all([listEffectiveModelsIncludingDisabled(), scopedUsage(req)]);
+    const [models, records] = await Promise.all([listEffectiveModelsIncludingDisabled(), readConfig('usage')]);
 
     const now = Date.now();
     const fiveMinAgo = now - 300_000;
@@ -2963,7 +2948,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Querystring: { period?: string; routerId?: string; from?: string; to?: string } }>('/api/leaderboard', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     // health/observability: must still account for disabled models
-    const [models, records] = await Promise.all([listEffectiveModelsIncludingDisabled(), scopedUsage(req)]);
+    const [models, records] = await Promise.all([listEffectiveModelsIncludingDisabled(), readConfig('usage')]);
     const { period = 'monthly', routerId, from, to } = req.query;
 
     const now = new Date();
