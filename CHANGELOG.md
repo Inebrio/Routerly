@@ -29,6 +29,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **RA-09 docs-version tests no longer time out under load.** The two happy-path tests in `test/docs-version.test.ts` now allow 300 s instead of 120 s. Tests only (ROUT-522).
 - **Upstream errors are clearer.** When a provider rejects a call with no error body (Vertex 401), the client error now says `Upstream provider returned HTTP <status> with no error body` instead of «Upstream provider error»; native OpenAI-compatible providers (deepseek, groq, …) name themselves in the error instead of «Custom provider»; the provider mock's `/__mock/requests` log records the response status (ROUT-476).
 - **Pass-through docs: `model` is forwarded unchanged.** `docs/api/llm-proxy.md` states that catch-all endpoints (embeddings, audio, …) need the provider's own model name in the body, not the Routerly model id; the body is not rewritten, preserving wire-format transparency (ROUT-374).
 - **`clients configure` no longer prints the router token.** The plan shown (and the `--json` `plan`) masks the token as `sk-rt-***`; the file written still holds the real token (ROUT-598).
