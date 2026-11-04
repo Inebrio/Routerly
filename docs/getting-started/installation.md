@@ -69,8 +69,6 @@ curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.2.0
 | `user` (default) | `~/.routerly/app/` | `~/.local/bin/routerly` |
 | `system` | `/opt/routerly/` | `/usr/local/bin/routerly` |
 
-The installer lists what it installed in `.routerly-manifest` inside the app directory. Updates and uninstall remove only those files (plus `node_modules` and `dist`); anything else in the folder is left alone. A folder such as `/opt/routerly` that holds no Routerly install does not select the `system` scope: with `--yes` the scope is `user`. `--scope user` and `--scope=user` are equivalent; any other value is an error.
-
 The **service config and data directory** depends on both scope and platform:
 
 | Scope | Linux | macOS | Windows |
@@ -278,7 +276,7 @@ powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
 The uninstall flow will:
 
 1. Stop and remove the system daemon (systemd / launchd / Windows Service)
-2. Remove the application files the installer created (not other files in the same folder) and the CLI binary
+2. Remove the application files and CLI binary
 3. Ask whether to also delete user data (`~/.routerly/` — accounts, settings, usage history)
 
 :::note Data preservation

@@ -16,7 +16,6 @@ import * as fsp           from 'node:fs/promises';
 import * as path          from 'node:path';
 import * as os            from 'node:os';
 import * as http          from 'node:http';
-import { argValue, isRouterlyInstall, listSourceFiles, SKIP_DIRS, staleFiles, uninstallPaths, MANIFEST } from './install-lib.mjs';
 
 const exec = promisify(execCb);
 
@@ -43,7 +42,11 @@ const die     = (...a) => { console.error(c.red(c.bold('✗')) + ' ' + a.join(' 
 
 // ─── Parse CLI args ────────────────────────────────────────────────────────────
 const args   = process.argv.slice(2);
-const getArg = (name) => argValue(args, name);
+const getArg = (name) => {
+  const prefix = `--${name}=`;
+  const entry  = args.find(a => a.startsWith(prefix));
+  return entry ? entry.slice(prefix.length) : null;
+};
 const hasFlag = (name) => args.includes(`--${name}`);
 
 const SOURCE_DIR     = getArg('source-dir') ?? path.resolve(path.dirname(process.argv[1]), '..');
@@ -300,10 +303,12 @@ function detectExistingScope() {
   // Check for system-level paths (app dirs + service home dirs)
   const systemPaths = [
     '/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly',
+    '/var/lib/routerly',
+    '/Library/Application Support/Routerly',
+    path.join('C:\\ProgramData', 'Routerly'),
   ];
-  // An existing folder is not enough: it must hold a Routerly install.
   for (const p of systemPaths) {
-    if (isRouterlyInstall(p)) return 'system';
+    if (fs.existsSync(p)) return 'system';
   }
   return 'user';
 }
@@ -311,7 +316,7 @@ function detectExistingScope() {
 function detectExistingAppDir() {
   const systemPaths = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
   for (const p of systemPaths) {
-    if (isRouterlyInstall(p)) return p;
+    if (fs.existsSync(p)) return p;
   }
   return path.join(HOME, '.routerly', 'app');
 }
@@ -374,12 +379,11 @@ if (isExistingInstall && YES) {
 
     // Remove app dir
     const systemAppDirs = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
-    // Only what the installer put there: foreign files in the folder stay.
     for (const d of systemAppDirs) {
-      if (isRouterlyInstall(d)) { await removeInstalled(d, needsSudo); success(`Removed Routerly files from ${d}`); }
+      if (fs.existsSync(d)) { await removeDir(d, needsSudo); success(`Removed ${d}`); }
     }
     const userAppDir = path.join(HOME, '.routerly', 'app');
-    if (fs.existsSync(userAppDir)) { await removeInstalled(userAppDir, false); success(`Removed Routerly files from ${userAppDir}`); }
+    if (fs.existsSync(userAppDir)) { await removeDir(userAppDir, false); success(`Removed ${userAppDir}`); }
 
     // Remove system-scope service home (config/settings written here on system installs)
     // Always use sudo for system paths on POSIX, even if detectExistingScope said 'user'
@@ -455,7 +459,6 @@ step('1', 'Configuration');
 // ── Scope ─────────────────────────────────────────────────────────────────────
 let scope;
 if (FLAG_SCOPE) {
-  if (FLAG_SCOPE !== 'user' && FLAG_SCOPE !== 'system') die(`Invalid --scope "${FLAG_SCOPE}": use "user" or "system"`);
   scope = FLAG_SCOPE;
 } else if (YES || isUpdate) {
   scope = detectExistingScope();
@@ -743,10 +746,10 @@ step('3', 'Copying files & installing dependencies');
 // Copy source tree to APP_DIR
 info(`Copying source from ${c.dim(SOURCE_DIR)} to ${c.dim(APP_DIR)}...`);
 // Drop files of the previous version that the new source no longer has
-// (stale files can break the build, e.g. on downgrade). Only files listed in the
-// previous install's manifest are removed, never anything else in APP_DIR.
-const sourceFiles = listSourceFiles(SOURCE_DIR);
-for (const f of staleFiles(APP_DIR, sourceFiles)) await removeDir(path.join(APP_DIR, f), needsSudo);
+// (stale files can break the build, e.g. on downgrade). Only touches APP_DIR.
+if (fs.existsSync(path.join(APP_DIR, 'package.json'))) {
+  await pruneStale(SOURCE_DIR, APP_DIR, needsSudo);
+}
 await copyDir(SOURCE_DIR, APP_DIR, needsSudo);
 success('Source files copied');
 
@@ -757,7 +760,6 @@ if (needsSudo) {
   const currentUser = os.userInfo().username;
   await runCmd(`${SUDO}chown -R ${currentUser} "${APP_DIR}"`, '/');
 }
-await fsp.writeFile(path.join(APP_DIR, MANIFEST), sourceFiles.join('\n') + '\n');
 
 // npm install --ignore-scripts
 // (skip lifecycle scripts to avoid "husky: not found" error)
@@ -1122,21 +1124,20 @@ async function runCmd(cmd, cwd) {
   }
 }
 
-/** Remove what the installer put in dir (manifest files, node_modules, dist), then dir if it is left empty. */
-async function removeInstalled(dir, useSudo) {
-  for (const f of uninstallPaths(dir, listSourceFiles(SOURCE_DIR))) {
-    const p = path.join(dir, f);
-    // The installer hands APP_DIR to the current user; sudo only if that fails.
-    await fsp.rm(p, { recursive: true, force: true }).catch(() => removeDir(p, useSudo));
+/** Remove from dest every entry missing in src, keeping dependencies and build output. */
+async function pruneStale(src, dest, useSudo = false) {
+  const keep = ['node_modules', 'dist'];
+  for (const entry of await fsp.readdir(dest, { withFileTypes: true })) {
+    if (keep.includes(entry.name)) continue;
+    const srcPath  = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    const srcStat  = await fsp.stat(srcPath).catch(() => null);
+    if (srcStat?.isDirectory() && entry.isDirectory()) {
+      await pruneStale(srcPath, destPath, useSudo);
+    } else if (!srcStat || srcStat.isDirectory() !== entry.isDirectory()) {
+      await removeDir(destPath, useSudo);
+    }
   }
-  await removeEmptyDirs(dir, useSudo);
-}
-
-async function removeEmptyDirs(dir, useSudo) {
-  for (const e of await fsp.readdir(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) await removeEmptyDirs(path.join(dir, e.name), useSudo);
-  }
-  if ((await fsp.readdir(dir)).length === 0) await removeDir(dir, useSudo);
 }
 
 /** Recursively copy a directory, optionally using sudo for system paths. */
@@ -1145,7 +1146,7 @@ async function copyDir(src, dest, useSudo = false) {
   const entries = await fsp.readdir(src, { withFileTypes: true });
   for (const entry of entries) {
     // Skip heavy dirs that aren't needed in the install target
-    if (entry.isDirectory() && SKIP_DIRS.includes(entry.name)) {
+    if (entry.isDirectory() && ['node_modules', '.git', '.github', '.vscode', 'spec'].includes(entry.name)) {
       continue;
     }
     const srcPath  = path.join(src, entry.name);
