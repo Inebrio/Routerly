@@ -1762,7 +1762,7 @@ Query parameters:
 
 `callType` and `requestType` are two different questions about the same record. A semantic-intent embedding fired by the router is `callType: "routing"`, `requestType: "embedding"`; a plain chat request from a client is `callType: "completion"`, `requestType: "chat"`. Calls the gateway forwards through the pass-through proxy (embeddings, images, audio) are recorded with their `requestType` and zero tokens, since their body is streamed to the client rather than parsed.
 
-A user scoped to specific routers (by `routerIds` or router membership) only gets records of those routers from `/api/usage`, `/api/sessions` and `/api/leaderboard`, only those routers from `GET /api/routers`, and `403` on `/api/routers/:id/...` for any other router. Users without a router scope are not restricted.
+A user scoped to specific routers (by `routerIds`; router membership does not scope) only gets records of those routers from `/api/usage`, `/api/sessions` and `/api/leaderboard`, only those routers from `GET /api/routers`, and `403` on `/api/routers/:id/...` for any other router. Users without a router scope are not restricted.
 
 All filters are applied server-side. `routerIds`, `modelIds` and `tokenIds` accept comma-separated values for multi-value filtering; they combine with (AND) the single-value `router` and `model` parameters when both are provided, narrowing the result to records that match every active filter.
 

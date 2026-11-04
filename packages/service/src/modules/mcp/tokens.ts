@@ -67,14 +67,9 @@ export async function resolveUserPermissions(user: UserConfig): Promise<Permissi
  * any authenticated user. Permissions, not this list, are the real gate.
  */
 export async function accessibleRouters(user: UserConfig): Promise<RouterConfig[]> {
-  return (await scopedRouters(user)) ?? readConfig('routers')
-}
-
-/** Routers a scoped user is limited to, or null when the user is unscoped. */
-export async function scopedRouters(user: UserConfig): Promise<RouterConfig[] | null> {
   const routers = await readConfig('routers')
   const scoped = routers.filter(
     (p) => (user.routerIds ?? []).includes(p.id) || p.members?.some((m) => m.userId === user.id),
   )
-  return scoped.length > 0 ? scoped : null
+  return scoped.length > 0 ? scoped : routers
 }

@@ -1956,8 +1956,7 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
       payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'r1' }] }),
     })
     await app.close()
-    // one read in the auth hook (router scoping, ROUT-596) + the single lock-held read in the handler
-    expect(routersCallCount).toBe(2)
+    expect(routersCallCount).toBe(1)
     expect(res.statusCode).toBe(201)
     expect(res.json().candidates).toEqual([{ routerId: 'r1', name: 'Plain Router' }])
   })

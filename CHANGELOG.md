@@ -20,7 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
-- **Router assignment now restricts the management API.** A user assigned to specific routers (`routerIds` or router membership) no longer lists other routers, cannot call `/api/routers/:id/*` on them (403, including token create) and sees only their usage records in reports, sessions and leaderboard. Unassigned users are unchanged (ROUT-596).
+- **Router assignment now restricts the management API.** A user assigned to specific routers (`routerIds`) no longer lists other routers, cannot call `/api/routers/:id/*` on them (403, including token create) and sees only their usage records in reports, sessions and leaderboard. Unassigned users are unchanged (ROUT-596).
 - **Installer no longer deletes files it did not install.** `scripts/install.mjs` records the copied files in `.routerly-manifest`; updates and uninstall remove only manifest files (plus `node_modules`, `dist` and `tsconfig.tsbuildinfo`), not other content of `/opt/routerly`. An existing `/opt/routerly` without a Routerly install no longer selects the `system` scope with `--yes`, `--scope user` (with a space) is honoured like `--scope=user`, and an invalid scope fails with an error (ROUT-579).
 - **Docs version cut publishes on release.** The `Publish documentation cut to docs-versions` step uses `mktemp -u` for the temporary git index (git rejects an empty index file) and commits with the non-releasable `ci(docs):` type (ROUT-577).
 

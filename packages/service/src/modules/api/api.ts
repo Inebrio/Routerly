@@ -7,7 +7,6 @@ import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { pingTelemetry } from '../telemetry/telemetry.js';
-import { scopedRouters } from '../mcp/tokens.js';
 import { readConfig, writeConfig, updateConfig, ConfigUpdateAbort, effectivePort } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
@@ -724,8 +723,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!user) return reply.status(401).send({ error: 'Unauthorized' });
 
     const allRoles = getEffectiveRoles(customRoles);
-    const reachable = await scopedRouters(user);
-    req.dashUser = { id: userId, email: user.email, roleId: user.roleId, permissions: resolvePermissions(user.roleId, allRoles), routerIds: reachable && new Set(reachable.map(p => p.id)) };
+    req.dashUser = { id: userId, email: user.email, roleId: user.roleId, permissions: resolvePermissions(user.roleId, allRoles), routerIds: user.routerIds?.length ? new Set(user.routerIds) : null };
 
     // A user assigned to specific routers cannot touch the others (ROUT-596).
     const target = /^\/api\/routers\/([^/?]+)/.exec(req.url)?.[1];

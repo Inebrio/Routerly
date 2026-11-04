@@ -68,6 +68,12 @@ describe('router assignment scoping (ROUT-596)', () => {
     expect(JSON.stringify(r.json())).not.toContain('"u2"')
     expect(r.json().records ?? []).toHaveLength(0)
   })
+  it('creator membership does not scope an admin without routerIds', async () => {
+    const a = await app(unscoped)
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'users' ? [unscoped] : t === 'roles' ? roles : t === 'routers' ? [{ ...routers[0], members: [{ userId: 'bob', role: 'admin' }] }, routers[1]] : [])
+    expect((await a.inject({ method: 'GET', url: '/api/routers', headers: h })).json()).toHaveLength(2)
+  })
   it('unscoped user sees everything', async () => {
     const a = await app(unscoped)
     expect((await a.inject({ method: 'GET', url: '/api/routers', headers: h })).json()).toHaveLength(2)
