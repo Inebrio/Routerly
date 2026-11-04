@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- **Installer sandbox.** `install.mjs --sandbox <dir>` (or `ROUTERLY_INSTALL_SANDBOX`) runs install and uninstall entirely under `<dir>`: no daemon, no sudo, no real folders. With `ROUTERLY_INSTALL_TEST=1` the installer refuses to run without a sandbox, and it never installs into a non-empty folder that is not a Routerly install. `scripts/backup-code.sh` and `scripts/restore-code.sh` back up and restore the working-code folders (documented in `docs/contributing/installer-testing.md`).
+
 ### Changed
 
 - **Release gate: no overwrite without a real-test proof.** `stable-pointer` and `docker-rebuild` (on an already-tagged version) now refuse unless `scripts/release-proof.mjs` finds a proof tag recorded for that exact version and commit, at most 7 days old (ROUT-602).
