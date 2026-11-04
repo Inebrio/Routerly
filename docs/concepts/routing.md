@@ -38,6 +38,26 @@ weight = total_models - index
 
 So a model at position 0 gets `weight = N`, the one at position 1 gets `weight = N-1`, etc. This creates a natural preference order even when no other scoring policies are active.
 
+### Ranking algorithm
+
+The ranking algorithm decides how the policy results become the order in
+which models are tried. It is a setting on the Router and on routing
+profiles, stored as `rankingAlgorithm`. One value exists today:
+
+| Id | Behaviour |
+|----|-----------|
+| `default` | Weighted mean of the policy scores (a policy that gives every model the same score abstains), then the profile's selector picks the order. |
+
+When the field is unset, `default` applies, so existing Routers behave
+exactly as before. A Router bound to a routing profile uses the profile's
+value; the Router's own value is ignored while a profile is bound. The
+algorithm only changes the order Routerly tries models in. Requests and
+responses are forwarded unchanged.
+
+The routing trace records the algorithm used: `router:profile` carries
+`rankingAlgorithm`, and `router:recap` carries `rankingAlgorithm` and
+`rankingSource` (`router` or `profile`). See [API: Get Routing Trace](../api/management.md#get-routing-trace).
+
 ---
 
 ## Available Policies
@@ -167,6 +187,12 @@ The other 6 (`cheapest`, `context`, `capability`, `llm`, `semantic-intent`,
 `model-preference`) pick among a Router's own models, which an Orchestrator
 has none of.
 
+An Orchestrator has its own `rankingAlgorithm` (same values as above, `default`
+today) that orders its candidate Routers from the per-candidate scores. It is
+always the Orchestrator's own value: a routing profile does not apply to an
+Orchestrator. Each request emits an `orchestrator:recap` trace entry with
+the final candidate order.
+
 ### Passthrough
 
 A `passthrough`-kind Router does not select a model at all. It is reached at
@@ -213,7 +239,8 @@ A Router either keeps its own inline policies (configured on its
 profile instead. Routing is one of three profile kinds, alongside optimizer
 and security profiles; see [Dashboard: Profiles](../dashboard/profiles.md)
 and [API: Profiles](../api/management.md#profiles) for how to manage and
-assign them.
+assign them. A routing profile also carries the Router's
+[ranking algorithm](#ranking-algorithm).
 
 ### Built-in Profiles
 

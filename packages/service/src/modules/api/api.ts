@@ -12,14 +12,14 @@ import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration } from '@routerly/shared';
+import type { RankingAlgorithmId, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
 import { validateRoutingModels } from '../routing/validate-routing-models.js';
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug, LOG_LEVELS } from '@routerly/shared';
+import { RANKING_ALGORITHMS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug, LOG_LEVELS } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -1254,6 +1254,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ══════════════════════════════════════════════════════════════════════════════
 
   const routerKindSchema = z.enum(['router', 'orchestrator', 'passthrough']).optional();
+  const rankingAlgorithmSchema = z.enum(RANKING_ALGORITHMS).optional();
   // Emptiness is rejected by validateOrchestratorCandidates (EC2), not here — that
   // path also produces the story's exact error message.
   const orchestratorCandidatesSchema = z.array(z.object({
@@ -1290,6 +1291,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       optimizers?: OptimizerConfig | null;
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
+      rankingAlgorithm?: RankingAlgorithmId;
     }
   }>('/api/routers', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
@@ -1298,6 +1300,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
     const parsedKind = routerKindSchema.safeParse(req.body.kind);
     if (!parsedKind.success) return reply.status(400).send({ error: 'Invalid kind', details: parsedKind.error.issues });
+    const parsedRanking = rankingAlgorithmSchema.safeParse(req.body.rankingAlgorithm);
+    if (!parsedRanking.success) return reply.status(400).send({ error: 'Invalid rankingAlgorithm', details: parsedRanking.error.issues });
     const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
     if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
     // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
@@ -1362,6 +1366,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       autoRouting: req.body.autoRouting ?? true,
       ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
       ...(req.body.policies !== undefined && req.body.policies.length > 0 ? { policies: req.body.policies } : {}),
+      ...(parsedRanking.data !== undefined ? { rankingAlgorithm: parsedRanking.data } : {}),
       models: normalizedModels.map(m => ({
         modelId: m.modelId,
         ...(m.prompt ? { prompt: m.prompt } : {}),
@@ -1434,6 +1439,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       traceContent?: boolean;
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
+      rankingAlgorithm?: RankingAlgorithmId;
     };
   }>('/api/routers/:id', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
@@ -1453,6 +1459,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
     const parsedKind = routerKindSchema.safeParse(req.body.kind);
     if (!parsedKind.success) return reply.status(400).send({ error: 'Invalid kind', details: parsedKind.error.issues });
+    const parsedRanking = rankingAlgorithmSchema.safeParse(req.body.rankingAlgorithm);
+    if (!parsedRanking.success) return reply.status(400).send({ error: 'Invalid rankingAlgorithm', details: parsedRanking.error.issues });
     const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
     if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
     // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
@@ -1593,6 +1601,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         autoRouting: req.body.autoRouting ?? existing.autoRouting ?? true,
         ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
         ...(req.body.policies !== undefined && { policies: req.body.policies }),
+        ...(parsedRanking.data !== undefined ? { rankingAlgorithm: parsedRanking.data } : {}),
         models: normalizedModels.map(m => ({
           modelId: m.modelId,
           ...(m.prompt ? { prompt: m.prompt } : {}),

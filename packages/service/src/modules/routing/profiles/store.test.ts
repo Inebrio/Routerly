@@ -63,6 +63,21 @@ describe('resolveRoutingProfile', () => {
     expect(resolved.policies).toEqual(policies)
   })
 
+  it('the custom profile inherits the router rankingAlgorithm, and omits the key when the router has none', async () => {
+    const { resolveRoutingProfile } = await import('./store.js')
+    expect((await resolveRoutingProfile(router({ rankingAlgorithm: 'default' }))).rankingAlgorithm).toBe('default')
+    expect('rankingAlgorithm' in await resolveRoutingProfile(router())).toBe(false)
+  })
+
+  it('a bound profile supplies its own rankingAlgorithm; the router inline value is ignored', async () => {
+    profilesFixture = [{ ...routingOverlay, rankingAlgorithm: 'default' }]
+    const { resolveRoutingProfile } = await import('./store.js')
+    const resolved = await resolveRoutingProfile(router({ routingProfileId: 'custom-1', rankingAlgorithm: 'jev' as never }))
+    expect(resolved.id).toBe('custom-1')
+    expect(resolved.rankingAlgorithm).toBe('default')
+    profilesFixture = []
+  })
+
   it('is idempotent: resolving twice yields identical output', async () => {
     const { resolveRoutingProfile } = await import('./store.js')
     const p = router({ policies: [{ type: 'health' as const, enabled: true }] })

@@ -1,7 +1,8 @@
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
+import { DEFAULT_RANKING_ALGORITHM, RANKING_ALGORITHMS } from '@routerly/shared';
 import type { Profile, ProfileKind, RouterConfig } from '@routerly/shared';
 
 // ponytail: no interactive editor for profile bodies in CLI v1; edit via dashboard or clone+PATCH. Add when a headless-edit need is proven.
@@ -25,6 +26,10 @@ function fail(message: string): never {
 function handleError(err: unknown): never {
   if (err instanceof ApiError) fail(`Error: ${err.message}`);
   return fail(String(err));
+}
+
+function rankingOption(description: string): Option {
+  return new Option('--ranking-algorithm <id>', description).choices(RANKING_ALGORITHMS);
 }
 
 function parseKind(value: string): ProfileKind {
@@ -64,6 +69,7 @@ function summarize(profile: Profile): string {
 function printDetails(profile: Profile): void {
   if (profile.kind === 'routing') {
     // Selector and fallback strategy are engine internals, not operator knobs (T112).
+    console.log(chalk.gray('ranking algorithm: ') + (profile.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM));
     console.log(chalk.bold('\nPolicies:'));
     if (profile.policies.length === 0) console.log(chalk.gray('  (none)'));
     for (const p of profile.policies) {
@@ -170,21 +176,60 @@ Examples:
     .description('Create an empty profile of the given kind, to be filled in from the dashboard')
     .requiredOption('--kind <kind>', `Profile kind: ${KINDS.join(', ')}`)
     .requiredOption('--label <label>', 'Label for the new profile')
+    .addOption(rankingOption('Ranking algorithm (routing profiles only)'))
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly profiles create --kind routing --label "My Routing"
+  routerly profiles create --kind routing --label "My Routing" --ranking-algorithm default
   routerly profiles create --kind security --label "My Guardrails" --json
 `)
-    .action(async (opts: { kind: string; label: string; json?: boolean }) => {
+    .action(async (opts: { kind: string; label: string; rankingAlgorithm?: string; json?: boolean }) => {
       try {
         const kind = parseKind(opts.kind);
-        const profile = await api<Profile>('POST', '/api/profiles', { kind, label: opts.label });
+        if (opts.rankingAlgorithm !== undefined && kind !== 'routing') {
+          fail('--ranking-algorithm is only valid with --kind routing.');
+        }
+        const profile = await api<Profile>('POST', '/api/profiles', {
+          kind,
+          label: opts.label,
+          ...(opts.rankingAlgorithm !== undefined ? { rankingAlgorithm: opts.rankingAlgorithm } : {}),
+        });
         if (opts.json) {
           console.log(JSON.stringify(profile, null, 2));
           return;
         }
         console.log(chalk.green(`✓ Created ${profile.kind} profile "${profile.label}" -> ${profile.id}`));
+      } catch (err) {
+        handleError(err);
+      }
+    });
+
+  // ── profiles update ──────────────────────────────────────────────────────────
+  cmd.command('update <id>')
+    .description('Update a user profile (built-ins cannot be changed)')
+    .option('--label <label>', 'New label')
+    .addOption(rankingOption('Ranking algorithm (routing profiles only)'))
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --ranking-algorithm default
+  routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --label "Renamed" --json
+`)
+    .action(async (id: string, opts: { label?: string; rankingAlgorithm?: string; json?: boolean }) => {
+      try {
+        if (opts.label === undefined && opts.rankingAlgorithm === undefined) {
+          fail('Error: provide --label and/or --ranking-algorithm.');
+        }
+        const profile = await api<Profile>('PATCH', `/api/profiles/${encodeURIComponent(id)}`, {
+          ...(opts.label !== undefined ? { label: opts.label } : {}),
+          ...(opts.rankingAlgorithm !== undefined ? { rankingAlgorithm: opts.rankingAlgorithm } : {}),
+        });
+        if (opts.json) {
+          console.log(JSON.stringify(profile, null, 2));
+          return;
+        }
+        console.log(chalk.green(`✓ Updated ${profile.kind} profile "${profile.label}" (version ${profile.version})`));
       } catch (err) {
         handleError(err);
       }

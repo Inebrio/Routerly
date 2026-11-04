@@ -1,4 +1,4 @@
-import { PASSTHROUGH_MODEL_ID, type ChatCompletionRequest, type ModelConfig, type RouterConfig, type RouterToken, type ResilienceStore, type RoutingCandidate, type RoutingProfile } from '@routerly/shared';
+import { DEFAULT_RANKING_ALGORITHM, PASSTHROUGH_MODEL_ID, type ChatCompletionRequest, type ModelConfig, type RouterConfig, type RouterToken, type ResilienceStore, type RankingAlgorithmId, type RoutingCandidate, type RoutingProfile } from '@routerly/shared';
 import { listEffectiveModels } from '../provider/list-effective.js';
 import { isAllowed, getViolatedLimits } from '../budget/budget.js';
 import type { LimitSnapshot } from '../budget/budget.js';
@@ -18,9 +18,8 @@ import { modelPreferencePolicy } from './policies/model-preference.js';
 import type { PolicyFn } from './policies/types.js';
 import type { TraceEntry } from '@routerly/shared';
 import type { TracePanel } from '../trace/store.js';
-import { resolveRoutingProfile } from './profiles/store.js';
-import { SELECTOR_MAP } from './selectors/index.js';
-import type { ScoredCandidate, SelectorContext } from './selectors/index.js';
+import { CUSTOM_PROFILE_ID, resolveRoutingProfile } from './profiles/store.js';
+import { RANKING_MAP, resolveRankingAlgorithm } from './ranking/index.js';
 
 function te(panel: TracePanel, message: string, details: Record<string, unknown>): TraceEntry {
   return { panel, message, details };
@@ -58,8 +57,8 @@ const POLICY_MAP: Record<string, PolicyFn> = {
  * must return `bypass` verbatim (all other fields are placeholder empties in that case).
  */
 export interface ScoringResult {
-  scored: ScoredCandidate[];
-  allAbstained: boolean;
+  scoringCandidates: CandidateModel[];
+  rankingAlgorithm: RankingAlgorithmId;
   successfulResults: { type: string; weight: number; routing: { model: string; point: number }[] }[];
   scoringIds: Set<string>;
   policyExcludes: Set<string>;
@@ -224,8 +223,8 @@ export async function scoreCandidates(
       trace: [...(resilienceTraceEntry ? [resilienceTraceEntry] : []), intakeEntry, bypassEntry],
     };
     return {
-      scored: [],
-      allAbstained: false,
+      scoringCandidates: [],
+      rankingAlgorithm: DEFAULT_RANKING_ALGORITHM,
       successfulResults: [],
       scoringIds: new Set(),
       policyExcludes: new Set(),
@@ -255,10 +254,12 @@ export async function scoreCandidates(
   });
   emit?.(policiesEntry);
 
+  const rankingAlgorithm = resolveRankingAlgorithm(profile.rankingAlgorithm, log);
   const profileEntry = te('router-request', 'router:profile', {
     profileId: profile.id,
     selector: profile.selector,
     fallbackStrategy: profile.fallbackStrategy,
+    rankingAlgorithm,
   });
   emit?.(profileEntry);
 
@@ -338,64 +339,8 @@ export async function scoreCandidates(
     throw new Error('all_models_excluded_by_policies');
   }
 
-  // ── Fase 2: media pesata dei punteggi raw (senza normalizzazione) ─────────
-  //
-  // Le policy restituiscono già punteggi 0–1 con semantica propria.
-  // Una policy in cui tutti i candidati hanno lo stesso punteggio non ha
-  // potere discriminante: viene ignorata (astensione). Se conteggiata,
-  // diluirebbe le policy che differenziano senza aggiungere informazione.
   const scoringIds = new Set(scoringCandidates.map(c => c.model.id));
-  const scoreAccumulator = new Map<string, number>();
-  const weightAccumulator = new Map<string, number>();
-  for (const c of scoringCandidates) {
-    scoreAccumulator.set(c.model.id, 0);
-    weightAccumulator.set(c.model.id, 0);
-  }
-
   const successfulResults = policyResults.filter(r => !r.failed);
-  const abstainedPolicies: string[] = [];
-
-  for (const { type, weight: policyWeight, routing } of successfulResults) {
-    const eligible = routing.filter(r => scoringIds.has(r.model));
-
-    // Astensione: se tutti i validi hanno lo stesso punteggio (±0.0001),
-    // la policy non contribuisce alla media pesata.
-    const points = eligible.map(r => (typeof r.point === 'number' && !isNaN(r.point) ? r.point : 0.5));
-    const min = Math.min(...points);
-    const max = Math.max(...points);
-    if (eligible.length === 0 || max - min < 0.0001) {
-      abstainedPolicies.push(type);
-      continue;
-    }
-
-    for (const r of eligible) {
-      const point = typeof r.point === 'number' && !isNaN(r.point) ? r.point : 0.5;
-      scoreAccumulator.set(r.model, (scoreAccumulator.get(r.model) ?? 0) + point * policyWeight);
-      weightAccumulator.set(r.model, (weightAccumulator.get(r.model) ?? 0) + policyWeight);
-    }
-  }
-
-  if (abstainedPolicies.length > 0) {
-    log?.info({ abstained: abstainedPolicies }, 'routing: policies abstained (no discriminating signal)');
-    emit?.(te('router-response', 'router:abstained', { policies: abstainedPolicies }));
-  }
-
-  // When every active policy abstained (or none were configured), no policy has a
-  // preference. Use random weights so the router distributes traffic uniformly over
-  // time instead of always picking the first model in the router config.
-  const allPoliciesAbstained = abstainedPolicies.length === successfulResults.length;
-
-  const scored: ScoredCandidate[] = scoringCandidates.map(c => {
-    const totalScore = scoreAccumulator.get(c.model.id) ?? 0;
-    const totalWeight = weightAccumulator.get(c.model.id) ?? 0;
-    const score = totalWeight > 0 ? totalScore / totalWeight : 0.5;
-    return {
-      model: c.model.id,
-      score: +score.toFixed(4),
-      cost: (c.model.cost.inputPerMillion + c.model.cost.outputPerMillion) / 2,
-      ...(c.prompt ? { prompt: c.prompt } : {}),
-    };
-  });
 
   const trace: TraceEntry[] = [
     ...(resilienceTraceEntry ? [resilienceTraceEntry] : []),
@@ -418,8 +363,8 @@ export async function scoreCandidates(
   ];
 
   return {
-    scored,
-    allAbstained: allPoliciesAbstained,
+    scoringCandidates,
+    rankingAlgorithm,
     successfulResults,
     scoringIds,
     policyExcludes,
@@ -442,14 +387,22 @@ export async function routeRequest(
   const profile = await resolveRoutingProfile(router);
   const sc = await scoreCandidates(request, router, profile, log, emit, token, traceId, conversationId, store);
   if (sc.bypass) return sc.bypass;
-  const { scored, allAbstained, successfulResults, scoringIds, policyExcludes, excludeReasons, failedPolicies, trace: preTrace } = sc;
+  const { scoringCandidates, rankingAlgorithm, successfulResults, scoringIds, policyExcludes, excludeReasons, failedPolicies, trace: preTrace } = sc;
 
-  const selectorCtx: SelectorContext = {
-    routerId: router.id,
-    ...(conversationId !== undefined ? { conversationId } : {}),
-    allAbstained,
-  };
-  const finalCandidates: RoutingCandidate[] = SELECTOR_MAP[profile.selector](scored, selectorCtx).models;
+  const { models: finalCandidates, scored, abstained } = RANKING_MAP[rankingAlgorithm]({
+    scoringCandidates,
+    successfulResults,
+    selector: profile.selector,
+    selectorCtx: {
+      routerId: router.id,
+      ...(conversationId !== undefined ? { conversationId } : {}),
+    },
+  });
+
+  if (abstained.length > 0) {
+    log?.info({ abstained }, 'routing: policies abstained (no discriminating signal)');
+    emit?.(te('router-response', 'router:abstained', { policies: abstained }));
+  }
 
   const TIED_TOLERANCE = 0.0001;
   const topScore = Math.max(0, ...scored.map(c => c.score));
@@ -465,6 +418,7 @@ export async function routeRequest(
           .filter(e => scoringIds.has(e.model))
           .map(e => ({ model: e.model, point: e.point, contribution: +(e.point * r.weight).toFixed(4) })),
       })),
+      rankingAlgorithm,
       final: finalCandidates,
       ...(hasTie ? { tied: tiedWinners.map(c => c.model) } : {}),
       ...(policyExcludes.size > 0 ? { excluded: Object.fromEntries(excludeReasons) } : {}),
@@ -477,6 +431,8 @@ export async function routeRequest(
   // not the selector's rank-based weight (that's resultEntry's `weight` field).
   const scoredByModel = new Map(scored.map(s => [s.model, s.score]));
   const recapEntry = te('router-response', 'router:recap', {
+    rankingAlgorithm,
+    rankingSource: profile.id === CUSTOM_PROFILE_ID ? 'router' : 'profile',
     policies: successfulResults.map(r => {
       const scorable = r.routing.filter(e => scoringIds.has(e.model));
       const sorted = [...scorable].sort((a, b) => b.point - a.point);

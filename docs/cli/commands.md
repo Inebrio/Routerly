@@ -514,7 +514,13 @@ routerly router remove <router>
 
 #### `routerly router routing show <router>`
 
-Display the routing configuration (auto-routing flag, routing model, fallback models, and policy stack).
+```
+routerly router routing show <router> [--json]
+```
+
+Display the routing configuration (auto-routing flag, routing model, fallback models, ranking algorithm, and policy stack). The ranking algorithm is the effective one: when the router is bound to a routing profile, the profile's value is shown with `(profile <label>)`, otherwise `(router)`.
+
+`--json` prints `{ routerId, routingProfileId, rankingAlgorithm, rankingSource, policies }` instead, where `rankingSource` is `router` or `profile`.
 
 #### `routerly router routing update <router>`
 
@@ -527,6 +533,9 @@ routerly router routing update <router> [options]
 | `--routing-model <id>` | Model ID used for LLM-based routing decisions (must be in the model registry, otherwise the service answers 400) |
 | `--fallback-models <ids>` | Comma-separated fallback routing model IDs |
 | `--auto-routing` / `--no-auto-routing` | Enable or disable auto-routing |
+| `--ranking-algorithm <id>` | Ranking algorithm: how policy results become the candidate order. Only `default` exists today; any other value is rejected with exit code 1 |
+
+If the router is bound to a routing profile, the profile's algorithm applies; the command still saves the router's value and prints `warning: router uses profile "<label>"; its ranking algorithm applies` to stderr.
 
 #### `routerly router routing policy list <router>`
 
@@ -1368,7 +1377,7 @@ Requires `profiles:read` permission.
 ### `routerly profiles create`
 
 ```
-routerly profiles create --kind <kind> --label <label> [--json]
+routerly profiles create --kind <kind> --label <label> [--ranking-algorithm <id>] [--json]
 ```
 
 Create an empty profile of the given kind. The CLI has no editor for profile bodies: fill the new profile in from the dashboard, or use `clone` to start from a preset.
@@ -1377,16 +1386,43 @@ Create an empty profile of the given kind. The CLI has no editor for profile bod
 |--------|-------------|
 | `--kind <kind>` | `routing`, `optimizer` or `security` - required |
 | `--label <label>` | Label for the new profile - required |
+| `--ranking-algorithm <id>` | Ranking algorithm, `routing` profiles only (`default`); with another kind the command exits 1 |
 | `--json` | Output the created profile as raw JSON |
 
 ```bash
 routerly profiles create --kind routing --label "My Routing"
+routerly profiles create --kind routing --label "My Routing" --ranking-algorithm default
 routerly profiles create --kind security --label "My Guardrails" --json
 ```
 
 **Output on success:**
 ```
 ✓ Created routing profile "My Routing" -> 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
+```
+
+Requires `profiles:manage` permission.
+
+### `routerly profiles update`
+
+```
+routerly profiles update <id> [--label <label>] [--ranking-algorithm <id>] [--json]
+```
+
+Update a user profile. At least one of `--label` or `--ranking-algorithm` is required, otherwise the command exits 1 with `Error: provide --label and/or --ranking-algorithm.` Built-in profiles cannot be changed.
+
+| Option | Description |
+|--------|-------------|
+| `--label <label>` | New label |
+| `--ranking-algorithm <id>` | Ranking algorithm, `routing` profiles only (`default`) |
+| `--json` | Output the updated profile as raw JSON |
+
+```bash
+routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --ranking-algorithm default
+```
+
+**Output on success:**
+```
+✓ Updated routing profile "My Routing" (version 2)
 ```
 
 Requires `profiles:manage` permission.

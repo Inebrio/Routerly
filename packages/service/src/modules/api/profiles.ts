@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { RANKING_ALGORITHMS } from '@routerly/shared';
 import type { Permission, Profile, ProfileKind, RoutingPolicy } from '@routerly/shared';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { logAudit } from '../audit/logger.js';
@@ -61,6 +62,7 @@ const CREATE_SCHEMAS = {
     policies: z.array(routingPolicySchema).default([]),
     selector: selectorTypeSchema.default('argmax'),
     fallbackStrategy: fallbackStrategyTypeSchema.default('next-best'),
+    rankingAlgorithm: z.enum(RANKING_ALGORITHMS).optional(),
   }),
   optimizer: z.object({
     kind: z.literal('optimizer'),
@@ -94,6 +96,7 @@ const PATCH_SCHEMAS: Record<ProfileKind, z.ZodTypeAny> = {
     policies: z.array(routingPolicySchema).optional(),
     selector: selectorTypeSchema.optional(),
     fallbackStrategy: fallbackStrategyTypeSchema.optional(),
+    rankingAlgorithm: z.enum(RANKING_ALGORITHMS).optional(),
   }).refine(b => Object.keys(b).length > 0, { message: 'At least one field must be provided' }),
   optimizer: z.object({
     ...labelField,

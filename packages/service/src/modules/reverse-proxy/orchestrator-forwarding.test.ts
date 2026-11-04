@@ -108,6 +108,32 @@ describe('orchestrator forwarding (RTR-02 task 3)', () => {
     expect(ctx.result).toEqual({ kind: 'json', body: response })
   })
 
+  it('ROUT-298: emits orchestrator:recap (rankingAlgorithm + candidate routers in rank order) before forwarding', async () => {
+    buildPipeline()
+    const modelA = makeModel(`m-${randomUUID()}`)
+    const modelB = makeModel(`m-${randomUUID()}`)
+    await seedModels([modelA, modelB])
+    const routerA = makeRouter(`r-${randomUUID()}`, [modelA.id])
+    const routerB = makeRouter(`r-${randomUUID()}`, [modelB.id])
+    const orchestrator = { ...makeOrchestrator(`o-${randomUUID()}`, [{ routerId: routerA.id }, { routerId: routerB.id }]), rankingAlgorithm: 'default' as const }
+    await writeConfig('routers', [orchestrator, routerA, routerB])
+    mockLlmChat.mockResolvedValueOnce(makeResponse(modelA.id))
+
+    const emit = vi.fn()
+    const ctx = { ...buildCtx(orchestrator), emit } as ProxyContext
+    await openaiAttempt.run(ctx)
+
+    const recap = emit.mock.calls.map(c => c[0]).filter(e => e.message === 'orchestrator:recap')
+    expect(recap).toHaveLength(1)
+    expect(recap[0].panel).toBe('router-response')
+    expect(recap[0].details.rankingAlgorithm).toBe('default')
+    expect(recap[0].details.final).toEqual([
+      expect.objectContaining({ rank: 1, model: routerA.name, routerId: routerA.id }),
+      expect.objectContaining({ rank: 2, model: routerB.name, routerId: routerB.id }),
+    ])
+    expect(recap[0].details.final.every((f: { score: number }) => f.score >= 0 && f.score <= 1)).toBe(true)
+  })
+
   it('AC5: records exactly one usage entry, orchestratorId set to the orchestrator, routerId set to the candidate that executed it', async () => {
     buildPipeline()
     const model = makeModel(`m-${randomUUID()}`)

@@ -600,7 +600,8 @@ POST /api/profiles
   "label": "My Routing Profile",
   "policies": [{ "type": "cheapest", "enabled": true }],
   "selector": "cheapest",
-  "fallbackStrategy": "abort"
+  "fallbackStrategy": "abort",
+  "rankingAlgorithm": "default"
 }
 ```
 
@@ -608,6 +609,8 @@ POST /api/profiles
 - `kind`: `routing` | `optimizer` | `security` (required, decides which other
   fields are accepted)
 - `label`: display name (required, non-empty)
+- `rankingAlgorithm`: `routing` only, `default` (the only id today); absent means
+  `default`. Any other value is a `400`
 - everything else is optional and defaults to an empty configuration, so
   `{ "kind": "security", "label": "Empty" }` is a valid body that can be filled
   in later with [Update Profile](#update-profile)
@@ -654,9 +657,13 @@ kind, at least one required. `kind` itself cannot be changed.
   "label": "Renamed Profile",
   "policies": [{ "type": "cheapest", "enabled": true }],
   "selector": "cheapest",
-  "fallbackStrategy": "abort"
+  "fallbackStrategy": "abort",
+  "rankingAlgorithm": "default"
 }
 ```
+
+`rankingAlgorithm` (`default`) applies to `routing` profiles; any other value
+is a `400`. See [Concepts: Routing](../concepts/routing.md#ranking-algorithm).
 
 Only user-created profiles can be updated. Every successful update bumps the
 profile's `version` field by 1.
@@ -1240,6 +1247,7 @@ unchanged, send `null` to clear it, or send an object to replace it.
 | `name` | string | Router name |
 | `timeoutMs` | number | Upstream timeout for this router's requests |
 | `traceContent` | boolean | Trace content opt-in. Default `false`: traces record metadata only. Set to `true` to also store prompts and answers on the trace (`entry.content`) — they then reach the trace stream, the usage record and any integration exporting traces. |
+| `rankingAlgorithm` | string | `default` (the only id today). Optional, also accepted on `POST /api/routers`; any other value is a `400` (`Invalid rankingAlgorithm`). Absent means `default`. Ignored when a routing profile is bound to the router, except on `kind: "orchestrator"`, which never uses a profile. |
 | `candidates` | array | Only on `kind: "orchestrator"`. Request body: `{ routerId, limits? }[]`. Response also resolves each candidate's `name`: `{ routerId, name, limits? }[]`. Array order **is** the priority order (index 0 = highest) — there is no `weight` field. |
 
 For a router with `kind: "passthrough"`, no request or response field
@@ -2024,6 +2032,9 @@ Every entry carries where it came from, so a consumer can group a request by pha
 | `optimizer:step` | Once per configured optimizer step, whatever it did | `{ id, outcome, klass?, tokensBefore?, tokensAfter?, saved?, ms?, reason? }`. `outcome` is `applied`, `unchanged`, `skipped` or `rolled-back`; `reason` says why (`disabled`, `not-registered`, `unsupported-request`, `safety-gate`, `invalid-result`, `threw: …`). |
 | `budget:checked` | Before every upstream attempt, per candidate model | `{ model, allowed, ms, violated?: [{ metric, window, limit, current }] }`. A candidate refused here is dropped and the router moves to the next one. |
 | `egress:sent` | Last entry of the request: what was written back to the client | `{ protocol, kind, status?, encoding?, frames?, bytes?, error? }`. `kind` is `json`, `stream`, `block` or `passthrough`. |
+| `router:profile` | Once per routed request, when the routing profile is resolved | `{ profileId, selector, fallbackStrategy, rankingAlgorithm }` |
+| `router:recap` | Once per routed request, after ranking | Includes `rankingAlgorithm`, `rankingSource` (`router` when the Router's own settings are used, `profile` when a routing profile is bound) and the `final` ranking. Traces recorded before this field existed omit both. |
+| `orchestrator:recap` | Once per request to an Orchestrator, after its candidates are scored | `{ rankingAlgorithm, final: [{ rank, model, routerId, score }] }`, where `model` is the candidate Router's name. |
 | `trace:recap` | Once, when the request finishes | The aggregate of everything above: `{ outcome, durationMs, model?, provider?, attempts, tokens, costUsd, latencyMs, ttftMs?, tokensPerSec?, overhead?, guardrails?, pii?, optimizers?, errors? }`. `outcome` is `ok`, `blocked`, `error` or `incomplete`; `overhead` is what Routerly's own model calls cost, kept out of the request's numbers. Purely derived, so it never disagrees with the entries it summarises. |
 
 ```bash

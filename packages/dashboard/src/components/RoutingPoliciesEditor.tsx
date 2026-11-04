@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, GripVertical, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { RANKING_ALGORITHMS, DEFAULT_RANKING_ALGORITHM, type RankingAlgorithmId } from '@routerly/shared';
 import type { Model, RoutingPolicy } from '../api';
 import { SearchableSelect } from './SearchableSelect';
 
@@ -32,6 +33,11 @@ interface RoutingPoliciesEditorProps {
   llmDefaults?: { routingModelId?: string; fallbackModelIds?: string[] };
   /** Restricts which types can be added. Defaults to every type (plain routers/profiles). */
   allowedTypes?: readonly string[];
+  /** When given, a "Ranking algorithm" select is rendered above the policies. */
+  rankingAlgorithm?: RankingAlgorithmId;
+  onRankingAlgorithmChange?: (id: RankingAlgorithmId) => void;
+  /** Picks which description hint the select shows. Defaults to 'router'. */
+  rankingAlgorithmContext?: 'router' | 'orchestrator';
 }
 
 /**
@@ -39,7 +45,7 @@ interface RoutingPoliciesEditorProps {
  * the router routing tab (inline router policies) and the profile form page
  * (profile policies), so both edit routing the exact same way.
  */
-export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, llmDefaults, allowedTypes = ALL_POLICY_TYPES }: RoutingPoliciesEditorProps) {
+export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, llmDefaults, allowedTypes = ALL_POLICY_TYPES, rankingAlgorithm, onRankingAlgorithmChange, rankingAlgorithmContext = 'router' }: RoutingPoliciesEditorProps) {
   const { t } = useTranslation();
   // Advanced section open state per policy index
   const [advancedOpen, setAdvancedOpen] = useState<Set<number>>(new Set());
@@ -207,7 +213,29 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
     setPolicies(prev => prev.filter((_, i) => i !== idx));
   }
 
+  const rankingId = rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM;
+  const rankingDescKey = rankingAlgorithmContext === 'orchestrator' ? 'orchestratorDescription' : 'description';
   return (
+    <>
+          {rankingAlgorithm !== undefined && (
+            <div className="form-group">
+              <label className="form-label">{t('common.rankingAlgorithm.title')}</label>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
+                {t('common.rankingAlgorithm.hint')}
+              </p>
+              <SearchableSelect
+                style={{ maxWidth: 420 }}
+                ariaLabel={t('common.rankingAlgorithm.title')}
+                placeholder={t('common.rankingAlgorithm.title')}
+                value={rankingId}
+                onChange={v => onRankingAlgorithmChange?.(v as RankingAlgorithmId)}
+                options={RANKING_ALGORITHMS.map(id => ({ value: id, label: t(`common.rankingAlgorithm.options.${id}.label`) }))}
+              />
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
+                {t(`common.rankingAlgorithm.options.${rankingId}.${rankingDescKey}`)}
+              </p>
+            </div>
+          )}
           <div className="form-group">
             <label className="form-label">{t('common.routingPolicies.title')}</label>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
@@ -971,5 +999,6 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
               />
             </div>
           </div>
+    </>
   );
 }
