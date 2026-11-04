@@ -73,6 +73,14 @@ describe('provider mock: web-specific errors', () => {
     await expect(adapter.chatCompletion(req, model('mock-403'))).rejects.toThrow(/403.*Cloudflare/s);
   });
 
+  it('request log records the response status', async () => {
+    const { adapter, model } = cases[0]!;
+    await adapter.chatCompletion(req, model('mock-ok'));
+    const raw = await (await fetch(`${mocks.url}/__mock/requests`)).json() as Array<{ status?: number }>;
+    expect(raw.length).toBeGreaterThan(0);
+    expect(raw.every(r => typeof r.status === 'number')).toBe(true);
+  });
+
   it('claude.ai conversation is deleted after the call', async () => {
     const { adapter, model } = cases[0]!;
     await adapter.chatCompletion(req, model('mock-ok'));
