@@ -426,6 +426,27 @@ Open the site and use the version switcher in the nav: the new version
 and `next` (the always-current, in-progress documentation) are both
 listed and each shows its own version banner.
 
+## Real-test gate before overwriting a release
+
+A published version is never re-published or overwritten on the strength of an
+untested fix. Both workflows that overwrite a release, **Stable pointer**
+(`stable-pointer.yml`) and **Docker Rebuild** (`docker-rebuild.yml`, when the
+`vX.Y.Z` tag already exists), start with `scripts/release-proof.mjs check` and
+fail if no proof is recorded.
+
+A proof is an annotated tag `proof/vX.Y.Z/<sha12>`, bound to one version and one
+commit. After testing the published package or image in an isolated
+environment, record it:
+
+```bash
+node scripts/release-proof.mjs record 0.6.1 --commit <sha> --evidence "npm package installed in a clean LXC, install + proxy smoke OK" --push
+node scripts/release-proof.mjs check 0.6.1 --commit <sha>      # what the workflows run
+```
+
+The check refuses when there is no proof for that exact version and commit
+(another commit's proof does not count), or when the proof is older than
+7 days (`--max-age-days`). The message says which of the two is missing.
+
 ## Rebuilding a Docker image
 
 The published image can lag the code it was built from: a base image gets a
