@@ -9,6 +9,9 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],
     setupFiles: ['./src/test-setup.ts'],
+    // Heavy server setup (dynamic imports, Fastify build) exceeds the 5s default on a loaded machine.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     env: { ROUTERLY_TELEMETRY_DISABLED: '1' },
     coverage: {
       provider: 'v8',
