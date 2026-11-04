@@ -235,7 +235,8 @@ export function openAIToAnthropicResponse(response: any, upstreamModel: string, 
   return {
     // `||`, not `??`: providers that answer with an empty id/model must still yield
     // a usable message id and the model the client asked for.
-    id: response?.id || fallbackId || `msg-${Date.now()}`,
+    // OpenAI-style `chatcmpl-` ids are rewritten to the Anthropic `msg_` shape.
+    id: response?.id?.replace(/^chatcmpl-/, 'msg_') || fallbackId || `msg-${Date.now()}`,
     type: 'message',
     role: 'assistant',
     content,
