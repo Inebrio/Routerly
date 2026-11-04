@@ -189,6 +189,10 @@ request finishes, so it never disagrees with the log below it. It carries:
 
 A section only appears when that part of the pipeline did something.
 
+#### Call configuration
+
+When the router applied a [call configuration](../concepts/call-configuration.md), the record page has a **Call configuration** row: the tier and whether it came from the router or a profile, the settings sent (effort, max output tokens, verbosity) and, when something was not sent, the setting with the reason (`client value kept`, `not supported by the model`, `invalid value`). Records without one show no row.
+
 #### Trace log
 
 The log is the detail level: every entry the pipeline emitted, in the order the

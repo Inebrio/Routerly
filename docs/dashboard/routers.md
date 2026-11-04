@@ -114,6 +114,20 @@ Available policies: `cheapest`, `health`, `performance`, `capability`, `context`
 
 See [Concepts: Routing](../concepts/routing.md) for each policy's behaviour and parameters.
 
+### Call Configuration
+
+Below the target models, the **Call configuration** editor sets how this router calls its models. It is off by default; see [Concepts: Call configuration](../concepts/call-configuration.md).
+
+- **Enable call configuration** switch. While off, the editor shows "Call configuration is off. Requests are forwarded with the parameters the client sent." and nothing is changed upstream.
+- A table with one row per complexity (**Low**, **Medium**, **High**) and a column each for **Effort**, **Max output tokens** and **Verbosity**. Effort and verbosity are selects with an **Unset** option; max output tokens is a number (16 to 1000000).
+- **If the client already sets it**: per setting, **Keep client value** (default) or **Override with router value**.
+- **Medium from** and **High from** (input tokens). Empty means the defaults, 2000 and 16000.
+- A permanent warning that max output tokens is a hard cap and cuts longer answers.
+
+The editor is part of the tab's unsaved changes and is saved with **Save Routing Configuration**. A max output tokens value outside 16 to 1000000, or a medium threshold not lower than the high one, blocks the save with a message. With a routing profile assigned, the editor is read-only, labelled **From profile**, and shows the profile's configuration. Without `router:write` it is read-only too.
+
+The Test tab and the Playground trace show a **CALL CONFIGURATION** entry (tier, input tokens estimate, tools, messages, thresholds, configured values and what each candidate would apply or skip).
+
 ---
 
 ## Optimizer Tab

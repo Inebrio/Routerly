@@ -1253,6 +1253,51 @@ for the ordering rule that decides which of a passthrough router's real
 models get scored versus the pass-through entry's own raw-forward, and for
 the fallback's forwarded-credential caveat.
 
+### Call Configuration (router and profile field) {#call-configuration-router-and-profile-field}
+
+A router, and a routing profile, may carry an optional `callConfig`: effort, max output tokens and verbosity chosen by request complexity. See [Concepts: Call configuration](../concepts/call-configuration.md) for behaviour.
+
+Accepted by `POST /api/routers`, `PUT /api/routers/:id` (permission `router:write`), `POST /api/profiles` and `PATCH /api/profiles/:id` (permission `profiles:manage`, routing kind only). The `GET` responses return it as stored.
+
+- Omit the field on `PUT` / `PATCH` to keep the stored value.
+- Send `null` to clear it.
+- Send an object to replace it. The whole object is replaced, there is no merge.
+
+```json
+{
+  "callConfig": {
+    "enabled": true,
+    "clientValues": { "effort": "keep" },
+    "tiers": {
+      "low":  { "effort": "low",  "maxOutputTokens": 512 },
+      "high": { "effort": "high", "maxOutputTokens": 8192, "verbosity": "high" }
+    },
+    "thresholds": { "mediumFromTokens": 2000, "highFromTokens": 16000 }
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `enabled` | boolean | Required |
+| `tiers` | object | Required. Keys `low`, `medium`, `high`, each `{ effort?, maxOutputTokens?, verbosity? }` |
+| `effort`, `verbosity` | `low` \| `medium` \| `high` | |
+| `maxOutputTokens` | integer | 16 to 1000000 |
+| `clientValues` | object | Per setting (`effort`, `maxOutputTokens`, `verbosity`): `keep` (default) or `override` |
+| `thresholds` | object | `mediumFromTokens`, `highFromTokens`: positive integers, medium lower than high (defaults 2000 and 16000) |
+
+Unknown fields are rejected.
+
+```bash
+curl -X PUT "$ROUTERLY_URL/api/routers/$ROUTER_ID" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"My App","models":[{"modelId":"gpt-5-mini"}],"callConfig":{"enabled":true,"tiers":{"low":{"effort":"low","maxOutputTokens":512}}}}'
+```
+
+**Errors**: `400` `{ "error": "Invalid callConfig", "details": ... }` on a router route, where `details` is the flattened validation error; on a profile route the usual `400` invalid-body response. Also `403` insufficient permissions.
+
+The applied configuration is recorded on usage records as `callConfig` (`tier`, `source`, `applied`, `skipped`).
+
 ### Content Guardrails and PII (router fields)
 
 A router may carry two optional security blocks, accepted by both

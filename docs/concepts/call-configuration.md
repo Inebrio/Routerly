@@ -124,7 +124,7 @@ Things to know:
 ## Configure it
 
 - Dashboard: [Router Routing tab](../dashboard/routers.md#call-configuration) and [Profiles](../dashboard/profiles.md#routing-configuration).
-- CLI: [`routerly router call-config`](../cli/commands.md#routerly-router-call-config) and [`routerly profiles`](../cli/commands.md#routerly-profiles-update).
+- CLI: [`routerly router call-config`](../cli/commands.md#call-configuration---routerly-router-call-config) and [`routerly profiles`](../cli/commands.md#routerly-profiles-update).
 - API: [Call configuration](../api/management.md#call-configuration-router-and-profile-field).
 
 See also [Routing](./routing.md) for how the model is chosen, and [Routers](./routers.md).

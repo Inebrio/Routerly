@@ -232,6 +232,10 @@ still pointing at `balanced` are migrated to the byte-identical `auto`;
 Routers on `offline` keep resolving it unchanged, but it cannot be picked or
 cloned any more.
 
+### Call configuration
+
+A router or routing profile can also carry a [call configuration](./call-configuration.md): effort, max output tokens and verbosity chosen by request complexity. It does not change which model is picked, only how it is called.
+
 ### Selectors
 
 The selector picks one model from the candidates the policy layer scored (and

@@ -111,6 +111,8 @@ not editable and no save button is shown. Clone one to customize it.
   policy's advanced `config` (when present) is edited as raw JSON; invalid
   JSON blocks saving until fixed.
 
+- **Call configuration**: the same editor as the router [Routing tab](./routers.md#call-configuration), shown for routing profiles. Routers assigned to the profile use this configuration instead of their own. An invalid value blocks saving. Built-in profiles have none.
+
 The selector and the fallback strategy are not editable from the dashboard:
 the engine defaults (`argmax` and `next-best`) apply to every profile created
 here. A profile that already carries other values keeps them when it is
