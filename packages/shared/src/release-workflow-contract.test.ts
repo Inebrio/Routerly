@@ -16,7 +16,7 @@
 // against raw text, so a comment mentioning the right string cannot fake a
 // pass.
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 import { createRequire } from 'node:module'
@@ -29,7 +29,6 @@ const yaml = require('js-yaml') as { load: (input: string) => unknown }
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 const WORKFLOW_PATH = resolve(REPO_ROOT, '.github/workflows/release.yml')
-const RELEASE_CONFIG_PATH = resolve(REPO_ROOT, 'release.config.mjs')
 
 interface WorkflowStep {
   name?: string
@@ -58,22 +57,8 @@ interface WorkflowDoc {
   jobs: Record<string, WorkflowJob>
 }
 
-interface ReleaseConfig {
-  branches: unknown[]
-  plugins: unknown[]
-}
-
 function loadWorkflow(): WorkflowDoc {
   return yaml.load(readFileSync(WORKFLOW_PATH, 'utf-8')) as WorkflowDoc
-}
-
-async function loadReleaseConfig(): Promise<ReleaseConfig> {
-  const mod = (await import(RELEASE_CONFIG_PATH)) as { default: ReleaseConfig }
-  return mod.default
-}
-
-function pluginName(entry: unknown): string {
-  return Array.isArray(entry) ? (entry[0] as string) : (entry as string)
 }
 
 describe('RC-5 — release.yml workflow contract', () => {
@@ -82,9 +67,11 @@ describe('RC-5 — release.yml workflow contract', () => {
     expect(doc.name).toBe('Release Pipeline')
   })
 
-  it('A2 — triggers only via workflow_dispatch, with no inputs', () => {
+  it('A2 — triggers only via workflow_dispatch, with one required version input', () => {
     const doc = loadWorkflow()
-    expect(doc.on.workflow_dispatch).toEqual({})
+    expect(doc.on.workflow_dispatch).toEqual({
+      inputs: { version: { description: expect.any(String), required: true, type: 'string' } },
+    })
   })
 
   it('A3 — no push key anywhere under on: (manual-only, RMT-1)', () => {
@@ -92,13 +79,16 @@ describe('RC-5 — release.yml workflow contract', () => {
     expect(doc.on).not.toHaveProperty('push')
   })
 
-  it("A5 — permissions grant contents, issues and pull-requests write (semantic-release/github's requirement)", () => {
+  it('A5 — permissions grant only contents write (tag, release, docs-versions push)', () => {
     const doc = loadWorkflow()
-    expect(doc.permissions).toEqual({
-      contents: 'write',
-      issues: 'write',
-      'pull-requests': 'write',
-    })
+    expect(doc.permissions).toEqual({ contents: 'write' })
+  })
+
+  it('A13 — semantic-release is gone: no config file, no dependency, no workflow step', () => {
+    expect(existsSync(resolve(REPO_ROOT, 'release.config.mjs'))).toBe(false)
+    const pkg = readFileSync(resolve(REPO_ROOT, 'package.json'), 'utf-8')
+    expect(pkg).not.toContain('semantic-release')
+    expect(readFileSync(WORKFLOW_PATH, 'utf-8')).not.toMatch(/semantic[-_]release/)
   })
 
   it('A6 — concurrency is defined and scoped per-branch via github.ref, not global', () => {
@@ -151,25 +141,5 @@ describe('RC-5 — release.yml workflow contract', () => {
     expect(job, 'develop-pointer job').toBeDefined()
     expect(job!.needs).toContain('release')
     expect(job!.if).toContain('needs.release.outputs.channel == \'develop\'')
-  })
-})
-
-describe('RC-5 — release.config.mjs contract', () => {
-  it('A10 — branches is the three-entry [main, next, develop] array, in order (RMT-1 C5)', async () => {
-    const config = await loadReleaseConfig()
-    expect(config.branches).toEqual([
-      'main',
-      { name: 'next', channel: 'next' },
-      { name: 'develop', channel: 'develop' },
-    ])
-    // branches[0] === 'main' asserted separately: the first entry drives the
-    // default/"current" channel and must never silently reorder (analysis D1).
-    expect(config.branches[0]).toBe('main')
-  })
-
-  it('A11 — plugins contain no @semantic-release/npm entry', async () => {
-    const config = await loadReleaseConfig()
-    const names = config.plugins.map(pluginName)
-    expect(names).not.toContain('@semantic-release/npm')
   })
 })

@@ -5,9 +5,14 @@ name: Release Pipeline
 # "Run workflow" → branch picker, or `gh workflow run release.yml --ref
 # <branch>`), same mechanism already proven by docker-rebuild.yml. The
 # branch to release from is whatever ref the dispatch names; nothing here
-# parses or validates it.
+# parses or validates it. The version is the one required input.
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version X.Y.Z (decided by the maintainer)'
+        required: true
+        type: string
 
 concurrency:
   group: 'release-pipeline-${{ github.ref }}'
@@ -15,11 +20,8 @@ concurrency:
 
 # contents: write covers tag creation (release, next-pointer), the GitHub
 # Release, the docs-versions branch push and the release asset upload.
-# issues/pull-requests: write cover the notes generator's issue/PR references.
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
 
 jobs:
   gate:
@@ -32,17 +34,18 @@ jobs:
     needs: gate
     runs-on: ubuntu-latest
     outputs:
-      released: ${{ steps.semantic_release.outputs.released || steps.defaults.outputs.released }}
-      action: ${{ steps.semantic_release.outputs.action || steps.defaults.outputs.action }}
-      version: ${{ steps.semantic_release.outputs.version || steps.defaults.outputs.version }}
-      git_tag: ${{ steps.semantic_release.outputs.git_tag || steps.defaults.outputs.git_tag }}
-      channel: ${{ steps.semantic_release.outputs.channel || steps.defaults.outputs.channel }}
-      docker_channel_tag: ${{ steps.semantic_release.outputs.docker_channel_tag || steps.defaults.outputs.docker_channel_tag }}
+      released: ${{ steps.decide.outputs.released }}
+      action: ${{ steps.decide.outputs.action }}
+      version: ${{ steps.decide.outputs.version }}
+      git_tag: ${{ steps.decide.outputs.git_tag }}
+      channel: ${{ steps.decide.outputs.channel }}
+      docker_channel_tag: ${{ steps.decide.outputs.docker_channel_tag }}
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
 
       - uses: actions/setup-node@v4
         with:
@@ -52,30 +55,47 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Defaults the job's outputs to "no release happened" so a run that
-      # never triggers a publishCmd/addChannelCmd (no releasable commits)
-      # still gates downstream jobs off cleanly (AC4, EC2).
-      - name: Default outputs
-        id: defaults
-        run: echo "released=false" >> "$GITHUB_OUTPUT"
-
-      - name: Run semantic-release
-        id: semantic_release
+      # The version is the maintainer's input, never computed. The script
+      # decides channel and action (publish a new tag | promote an existing
+      # one) and refuses a version that is not above the latest reachable tag.
+      - name: Decide channel and action
+        id: decide
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -o pipefail
-          npx semantic-release 2>&1 | tee semantic-release.log
+          VERSION: ${{ inputs.version }}
+          BRANCH: ${{ github.ref_name }}
+        run: node scripts/ci-release-output.mjs "$VERSION" "$BRANCH"
 
-      # AC8: surface the version-ordering failure as a readable annotation
-      # instead of an unexplained crash.
-      - name: Annotate branch-ordering failure
-        if: failure()
+      # Stamp every manifest, then archive the stamped index. The tag points at
+      # the unstamped branch commit; the stamped tree only exists in the tarball.
+      - name: Publish tag and GitHub Release
+        if: steps.decide.outputs.action == 'publish'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.decide.outputs.version }}
+          GIT_TAG: ${{ steps.decide.outputs.git_tag }}
+          CHANNEL: ${{ steps.decide.outputs.channel }}
         run: |
-          if grep -q 'EINVALIDNEXTVERSION' semantic-release.log; then
-            echo "::error title=Release blocked by branch ordering::semantic-release refused this release with EINVALIDNEXTVERSION: the version computed for '${{ github.ref_name }}' is not higher than the last release on the previous release branch. Recovery: docs/contributing/releasing.md#einvalidnextversion"
-          fi
+          set -euo pipefail
+          npm version "$VERSION" --allow-same-version --workspaces --include-workspace-root --no-git-tag-version --ignore-scripts
+          node scripts/sync-module-versions.mjs
+          node scripts/sync-module-versions.mjs --check
+          git add package.json package-lock.json packages/*/package.json packages/service/src
+          git archive --format=tar.gz --prefix="routerly-${VERSION}/" --output="routerly-${VERSION}.tar.gz" "$(git write-tree)"
+          PREV="$(git tag --merged HEAD --list 'v*' --sort=-v:refname | head -1)"
+          scripts/release-notes.sh "${PREV:-$(git rev-list --max-parents=0 HEAD | tail -1)}" HEAD --tag "$GIT_TAG" > release-notes.md
+          FLAGS=(--prerelease)
+          if [ "$CHANNEL" = current ]; then FLAGS=(--latest); fi
+          gh release create "$GIT_TAG" --target "$GITHUB_SHA" --title "$GIT_TAG" --notes-file release-notes.md "${FLAGS[@]}" \
+            "routerly-${VERSION}.tar.gz" scripts/install.sh scripts/install.ps1 scripts/install.mjs
+
+      # Promotion: the release already exists; only its flags change.
+      # --latest is rejected (HTTP 422) on a prerelease, so only main does it.
+      - name: Promote existing release
+        if: steps.decide.outputs.action == 'addChannel' && steps.decide.outputs.channel == 'current'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_TAG: ${{ steps.decide.outputs.git_tag }}
+        run: gh release edit "$GIT_TAG" --prerelease=false --latest
 
   docker:
     name: Docker
