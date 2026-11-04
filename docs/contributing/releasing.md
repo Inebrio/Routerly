@@ -32,6 +32,8 @@ version. `commitlint` enforces the type list and a lower-case subject on
 every commit via a Husky hook, but not the breaking marker: that is on the
 author.
 
+Branch names and lifetimes are described in [Branches](branches.md).
+
 ## Reference the issue you're closing
 
 If a commit resolves a GitHub issue, say so in the body: `Closes #NNN`,
