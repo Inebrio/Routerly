@@ -212,4 +212,21 @@ describe('scoreOrchestratorCandidates', () => {
     ]);
     expect(resolved.map(c => c.routerId)).toEqual(['r1']);
   });
+
+  it('ROUT-298: onRanked receives the ranked entries (candidate, 0..1 quality, index) in final order', async () => {
+    mockReadUsageRecords.mockResolvedValue([]);
+    const onRanked = vi.fn();
+    const candidates = [candidate('r2'), candidate('r1')];
+    const result = await scoreOrchestratorCandidates('orc-1', candidates, [router('r1'), router('r2')], undefined, 'default', onRanked);
+    expect(onRanked).toHaveBeenCalledTimes(1);
+    const ranked = onRanked.mock.calls[0]![0] as { candidate: OrchestratorCandidateRef; quality: number }[];
+    expect(ranked.map(r => r.candidate.routerId)).toEqual(result.map(c => c.routerId));
+    expect(ranked.every(r => r.quality >= 0 && r.quality <= 1)).toBe(true);
+  });
+
+  it('ROUT-298: the single-candidate bypass runs no ranking, so onRanked is not called', async () => {
+    const onRanked = vi.fn();
+    await scoreOrchestratorCandidates('orc-1', [candidate('r1')], [router('r1')], undefined, 'default', onRanked);
+    expect(onRanked).not.toHaveBeenCalled();
+  });
 });

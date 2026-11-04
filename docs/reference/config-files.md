@@ -189,6 +189,7 @@ Array of Router configurations: routers, Orchestrators, and Passthrough Routers 
 | `kind` | `string` | `"router"` \| `"orchestrator"` \| `"passthrough"`. Absent means `"router"` (every Router stored before this field existed) |
 | `timeoutMs` | `number` | Time-to-first-token timeout per model attempt, streaming requests only, in milliseconds. Default `2000`; `0` disables it. Non-streaming calls are capped by the model `timeout` (default `60000`) |
 | `policies` | `RoutingPolicy[]` | Routing policies in priority order (each `{ type, ...params }`); see [Concepts: Routing](../concepts/routing.md) |
+| `rankingAlgorithm` | `string` | Optional. How policy results become the candidate order: `"default"` (the only id today). Absent means `"default"`. Ignored while a routing profile is bound, except on `kind: "orchestrator"` |
 | `models` | `array` | Target models: `{ modelId, prompt? }` |
 | `candidates` | `array` | Only on `kind: "orchestrator"`: `{ routerId, limits? }` — other Routers this one forwards to, in priority order (index 0 = highest); no `weight` field |
 | `slug` | `string` | Only on `kind: "passthrough"`: the URL path segment at `/passthrough/<slug>/*` |

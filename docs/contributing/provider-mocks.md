@@ -29,7 +29,7 @@ routerly connections add --provider-id bedrock --label bedrock-mock --aws-access
 | `mock-cut` | Stream interrupted after the first chunk |
 | anything else | 401, so a real key never passes by accident |
 
-The credential is the `sessionKey` (claude.ai), access token (chatgpt.com), `api-key` (Azure), AWS access key id (Bedrock) or bearer token (Vertex). `GET /__mock/requests` lists the requests received (secrets masked), `DELETE` clears them.
+The credential is the `sessionKey` (claude.ai), access token (chatgpt.com), `api-key` (Azure), AWS access key id (Bedrock) or bearer token (Vertex). `GET /__mock/requests` lists the requests received (secrets masked, with the response `status`), `DELETE` clears them.
 
 ## What a mock proves — and what it does not
 

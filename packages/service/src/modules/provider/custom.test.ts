@@ -481,13 +481,19 @@ describe('CustomAdapter — model ID handling', () => {
 })
 
 describe('CustomAdapter upstream errors', () => {
+  it('names the configured provider, not "Custom provider", for native OpenAI-compatible providers', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"error":{"message":"bad key"}}', { status: 401 })))
+    const err = await adapter.chatCompletion({ model: 'auto', messages: [] }, makeModel({ provider: 'deepseek' })).catch(e => e)
+    expect(err.message).toContain('deepseek returned 401')
+    expect(err.message).not.toContain('Custom provider')
+  })
   it('exposes status, headers and body so 429 retry-after and 404 are classified', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
       JSON.stringify({ error: { code: 'model_not_found' } }),
       { status: 404, headers: { 'retry-after': '20' } },
     )))
     const err = await adapter.chatCompletion({ model: 'auto', messages: [] }, makeModel()).catch(e => e)
-    expect(err.message).toContain('Custom provider returned 404')
+    expect(err.message).toContain('custom returned 404')
     expect(err.status).toBe(404)
     expect(err.headers['retry-after']).toBe('20')
     expect(err.error).toEqual({ error: { code: 'model_not_found' } })
