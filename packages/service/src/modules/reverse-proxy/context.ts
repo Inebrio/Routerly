@@ -11,6 +11,7 @@ import type {
 import type { EffectivePii } from '../pii/piiScrubber.js'
 import type { TraceEntry } from '@routerly/shared'
 import type { UpstreamResponse } from '../resilience/classifier.js'
+import type { CallDecision } from '../routing/call-config.js'
 
 export interface ProxyResult {
   kind: 'stream' | 'json' | 'block' | 'passthrough'
@@ -76,6 +77,8 @@ export interface ProxyContext {
   // routing / attempt loop
   candidates?: RoutingCandidate[]
   attempt?: { model: ModelConfig; candidate: RoutingCandidate }
+  /** Call-configuration decision (tier) for this request; absent when no enabled config applies. */
+  callDecision?: CallDecision
   // Task 7 (resilience): the upstream.execute processor stashes a failed candidate's raw error
   // here (never for BudgetExceededError — that's a local skip, not an upstream fault) so the
   // routing.execute attempt loop can classify + record it at the connection-level resilience key

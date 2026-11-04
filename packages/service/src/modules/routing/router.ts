@@ -19,6 +19,7 @@ import type { PolicyFn } from './policies/types.js';
 import type { TraceEntry } from '@routerly/shared';
 import type { TracePanel } from '../trace/store.js';
 import { resolveRoutingProfile } from './profiles/store.js';
+import { callConfigTraceDetails, decideCallTier, pickCallConfig, type CallDecision } from './call-config.js';
 import { SELECTOR_MAP } from './selectors/index.js';
 import type { ScoredCandidate, SelectorContext } from './selectors/index.js';
 
@@ -29,6 +30,8 @@ function te(panel: TracePanel, message: string, details: Record<string, unknown>
 export interface RouteResult {
   models: RoutingCandidate[];
   trace: TraceEntry[];
+  /** Present only when the resolved call configuration is enabled. */
+  callDecision?: CallDecision;
 }
 
 type Logger = {
@@ -440,8 +443,22 @@ export async function routeRequest(
   store?: ResilienceStore,
 ): Promise<RouteResult> {
   const profile = await resolveRoutingProfile(router);
+  const picked = pickCallConfig(profile);
+  const callDecision = picked ? decideCallTier(request, picked.config, picked.source) : undefined;
+  // Adds the call decision and its trace entry to a finished route (bypass and scored alike).
+  const withCallConfig = async (result: RouteResult): Promise<RouteResult> => {
+    if (!callDecision) return result;
+    const all = await listEffectiveModels();
+    const entry = te('router-response', 'router:call-config', callConfigTraceDetails(
+      callDecision,
+      result.models.map(m => ({ id: m.model, model: all.find(x => x.id === m.model) })),
+      request,
+    ));
+    emit?.(entry);
+    return { ...result, trace: [...result.trace, entry], callDecision };
+  };
   const sc = await scoreCandidates(request, router, profile, log, emit, token, traceId, conversationId, store);
-  if (sc.bypass) return sc.bypass;
+  if (sc.bypass) return withCallConfig(sc.bypass);
   const { scored, allAbstained, successfulResults, scoringIds, policyExcludes, excludeReasons, failedPolicies, trace: preTrace } = sc;
 
   const selectorCtx: SelectorContext = {
@@ -514,6 +531,6 @@ export async function routeRequest(
 
   const trace: TraceEntry[] = [...preTrace, recapEntry, resultEntry];
 
-  return { models: finalCandidates, trace };
+  return withCallConfig({ models: finalCandidates, trace });
 }
 

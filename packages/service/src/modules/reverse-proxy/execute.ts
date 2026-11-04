@@ -40,7 +40,7 @@ import { resolveAnthropicOAuthCredential } from '../provider/anthropic-oauth.js'
 import { resolveOpenAIOAuthCredential } from '../provider/openai-oauth.js';
 import { resolveAnthropicWebCredential } from '../provider/anthropic-web.js';
 import { resolveOpenAIWebCredential } from '../provider/openai-web.js';
-import type { TraceEntry } from '@routerly/shared';
+import type { AppliedCallConfig, TraceEntry } from '@routerly/shared';
 import type { TracePanel } from '../trace/store.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { resilienceKeys } from '../resilience/keys.js';
@@ -89,6 +89,11 @@ export interface LLMCallContext {
   forwardHeaders?: Record<string, string>;
   /** Receives the provider's response headers for the call that answered. */
   onUpstreamHeaders?: (headers: Record<string, string>) => void;
+  /**
+   * Call configuration resolved for THIS attempt's model (tier, applied, skipped). Per attempt,
+   * never stored on the request: each fallback candidate gets its own. Absent = nothing applied.
+   */
+  callSettings?: AppliedCallConfig;
 }
 
 /**
@@ -114,7 +119,23 @@ function callOptions(ctx: LLMCallContext): CallOptions {
   return {
     ...(ctx.forwardHeaders ? { headers: ctx.forwardHeaders } : {}),
     ...(ctx.onUpstreamHeaders ? { onResponseHeaders: ctx.onUpstreamHeaders } : {}),
+    ...(ctx.callSettings ? { callSettings: ctx.callSettings.applied } : {}),
   };
+}
+
+/** Per-call copy of the request carrying the router's output token cap (the caller's request is never mutated). */
+function withMaxOutputTokens(request: ChatCompletionRequest, ctx: LLMCallContext): ChatCompletionRequest {
+  const cap = ctx.callSettings?.applied.maxOutputTokens;
+  if (cap === undefined) return request;
+  const { max_completion_tokens: _drop, ...rest } = request;
+  return { ...rest, max_tokens: cap };
+}
+
+/** `model:request` detail for the call configuration applied to this attempt; empty when none was. */
+function callSettingsDetail(ctx: LLMCallContext): Record<string, unknown> {
+  const cs = ctx.callSettings;
+  if (!cs) return {};
+  return { callSettings: { applied: cs.applied, ...(cs.skipped ? { skipped: cs.skipped } : {}) } };
 }
 
 // Provider health tracking: keyed by model.id
@@ -348,6 +369,7 @@ export async function llmChat(
   const { req, res } = getPanels(callType);
 
   model = (await loadEffectiveModel(model.id)) ?? model;
+  request = withMaxOutputTokens(request, ctx);
 
   await checkBudget(model, ctx);
 
@@ -370,6 +392,7 @@ export async function llmChat(
       ...(request.max_completion_tokens != null ? { maxTokens: request.max_completion_tokens } : {}),
       ...(request.max_tokens != null ? { maxTokens: request.max_tokens } : {}),
       ...(request.temperature != null ? { temperature: request.temperature } : {}),
+      ...callSettingsDetail(ctx),
     },
     // Prompt text: dropped by publishTrace unless the router opted in.
     ...(systemMsg != null
@@ -442,6 +465,7 @@ export async function llmChat(
       ttftMs: latencyMs,     // non-streaming: tutta la latenza ≡ TTFT
       outcome: 'success',
       callType,
+      ...(ctx.callSettings ? { callConfig: ctx.callSettings } : {}),
       ...(traceId !== undefined ? { traceId } : {}),
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
       ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
@@ -476,6 +500,7 @@ export async function llmChat(
       outcome: isUpstreamTimeout(err) ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
+      ...(ctx.callSettings ? { callConfig: ctx.callSettings } : {}),
       ...(traceId !== undefined ? { traceId } : {}),
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
       ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
@@ -525,6 +550,7 @@ export async function llmStream(
   const { req, res } = getPanels(callType);
 
   model = (await loadEffectiveModel(model.id)) ?? model;
+  request = withMaxOutputTokens(request, ctx);
 
   await checkBudget(model, ctx);
 
@@ -542,6 +568,7 @@ export async function llmStream(
       ...(request.max_completion_tokens != null ? { maxTokens: request.max_completion_tokens } : {}),
       ...(request.max_tokens != null ? { maxTokens: request.max_tokens } : {}),
       ...(request.temperature != null ? { temperature: request.temperature } : {}),
+      ...callSettingsDetail(ctx),
     },
   });
 
@@ -589,6 +616,7 @@ export async function llmStream(
       outcome: isTtftTimeout || isUpstreamTimeout(err) ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
+      ...(ctx.callSettings ? { callConfig: ctx.callSettings } : {}),
       ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
       ...(traceId !== undefined ? { traceId } : {}),
       ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
@@ -717,6 +745,7 @@ export async function llmStream(
         routerId, model, inputTokens, outputTokens, latencyMs, ttftMs,        ...(cachedInputTokens > 0 ? { cachedInputTokens } : {}),        outcome,
         ...(errorMessage !== undefined ? { errorMessage } : {}),
         callType,
+        ...(ctx.callSettings ? { callConfig: ctx.callSettings } : {}),
         ...(traceId !== undefined ? { traceId } : {}),
         ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
         ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
