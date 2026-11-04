@@ -4,6 +4,8 @@ import { Plus, Trash2, Check, ChevronDown, ChevronRight, GripVertical } from 'lu
 import { getRouters, updateRouter, type Router } from '../../api';
 import { DEFAULT_RANKING_ALGORITHM, type RankingAlgorithmId } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
+import { useAuth } from '../../AuthContext';
+import { ReadOnlyFieldset } from '../../components/ProfileDraftControls';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { LimitRowsEditor, limitsToRows, limitRowsToLimits, type LimitRow } from '../../components/LimitRowsEditor';
@@ -34,6 +36,7 @@ function mkId() {
 export function RouterOrchestratorTab() {
   const { t } = useTranslation();
   const { router, setRouter } = useRouter();
+  const canWrite = useAuth().can('router:write');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -195,6 +198,8 @@ export function RouterOrchestratorTab() {
       <form onSubmit={handleSubmit} style={{ maxWidth: 800 }}>
         {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
+        <ReadOnlyFieldset readOnly={!canWrite}>
+
         <div className="form-group">
           <label className="form-label">{t('routers.orchestrator.routingPolicies')}</label>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
@@ -227,7 +232,7 @@ export function RouterOrchestratorTab() {
                 <div
                   key={row.internalId}
                   id={`candidate-row-${idx}`}
-                  draggable
+                  draggable={canWrite}
                   onDragStart={e => onDragStartRow(e, idx)}
                   onDragEnter={e => onDragEnterRow(e, idx)}
                   onDragEnd={e => onDragEndRow(e, idx)}
@@ -326,7 +331,9 @@ export function RouterOrchestratorTab() {
           </button>
         </div>
 
-        <div style={{ marginTop: 32 }}>
+        </ReadOnlyFieldset>
+
+        {canWrite && <div style={{ marginTop: 32 }}>
           <button
             type="button"
             className="btn btn-primary"
@@ -342,7 +349,7 @@ export function RouterOrchestratorTab() {
               t('routers.orchestrator.saveCandidates')
             )}
           </button>
-        </div>
+        </div>}
       </form>
 
       {isBlocked && <UnsavedChangesModal onConfirm={proceed} onCancel={reset} />}
