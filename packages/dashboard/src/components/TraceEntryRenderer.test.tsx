@@ -1173,3 +1173,35 @@ describe('TraceEntryRenderer — router:recap with every policy failed', () => {
     expect(screen.getAllByText(/Policies failed/i).length).toBe(2);
   });
 });
+
+describe('TraceEntryRenderer — router:call-config', () => {
+  it('renders tier, signals and per-model applied/skipped settings', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'router:call-config',
+        panel: 'router-response',
+        details: {
+          tier: 'high', source: 'profile',
+          signals: { estimatedInputTokens: 20000, hasTools: true, messageCount: 3 },
+          thresholds: { mediumFromTokens: 2000, highFromTokens: 16000 },
+          desired: { effort: 'high', maxOutputTokens: 4096 },
+          perModel: [{ model: 'openai/gpt-4o', applied: { effort: 'high' }, skipped: [{ setting: 'verbosity', reason: 'unsupported' }] }],
+        },
+      }} />
+    );
+    expect(screen.getByText('openai/gpt-4o')).toBeTruthy();
+    expect(screen.getByText(/20000/)).toBeTruthy();
+    expect(screen.getByText(/2000 \/ 16000/)).toBeTruthy();
+  });
+
+  it('renders callSettings on model:request', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'model:request',
+        panel: 'router-response',
+        details: { callSettings: { applied: { maxOutputTokens: 777 } } },
+      }} />
+    );
+    expect(screen.getAllByText(/Max output tokens 777/).length).toBeGreaterThan(0);
+  });
+});
