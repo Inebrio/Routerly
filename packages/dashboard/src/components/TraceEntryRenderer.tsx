@@ -95,7 +95,8 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   const isModelSuccess = e.message === 'model:success';
   const isError        = e.message === 'model:error';
   const isThinking     = e.message === 'model:thinking';
-  const isRecap        = e.message === 'router:recap';
+  const isOrchestratorRecap = e.message === 'orchestrator:recap';
+  const isRecap        = e.message === 'router:recap' || isOrchestratorRecap;
   const isIntake       = e.message === 'router:intake';
   const isCacheEmbedding = e.message === 'cache:embedding';
   const isCacheHit     = e.message === 'cache:hit';
@@ -322,10 +323,15 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
 
       ) : isRecap ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {e.details?.rankingAlgorithm && (
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              {t('common.trace.rankingAlgorithm')}: <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{t(`common.rankingAlgorithm.options.${e.details.rankingAlgorithm}.label`, { defaultValue: String(e.details.rankingAlgorithm) })}</span>
+            </div>
+          )}
           {/* Final ranking */}
           {e.details?.final?.length > 0 ? (
             <>
-              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>{t('common.trace.finalRanking')}</div>
+              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>{isOrchestratorRecap ? t('common.trace.orchestratorRecap') : t('common.trace.finalRanking')}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
                 {e.details.final.map((f: any) => (

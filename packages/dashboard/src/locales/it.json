@@ -421,7 +421,21 @@
       "encoding": "Codifica",
       "frames": "Frame",
       "bytes": "Byte",
-      "policiesFailed": "Policies failed and were left out of the ranking"
+      "policiesFailed": "Policies failed and were left out of the ranking",
+      "rankingAlgorithm": "Algoritmo di ranking",
+      "orchestratorRecap": "CLASSIFICA ORCHESTRATORE"
+    },
+    "rankingAlgorithm": {
+      "title": "Algoritmo di ranking",
+      "hint": "Come i risultati delle policy diventano l'ordine in cui i modelli vengono provati.",
+      "fromProfile": "dal profilo",
+      "options": {
+        "default": {
+          "label": "Predefinito",
+          "description": "Media pesata dei punteggi delle policy, dal punteggio migliore.",
+          "orchestratorDescription": "La media pesata dei punteggi di qualità delle policy ordina i router candidati."
+        }
+      }
     }
   },
   "profile": {

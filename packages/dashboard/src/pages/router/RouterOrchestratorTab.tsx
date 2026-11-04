@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Check, ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
 import { getRouters, updateRouter, type Router } from '../../api';
+import { DEFAULT_RANKING_ALGORITHM, type RankingAlgorithmId } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
@@ -40,6 +41,7 @@ export function RouterOrchestratorTab() {
   const [candidateRouters, setCandidateRouters] = useState<Router[]>([]);
   const [rows, setRows] = useState<CandidateRow[]>([]);
   const [policies, setPolicies] = useState<PolicyItem[]>([]);
+  const [rankingAlgorithm, setRankingAlgorithm] = useState<RankingAlgorithmId>(DEFAULT_RANKING_ALGORITHM);
 
   useEffect(() => {
     getRouters()
@@ -57,6 +59,7 @@ export function RouterOrchestratorTab() {
     setRows((router.candidates ?? []).map(c => ({
       internalId: mkId(), routerId: c.routerId, limitRows: limitsToRows(c.limits),
     })));
+    setRankingAlgorithm(router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM);
     setPolicies((router.policies ?? []).map(p => ({ ...p, internalId: mkPolicyId() })));
   }, [router]);
 
@@ -69,6 +72,8 @@ export function RouterOrchestratorTab() {
       r.routerId !== savedCandidates[i]!.routerId ||
       JSON.stringify(limitRowsToLimits(r.limitRows)) !== JSON.stringify(savedCandidates[i]!.limits ?? [])
     )) return true;
+
+    if (rankingAlgorithm !== (router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM)) return true;
 
     const savedPolicies = router.policies ?? [];
     if (policies.length !== savedPolicies.length) return true;
@@ -156,6 +161,7 @@ export function RouterOrchestratorTab() {
           const { internalId: _internalId, ...rest } = p;
           return rest;
         }),
+        ...(rankingAlgorithm !== (router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM) && { rankingAlgorithm }),
       };
       const updated = await updateRouter(router.id, payload);
       setRouter(updated);
@@ -199,6 +205,9 @@ export function RouterOrchestratorTab() {
             setPolicies={setPolicies}
             availableModels={[]}
             allowedTypes={ORCHESTRATOR_POLICY_TYPES}
+            rankingAlgorithm={rankingAlgorithm}
+            onRankingAlgorithmChange={setRankingAlgorithm}
+            rankingAlgorithmContext="orchestrator"
           />
         </div>
 

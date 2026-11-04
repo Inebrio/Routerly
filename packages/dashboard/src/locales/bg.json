@@ -420,7 +420,21 @@
       "encoding": "кодиране",
       "frames": "кадри",
       "bytes": "байтове",
-      "policiesFailed": "Policies failed and were left out of the ranking"
+      "policiesFailed": "Policies failed and were left out of the ranking",
+      "rankingAlgorithm": "Ranking algorithm",
+      "orchestratorRecap": "ORCHESTRATOR RANKING"
+    },
+    "rankingAlgorithm": {
+      "title": "Ranking algorithm",
+      "hint": "How the policy results are turned into the order in which models are tried.",
+      "fromProfile": "from profile",
+      "options": {
+        "default": {
+          "label": "Default",
+          "description": "Weighted mean of the policy scores, best score first.",
+          "orchestratorDescription": "Weighted mean of the policy quality scores orders the candidate routers."
+        }
+      }
     }
   },
   "profile": {
