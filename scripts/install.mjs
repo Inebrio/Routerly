@@ -211,7 +211,7 @@ async function removeInstalledApp(dir, useSudo) {
   catch { warn(`Skipped ${dir}: no install manifest, not created by this installer`); return; }
   const owned = [MANIFEST_NAME, 'node_modules', ...files];
   for (const pkg of fs.existsSync(path.join(dir, 'packages')) ? fs.readdirSync(path.join(dir, 'packages')) : []) {
-    owned.push(path.join('packages', pkg, 'node_modules'), path.join('packages', pkg, 'dist'));
+    owned.push(path.join('packages', pkg, 'node_modules'), path.join('packages', pkg, 'dist'), path.join('packages', pkg, 'tsconfig.tsbuildinfo'));
   }
   for (const rel of owned) {
     if (!path.isAbsolute(rel) && !rel.split(path.sep).includes('..')) await removeDir(path.join(dir, rel), useSudo);
