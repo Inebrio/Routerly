@@ -1015,9 +1015,74 @@ describe('routeRequest', () => {
         profileId: 'custom',
         selector: 'argmax',
         fallbackStrategy: 'next-best',
+        rankingAlgorithm: 'default',
       })
       // Also present in the returned trace array (not just via emit).
       expect(result.trace.find(e => e.message === 'router:profile')).toBeDefined()
+    })
+
+    describe('ranking algorithm (ROUT-298)', () => {
+      const twoModels = () => {
+        mockModels([makeModel('m1'), makeModel('m2')])
+        mockIsAllowed.mockResolvedValue(true)
+        mockCheapestPolicy.mockResolvedValue({
+          routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
+        })
+      }
+
+      it('router:recap and router:profile carry rankingAlgorithm=default, rankingSource=router for an inline router', async () => {
+        twoModels()
+        const emit = vi.fn()
+        const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+        const result = await routeRequest(request, router, undefined, emit)
+
+        const recap = result.trace.find(e => e.message === 'router:recap')!
+        expect(recap.details['rankingAlgorithm']).toBe('default')
+        expect(recap.details['rankingSource']).toBe('router')
+        expect((recap.details['final'] as { model: string }[]).map(f => f.model)).toEqual(['m1', 'm2'])
+        expect(result.trace.find(e => e.message === 'router:profile')!.details['rankingAlgorithm']).toBe('default')
+      })
+
+      it('trace message order is unchanged by the ranking refactor', async () => {
+        twoModels()
+        const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+        const result = await routeRequest(request, router)
+        expect(result.trace.map(e => e.message)).toEqual([
+          'router:intake', 'router:policies', 'router:profile', 'policy:result:cheapest', 'router:recap', 'router:result',
+        ])
+      })
+
+      it('a bound routing profile wins over the router value and reports rankingSource=profile', async () => {
+        mockIsAllowed.mockResolvedValue(true)
+        mockCheapestPolicy.mockResolvedValue({ routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }] })
+        const { instances, connections } = splitModelsIntoInstancesConnections([makeModel('m1'), makeModel('m2')])
+        mockReadConfig.mockImplementation(async (key: string) => {
+          if (key === 'connections') return connections as never
+          if (key === 'instances') return instances as never
+          if (key === 'profiles') return [{
+            id: 'prof-1', kind: 'routing', version: 1, label: 'P', builtin: false,
+            policies: [{ type: 'cheapest', enabled: true }], selector: 'argmax', fallbackStrategy: 'next-best',
+            rankingAlgorithm: 'default',
+          }] as never
+          return [] as never
+        })
+        const router = { ...makeRouter(['m1', 'm2']), routingProfileId: 'prof-1' }
+        const result = await routeRequest(request, router)
+        const recap = result.trace.find(e => e.message === 'router:recap')!
+        expect(recap.details['rankingSource']).toBe('profile')
+        expect(recap.details['rankingAlgorithm']).toBe('default')
+        expect(result.trace.find(e => e.message === 'router:profile')!.details['profileId']).toBe('prof-1')
+      })
+
+      it('an unknown stored algorithm id still serves the request with default and warns', async () => {
+        twoModels()
+        const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+        const router = { ...makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }]), rankingAlgorithm: 'jev' as never }
+        const result = await routeRequest(request, router, log)
+        expect(result.models.map(m => m.model)).toEqual(['m1', 'm2'])
+        expect(result.trace.find(e => e.message === 'router:recap')!.details['rankingAlgorithm']).toBe('default')
+        expect(log.warn).toHaveBeenCalledWith({ rankingAlgorithm: 'jev' }, 'routing: unknown ranking algorithm, falling back to default')
+      })
     })
   })
 

@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- **Configurable ranking algorithm.** Routers and routing profiles carry an optional `rankingAlgorithm` (only `default` today, which is the current weighted-mean ranking plus selector, so behaviour is unchanged when unset). A routing profile bound to a router wins over the router's own value. Management API: `POST/PUT /api/routers` and `POST/PATCH /api/profiles` accept `rankingAlgorithm` (400 for an unknown id). CLI: `router routing update --ranking-algorithm`, `router routing show [--json]`, `profiles create|update --ranking-algorithm`, `profiles update`. Trace (management only, no wire-format change): `router:profile` and `router:recap` carry `rankingAlgorithm` and `rankingSource`, and orchestrators emit an `orchestrator:recap` event (ROUT-298).
+
 ### Changed
 
 - **`/v1/messages` message id in Anthropic shape.** Non-stream responses converted from a chat completion (e.g. via anthropic-web) return `msg_…` instead of `chatcmpl-…` (ROUT-488).

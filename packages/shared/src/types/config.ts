@@ -318,6 +318,11 @@ export interface RoutingPolicy {
 
 export type SelectorType = 'argmax' | 'weighted-random' | 'round-robin' | 'cheapest' | 'lowest-latency';
 
+/** Registered ranking algorithms. ROUT-299 appends 'decision-model'. Order = display order. */
+export const RANKING_ALGORITHMS = ['default'] as const;
+export type RankingAlgorithmId = typeof RANKING_ALGORITHMS[number];
+export const DEFAULT_RANKING_ALGORITHM: RankingAlgorithmId = 'default';
+
 export type FallbackStrategyType = 'next-best' | 'retry-after-cooldown' | 'abort';
 
 /**
@@ -343,6 +348,8 @@ export interface RoutingProfile extends ProfileBase {
   policies: RoutingPolicy[];
   selector: SelectorType;
   fallbackStrategy: FallbackStrategyType;
+  /** Absent means 'default'. */
+  rankingAlgorithm?: RankingAlgorithmId;
 }
 
 export interface OptimizerProfile extends ProfileBase {
@@ -613,6 +620,8 @@ export interface RouterConfig {
 
   /** Ordered list of routing policies applied to requests */
   policies?: RoutingPolicy[];
+  /** How policy results become the candidate order. Absent means 'default'; ignored when a routing profile is bound. */
+  rankingAlgorithm?: RankingAlgorithmId;
   models: RouterModelRef[];
   /** TTFT timeout per model attempt (ms). If the first response byte hasn't arrived
    *  within this time, the attempt is aborted and the next candidate is tried.
