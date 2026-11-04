@@ -384,3 +384,13 @@ describe('VertexAdapter — token exchange error fallback', () => {
     ).rejects.toThrow('Vertex token exchange failed 500: Internal Server Error');
   });
 });
+
+describe('VertexAdapter — error unwrapping (ROUT-489)', () => {
+  it('passes the Gemini error unwrapper as the SDK fetch', async () => {
+    const { unwrapGeminiError } = await import('./gemini.js');
+    mockCreate.mockResolvedValue(chatResponse);
+    const { VertexAdapter } = await import('./vertex.js');
+    await new VertexAdapter().chatCompletion({ model: 'x', messages: [] } as never, baseModel);
+    expect(mockConstructorArgs[0]?.fetch).toBe(unwrapGeminiError);
+  });
+});
