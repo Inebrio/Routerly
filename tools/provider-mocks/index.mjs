@@ -240,10 +240,12 @@ export async function startMocks({ port = 0, host = '127.0.0.1' } = {}) {
       return json(res, 200, log);
     }
     const body = await readBody(req);
-    log.push({
+    const entry = {
       method: req.method, path: url.pathname + url.search, body,
       headers: Object.fromEntries(Object.entries(req.headers).map(([k, v]) => [k, SECRET_HEADERS.has(k) ? mask(String(v)) : v])),
-    });
+    };
+    log.push(entry);
+    res.on('finish', () => { entry.status = res.statusCode; });
     const p = url.pathname;
     try {
       if (p.startsWith('/api/organizations')) return claudeWeb(req, res, url, body);

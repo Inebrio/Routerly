@@ -94,6 +94,15 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Require a recorded real-test proof before overwriting a published image
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          # First publish of a version is not an overwrite: only an existing vX.Y.Z tag is gated.
+          if git rev-parse -q --verify "refs/tags/v${VERSION}" >/dev/null; then
+            node scripts/release-proof.mjs check "$VERSION" --commit "$(git rev-parse HEAD)"
+          fi
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:

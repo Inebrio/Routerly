@@ -15,11 +15,11 @@ import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages
  * Error carrying the SDK-style `status`/`headers`/`error` shape so the resilience
  * classifier sees the real HTTP status and retry-after instead of a generic fault.
  */
-async function upstreamError(response: Response): Promise<Error> {
+async function upstreamError(response: Response, provider: string): Promise<Error> {
   const text = await response.text().catch(() => '');
   let body: unknown;
   try { body = JSON.parse(text); } catch { /* non-JSON body */ }
-  return Object.assign(new Error(`Custom provider returned ${response.status}: ${text}`), {
+  return Object.assign(new Error(`${provider} returned ${response.status}: ${text}`), {
     status: response.status,
     headers: Object.fromEntries(response.headers),
     ...(body !== undefined ? { error: body } : {}),
@@ -71,7 +71,7 @@ export class CustomAdapter implements ProviderAdapter {
     });
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
     if (!response.ok) {
-      throw await upstreamError(response);
+      throw await upstreamError(response, model.provider);
     }
     return response.json() as Promise<ChatCompletionResponse>;
   }
@@ -101,7 +101,7 @@ export class CustomAdapter implements ProviderAdapter {
     }).finally(() => clearTimeout(timer));
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
     if (!response.ok) {
-      throw await upstreamError(response);
+      throw await upstreamError(response, model.provider);
     }
     if (!response.body) {
       throw new Error('Custom provider returned no response body for streaming.');
