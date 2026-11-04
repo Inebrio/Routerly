@@ -14,6 +14,7 @@ the change itself — never reconstructed after the fact. See
 ### Added
 
 - **Configurable ranking algorithm.** Routers and routing profiles carry an optional `rankingAlgorithm` (only `default` today, which is the current weighted-mean ranking plus selector, so behaviour is unchanged when unset). A routing profile bound to a router wins over the router's own value. Management API: `POST/PUT /api/routers` and `POST/PATCH /api/profiles` accept `rankingAlgorithm` (400 for an unknown id). CLI: `router routing update --ranking-algorithm`, `router routing show [--json]`, `profiles create|update --ranking-algorithm`, `profiles update`. Trace (management only, no wire-format change): `router:profile` carries `rankingAlgorithm`, `router:recap` carries `rankingAlgorithm` and `rankingSource`, and orchestrators emit an `orchestrator:recap` event (ROUT-298).
+- **Installer sandbox.** `install.mjs --sandbox <dir>` (or `ROUTERLY_INSTALL_SANDBOX`) runs install and uninstall entirely under `<dir>`: no daemon, no sudo, no real folders. With `ROUTERLY_INSTALL_TEST=1` the installer refuses to run without a sandbox, and it never installs into a non-empty folder that is not a Routerly install. `scripts/backup-code.sh` and `scripts/restore-code.sh` back up and restore the working-code folders (documented in `docs/contributing/installer-testing.md`).
 
 ### Changed
 
