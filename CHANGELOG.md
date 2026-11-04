@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Changed
 
+- **`/v1/messages` message id in Anthropic shape.** Non-stream responses converted from a chat completion (e.g. via anthropic-web) return `msg_…` instead of `chatcmpl-…` (ROUT-488).
 - **CLI test suite stable under load.** `packages/cli` sets `testTimeout` to 30s so cold dynamic imports no longer fail `auth login` / `router pii add` tests on a busy machine (ROUT-556).
 - **Dashboard test suite stable under load.** `packages/dashboard` test setup raises the Testing Library `waitFor` timeout from 1s to 10s so `App.test` no longer times out on a busy machine (ROUT-559).
 - **Dashboard permission-blocked modal tests no longer flake.** The `App.test` cases for the `lr-permission-blocked` event re-dispatch it until the listener observes it, so a cold, loaded run cannot lose the event (ROUT-561).
