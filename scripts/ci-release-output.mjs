@@ -1,32 +1,29 @@
 #!/usr/bin/env node
 // ────────────────────────────────────────────────────────────────────────────
-// Routerly — CI release output mapping
-// Called by release.config.mjs's @semantic-release/exec publishCmd and
-// addChannelCmd hooks. Single source of the branch → channel → docker-tag
-// mapping the release.yml workflow's downstream jobs (docker, docs,
-// next-pointer, develop-pointer) key off of. That hook — and nothing else —
-// is what distinguishes a build from a re-tag; there is no commit heuristic,
-// no diff inspection, no "did the tag already exist" probe.
+// Routerly — CI release decision
+// The maintainer types the version when dispatching release.yml; this script
+// turns (version, branch) into the outputs the workflow's jobs key off of:
+// the channel, the docker tag, and whether this is a first publish or a
+// promotion of an already-published tag to another channel. Nothing is
+// computed from commit history.
 //
-// Invocation:
-//   node scripts/ci-release-output.mjs <action> <version> <gitTag> <branch>
-//     action  publish | addChannel   (exact strings, case-sensitive)
-//     version bare semver, e.g. 1.5.3
-//     gitTag  v<version>, e.g. v1.5.3
+// Invocation (run from a checkout with tags fetched, HEAD = dispatched ref):
+//   node scripts/ci-release-output.mjs <version> <branch>
+//     version bare semver chosen by the maintainer, e.g. 0.6.1
 //     branch  main | next | develop
 //
-// On any violation: one line to stderr, exit 1 — fails the release run
-// loudly rather than publishing an image under a wrong tag.
-// On success: appends the output block to the file named by $GITHUB_OUTPUT
-// (skipped, stdout-only, when unset — local dry run) and echoes the same
-// lines to stdout. Exit 0.
+// Decision:
+//   tag v<version> absent  → publish; the version must be greater than the
+//                            highest v* tag reachable from HEAD (typo guard)
+//   tag v<version> present → addChannel (promotion); the tag must be an
+//                            ancestor of HEAD
 //
-// Contract frozen by the RC-2 blueprint (C1/C2), extended to a third branch
-// by the RMT-1 blueprint (C1) — do not change without updating release.yml
-// and the story.
+// On any violation: one line to stderr, exit 1. On success: appends the
+// output block to $GITHUB_OUTPUT (stdout only when unset) and exits 0.
 // ────────────────────────────────────────────────────────────────────────────
 
 import * as fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 
 const die = (message) => {
   process.stderr.write(`${message}\n`);
@@ -35,47 +32,62 @@ const die = (message) => {
 
 const VERSION_RE = /^\d+\.\d+\.\d+$/;
 
-// branch → { channel, docker_channel_tag }, frozen mapping (blueprint C1)
 const BRANCH_MAP = {
   main: { channel: 'current', docker_channel_tag: 'latest' },
   next: { channel: 'next', docker_channel_tag: 'next' },
   develop: { channel: 'develop', docker_channel_tag: 'develop' },
 };
 
-function main() {
-  const [action, version, gitTag, branch] = process.argv.slice(2);
+const git = (...args) => spawnSync('git', args, { encoding: 'utf-8' });
 
-  if (action !== 'publish' && action !== 'addChannel') {
-    die(`Invalid action "${action}". Expected "publish" or "addChannel".`);
-  }
+const parts = (v) => v.split('.').map(Number);
+function greater(a, b) {
+  const [x, y] = [parts(a), parts(b)];
+  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i];
+  return false;
+}
+
+function main() {
+  const [version, branch] = process.argv.slice(2);
+
   if (!version || !VERSION_RE.test(version)) {
     die(`Invalid version "${version}". Expected bare semver in the form X.Y.Z.`);
-  }
-  if (gitTag !== `v${version}`) {
-    die(`Invalid gitTag "${gitTag}". Expected "v${version}".`);
   }
   if (!Object.hasOwn(BRANCH_MAP, branch)) {
     die(`Invalid branch "${branch}". Expected "main", "next" or "develop".`);
   }
 
-  const { channel, docker_channel_tag } = BRANCH_MAP[branch];
+  const gitTag = `v${version}`;
+  let action;
+  if (git('rev-parse', '--verify', '--quiet', `refs/tags/${gitTag}`).status === 0) {
+    action = 'addChannel';
+    if (git('merge-base', '--is-ancestor', gitTag, 'HEAD').status !== 0) {
+      die(`Tag ${gitTag} exists but is not an ancestor of ${branch}. Merge the branch that published it into ${branch} first.`);
+    }
+  } else {
+    action = 'publish';
+    const reachable = git('tag', '--merged', 'HEAD', '--list', 'v*').stdout
+      .split('\n')
+      .map((t) => t.trim().replace(/^v/, ''))
+      .filter((t) => VERSION_RE.test(t));
+    const highest = reachable.reduce((a, b) => (a && greater(a, b) ? a : b), '');
+    if (highest && !greater(version, highest)) {
+      die(`Version ${version} must be greater than the latest release reachable from ${branch} (v${highest}).`);
+    }
+  }
 
-  const lines = [
+  const { channel, docker_channel_tag } = BRANCH_MAP[branch];
+  const block = [
     'released=true',
     `action=${action}`,
     `version=${version}`,
     `git_tag=${gitTag}`,
     `channel=${channel}`,
     `docker_channel_tag=${docker_channel_tag}`,
-  ];
-  const block = `${lines.join('\n')}\n`;
+  ].join('\n') + '\n';
 
-  const outputFile = process.env.GITHUB_OUTPUT;
-  if (outputFile) {
-    fs.appendFileSync(outputFile, block);
-  }
+  if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, block);
   process.stdout.write(block);
-  process.exit(0);
 }
 
 main();

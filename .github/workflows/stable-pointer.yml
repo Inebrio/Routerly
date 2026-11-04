@@ -36,6 +36,9 @@ jobs:
           newest="$(gh release list --limit 100 --json tagName --jq '.[].tagName' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)"
           [ "$newest" = "$VERSION" ] || { echo "::error::$VERSION is not current (newest release is $newest)"; exit 1; }
 
+      - name: Require a recorded real-test proof for this release
+        run: node scripts/release-proof.mjs check "${VERSION#v}" --commit "$(git rev-list -n1 "$VERSION")"
+
       - name: Force-move the channel-stable tag
         run: |
           git config user.name "github-actions[bot]"

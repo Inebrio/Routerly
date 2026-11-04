@@ -13,6 +13,9 @@ the change itself — never reconstructed after the fact. See
 
 ### Changed
 
+- **Release gate: no overwrite without a real-test proof.** `stable-pointer` and `docker-rebuild` (on an already-tagged version) now refuse unless `scripts/release-proof.mjs` finds a proof tag recorded for that exact version and commit, at most 7 days old (ROUT-602).
+- **Release versions are chosen by hand.** `release.yml` takes a required `version` input (`gh workflow run release.yml --ref <branch> -f version=X.Y.Z`) instead of computing it from commits; semantic-release and `release.config.mjs` are removed. Tag, GitHub Release (tarball, install scripts, git-cliff notes), Docker, docs and channel pointers behave as before; a version not above the latest reachable tag is refused, an existing tag is promoted to the dispatched channel (ROUT-548).
+- **`/v1/messages` message id in Anthropic shape.** Non-stream responses converted from a chat completion (e.g. via anthropic-web) return `msg_…` instead of `chatcmpl-…` (ROUT-488).
 - **CLI test suite stable under load.** `packages/cli` sets `testTimeout` to 30s so cold dynamic imports no longer fail `auth login` / `router pii add` tests on a busy machine (ROUT-556).
 - **Dashboard test suite stable under load.** `packages/dashboard` test setup raises the Testing Library `waitFor` timeout from 1s to 10s so `App.test` no longer times out on a busy machine (ROUT-559).
 - **Dashboard permission-blocked modal tests no longer flake.** The `App.test` cases for the `lr-permission-blocked` event re-dispatch it until the listener observes it, so a cold, loaded run cannot lose the event (ROUT-561).
@@ -21,6 +24,7 @@ the change itself — never reconstructed after the fact. See
 ### Fixed
 
 - **Upstream errors are clearer.** When a provider rejects a call with no error body (Vertex 401), the client error now says `Upstream provider returned HTTP <status> with no error body` instead of «Upstream provider error»; native OpenAI-compatible providers (deepseek, groq, …) name themselves in the error instead of «Custom provider»; the provider mock's `/__mock/requests` log records the response status (ROUT-476).
+- **Pass-through docs: `model` is forwarded unchanged.** `docs/api/llm-proxy.md` states that catch-all endpoints (embeddings, audio, …) need the provider's own model name in the body, not the Routerly model id; the body is not rewritten, preserving wire-format transparency (ROUT-374).
 - **`clients configure` no longer prints the router token.** The plan shown (and the `--json` `plan`) masks the token as `sk-rt-***`; the file written still holds the real token (ROUT-598).
 - **Installer no longer deletes files it did not install.** `scripts/install.mjs` records the copied files in `.routerly-manifest`; updates and uninstall remove only manifest files (plus `node_modules`, `dist` and `tsconfig.tsbuildinfo`), not other content of `/opt/routerly`. An existing `/opt/routerly` without a Routerly install no longer selects the `system` scope with `--yes`, `--scope user` (with a space) is honoured like `--scope=user`, and an invalid scope fails with an error (ROUT-579).
 - **Docs version cut publishes on release.** The `Publish documentation cut to docs-versions` step uses `mktemp -u` for the temporary git index (git rejects an empty index file) and commits with the non-releasable `ci(docs):` type (ROUT-577).

@@ -227,7 +227,7 @@ export async function startServer() {
     await server.listen({ port: effectivePort(settings), host: settings.host });
     // The 60s integration push is started by the observability module (kernel start).
     // Skipped outside production by default: a dev checkout's package.json version
-    // is never bumped by semantic-release on develop/main (see docs/contributing/
+    // is never bumped by the release job on develop/main (see docs/contributing/
     // releasing.md's "unstamped tag" note), so it always lags the tag a release just
     // cut — comparing it would flag the instance actively building that release as
     // "outdated". ROUTERLY_FORCE_UPDATE_CHECK opts back in for testing the checker itself.

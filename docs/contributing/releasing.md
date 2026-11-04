@@ -12,50 +12,32 @@ automated.
 
 ## Write a conventional commit
 
-There is no separate step to declare a version bump or a changelog entry.
-The commit message is the whole contribution protocol: the next version
-number and the release notes are both computed from the commit history at
-release time, nothing is declared a second time anywhere.
+There is no separate step to declare a changelog entry, and commits do not
+decide the version: the maintainer types the version when dispatching the
+release (see [Triggering a release](#triggering-a-release)). The commit
+message feeds the GitHub release notes, which are rendered from the commit
+range since the previous release.
 
 Your commit's type must be one of the eleven `commitlint.config.js` allows:
 `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`,
-`chore`, `revert`. Three of those drive the version:
-
-- **`fix`** — a bug fix. Bumps the **patch** version.
-- **`feat`** — a new feature, flag, endpoint or option. Bumps the **minor**
-  version.
-- A `!` after the type/scope (`feat!:`, `fix!:`) or a `BREAKING CHANGE:`
-  footer in the commit body — a breaking change to the wire format, the
-  CLI, the API or the configuration shape. Bumps the **major** version,
-  regardless of the type it is attached to.
-
-Every other type (`docs`, `style`, `refactor`, `perf`, `test`, `build`,
-`ci`, `chore`, `revert`) triggers no version bump on its own.
-
-The same type also decides where your change shows up in the GitHub
+`chore`, `revert`. The type decides where the change shows up in the
 release notes: `feat` under **Features**, `fix` under **Bug Fixes**, `perf`
 under **Performance**, `docs` under **Documentation**, `refactor` under
 **Refactor**. `chore`, `ci`, `build`, `test`, `style` and `revert` produce
-no heading and no bullet; they exist for internal housekeeping and stay out
-of what a reader sees changed.
+no heading and no bullet; they stay out of what a reader sees changed.
 
-`commitlint` enforces the type against that list and requires a lower-case
-subject, on every commit via a Husky hook. It does **not** enforce the `!`
-or `BREAKING CHANGE:` marker: nothing stops a commit that changes the wire
-format from going out as a plain `feat` or `fix` and shipping as a minor or
-patch bump. Marking a breaking change correctly is on the author, not on
-tooling.
+Mark a breaking change with a `!` after the type/scope (`feat!:`) or a
+`BREAKING CHANGE:` footer so the maintainer sees it when choosing the
+version. `commitlint` enforces the type list and a lower-case subject on
+every commit via a Husky hook, but not the breaking marker: that is on the
+author.
 
 ## Reference the issue you're closing
 
 If a commit resolves a GitHub issue, say so in the body: `Closes #NNN`,
 `Fixes #NNN`, or `Resolves #NNN`. `develop` is this repository's default
 branch, so a commit using that syntax auto-closes the issue the moment it
-lands there — no separate close step. `@semantic-release/github` also
-auto-labels and comments on every issue/PR referenced by `#NNN` (closing
-keyword or not) once the containing commit ships, with the release version
-and a `released on @<channel>` label — this already runs, nothing to
-configure. A commit that fixes something without a tracked issue needs
+lands there — no separate close step. A commit that fixes something without a tracked issue needs
 nothing extra.
 
 ## Stamping a branch
@@ -70,7 +52,7 @@ npm version X.Y.Z --allow-same-version --workspaces --include-workspace-root --n
 node scripts/sync-module-versions.mjs
 ```
 
-Commit as `chore: stamp version X.Y.Z`. The publish job overwrites it with the computed version.
+Commit as `chore: stamp version X.Y.Z`. The publish job overwrites it with the version typed at dispatch.
 
 ## Module manifests carry the product version, not their own
 
@@ -114,34 +96,24 @@ least stable.
 
 | Branch | Channel | What it means | What it runs |
 |---|---|---|---|
-| `main` | `current` (semantic-release's own name for it is `latest` — see below) | The currently shipped, stable release. | `ci.yml`, manually via `release.yml` (see [Triggering a release](#triggering-a-release)). |
+| `main` | `current` (the Docker tag and GitHub "Latest" flag are called `latest`) | The currently shipped, stable release. | `ci.yml`, manually via `release.yml` (see [Triggering a release](#triggering-a-release)). |
 | `next` | `next` | Validated pre-release line, promoted from `develop` once it has been reviewed. | `ci.yml`, manually via `release.yml`. |
 | `develop` | `develop` | Bleeding-edge, unreviewed release line. Every merge to `develop` is a candidate; nothing between here and the commit history gates it. | `ci.yml`, manually via `release.yml`. |
 
-The order in `release.config.mjs` is load-bearing, not decoration:
-
-```
-branches: ['main', { name: 'next', channel: 'next' }, { name: 'develop', channel: 'develop' }],
-```
-
-`main` being listed first is what makes its releases the stable, `latest`
-ones; `next` and `develop` are each explicit about their own channel. Whether
-a release is a prerelease, which prerelease line it belongs to, or the
-stable `latest` one, is derived by semantic-release from this order —
-nothing in this repository computes it. Reordering the array would silently
-swap which branch is the stable one, or which of `next`/`develop` is allowed
-to publish the higher version.
+The channel of a release is the branch it is dispatched from (`main` →
+`current`, `next` → `next`, `develop` → `develop`); the mapping lives in
+`scripts/ci-release-output.mjs`. Only `main` publishes a stable release
+(not a prerelease, flagged "Latest").
 
 All three branches share **one tag namespace**: every release, on any of
 them, gets a single `vX.Y.Z` git tag. There is no second, channel-prefixed
 tag scheme — a version tagged `v1.5.3` is the same object whether it was
 first published from `develop` or later promoted onto `next` or `main`.
 
-**Migration note.** No `v0.4.0` starting tag was placed for this migration.
-The last reachable tag going into it was `v0.2.0`, and the first version
-semantic-release actually computed on `main` under this pipeline was
-**`0.3.0`** — not `0.4.0` and not `1.0.0`. This is a real, observed result
-from RC-1's dry run, not a hypothetical.
+**Versions are chosen by hand.** Up to 0.6.0 the version was computed from the
+commit history; that caused the 0.x problems
+that motivated the change (a breaking change producing a major, channels
+resolving different versions). Nothing computes a version any more.
 
 **Channel names.** The CLI, the config, the management API and the
 installers accept exactly five values: `latest`, `current`, `next`,
@@ -199,10 +171,22 @@ release from via the ref picker:
   (`main`, `next` or `develop`) in the branch dropdown → **Run workflow**.
 - Or from the CLI: `gh workflow run release.yml --ref <branch>`.
 
-The workflow takes no inputs beyond the ref itself — there is nothing to
-fill in on the dispatch form. The branch you pick is also what
-`scripts/ci-release-output.mjs` reads back to decide the channel; it accepts
-exactly `main`, `next` or `develop` and fails loudly on anything else.
+The workflow has one required input, `version` (`X.Y.Z`), typed by the
+maintainer:
+
+```bash
+gh workflow run release.yml --ref develop -f version=0.6.1
+```
+
+The branch you pick is also what `scripts/ci-release-output.mjs` reads back
+to decide the channel; it accepts exactly `main`, `next` or `develop`. The
+script then chooses the action from git alone:
+
+- tag `vX.Y.Z` does not exist: **publish**. The version must be greater
+  than the highest `v*` tag reachable from the branch, otherwise the run
+  fails (typo guard).
+- tag `vX.Y.Z` exists: **promotion** (`addChannel`). The tag must be an
+  ancestor of the branch.
 
 ## What runs automatically
 
@@ -212,7 +196,7 @@ dispatches a run (see above).
 | Job | Runs when | What it produces |
 |---|---|---|
 | `gate` | Every dispatched run | Runs the full `ci.yml` suite as a prerequisite. Nothing downstream runs if it fails. |
-| `release` | `gate` passed | `npx semantic-release`. Computes the next version from the commit history, creates the shared `vX.Y.Z` tag, and publishes (or updates) the GitHub Release. If there is nothing to release, it exits cleanly with `released=false` and nothing downstream runs. |
+| `release` | `gate` passed | Decides channel and action (see above). Publish: stamps every manifest with the typed version, builds the release tarball, renders the release notes with `scripts/release-notes.sh` (git-cliff over the commits since the previous tag), and creates the `vX.Y.Z` tag and the GitHub Release with the tarball and install scripts (prerelease unless the channel is `current`). Promotion: no new tag; on `main` the existing release loses its prerelease flag and becomes Latest. |
 | `docker` | `release` published (`released == 'true'`) | Multi-arch (`linux/amd64`, `linux/arm64`) build and push. A first publish (`action == 'publish'`) builds from the release tarball and tags both the git tag and the channel tag; a later channel move (`action == 'addChannel'`) re-tags with `docker buildx imagetools create` instead of rebuilding. |
 | `docs` | `release` published **and** `channel == 'current'` | Runs `npm run docs:cut` for the new version and pushes the cut to the `docs-versions` branch. Skipped entirely for a `next` or `develop` release. |
 | `docs-deploy` | `docs` finished, same `channel == 'current'` gate | Builds `website/` and deploys it to Firebase Hosting. |
@@ -224,7 +208,7 @@ the exact same name as a branch makes `git push origin <name>` ambiguous
 (`dst refspec <name> matches more than one`). They are purely an internal
 mechanism so the `next` and `develop` channels always have something
 resolvable to install from, even though neither publishes its own `vX.Y.Z`
-tag beyond the one semantic-release already created on the branch.
+tag beyond the one the `release` job already created.
 
 ## Promotion and back-merge
 
@@ -234,28 +218,22 @@ is merged by hand; the pipeline only acts once a maintainer dispatches
 `release.yml` against the branch that just received the merge (see
 [Triggering a release](#triggering-a-release)).
 
-**Promotion, not recomputation.** semantic-release computes a version from
-the commit history, not from which branch a dispatch targets. `develop`, on
-channel `develop`, has typically already published its own `vX.Y.Z` release
-before the merge into `next` happens. Merging it into `next` does not put
-in front of `next` any commits that were not already accounted for — the
-same computation runs again and produces the same number. What actually
-happens is that the release already published from `develop` is
-republished from `next`: it takes over the `next` channel tag and
-prerelease. The same pattern repeats one hop later, when `next` is merged
-into `main`: the release already validated on `next` is republished from
-`main`, loses its prerelease flag, and takes over the `latest` channel tag.
-At neither hop is a new tag created or a second release object made; the
-existing one is mutated in place.
+**Promotion, not recomputation.** The version is typed, so promoting a
+release means dispatching the same version again on the next branch.
+`develop`, on channel `develop`, has typically already published its own
+`vX.Y.Z` release before the merge into `next` happens. After merging
+`develop` into `next`, dispatch `release.yml` on `next` with that same
+version: the tag already exists, so the run is a promotion. The release
+takes over the `next` channel tag and prerelease. One hop later, after
+`next` is merged into `main`, dispatching the same version on `main` flips
+the release from prerelease to stable and makes it `latest`. At neither hop
+is a new tag created or a second release object made.
 
-**Worked example.** `main` is currently serving `1.4.1`, `next` has already
-published `1.5.0`, and `develop` has already published `1.5.3`. A
-maintainer merges `develop` into `next` and dispatches a release on `next`:
-`next` now serves **1.5.3** (it still has a `.5.3`-or-lower range available,
-see [EINVALIDNEXTVERSION](#einvalidnextversion)). The maintainer then merges
-`next` into `main` and dispatches a release on `main`: `main` serves
-**1.5.3** too — no new tag, no second release object; the existing `1.5.3`
-release flips from prerelease to stable and becomes `latest`.
+**Worked example.** `develop` has published `1.5.3`. A maintainer merges
+`develop` into `next` and dispatches `release.yml` on `next` with
+`version=1.5.3`: `next` now serves **1.5.3**. The maintainer then merges
+`next` into `main` and dispatches on `main` with `version=1.5.3`: `main`
+serves **1.5.3** too.
 
 ### The back-merge
 
@@ -304,78 +282,20 @@ workflows a release run can depend on.
 | Failure | What is visible | What it leaves behind | What to do |
 |---|---|---|---|
 | Red `gate` job | `ci.yml` fails as a called workflow | Nothing downstream runs: no tag, no release, no image, no docs cut | Fix the CI failure and dispatch the run again. |
-| `release` job fails on `EINVALIDNEXTVERSION` | See [EINVALIDNEXTVERSION](#einvalidnextversion) below | No tag, no release, nothing to clean up; the branch is unchanged | See the recoveries below. |
-| `release` job fails for another reason | The `release` job is red; `semantic-release.log` is available in the run | No tag, no release, nothing downstream runs | Read `semantic-release.log` for the specific cause, fix it, and dispatch the run again. |
+| `release` job refuses the version | The `Decide channel and action` step is red with one line (`must be greater than the latest release …` or `not an ancestor`) | No tag, no release, nothing downstream runs | Dispatch again with a higher version, or merge the branch that published the tag first. |
+| `release` job fails for another reason | The `release` job is red | Possibly nothing, or a created tag/Release if `gh release create` ran | Read the step log. If the `vX.Y.Z` release exists but incomplete, delete it and its tag (`gh release delete vX.Y.Z --cleanup-tag`) and dispatch again. |
 | `docker` job fails | The `docker` job is red | The git tag and GitHub Release already exist, since `release` already succeeded; no image was pushed or re-tagged | Re-run the failed job, or use **Docker Rebuild** afterward to push the missing tag. |
 | `docs` job fails (only runs for a `current`-channel release) | The `docs` job is red | The release itself exists, but no documentation version was cut; `docs-deploy` is skipped since it needs `[release, docs]` | Cut the version locally following [Cutting a documentation version](#cutting-a-documentation-version), then re-run the `docs` and `docs-deploy` jobs. |
 | `docs-deploy` job fails | The `docs-deploy` job is red | The version was cut and pushed to `docs-versions`; the live site still serves the previous build | Re-run the `docs-deploy` job. |
 | `next-pointer` job fails (only runs for a `next`-channel release) | The `next-pointer` job is red | The release itself exists on `next`; the rolling `channel-next` git tag was not moved and its prerelease GitHub Release was not recreated | Re-run the `next-pointer` job. |
 | `develop-pointer` job fails (only runs for a `develop`-channel release) | The `develop-pointer` job is red | The release itself exists on `develop`; the rolling `channel-develop` git tag was not moved and its prerelease GitHub Release was not recreated | Re-run the `develop-pointer` job. |
 
-### EINVALIDNEXTVERSION
-
-**Trigger.** A commit is released directly from `main` or `next`, out of
-the normal `develop` → `next` → `main` promotion order, and the version it
-computes would exceed what the next branch down the chain has already
-published.
-
-**Cause.** `release.config.mjs`'s `branches` array orders `main`, then
-`next`, then `develop`. semantic-release enforces that each branch's
-computed version stays below the next branch's own valid range: a branch
-earlier in the order is not allowed to publish a version that outruns a
-branch later in the order. There are therefore two boundaries where this
-can fire: `main` outrunning `next`, and `next` outrunning `develop`. Either
-way the `release` job fails before creating anything.
-
-**Worked example, `main`/`next` boundary.** `main` serving `1.4.0`, `next`
-having already published `1.5.3`: a `fix` dispatched on `main` (→ `1.4.1`)
-is fine, and even a first `feat` (→ `1.5.0`) is fine, because both stay
-below `next`'s `1.5.3`. A second `feat` on `main` (→ `1.6.0`) or a
-`BREAKING CHANGE` (→ `2.0.0`) fails the release run, because both exceed
-`1.5.3`.
-
-**Worked example, `next`/`develop` boundary.** Same mechanism, one hop
-further down the chain. `next` serving `1.5.0`, `develop` having already
-published `1.6.2`: a `fix` dispatched on `next` (→ `1.5.1`) is fine; a
-`feat` on `next` that would compute `1.7.0` is not, because it exceeds
-`develop`'s `1.6.2`. The fix here is the same shape as the recoveries
-below, one branch to the right: merge `develop` into `next` first, or land
-the change on `develop` and promote it from there.
-
-This is the mechanism RC-1's validation actually observed, not vendor
-documentation alone: a scratch repository with `main`'s valid next-version
-range at `>=1.1.0 <1.2.0` and `develop` already at `1.1.0`, a `feat` commit
-on `main` computing `1.2.0` was rejected with `EINVALIDNEXTVERSION`, exit
-code `1`, and a structured error naming the responsible commit, the valid
-range, and semantic-release's own suggested recovery: merge, cherry-pick,
-revert or reset — "a valid branch could be `develop`". See
-`.claude/specs/release-channels/03-validation/RC-1.md` for the captured
-error. The numbers in both worked examples above are illustrations built on
-that same mechanism, not a restatement of RC-1's own numbers.
-
-**What the failed run leaves behind.** No tag, no release, nothing to
-clean up. The commit is still on its branch, unchanged; only the release
-run failed.
-
-**Recoveries**, any one of the three, applied to whichever boundary fired:
-
-1. Merge the branch one hop down the chain (`next` for a `main` failure,
-   `develop` for a `next` failure) into the failing branch first, so it
-   adopts the lower branch's number, then dispatch the release again. This
-   is an ordinary [promotion](#promotion-and-back-merge).
-2. Land the change on the branch one hop down the chain instead, and
-   promote it from there once it has published.
-3. Dispatch the equivalent release on the branch one hop down the chain
-   first, so it stays ahead of the failing branch, then dispatch the same
-   change on the original branch.
-
 ## Keeping module manifests in sync
 
-`release.config.mjs`'s `prepareCmd` runs `npm version ${nextRelease.version}
---workspaces --include-workspace-root --no-git-tag-version
---ignore-scripts`, then, automatically, `node
-scripts/sync-module-versions.mjs`. Nothing extra to run: the moment
-semantic-release bumps every `package.json` to the computed version, this
+The `release` job runs `npm version <version> --workspaces
+--include-workspace-root --no-git-tag-version --ignore-scripts`, then
+`node scripts/sync-module-versions.mjs`. Nothing extra to run: the moment
+the job bumps every `package.json` to the typed version, this
 second step rewrites every module manifest's `version` field and every
 `^X.Y.Z` `dependsOn` range under `packages/service/src` to match it. It is
 unconditional, not differential: it overwrites every matching literal with
@@ -505,6 +425,27 @@ npm run serve --prefix website -- --port <port> --no-open
 Open the site and use the version switcher in the nav: the new version
 and `next` (the always-current, in-progress documentation) are both
 listed and each shows its own version banner.
+
+## Real-test gate before overwriting a release
+
+A published version is never re-published or overwritten on the strength of an
+untested fix. Both workflows that overwrite a release, **Stable pointer**
+(`stable-pointer.yml`) and **Docker Rebuild** (`docker-rebuild.yml`, when the
+`vX.Y.Z` tag already exists), start with `scripts/release-proof.mjs check` and
+fail if no proof is recorded.
+
+A proof is an annotated tag `proof/vX.Y.Z/<sha12>`, bound to one version and one
+commit. After testing the published package or image in an isolated
+environment, record it:
+
+```bash
+node scripts/release-proof.mjs record 0.6.1 --commit <sha> --evidence "npm package installed in a clean LXC, install + proxy smoke OK" --push
+node scripts/release-proof.mjs check 0.6.1 --commit <sha>      # what the workflows run
+```
+
+The check refuses when there is no proof for that exact version and commit
+(another commit's proof does not count), or when the proof is older than
+7 days (`--max-age-days`). The message says which of the two is missing.
 
 ## Rebuilding a Docker image
 
