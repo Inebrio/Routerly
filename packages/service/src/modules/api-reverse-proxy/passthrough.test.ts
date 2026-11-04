@@ -246,6 +246,25 @@ async function buildApp(router?: RouterConfig | null, parseBinary = false) {
 }
 
 describe('passthroughHandler', () => {
+  it('sends the upstream model name when the body uses the registered id', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', mockFetch)
+    mockModels([{ ...openaiModel, id: 'em/nomic-embed-text', upstreamModelId: 'nomic-embed-text' }])
+    const app = await buildApp({ ...testRouter, models: [{ modelId: 'em/nomic-embed-text' }] })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/embeddings',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'em/nomic-embed-text', input: 'ciao' }),
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(200)
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(JSON.parse(init.body as string)).toEqual({ model: 'nomic-embed-text', input: 'ciao' })
+  })
+
   it('proxies unhandled /v1/embeddings to upstream and returns response', async () => {
     const mockFetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ object: 'list', data: [] }), {

@@ -29,6 +29,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **`/v1/embeddings` accepts the registered model id.** A pass-through request whose `model` is the full registered id (e.g. `vendor/name`) now reaches the provider with the upstream model name instead of failing with `model not found` (ROUT-491).
 - **RA-09 docs-version tests no longer time out under load.** The two happy-path tests in `test/docs-version.test.ts` now allow 300 s instead of 120 s. Tests only (ROUT-522).
 - **Service test suite no longer flaky under load.** `packages/service/vitest.config.ts` now sets `testTimeout`/`hookTimeout` to 60 s (was the 5 s default), so `api.test` and `profiles.test` stop timing out on a loaded machine (ROUT-615).
 - **Router Orchestrator tab is read-only without `router:write`.** Controls are disabled and the Save button is hidden, as on the Routing tab.
