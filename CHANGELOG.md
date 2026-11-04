@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Changed
 
+- **Release gate: no overwrite without a real-test proof.** `stable-pointer` and `docker-rebuild` (on an already-tagged version) now refuse unless `scripts/release-proof.mjs` finds a proof tag recorded for that exact version and commit, at most 7 days old (ROUT-602).
 - **`/v1/messages` message id in Anthropic shape.** Non-stream responses converted from a chat completion (e.g. via anthropic-web) return `msg_…` instead of `chatcmpl-…` (ROUT-488).
 - **CLI test suite stable under load.** `packages/cli` sets `testTimeout` to 30s so cold dynamic imports no longer fail `auth login` / `router pii add` tests on a busy machine (ROUT-556).
 - **Dashboard test suite stable under load.** `packages/dashboard` test setup raises the Testing Library `waitFor` timeout from 1s to 10s so `App.test` no longer times out on a busy machine (ROUT-559).
