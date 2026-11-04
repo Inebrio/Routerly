@@ -12,7 +12,7 @@ import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration } from '@routerly/shared';
+import type { RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration, CallConfig } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
 import { validateRoutingModels } from '../routing/validate-routing-models.js';
@@ -47,6 +47,7 @@ import { profilesRoutes } from './profiles.js';
 import { experimentsRoutes } from './experiments.js';
 import { mcpApiRoutes } from './mcp.js';
 import { getOptimizerRegistry } from '../optimizers/registry.js';
+import { callConfigSchema } from '../routing/call-config.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema, optimizerStepSchema } from './schemas.js';
 import { runPreview } from '../optimizers/preview.js';
 import { resolveOptimizerProfile, CUSTOM_PROFILE_ID } from '../routing/profiles/store.js';
@@ -1288,11 +1289,19 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       guardrails?: GuardrailConfig;
       pii?: PiiConfig;
       optimizers?: OptimizerConfig | null;
+      callConfig?: CallConfig | null;
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
     }
   }>('/api/routers', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
+    // undefined = unset, null = nothing to store, an object is validated.
+    let callConfig: CallConfig | undefined;
+    if (req.body.callConfig != null) {
+      const parsed = callConfigSchema.safeParse(req.body.callConfig);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid callConfig', details: parsed.error.flatten() });
+      callConfig = parsed.data as CallConfig;
+    }
     // Setting the optimizers pipeline is a privileged sub-operation of router write.
     if (req.body.optimizers != null && !requirePerm(req, 'optimizers:manage', reply)) return;
     if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
@@ -1370,6 +1379,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(guardrails ? { guardrails } : {}),
       ...(pii ? { pii } : {}),
       ...(optimizers ? { optimizers } : {}),
+      ...(callConfig ? { callConfig } : {}),
       ...(kind !== 'router' ? { kind } : {}),
       ...(kind === 'orchestrator' && candidates !== undefined ? { candidates } : {}),
     };
@@ -1430,6 +1440,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       guardrails?: GuardrailConfig | null;
       pii?: PiiConfig | null;
       optimizers?: OptimizerConfig | null;
+      callConfig?: CallConfig | null;
       notifications?: { channels: string[] } | null;
       traceContent?: boolean;
       kind?: RouterKind;
@@ -1437,6 +1448,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
   }>('/api/routers/:id', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
+    // undefined keeps the stored config, null clears it, an object is validated and replaces it.
+    let callConfigUpdate: CallConfig | null | undefined;
+    if (req.body.callConfig === null) callConfigUpdate = null;
+    else if (req.body.callConfig !== undefined) {
+      const parsed = callConfigSchema.safeParse(req.body.callConfig);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid callConfig', details: parsed.error.flatten() });
+      callConfigUpdate = parsed.data as CallConfig;
+    }
     // Routing a router's events to external channels is a privileged sub-operation.
     if (req.body.notifications !== undefined && !requirePerm(req, 'notification:write', reply)) return;
     let notificationChannels: string[] | undefined;
@@ -1585,7 +1604,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const notifChannels = req.body.notifications === null ? [] : notificationChannels ?? routers[index]!.notifications?.channels ?? [];
       const notificationsUpdate: { notifications?: { channels: string[] } } = notifChannels.length ? { notifications: { channels: notifChannels } } : {};
 
-      const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, kind: _k, candidates: _c, ...existing } = routers[index]!;
+      const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, kind: _k, candidates: _c, callConfig: existingCallConfig, ...existing } = routers[index]!;
+      const nextCallConfig = callConfigUpdate === undefined ? existingCallConfig : callConfigUpdate ?? undefined;
       updated = {
         ...existing,
         name: trimmedName,
@@ -1603,6 +1623,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...guardrailsUpdate,
         ...piiUpdate,
         ...optimizersUpdate,
+        ...(nextCallConfig ? { callConfig: nextCallConfig } : {}),
         ...notificationsUpdate,
         ...(kind !== 'router' ? { kind } : {}),
         ...(kind === 'orchestrator' ? candidatesUpdate : {}),
