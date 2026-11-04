@@ -20,6 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Docs 0.6.0 channel wording.** The 0.6.0 breaking-changes entry no longer says `stable` is rejected (it is valid since ROUT-551); the Docker examples in the installation guide use `v0.6.0`; `configuration.md` lists `stable` among the update channels (ROUT-580).
 - **Docs version cut publishes on release.** The `Publish documentation cut to docs-versions` step uses `mktemp -u` for the temporary git index (git rejects an empty index file) and commits with the non-releasable `ci(docs):` type (ROUT-577).
 
 - **Release on `next` no longer fails.** The `addChannel` step runs `gh release edit --latest` only on `main`; GitHub rejects `--latest` on a prerelease with HTTP 422 (ROUT-576).
@@ -387,7 +388,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 - The management surface uses `router` and `routers` instead of `project` and `projects`. API paths, CLI commands, dashboard routes, configuration fields, and usage fields have no backward aliases. Existing `projects.json` data migrates to `routers.json` automatically and idempotently on first start.
 - `router create --candidate`/`router edit --candidate` no longer accepts `<routerId>:<weight>` — use `--candidate <routerId>` (repeatable); order of repetition is now the priority order. The old syntax is rejected with an error naming the replacement, not silently reinterpreted.
-- The update channel's deprecated aliases are retired: `stable` is now rejected outright (400 from the management API, non-zero exit from the CLI and installers) instead of silently resolving to `current`, and `develop` is now a real, distinct channel — the bleeding-edge line — instead of an alias for `next`. An instance with `"develop"` already persisted under the old meaning now tracks the bleeding-edge line the next time it checks for updates, not `next`.
+- The `develop` update channel is now a real, distinct channel — the bleeding-edge line — instead of an alias for `next`. An instance with `"develop"` already persisted under the old meaning now tracks the bleeding-edge line the next time it checks for updates, not `next`. `stable` remains a valid channel (see ROUT-551).
 
 ---
 
