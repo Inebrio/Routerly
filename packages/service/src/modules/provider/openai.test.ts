@@ -123,6 +123,19 @@ describe('OpenAIAdapter.chatCompletion', () => {
     expect(calledWith).toHaveProperty('reasoning_effort', 'high');
   });
 
+  it('preserves reasoning_effort for gpt-5 and strips it for gpt-5-chat', async () => {
+    const adapter = new OpenAIAdapter();
+    for (const [id, kept] of [['gpt-5', true], ['gpt-5-mini', true], ['gpt-5-chat-latest', false], ['gpt-4o', false]] as const) {
+      create.mockResolvedValue(makeResponse());
+      await adapter.chatCompletion(
+        { model: id, messages: [{ role: 'user', content: 'Hi' }], reasoning_effort: 'high' } as ChatCompletionRequest,
+        makeModel({ id }),
+      );
+      const calledWith = create.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+      expect('reasoning_effort' in calledWith).toBe(kept);
+    }
+  });
+
   it('uses max_completion_tokens when both max_tokens and max_completion_tokens are set', async () => {
     create.mockResolvedValue(makeResponse());
 
