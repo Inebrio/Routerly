@@ -16,7 +16,6 @@ import * as fsp           from 'node:fs/promises';
 import * as path          from 'node:path';
 import * as os            from 'node:os';
 import * as http          from 'node:http';
-import { argValue, isRouterlyInstall, listSourceFiles, SKIP_DIRS, staleFiles, uninstallPaths, MANIFEST } from './install-lib.mjs';
 
 const exec = promisify(execCb);
 
@@ -43,7 +42,14 @@ const die     = (...a) => { console.error(c.red(c.bold('✗')) + ' ' + a.join(' 
 
 // ─── Parse CLI args ────────────────────────────────────────────────────────────
 const args   = process.argv.slice(2);
-const getArg = (name) => argValue(args, name);
+const getArg = (name) => {
+  const prefix = `--${name}=`;
+  const entry  = args.find(a => a.startsWith(prefix));
+  if (entry) return entry.slice(prefix.length);
+  // also accept the space-separated form: --name value
+  const i = args.indexOf(`--${name}`);
+  return i >= 0 && args[i + 1] !== undefined && !args[i + 1].startsWith('--') ? args[i + 1] : null;
+};
 const hasFlag = (name) => args.includes(`--${name}`);
 
 const SOURCE_DIR     = getArg('source-dir') ?? path.resolve(path.dirname(process.argv[1]), '..');
@@ -73,6 +79,9 @@ const ENV_INSTALL_SVC  = process.env.ROUTERLY_INSTALL_SERVICE;
 const ENV_INSTALL_CLI  = process.env.ROUTERLY_INSTALL_CLI;
 const ENV_INSTALL_DASH = process.env.ROUTERLY_INSTALL_DASHBOARD;
 const ENV_DAEMON       = process.env.ROUTERLY_DAEMON;
+
+const COPY_SKIP_DIRS = ['node_modules', '.git', '.github', '.vscode', 'spec'];
+const MANIFEST_NAME  = '.routerly-manifest.json';
 
 // ─── Platform ─────────────────────────────────────────────────────────────────
 const PLATFORM = process.platform; // 'linux' | 'darwin' | 'win32'
@@ -179,6 +188,36 @@ const existingCliConfigPath = path.join(cliHome, 'config', 'cli.json');
 let existingCliConfig = {};
 if (fs.existsSync(existingCliConfigPath)) {
   try { existingCliConfig = JSON.parse(fs.readFileSync(existingCliConfigPath, 'utf-8')); } catch { /* ignore */ }
+}
+
+/** True only for a directory the installer created: it holds the Routerly package.json. */
+function isRouterlyAppDir(dir) {
+  try { return JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8')).name === 'routerly'; }
+  catch { return false; }
+}
+
+/** Remove empty directories under dir, bottom-up, then dir itself if empty. */
+async function removeEmptyDirs(dir, useSudo) {
+  for (const e of await fsp.readdir(dir, { withFileTypes: true })) {
+    if (e.isDirectory()) await removeEmptyDirs(path.join(dir, e.name), useSudo);
+  }
+  if ((await fsp.readdir(dir)).length === 0) await removeDir(dir, useSudo);
+}
+
+/** Uninstall an app dir: remove only what the installer put there (manifest files, build output), keep foreign files. */
+async function removeInstalledApp(dir, useSudo) {
+  let files;
+  try { files = JSON.parse(fs.readFileSync(path.join(dir, MANIFEST_NAME), 'utf-8')); }
+  catch { warn(`Skipped ${dir}: no install manifest, not created by this installer`); return; }
+  const owned = [MANIFEST_NAME, 'node_modules', ...files];
+  for (const pkg of fs.existsSync(path.join(dir, 'packages')) ? fs.readdirSync(path.join(dir, 'packages')) : []) {
+    owned.push(path.join('packages', pkg, 'node_modules'), path.join('packages', pkg, 'dist'), path.join('packages', pkg, 'tsconfig.tsbuildinfo'));
+  }
+  for (const rel of owned) {
+    if (!path.isAbsolute(rel) && !rel.split(path.sep).includes('..')) await removeDir(path.join(dir, rel), useSudo);
+  }
+  await removeEmptyDirs(dir, useSudo);
+  success(`Removed Routerly files from ${dir}`);
 }
 
 /** Remove a path recursively, using sudo on POSIX if needed */
@@ -298,12 +337,15 @@ async function removeDaemon(scope) {
 // Read existing install scope from APP_DIR symlink/path heuristic
 function detectExistingScope() {
   // Check for system-level paths (app dirs + service home dirs)
+  const systemAppPaths = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
+  if (systemAppPaths.some(isRouterlyAppDir)) return 'system';
   const systemPaths = [
-    '/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly',
+    '/var/lib/routerly',
+    '/Library/Application Support/Routerly',
+    path.join('C:\\ProgramData', 'Routerly'),
   ];
-  // An existing folder is not enough: it must hold a Routerly install.
   for (const p of systemPaths) {
-    if (isRouterlyInstall(p)) return 'system';
+    if (fs.existsSync(p)) return 'system';
   }
   return 'user';
 }
@@ -311,7 +353,7 @@ function detectExistingScope() {
 function detectExistingAppDir() {
   const systemPaths = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
   for (const p of systemPaths) {
-    if (isRouterlyInstall(p)) return p;
+    if (isRouterlyAppDir(p)) return p;
   }
   return path.join(HOME, '.routerly', 'app');
 }
@@ -374,16 +416,15 @@ if (isExistingInstall && YES) {
 
     // Remove app dir
     const systemAppDirs = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
-    // Only what the installer put there: foreign files in the folder stay.
     for (const d of systemAppDirs) {
-      if (isRouterlyInstall(d)) { await removeInstalled(d, needsSudo); success(`Removed Routerly files from ${d}`); }
+      if (fs.existsSync(d)) await removeInstalledApp(d, needsSudo);
     }
     const userAppDir = path.join(HOME, '.routerly', 'app');
-    if (fs.existsSync(userAppDir)) { await removeInstalled(userAppDir, false); success(`Removed Routerly files from ${userAppDir}`); }
+    if (fs.existsSync(userAppDir)) { await removeDir(userAppDir, false); success(`Removed ${userAppDir}`); }
 
     // Remove system-scope service home (config/settings written here on system installs)
     // Always use sudo for system paths on POSIX, even if detectExistingScope said 'user'
-    if (_systemServiceHome !== cliHome && fs.existsSync(_systemServiceHome)) {
+    if (_systemServiceHome !== cliHome && fs.existsSync(path.join(_systemServiceHome, 'config', 'settings.json'))) {
       const sysNeedsSudo = PLATFORM !== 'win32';
       await removeDir(_systemServiceHome, sysNeedsSudo);
       success(`Removed ${_systemServiceHome}`);
@@ -455,7 +496,6 @@ step('1', 'Configuration');
 // ── Scope ─────────────────────────────────────────────────────────────────────
 let scope;
 if (FLAG_SCOPE) {
-  if (FLAG_SCOPE !== 'user' && FLAG_SCOPE !== 'system') die(`Invalid --scope "${FLAG_SCOPE}": use "user" or "system"`);
   scope = FLAG_SCOPE;
 } else if (YES || isUpdate) {
   scope = detectExistingScope();
@@ -479,7 +519,7 @@ if (FLAG_SCOPE) {
   }
 }
 if (scope !== 'user' && scope !== 'system') {
-  die(`Invalid scope "${scope}". Must be "user" or "system".`);
+  die(`Invalid --scope "${scope}". Must be "user" or "system".`);
 }
 success(`Scope: ${c.bold(scope)}`);
 
@@ -743,11 +783,11 @@ step('3', 'Copying files & installing dependencies');
 // Copy source tree to APP_DIR
 info(`Copying source from ${c.dim(SOURCE_DIR)} to ${c.dim(APP_DIR)}...`);
 // Drop files of the previous version that the new source no longer has
-// (stale files can break the build, e.g. on downgrade). Only files listed in the
-// previous install's manifest are removed, never anything else in APP_DIR.
-const sourceFiles = listSourceFiles(SOURCE_DIR);
-for (const f of staleFiles(APP_DIR, sourceFiles)) await removeDir(path.join(APP_DIR, f), needsSudo);
+// (stale files can break the build, e.g. on downgrade). Only removes files listed in the manifest the installer wrote.
+const sourceFiles = await listSourceFiles(SOURCE_DIR);
+await pruneStale(sourceFiles, APP_DIR, needsSudo);
 await copyDir(SOURCE_DIR, APP_DIR, needsSudo);
+await writeFileP(path.join(APP_DIR, MANIFEST_NAME), JSON.stringify(sourceFiles), needsSudo);
 success('Source files copied');
 
 // For system installs the directory was created/populated with sudo.
@@ -757,7 +797,6 @@ if (needsSudo) {
   const currentUser = os.userInfo().username;
   await runCmd(`${SUDO}chown -R ${currentUser} "${APP_DIR}"`, '/');
 }
-await fsp.writeFile(path.join(APP_DIR, MANIFEST), sourceFiles.join('\n') + '\n');
 
 // npm install --ignore-scripts
 // (skip lifecycle scripts to avoid "husky: not found" error)
@@ -1122,21 +1161,28 @@ async function runCmd(cmd, cwd) {
   }
 }
 
-/** Remove what the installer put in dir (manifest files, node_modules, dist), then dir if it is left empty. */
-async function removeInstalled(dir, useSudo) {
-  for (const f of uninstallPaths(dir, listSourceFiles(SOURCE_DIR))) {
-    const p = path.join(dir, f);
-    // The installer hands APP_DIR to the current user; sudo only if that fails.
-    await fsp.rm(p, { recursive: true, force: true }).catch(() => removeDir(p, useSudo));
+/** Relative paths of every file copyDir copies from dir. */
+async function listSourceFiles(dir, rel = '') {
+  const out = [];
+  for (const entry of await fsp.readdir(path.join(dir, rel), { withFileTypes: true })) {
+    if (entry.isDirectory() && COPY_SKIP_DIRS.includes(entry.name)) continue;
+    const r = path.join(rel, entry.name);
+    if (entry.isDirectory()) out.push(...await listSourceFiles(dir, r));
+    else out.push(r);
   }
-  await removeEmptyDirs(dir, useSudo);
+  return out;
 }
 
-async function removeEmptyDirs(dir, useSudo) {
-  for (const e of await fsp.readdir(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) await removeEmptyDirs(path.join(dir, e.name), useSudo);
+/** Remove only files a previous install copied (per its manifest) that the new source no longer has. */
+async function pruneStale(files, dest, useSudo = false) {
+  let previous = [];
+  try { previous = JSON.parse(fs.readFileSync(path.join(dest, MANIFEST_NAME), 'utf-8')); } catch { return; }
+  const keep = new Set(files);
+  for (const rel of previous) {
+    if (!keep.has(rel) && !path.isAbsolute(rel) && !rel.split(path.sep).includes('..')) {
+      await removeDir(path.join(dest, rel), useSudo);
+    }
   }
-  if ((await fsp.readdir(dir)).length === 0) await removeDir(dir, useSudo);
 }
 
 /** Recursively copy a directory, optionally using sudo for system paths. */
@@ -1145,7 +1191,7 @@ async function copyDir(src, dest, useSudo = false) {
   const entries = await fsp.readdir(src, { withFileTypes: true });
   for (const entry of entries) {
     // Skip heavy dirs that aren't needed in the install target
-    if (entry.isDirectory() && SKIP_DIRS.includes(entry.name)) {
+    if (entry.isDirectory() && COPY_SKIP_DIRS.includes(entry.name)) {
       continue;
     }
     const srcPath  = path.join(src, entry.name);

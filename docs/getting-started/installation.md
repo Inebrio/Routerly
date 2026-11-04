@@ -69,7 +69,7 @@ curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.2.0
 | `user` (default) | `~/.routerly/app/` | `~/.local/bin/routerly` |
 | `system` | `/opt/routerly/` | `/usr/local/bin/routerly` |
 
-The installer lists what it installed in `.routerly-manifest` inside the app directory. Updates and uninstall remove only those files (plus `node_modules`, `dist` and `tsconfig.tsbuildinfo`); anything else in the folder is left alone. A folder such as `/opt/routerly` that holds no Routerly install does not select the `system` scope: with `--yes` the scope is `user`. `--scope user` and `--scope=user` are equivalent; any other value is an error.
+The installer lists what it installed in `.routerly-manifest.json` inside the app directory. Updates and uninstall remove only those files (plus `node_modules`, `dist` and `tsconfig.tsbuildinfo`); anything else in the folder is left alone. A folder such as `/opt/routerly` that holds no Routerly install does not select the `system` scope: with `--yes` the scope is `user`. `--scope user` and `--scope=user` are equivalent; any other value is an error.
 
 The **service config and data directory** depends on both scope and platform:
 

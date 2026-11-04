@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Fixed
+
+- **Installer respects `--scope user` and never deletes folders it did not create.** `install.mjs` now accepts `--scope user` as well as `--scope=user`, detects a system install only from a real Routerly directory (not any existing `/opt/routerly`), and prunes and uninstalls only files listed in the manifest it wrote (`.routerly-manifest.json`), so foreign folders under the app directory survive (ROUT-581).
+
 ### Changed
 
 - **CLI test suite stable under load.** `packages/cli` sets `testTimeout` to 30s so cold dynamic imports no longer fail `auth login` / `router pii add` tests on a busy machine (ROUT-556).
@@ -20,7 +24,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
-- **Installer no longer deletes files it did not install.** `scripts/install.mjs` records the copied files in `.routerly-manifest`; updates and uninstall remove only manifest files (plus `node_modules`, `dist` and `tsconfig.tsbuildinfo`), not other content of `/opt/routerly`. An existing `/opt/routerly` without a Routerly install no longer selects the `system` scope with `--yes`, `--scope user` (with a space) is honoured like `--scope=user`, and an invalid scope fails with an error (ROUT-579).
+- **Installer docs and UAT for the manifest-based update/uninstall.** `scripts/install.mjs` records the copied files in `.routerly-manifest.json`; updates and uninstall remove only manifest files (plus `node_modules`, `dist` and `tsconfig.tsbuildinfo`), not other content of `/opt/routerly`. An existing `/opt/routerly` without a Routerly install no longer selects the `system` scope with `--yes`, `--scope user` (with a space) is honoured like `--scope=user`, and an invalid scope fails with an error (ROUT-579).
 - **Docs 0.6.0 channel wording.** The 0.6.0 breaking-changes entry no longer says `stable` is rejected (it is valid since ROUT-551); the Docker examples in the installation guide use `v0.6.0`; `configuration.md` lists `stable` among the update channels (ROUT-580).
 - **Docs version cut publishes on release.** The `Publish documentation cut to docs-versions` step uses `mktemp -u` for the temporary git index (git rejects an empty index file) and commits with the non-releasable `ci(docs):` type (ROUT-577).
 
