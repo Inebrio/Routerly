@@ -515,3 +515,109 @@ describe('profiles get', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
   });
 });
+
+// ─── call configuration ──────────────────────────────────────────────────────
+
+describe('profiles call configuration', () => {
+  const cc = { enabled: true, tiers: { low: { maxOutputTokens: 512 } } };
+  let out: string[];
+  let err: string[];
+  let exitSpy: ReturnType<typeof vi.spyOn>;
+  const run = (...args: string[]) => makeCmd().parseAsync(['node', 'profiles', ...args]);
+
+  beforeEach(() => {
+    out = [];
+    err = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => { out.push(a.join(' ')); });
+    vi.spyOn(console, 'error').mockImplementation((...a) => { err.push(a.join(' ')); });
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+  });
+  afterEach(() => exitSpy.mockRestore());
+
+  it('show prints the call configuration section of a routing profile', async () => {
+    mockApi.mockResolvedValueOnce([{ ...userProfile, callConfig: cc }]);
+    await run('show', 'user-1');
+    const text = out.join('\n');
+    expect(text).toContain('Call configuration');
+    expect(text).toContain('max-output-tokens=512');
+  });
+
+  it('show says not configured when the profile has none', async () => {
+    mockApi.mockResolvedValueOnce([userProfile]);
+    await run('show', 'user-1');
+    expect(out.join('\n')).toContain('not configured');
+  });
+
+  it('show --json passes callConfig through untouched', async () => {
+    mockApi.mockResolvedValueOnce([{ ...userProfile, callConfig: cc }]);
+    await run('show', 'user-1', '--json');
+    expect(JSON.parse(out.join('\n')).callConfig).toEqual(cc);
+  });
+
+  it('create --call-config sends inline JSON', async () => {
+    mockApi.mockResolvedValueOnce({ ...userProfile, callConfig: cc });
+    await run('create', '--kind', 'routing', '--label', 'X', '--call-config', JSON.stringify(cc));
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/profiles', { kind: 'routing', label: 'X', callConfig: cc });
+  });
+
+  it('create --call-config @file reads the file', async () => {
+    const { mkdtempSync, writeFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { tmpdir } = await import('node:os');
+    const file = join(mkdtempSync(join(tmpdir(), 'cc-')), 'cc.json');
+    writeFileSync(file, JSON.stringify(cc));
+    mockApi.mockResolvedValueOnce(userProfile);
+    await run('create', '--kind', 'routing', '--label', 'X', '--call-config', `@${file}`, '--json');
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/profiles', { kind: 'routing', label: 'X', callConfig: cc });
+    expect(JSON.parse(out.join('\n')).id).toBe('user-1');
+  });
+
+  it('create --call-config exits 1 on invalid JSON, without calling the API', async () => {
+    await expect(run('create', '--kind', 'routing', '--label', 'X', '--call-config', '{nope')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(err.join('\n')).toContain('Invalid call configuration JSON');
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('create --call-config exits 1 for a non-routing kind', async () => {
+    await expect(run('create', '--kind', 'security', '--label', 'X', '--call-config', '{}')).rejects.toThrow('exit');
+    expect(err.join('\n')).toContain('routing profiles');
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('create --call-config exits 1 on 400 from the service', async () => {
+    const { ApiError } = await import('../api.js');
+    mockApi.mockRejectedValueOnce(new ApiError(400, 'tiers: unrecognized key'));
+    await expect(run('create', '--kind', 'routing', '--label', 'X', '--call-config', '{"enabled":true,"tiers":{"x":{}}}')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(err.join('\n')).toContain('unrecognized key');
+  });
+
+  it('update --call-config PATCHes the profile', async () => {
+    mockApi.mockResolvedValueOnce({ ...userProfile, callConfig: cc });
+    await run('update', 'user-1', '--call-config', JSON.stringify(cc));
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/profiles/user-1', { callConfig: cc });
+    expect(out.join('\n')).toContain('saved');
+  });
+
+  it('update --clear-call-config sends null; --json is parseable', async () => {
+    mockApi.mockResolvedValueOnce(userProfile);
+    await run('update', 'user-1', '--clear-call-config', '--json');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/profiles/user-1', { callConfig: null });
+    expect(JSON.parse(out.join('\n')).id).toBe('user-1');
+  });
+
+  it('update with no option or both options exits 1', async () => {
+    await expect(run('update', 'user-1')).rejects.toThrow('exit');
+    await expect(run('update', 'user-1', '--call-config', '{}', '--clear-call-config')).rejects.toThrow('exit');
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('update exits 1 on 403', async () => {
+    const { ApiError } = await import('../api.js');
+    mockApi.mockRejectedValueOnce(new ApiError(403, 'Forbidden'));
+    await expect(run('update', 'user-1', '--clear-call-config')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(err.join('\n')).toContain('Forbidden');
+  });
+});

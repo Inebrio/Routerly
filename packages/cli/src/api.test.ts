@@ -114,6 +114,22 @@ describe('api() error handling', () => {
     await expect(api('GET', '/api/models')).rejects.toThrow('Invalid optimizers config: ccr: threshold must be at least 1')
   })
 
+  it('reads zod flatten() details (router 400) into the message', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false, status: 400, statusText: 'Bad Request',
+      json: async () => ({ error: 'Invalid callConfig', details: { formErrors: [], fieldErrors: { tiers: ['Unrecognized key: "x"'] } } }),
+    }))
+    await expect(api('PUT', '/api/routers/r1', {})).rejects.toThrow('Invalid callConfig: tiers: Unrecognized key: "x"')
+  })
+
+  it('reads a zod flatten() object sent as the error itself (profile 400)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false, status: 400, statusText: 'Bad Request',
+      json: async () => ({ error: { formErrors: [], fieldErrors: { callConfig: ['Required'] } } }),
+    }))
+    await expect(api('PATCH', '/api/profiles/p1', {})).rejects.toThrow('callConfig: Required')
+  })
+
   it('throws ApiError when response is not ok', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       status: 403,
