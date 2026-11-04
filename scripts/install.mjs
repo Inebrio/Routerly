@@ -80,6 +80,9 @@ const ENV_INSTALL_CLI  = process.env.ROUTERLY_INSTALL_CLI;
 const ENV_INSTALL_DASH = process.env.ROUTERLY_INSTALL_DASHBOARD;
 const ENV_DAEMON       = process.env.ROUTERLY_DAEMON;
 
+const COPY_SKIP_DIRS = ['node_modules', '.git', '.github', '.vscode', 'spec'];
+const MANIFEST_NAME  = '.routerly-manifest.json';
+
 // ─── Platform ─────────────────────────────────────────────────────────────────
 const PLATFORM = process.platform; // 'linux' | 'darwin' | 'win32'
 const HOME     = os.homedir();
@@ -191,6 +194,30 @@ if (fs.existsSync(existingCliConfigPath)) {
 function isRouterlyAppDir(dir) {
   try { return JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8')).name === 'routerly'; }
   catch { return false; }
+}
+
+/** Remove empty directories under dir, bottom-up, then dir itself if empty. */
+async function removeEmptyDirs(dir, useSudo) {
+  for (const e of await fsp.readdir(dir, { withFileTypes: true })) {
+    if (e.isDirectory()) await removeEmptyDirs(path.join(dir, e.name), useSudo);
+  }
+  if ((await fsp.readdir(dir)).length === 0) await removeDir(dir, useSudo);
+}
+
+/** Uninstall an app dir: remove only what the installer put there (manifest files, build output), keep foreign files. */
+async function removeInstalledApp(dir, useSudo) {
+  let files;
+  try { files = JSON.parse(fs.readFileSync(path.join(dir, MANIFEST_NAME), 'utf-8')); }
+  catch { warn(`Skipped ${dir}: no install manifest, not created by this installer`); return; }
+  const owned = [MANIFEST_NAME, 'node_modules', ...files];
+  for (const pkg of fs.existsSync(path.join(dir, 'packages')) ? fs.readdirSync(path.join(dir, 'packages')) : []) {
+    owned.push(path.join('packages', pkg, 'node_modules'), path.join('packages', pkg, 'dist'));
+  }
+  for (const rel of owned) {
+    if (!path.isAbsolute(rel) && !rel.split(path.sep).includes('..')) await removeDir(path.join(dir, rel), useSudo);
+  }
+  await removeEmptyDirs(dir, useSudo);
+  success(`Removed Routerly files from ${dir}`);
 }
 
 /** Remove a path recursively, using sudo on POSIX if needed */
@@ -390,8 +417,7 @@ if (isExistingInstall && YES) {
     // Remove app dir
     const systemAppDirs = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
     for (const d of systemAppDirs) {
-      if (isRouterlyAppDir(d)) { await removeDir(d, needsSudo); success(`Removed ${d}`); }
-      else if (fs.existsSync(d)) warn(`Skipped ${d}: not created by the Routerly installer`);
+      if (fs.existsSync(d)) await removeInstalledApp(d, needsSudo);
     }
     const userAppDir = path.join(HOME, '.routerly', 'app');
     if (fs.existsSync(userAppDir)) { await removeDir(userAppDir, false); success(`Removed ${userAppDir}`); }
@@ -493,7 +519,7 @@ if (FLAG_SCOPE) {
   }
 }
 if (scope !== 'user' && scope !== 'system') {
-  die(`Invalid scope "${scope}". Must be "user" or "system".`);
+  die(`Invalid --scope "${scope}". Must be "user" or "system".`);
 }
 success(`Scope: ${c.bold(scope)}`);
 
@@ -757,11 +783,11 @@ step('3', 'Copying files & installing dependencies');
 // Copy source tree to APP_DIR
 info(`Copying source from ${c.dim(SOURCE_DIR)} to ${c.dim(APP_DIR)}...`);
 // Drop files of the previous version that the new source no longer has
-// (stale files can break the build, e.g. on downgrade). Only touches APP_DIR.
-if (isRouterlyAppDir(APP_DIR)) {
-  await pruneStale(SOURCE_DIR, APP_DIR, needsSudo);
-}
+// (stale files can break the build, e.g. on downgrade). Only removes files listed in the manifest the installer wrote.
+const sourceFiles = await listSourceFiles(SOURCE_DIR);
+await pruneStale(sourceFiles, APP_DIR, needsSudo);
 await copyDir(SOURCE_DIR, APP_DIR, needsSudo);
+await writeFileP(path.join(APP_DIR, MANIFEST_NAME), JSON.stringify(sourceFiles), needsSudo);
 success('Source files copied');
 
 // For system installs the directory was created/populated with sudo.
@@ -1135,18 +1161,26 @@ async function runCmd(cmd, cwd) {
   }
 }
 
-/** Remove from dest every entry missing in src, keeping dependencies and build output. */
-async function pruneStale(src, dest, useSudo = false) {
-  const keep = ['node_modules', 'dist'];
-  for (const entry of await fsp.readdir(dest, { withFileTypes: true })) {
-    if (keep.includes(entry.name)) continue;
-    const srcPath  = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
-    const srcStat  = await fsp.stat(srcPath).catch(() => null);
-    if (srcStat?.isDirectory() && entry.isDirectory()) {
-      await pruneStale(srcPath, destPath, useSudo);
-    } else if (!srcStat || srcStat.isDirectory() !== entry.isDirectory()) {
-      await removeDir(destPath, useSudo);
+/** Relative paths of every file copyDir copies from dir. */
+async function listSourceFiles(dir, rel = '') {
+  const out = [];
+  for (const entry of await fsp.readdir(path.join(dir, rel), { withFileTypes: true })) {
+    if (entry.isDirectory() && COPY_SKIP_DIRS.includes(entry.name)) continue;
+    const r = path.join(rel, entry.name);
+    if (entry.isDirectory()) out.push(...await listSourceFiles(dir, r));
+    else out.push(r);
+  }
+  return out;
+}
+
+/** Remove only files a previous install copied (per its manifest) that the new source no longer has. */
+async function pruneStale(files, dest, useSudo = false) {
+  let previous = [];
+  try { previous = JSON.parse(fs.readFileSync(path.join(dest, MANIFEST_NAME), 'utf-8')); } catch { return; }
+  const keep = new Set(files);
+  for (const rel of previous) {
+    if (!keep.has(rel) && !path.isAbsolute(rel) && !rel.split(path.sep).includes('..')) {
+      await removeDir(path.join(dest, rel), useSudo);
     }
   }
 }
@@ -1157,7 +1191,7 @@ async function copyDir(src, dest, useSudo = false) {
   const entries = await fsp.readdir(src, { withFileTypes: true });
   for (const entry of entries) {
     // Skip heavy dirs that aren't needed in the install target
-    if (entry.isDirectory() && ['node_modules', '.git', '.github', '.vscode', 'spec'].includes(entry.name)) {
+    if (entry.isDirectory() && COPY_SKIP_DIRS.includes(entry.name)) {
       continue;
     }
     const srcPath  = path.join(src, entry.name);

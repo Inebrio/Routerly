@@ -13,7 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
-- **Installer respects `--scope user` and never deletes folders it did not create.** `install.mjs` now accepts `--scope user` as well as `--scope=user`, detects a system install only from a real Routerly directory (not any existing `/opt/routerly`), and prunes/uninstalls app directories only when they hold the Routerly `package.json` (ROUT-581).
+- **Installer respects `--scope user` and never deletes folders it did not create.** `install.mjs` now accepts `--scope user` as well as `--scope=user`, detects a system install only from a real Routerly directory (not any existing `/opt/routerly`), and prunes and uninstalls only files listed in the manifest it wrote (`.routerly-manifest.json`), so foreign folders under the app directory survive (ROUT-581).
 
 ### Changed
 
