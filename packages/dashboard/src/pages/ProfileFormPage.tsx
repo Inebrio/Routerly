@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { DEFAULT_RANKING_ALGORITHM, type RankingAlgorithmId } from '@routerly/shared';
 import type { TFunction } from 'i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Save, ShieldOff } from 'lucide-react';
@@ -65,6 +66,9 @@ export function ProfileFormPage() {
   // a question they had no way to answer. They are still round-tripped so editing
   // a profile that was created with other values does not silently reset them.
   const [policies, setPolicies] = useState<PolicyItem[]>([]);
+  const [rankingAlgorithm, setRankingAlgorithm] = useState<RankingAlgorithmId>(DEFAULT_RANKING_ALGORITHM);
+  // Value stored on the server; on create/clone it stays 'default' so a non-default pick is sent.
+  const [storedRanking, setStoredRanking] = useState<RankingAlgorithmId>(DEFAULT_RANKING_ALGORITHM);
   const [selector, setSelector] = useState<SelectorType>('argmax');
   const [fallbackStrategy, setFallbackStrategy] = useState<FallbackStrategyType>('next-best');
   const [models, setModels] = useState<Model[]>([]);
@@ -83,6 +87,8 @@ export function ProfileFormPage() {
     setKind(p.kind);
     if (p.kind === 'routing') {
       setPolicies(p.policies.map(pol => ({ ...pol, internalId: mkPolicyId() })));
+      setRankingAlgorithm(p.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM);
+      if (!isCreate) setStoredRanking(p.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM);
       setSelector(p.selector);
       setFallbackStrategy(p.fallbackStrategy);
       setCallConfig(p.callConfig);
@@ -124,7 +130,7 @@ export function ProfileFormPage() {
 
   function configBody() {
     if (kind === 'routing') {
-      return { policies: policies.map(({ internalId: _drop, ...rest }) => rest), selector, fallbackStrategy, ...(callConfig !== undefined && { callConfig }) };
+      return { policies: policies.map(({ internalId: _drop, ...rest }) => rest), selector, fallbackStrategy, ...(rankingAlgorithm !== storedRanking && { rankingAlgorithm }), ...(callConfig !== undefined && { callConfig }) };
     }
     if (kind === 'optimizer') {
       return { optimizers: { steps: buildOptimizerSteps(rows) } };
@@ -199,7 +205,7 @@ export function ProfileFormPage() {
           <div style={readOnly ? { pointerEvents: 'none', opacity: 0.7 } : {}}>
             {/* Each editor prints its own heading, so the form does not repeat it. */}
             {kind === 'routing' && (
-              <RoutingPoliciesEditor policies={policies} setPolicies={setPolicies} availableModels={models} />
+              <RoutingPoliciesEditor policies={policies} setPolicies={setPolicies} availableModels={models} rankingAlgorithm={rankingAlgorithm} onRankingAlgorithmChange={setRankingAlgorithm} />
             )}
 
             {kind === 'routing' && (

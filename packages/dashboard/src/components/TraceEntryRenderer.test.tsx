@@ -1205,3 +1205,23 @@ describe('TraceEntryRenderer — router:call-config', () => {
     expect(screen.getAllByText(/Max output tokens 777/).length).toBeGreaterThan(0);
   });
 });
+
+describe('TraceEntryRenderer — ranking algorithm (ROUT-298)', () => {
+  it('shows the algorithm line on router:recap', () => {
+    render(<TraceEntryRenderer entry={{ message: 'router:recap', details: { rankingAlgorithm: 'default', rankingSource: 'router', final: [{ rank: 1, model: 'a/b', score: 0.5 }] } }} />);
+    expect(screen.getByText(/Ranking algorithm:/)).toBeTruthy();
+    expect(screen.getByText('Default')).toBeTruthy();
+  });
+
+  it('omits the line on old traces without the field', () => {
+    render(<TraceEntryRenderer entry={{ message: 'router:recap', details: { final: [{ rank: 1, model: 'a/b', score: 0.5 }] } }} />);
+    expect(screen.queryByText(/Ranking algorithm:/)).toBeNull();
+  });
+
+  it('renders orchestrator:recap as a recap with its own heading', () => {
+    render(<TraceEntryRenderer entry={{ message: 'orchestrator:recap', details: { rankingAlgorithm: 'default', final: [{ rank: 1, routerId: 'r1', model: 'Router A', score: 0.9 }] } }} />);
+    expect(screen.getByText('ORCHESTRATOR RANKING')).toBeTruthy();
+    expect(screen.getByText('Router A')).toBeTruthy();
+    expect(screen.getByText('0.900')).toBeTruthy();
+  });
+});

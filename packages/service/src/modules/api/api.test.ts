@@ -4930,6 +4930,102 @@ describe('PUT /api/routers/:id', () => {
   })
 })
 
+describe('rankingAlgorithm on routers (ROUT-298)', () => {
+  const stored = { id: 'p1', name: 'R', tokens: [], members: [], models: [] }
+  const json = { 'content-type': 'application/json' }
+
+  function seed(router: any = stored) {
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [router]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  it('PUT with router:write persists rankingAlgorithm and GET returns it', async () => {
+    setupAdminAuth()
+    seed()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/p1', headers: { ...adminAuthHeaders(), ...json },
+      payload: JSON.stringify({ name: 'R', models: [], rankingAlgorithm: 'default' }),
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().rankingAlgorithm).toBe('default')
+    expect(mockWriteConfig).toHaveBeenCalledWith('routers', [expect.objectContaining({ id: 'p1', rankingAlgorithm: 'default' })])
+
+    seed({ ...stored, rankingAlgorithm: 'default' })
+    const list = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
+    await app.close()
+    expect(list.json()[0].rankingAlgorithm).toBe('default')
+  })
+
+  it('PUT without the field keeps the stored value, and writes no key on a router that had none', async () => {
+    setupAdminAuth()
+    seed({ ...stored, rankingAlgorithm: 'default' })
+    const app = await buildApp()
+    const kept = await app.inject({ method: 'PUT', url: '/api/routers/p1', headers: { ...adminAuthHeaders(), ...json }, payload: JSON.stringify({ timeoutMs: 5000 }) })
+    expect(kept.json().rankingAlgorithm).toBe('default')
+
+    seed()
+    const untouched = await app.inject({ method: 'PUT', url: '/api/routers/p1', headers: { ...adminAuthHeaders(), ...json }, payload: JSON.stringify({ timeoutMs: 5000 }) })
+    await app.close()
+    expect('rankingAlgorithm' in untouched.json()).toBe(false)
+  })
+
+  it('PUT with an unregistered id (jev) is 400 and nothing is written', async () => {
+    setupAdminAuth()
+    seed()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/p1', headers: { ...adminAuthHeaders(), ...json },
+      payload: JSON.stringify({ name: 'R', models: [], rankingAlgorithm: 'jev' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toBe('Invalid rankingAlgorithm')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('PUT without router:write is 403', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'viewer-id', email: 'v@example.com', passwordHash: 'h', roleId: 'viewer', routerIds: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/p1', headers: { ...adminAuthHeaders(), ...json },
+      payload: JSON.stringify({ name: 'R', models: [], rankingAlgorithm: 'default' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('POST stores a valid rankingAlgorithm, rejects jev with 400, and 403 without router:write', async () => {
+    setupAdminAuth()
+    seed()
+    const app = await buildApp()
+    const ok = await app.inject({ method: 'POST', url: '/api/routers', headers: { ...adminAuthHeaders(), ...json }, payload: JSON.stringify({ name: 'New', rankingAlgorithm: 'default' }) })
+    expect(ok.statusCode).toBe(201)
+    expect(ok.json().rankingAlgorithm).toBe('default')
+    const bad = await app.inject({ method: 'POST', url: '/api/routers', headers: { ...adminAuthHeaders(), ...json }, payload: JSON.stringify({ name: 'New2', rankingAlgorithm: 'jev' }) })
+    expect(bad.statusCode).toBe(400)
+    const plain = await app.inject({ method: 'POST', url: '/api/routers', headers: { ...adminAuthHeaders(), ...json }, payload: JSON.stringify({ name: 'New3' }) })
+    expect('rankingAlgorithm' in plain.json()).toBe(false)
+
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'users' ? [{ id: 'viewer-id', email: 'v@example.com', passwordHash: 'h', roleId: 'viewer', routerIds: [] }] : [])
+    const forbidden = await app.inject({ method: 'POST', url: '/api/routers', headers: { ...adminAuthHeaders(), ...json }, payload: JSON.stringify({ name: 'New4', rankingAlgorithm: 'default' }) })
+    await app.close()
+    expect(forbidden.statusCode).toBe(403)
+  })
+})
+
 describe('DELETE /api/routers/:id', () => {
   it('deletes router', async () => {
     setupAdminAuth()

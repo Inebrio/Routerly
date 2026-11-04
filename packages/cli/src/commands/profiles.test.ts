@@ -199,6 +199,14 @@ describe('profiles show', () => {
     expect(out).not.toContain('next-best');
   });
 
+  it('shows the ranking algorithm of a routing profile, defaulting when unset', async () => {
+    mockApi.mockResolvedValueOnce([builtinProfile, { ...userProfile, rankingAlgorithm: 'default' }]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'profiles', 'show', 'auto']);
+    expect(lines.join('\n')).toContain('ranking algorithm: default');
+  });
+
   it('shows the step pipeline for an optimizer profile', async () => {
     mockApi.mockResolvedValueOnce([optimizerProfile]);
     const lines: string[] = [];
@@ -311,8 +319,77 @@ describe('profiles create', () => {
     expect(mockApi).not.toHaveBeenCalled();
   });
 
+  it('sends --ranking-algorithm for a routing profile', async () => {
+    mockApi.mockResolvedValueOnce({ ...userProfile, rankingAlgorithm: 'default' });
+    await makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'routing', '--label', 'R', '--ranking-algorithm', 'default']);
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/profiles', { kind: 'routing', label: 'R', rankingAlgorithm: 'default' });
+  });
+
+  it('rejects --ranking-algorithm on a non-routing kind before calling the API', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'security', '--label', 'S', '--ranking-algorithm', 'default'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('only valid with --kind routing'));
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unknown --ranking-algorithm without calling the API', async () => {
+    await expect(makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'routing', '--label', 'R', '--ranking-algorithm', 'jev'])).rejects.toThrow();
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
   it('errors when --label is missing (Commander required option)', async () => {
     await expect(makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'routing'])).rejects.toThrow();
+  });
+});
+
+// ─── profiles update ───────────────────────────────────────────────────────
+
+describe('profiles update', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('PATCHes the ranking algorithm and prints the new version', async () => {
+    mockApi.mockResolvedValueOnce({ ...userProfile, version: 2, rankingAlgorithm: 'default' });
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'profiles', 'update', 'user-1', '--ranking-algorithm', 'default']);
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/profiles/user-1', { rankingAlgorithm: 'default' });
+    expect(lines.join('\n')).toContain('Updated routing profile "My Custom" (version 2)');
+  });
+
+  it('sends label and algorithm together and prints parseable JSON with --json', async () => {
+    const updated = { ...userProfile, version: 2, label: 'Renamed', rankingAlgorithm: 'default' };
+    mockApi.mockResolvedValueOnce(updated);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'profiles', 'update', 'user-1', '--label', 'Renamed', '--ranking-algorithm', 'default', '--json']);
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/profiles/user-1', { label: 'Renamed', rankingAlgorithm: 'default' });
+    expect(JSON.parse(lines.join('\n'))).toEqual(updated);
+  });
+
+  it('exits 1 when no option is given', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'profiles', 'update', 'user-1'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('provide --label, --ranking-algorithm, --call-config and/or --clear-call-config'));
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unknown algorithm without calling the API', async () => {
+    await expect(makeCmd().parseAsync(['node', 'profiles', 'update', 'user-1', '--ranking-algorithm', 'jev'])).rejects.toThrow();
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('exits 1 with the message on a built-in conflict', async () => {
+    const { ApiError } = await import('../api.js');
+    mockApi.mockRejectedValueOnce(new ApiError(409, 'immutable_builtin_profile'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'profiles', 'update', 'auto', '--ranking-algorithm', 'default'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('immutable_builtin_profile'));
   });
 });
 
@@ -597,7 +674,7 @@ describe('profiles call configuration', () => {
     mockApi.mockResolvedValueOnce({ ...userProfile, callConfig: cc });
     await run('update', 'user-1', '--call-config', JSON.stringify(cc));
     expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/profiles/user-1', { callConfig: cc });
-    expect(out.join('\n')).toContain('saved');
+    expect(out.join('\n')).toContain('Updated');
   });
 
   it('update --clear-call-config sends null; --json is parseable', async () => {

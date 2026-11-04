@@ -11,6 +11,12 @@ vi.mock('../../AuthContext', () => ({
   useAuth: () => ({ can: (p: string) => (p === 'router:write' ? mockCanWrite : true) }),
 }));
 
+// A second algorithm so a change can be exercised (the registry holds one until ROUT-299).
+vi.mock('@routerly/shared', async (importActual) => ({
+  ...(await importActual<typeof import('@routerly/shared')>()),
+  RANKING_ALGORITHMS: ['default', 'alt'],
+}));
+
 vi.mock('../../api', () => ({
   getModels: vi.fn(),
   updateRouter: vi.fn(),
@@ -2413,5 +2419,40 @@ describe('RouterRoutingTab — call configuration', () => {
     await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
     await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
     expect(mockUpdateRouter.mock.calls[mockUpdateRouter.mock.calls.length - 1]![1]).toMatchObject({ callConfig: { enabled: true, tiers: { low: { effort: 'low', maxOutputTokens: 2048 } } } });
+  });
+});
+
+describe('RouterRoutingTab — ranking algorithm', () => {
+  it('shows the select above Routing Policies with Default selected', async () => {
+    renderTab();
+    const sel = await screen.findByDisplayValue('Default');
+    const policies = screen.getByText('Routing Policies');
+    expect(sel.compareDocumentPosition(policies) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('does not send rankingAlgorithm when unchanged', async () => {
+    renderTab();
+    await screen.findByDisplayValue('Default');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Routing Configuration' }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    expect(mockUpdateRouter.mock.calls[0]![1]).not.toHaveProperty('rankingAlgorithm');
+  });
+
+  it('sends rankingAlgorithm when changed', async () => {
+    renderTab();
+    await userEvent.selectOptions(await screen.findByDisplayValue('Default'), 'alt');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Routing Configuration' }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalledWith('proj-1', expect.objectContaining({ rankingAlgorithm: 'alt' })));
+  });
+
+  it('is disabled without router:write', async () => {
+    mockCanWrite = false;
+    renderTab();
+    expect(await screen.findByDisplayValue('Default')).toBeDisabled();
+  });
+
+  it('shows a read-only line in profile mode', async () => {
+    renderTab({ ...mockRouter, routingProfileId: 'auto' });
+    expect(await screen.findByText(/Ranking algorithm: Default \(from profile\)/)).toBeInTheDocument();
   });
 });

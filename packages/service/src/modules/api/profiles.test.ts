@@ -259,6 +259,53 @@ describe('POST /api/profiles/clone', () => {
   })
 })
 
+describe('rankingAlgorithm on routing profiles (ROUT-298)', () => {
+  it('POST persists a valid rankingAlgorithm, writes no key when absent, and 400s on jev', async () => {
+    const app = await buildApp()
+    const ok = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'routing', label: 'R', rankingAlgorithm: 'default' } })
+    expect(ok.statusCode).toBe(201)
+    expect(JSON.parse(ok.body).rankingAlgorithm).toBe('default')
+    const plain = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'routing', label: 'R2' } })
+    expect('rankingAlgorithm' in JSON.parse(plain.body)).toBe(false)
+    mockWriteConfig.mockClear()
+    const bad = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'routing', label: 'R3', rankingAlgorithm: 'jev' } })
+    await app.close()
+    expect(bad.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('POST on a non-routing kind does not store the field', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'optimizer', label: 'O', rankingAlgorithm: 'default' } })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect('rankingAlgorithm' in JSON.parse(res.body)).toBe(false)
+  })
+
+  it('PATCH with profiles:manage sets it (200, persisted, version bumped); 403 without; 400 on jev', async () => {
+    const app = await buildApp()
+    const ok = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile] }), payload: { rankingAlgorithm: 'default' } })
+    expect(ok.statusCode).toBe(200)
+    expect(JSON.parse(ok.body)).toMatchObject({ rankingAlgorithm: 'default', version: 2 })
+    expect(mockWriteConfig).toHaveBeenCalledWith('profiles', [expect.objectContaining({ id: 'u1', rankingAlgorithm: 'default' })])
+    mockWriteConfig.mockClear()
+    const forbidden = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:read', { profiles: [userProfile] }), payload: { rankingAlgorithm: 'default' } })
+    expect(forbidden.statusCode).toBe(403)
+    const bad = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile] }), payload: { rankingAlgorithm: 'jev' } })
+    await app.close()
+    expect(bad.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('PATCH on a built-in profile keeps the existing immutable rejection', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/auto', headers: authWith('profiles:manage', { profiles: [] }), payload: { rankingAlgorithm: 'default' } })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+    expect(JSON.parse(res.body).error).toBe('immutable_builtin_profile')
+  })
+})
+
 // ─── PATCH /api/profiles/:id ─────────────────────────────────────────────────
 
 describe('PATCH /api/profiles/:id', () => {

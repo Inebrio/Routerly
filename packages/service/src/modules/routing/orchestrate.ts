@@ -1,10 +1,11 @@
-import type { OrchestratorCandidateRef, RouterConfig, RoutingPolicy, UsageRecord } from '@routerly/shared';
+import { DEFAULT_RANKING_ALGORITHM, type OrchestratorCandidateRef, type RankingAlgorithmId, type RouterConfig, type RoutingPolicy, type UsageRecord } from '@routerly/shared';
 import type { ProcessorRegistry } from '../../core/index.js';
 import type { ProxyContext } from '../reverse-proxy/context.js';
 import { readUsageRecords } from '../usage/usageStore.js';
 import { readConfig } from '../config/loader.js';
 import { isOrchestratorCandidateAllowed, getOrchestratorCandidateLimitSnapshot, type LimitSnapshot } from '../budget/budget.js';
 import { runCandidateLoop } from '../reverse-proxy/candidate-loop.js';
+import { resolveRankingAlgorithm } from './ranking/index.js';
 import { decayWeightedErrorScore, decayWeightedLatencyAverage, relativeLatencyScore, ratioScore, shareScore } from './policies/scoring.js';
 
 // Same policy types, same config keys and defaults as the plain-Router policies these
@@ -64,6 +65,16 @@ function budgetRemainingScore(snapshots: LimitSnapshot[]): number {
   return Math.max(0, Math.min(1, minHeadroom));
 }
 
+export type OrchestratorScored = { candidate: OrchestratorCandidateRef; quality: number; index: number };
+
+/** Orchestrator counterpart of ranking/index.ts RANKING_MAP: how the per-candidate quality becomes the order. */
+const ORCHESTRATOR_RANKING: Record<RankingAlgorithmId, (scored: OrchestratorScored[]) => OrchestratorScored[]> = {
+  default: scored => scored.sort((a, b) => {
+    if (Math.abs(a.quality - b.quality) >= 0.0001) return b.quality - a.quality;
+    return a.index - b.index; // AC3: earlier position in the input array wins the tie, always unique
+  }),
+};
+
 /**
  * Orders an Orchestrator's candidate Routers by a priority-position/health/rate-limit/
  * fairness/performance/budget-remaining blend, most-preferred first. Adapts the
@@ -100,6 +111,8 @@ export async function scoreOrchestratorCandidates(
   candidates: OrchestratorCandidateRef[],
   liveRouters: RouterConfig[],
   policies?: RoutingPolicy[],
+  rankingAlgorithm: RankingAlgorithmId = DEFAULT_RANKING_ALGORITHM,
+  onRanked?: (ranked: OrchestratorScored[]) => void,
 ): Promise<OrchestratorCandidateRef[]> {
   const liveRouterKind = new Map(liveRouters.map(r => [r.id, r.kind ?? 'router']));
   const valid = candidates.filter(c => liveRouterKind.get(c.routerId) === 'router');
@@ -158,12 +171,10 @@ export async function scoreOrchestratorCandidates(
     return { candidate, quality, index };
   });
 
-  scored.sort((a, b) => {
-    if (Math.abs(a.quality - b.quality) >= 0.0001) return b.quality - a.quality;
-    return a.index - b.index; // AC3: earlier position in the input array wins the tie, always unique
-  });
+  const ranked = ORCHESTRATOR_RANKING[rankingAlgorithm](scored);
+  onRanked?.(ranked);
 
-  return scored.map(s => s.candidate);
+  return ranked.map(s => s.candidate);
 }
 
 /**
@@ -212,7 +223,22 @@ export async function forwardToRouter(
 ): Promise<void> {
   const liveRouters = await readConfig('routers');
   const liveById = new Map(liveRouters.map(r => [r.id, r]));
-  const ordered = await scoreOrchestratorCandidates(orchestrator.id, orchestrator.candidates ?? [], liveRouters, orchestrator.policies);
+  const rankingAlgorithm = resolveRankingAlgorithm(orchestrator.rankingAlgorithm, ctx.log);
+  const ordered = await scoreOrchestratorCandidates(orchestrator.id, orchestrator.candidates ?? [], liveRouters, orchestrator.policies, rankingAlgorithm, ranked => {
+    ctx.emit?.({
+      panel: 'router-response',
+      message: 'orchestrator:recap',
+      details: {
+        rankingAlgorithm,
+        final: ranked.map((r, i) => ({
+          rank: i + 1,
+          model: liveById.get(r.candidate.routerId)?.name ?? r.candidate.routerId,
+          routerId: r.candidate.routerId,
+          score: +r.quality.toFixed(4),
+        })),
+      },
+    });
+  });
 
   ctx.orchestratorId = orchestrator.id;
 

@@ -514,7 +514,13 @@ routerly router remove <router>
 
 #### `routerly router routing show <router>`
 
-Display the routing configuration (auto-routing flag, routing model, fallback models, and policy stack).
+```
+routerly router routing show <router> [--json]
+```
+
+Display the routing configuration (auto-routing flag, routing model, fallback models, ranking algorithm, and policy stack). The ranking algorithm is the effective one: when the router is bound to a routing profile, the profile's value is shown with `(profile <label>)`, otherwise `(router)`.
+
+`--json` prints `{ routerId, routingProfileId, rankingAlgorithm, rankingSource, policies }` instead, where `rankingSource` is `router` or `profile`.
 
 #### `routerly router routing update <router>`
 
@@ -527,6 +533,9 @@ routerly router routing update <router> [options]
 | `--routing-model <id>` | Model ID used for LLM-based routing decisions (must be in the model registry, otherwise the service answers 400) |
 | `--fallback-models <ids>` | Comma-separated fallback routing model IDs |
 | `--auto-routing` / `--no-auto-routing` | Enable or disable auto-routing |
+| `--ranking-algorithm <id>` | Ranking algorithm: how policy results become the candidate order. Only `default` exists today; any other value is rejected with exit code 1 |
+
+If the router is bound to a routing profile, the profile's algorithm applies; the command still saves the router's value and prints `warning: router uses profile "<label>"; its ranking algorithm applies` to stderr.
 
 #### `routerly router routing policy list <router>`
 
@@ -1426,7 +1435,7 @@ Requires `profiles:read` permission.
 ### `routerly profiles create`
 
 ```
-routerly profiles create --kind <kind> --label <label> [--json]
+routerly profiles create --kind <kind> --label <label> [--ranking-algorithm <id>] [--json]
 ```
 
 Create an empty profile of the given kind. The CLI has no editor for profile bodies: fill the new profile in from the dashboard, or use `clone` to start from a preset.
@@ -1435,11 +1444,13 @@ Create an empty profile of the given kind. The CLI has no editor for profile bod
 |--------|-------------|
 | `--kind <kind>` | `routing`, `optimizer` or `security` - required |
 | `--label <label>` | Label for the new profile - required |
+| `--ranking-algorithm <id>` | Ranking algorithm, `routing` profiles only (`default`); with another kind the command exits 1 |
 | `--call-config <json\|@file>` | Routing kind only: a [call configuration](../concepts/call-configuration.md) as inline JSON or `@path` |
 | `--json` | Output the created profile as raw JSON |
 
 ```bash
 routerly profiles create --kind routing --label "My Routing"
+routerly profiles create --kind routing --label "My Routing" --ranking-algorithm default
 routerly profiles create --kind routing --label "Capped" --call-config '{"enabled":true,"tiers":{"low":{"maxOutputTokens":512}}}'
 routerly profiles create --kind security --label "My Guardrails" --json
 ```
@@ -1454,19 +1465,28 @@ Requires `profiles:manage` permission.
 ### `routerly profiles update`
 
 ```
-routerly profiles update <id> (--call-config <json|@file> | --clear-call-config) [--json]
+routerly profiles update <id> [--label <label>] [--ranking-algorithm <id>] [--call-config <json|@file> | --clear-call-config] [--json]
 ```
 
-Replaces or removes the call configuration of a user-created routing profile. The two options are mutually exclusive and one is required; the service validates the JSON and answers `400` when it is invalid.
+Update a user profile. At least one of `--label`, `--ranking-algorithm`, `--call-config` or `--clear-call-config` is required, otherwise the command exits 1 with `Error: provide --label, --ranking-algorithm, --call-config and/or --clear-call-config.` Built-in profiles cannot be changed. `--call-config` and `--clear-call-config` are mutually exclusive; the service validates the call configuration JSON and answers `400` when it is invalid.
+
+| Option | Description |
+|--------|-------------|
+| `--label <label>` | New label |
+| `--ranking-algorithm <id>` | Ranking algorithm, `routing` profiles only (`default`) |
+| `--call-config <json\|@file>` | Replace the [call configuration](../concepts/call-configuration.md), `routing` profiles only |
+| `--clear-call-config` | Remove the call configuration |
+| `--json` | Output the updated profile as raw JSON |
 
 ```bash
+routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --ranking-algorithm default
 routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --call-config @call-config.json
 routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --clear-call-config
 ```
 
 **Output on success:**
 ```
-✓ Call configuration saved on routing profile "Capped"
+✓ Updated routing profile "My Routing" (version 2)
 ```
 
 Requires `profiles:manage` permission.

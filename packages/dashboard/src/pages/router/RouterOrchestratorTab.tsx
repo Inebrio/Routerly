@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Check, ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
 import { getRouters, updateRouter, type Router } from '../../api';
+import { DEFAULT_RANKING_ALGORITHM, type RankingAlgorithmId } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
+import { useAuth } from '../../AuthContext';
+import { ReadOnlyFieldset } from '../../components/ProfileDraftControls';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { LimitRowsEditor, limitsToRows, limitRowsToLimits, type LimitRow } from '../../components/LimitRowsEditor';
@@ -33,6 +36,7 @@ function mkId() {
 export function RouterOrchestratorTab() {
   const { t } = useTranslation();
   const { router, setRouter } = useRouter();
+  const canWrite = useAuth().can('router:write');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -40,6 +44,7 @@ export function RouterOrchestratorTab() {
   const [candidateRouters, setCandidateRouters] = useState<Router[]>([]);
   const [rows, setRows] = useState<CandidateRow[]>([]);
   const [policies, setPolicies] = useState<PolicyItem[]>([]);
+  const [rankingAlgorithm, setRankingAlgorithm] = useState<RankingAlgorithmId>(DEFAULT_RANKING_ALGORITHM);
 
   useEffect(() => {
     getRouters()
@@ -57,6 +62,7 @@ export function RouterOrchestratorTab() {
     setRows((router.candidates ?? []).map(c => ({
       internalId: mkId(), routerId: c.routerId, limitRows: limitsToRows(c.limits),
     })));
+    setRankingAlgorithm(router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM);
     setPolicies((router.policies ?? []).map(p => ({ ...p, internalId: mkPolicyId() })));
   }, [router]);
 
@@ -69,6 +75,8 @@ export function RouterOrchestratorTab() {
       r.routerId !== savedCandidates[i]!.routerId ||
       JSON.stringify(limitRowsToLimits(r.limitRows)) !== JSON.stringify(savedCandidates[i]!.limits ?? [])
     )) return true;
+
+    if (rankingAlgorithm !== (router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM)) return true;
 
     const savedPolicies = router.policies ?? [];
     if (policies.length !== savedPolicies.length) return true;
@@ -156,6 +164,7 @@ export function RouterOrchestratorTab() {
           const { internalId: _internalId, ...rest } = p;
           return rest;
         }),
+        ...(rankingAlgorithm !== (router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM) && { rankingAlgorithm }),
       };
       const updated = await updateRouter(router.id, payload);
       setRouter(updated);
@@ -189,6 +198,8 @@ export function RouterOrchestratorTab() {
       <form onSubmit={handleSubmit} style={{ maxWidth: 800 }}>
         {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
+        <ReadOnlyFieldset readOnly={!canWrite}>
+
         <div className="form-group">
           <label className="form-label">{t('routers.orchestrator.routingPolicies')}</label>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
@@ -199,6 +210,9 @@ export function RouterOrchestratorTab() {
             setPolicies={setPolicies}
             availableModels={[]}
             allowedTypes={ORCHESTRATOR_POLICY_TYPES}
+            rankingAlgorithm={rankingAlgorithm}
+            onRankingAlgorithmChange={setRankingAlgorithm}
+            rankingAlgorithmContext="orchestrator"
           />
         </div>
 
@@ -218,7 +232,7 @@ export function RouterOrchestratorTab() {
                 <div
                   key={row.internalId}
                   id={`candidate-row-${idx}`}
-                  draggable
+                  draggable={canWrite}
                   onDragStart={e => onDragStartRow(e, idx)}
                   onDragEnter={e => onDragEnterRow(e, idx)}
                   onDragEnd={e => onDragEndRow(e, idx)}
@@ -317,7 +331,9 @@ export function RouterOrchestratorTab() {
           </button>
         </div>
 
-        <div style={{ marginTop: 32 }}>
+        </ReadOnlyFieldset>
+
+        {canWrite && <div style={{ marginTop: 32 }}>
           <button
             type="button"
             className="btn btn-primary"
@@ -333,7 +349,7 @@ export function RouterOrchestratorTab() {
               t('routers.orchestrator.saveCandidates')
             )}
           </button>
-        </div>
+        </div>}
       </form>
 
       {isBlocked && <UnsavedChangesModal onConfirm={proceed} onCancel={reset} />}

@@ -67,6 +67,7 @@ export async function resolveRoutingProfile(router: RouterConfig): Promise<Routi
     version: 1,
     policies: structuredClone(router.policies ?? fallback.policies),
     ...(router.callConfig ? { callConfig: structuredClone(router.callConfig) } : {}),
+    ...(router.rankingAlgorithm !== undefined ? { rankingAlgorithm: router.rankingAlgorithm } : {}),
   };
 }
 

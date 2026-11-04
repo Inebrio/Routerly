@@ -1328,6 +1328,113 @@ describe('routing update', () => {
   });
 });
 
+// ─── ranking algorithm (ROUT-298) ──────────────────────────────────────────────
+
+describe('ranking algorithm (ROUT-298)', () => {
+  const boundRouter = { ...baseRouter, routingProfileId: 'prof-1', rankingAlgorithm: 'default' as const };
+  const routingProfile = { id: 'prof-1', kind: 'routing' as const, version: 1, label: 'Fast', policies: [{ type: 'health' as const, enabled: true }], selector: 'argmax', fallbackStrategy: 'next-best', builtin: false };
+
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('routing show --json reports the router-sourced algorithm without fetching profiles', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api', '--json']);
+    expect(JSON.parse(lines.join('\n'))).toEqual({
+      routerId: 'proj-1',
+      routingProfileId: null,
+      rankingAlgorithm: 'default',
+      rankingSource: 'router',
+      policies: [],
+    });
+    expect(mockApi).toHaveBeenCalledTimes(1);
+  });
+
+  it('routing show --json reports the profile-sourced algorithm and policies', async () => {
+    mockApi.mockResolvedValueOnce([boundRouter]).mockResolvedValueOnce([routingProfile]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api', '--json']);
+    expect(mockApi).toHaveBeenCalledWith('GET', '/api/profiles?kind=routing');
+    expect(JSON.parse(lines.join('\n'))).toEqual({
+      routerId: 'proj-1',
+      routingProfileId: 'prof-1',
+      rankingAlgorithm: 'default',
+      rankingSource: 'profile',
+      policies: routingProfile.policies,
+    });
+  });
+
+  it('routing show prints the ranking algorithm line', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api']);
+    expect(lines.join('\n')).toMatch(/Ranking algorithm:\s+default.*\(router\)/);
+  });
+
+  it('routing show names the bound profile as the source', async () => {
+    mockApi.mockResolvedValueOnce([boundRouter]).mockResolvedValueOnce([routingProfile]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api']);
+    expect(lines.join('\n')).toContain('(profile Fast)');
+  });
+
+  it('routing update --ranking-algorithm sends the field in the PUT body', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'update', 'my-api', '--ranking-algorithm', 'default']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    expect(putCall![2]).toMatchObject({ rankingAlgorithm: 'default' });
+  });
+
+  it('routing update without --ranking-algorithm omits the field', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'update', 'my-api', '--auto-routing']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    expect(putCall![2]).not.toHaveProperty('rankingAlgorithm');
+  });
+
+  it('routing update warns on stderr when a bound profile decides the algorithm', async () => {
+    mockApi.mockResolvedValueOnce([boundRouter]).mockResolvedValueOnce([routingProfile]).mockResolvedValueOnce(undefined);
+    const errs: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((...a) => errs.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'update', 'my-api', '--ranking-algorithm', 'default']);
+    expect(errs.join('\n')).toContain('router uses profile "Fast"');
+    expect(mockApi.mock.calls.some(c => c[0] === 'PUT')).toBe(true);
+  });
+
+  it('routing update rejects an unknown algorithm without calling the API', async () => {
+    await expect(
+      makeCmd().parseAsync(['node', 'router', 'routing', 'update', 'my-api', '--ranking-algorithm', 'jev']),
+    ).rejects.toThrow();
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('routing update exits 1 with the message on a 403', async () => {
+    const { ApiError } = await import('../api.js');
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(
+      makeCmd().parseAsync(['node', 'router', 'routing', 'update', 'my-api', '--ranking-algorithm', 'default']),
+    ).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
+  });
+
+  it('router show prints the Ranking line', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce([]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
+    expect(lines.join('\n')).toMatch(/Ranking:\s+default/);
+  });
+});
+
 // ─── routing policy ────────────────────────────────────────────────────────────
 
 describe('routing policy list', () => {

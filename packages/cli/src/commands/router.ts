@@ -1,8 +1,8 @@
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import { DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TIERS, CALL_SETTINGS, CALL_MAX_OUTPUT_TOKENS_MIN, CALL_MAX_OUTPUT_TOKENS_MAX } from '@routerly/shared';
+import { DEFAULT_RANKING_ALGORITHM, RANKING_ALGORITHMS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TIERS, CALL_SETTINGS, CALL_MAX_OUTPUT_TOKENS_MIN, CALL_MAX_OUTPUT_TOKENS_MAX } from '@routerly/shared';
 import { readCallConfigArg, printCallConfig } from '../lib/call-config.js';
 import type { CallConfig, CallLevel, CallSettings, CallTier, Profile, RouterConfig, RouterKind, RouterModelRef, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
 
@@ -152,6 +152,23 @@ function parseLimitSpec(spec: string, idLabel: string = 'model'): { id: string; 
   return { id: id!, limit };
 }
 
+// ─── Helper: effective ranking algorithm ─────────────────────────────────────
+
+/**
+ * Mirrors the service's resolution (routing/profiles/store.ts): a bound routing profile that
+ * resolves wins over the router's own `rankingAlgorithm`, as it does for `policies`.
+ */
+async function resolveRanking(router: RouterConfig) {
+  const profileId = router.routingProfileId ?? router.profileId;
+  const profile = profileId
+    ? (await api<Profile[]>('GET', '/api/profiles?kind=routing')).find(p => p.id === profileId && p.kind === 'routing')
+    : undefined;
+  if (profile?.kind === 'routing') {
+    return { profileId: profileId ?? null, profileLabel: profile.label, algorithm: profile.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM, source: 'profile' as const, policies: profile.policies };
+  }
+  return { profileId: profileId ?? null, profileLabel: undefined, algorithm: router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM, source: 'router' as const, policies: router.policies ?? [] };
+}
+
 // ─── Routing subcommand group ─────────────────────────────────────────────────
 
 function makeRoutingCommand(): Command {
@@ -160,18 +177,32 @@ function makeRoutingCommand(): Command {
   // routing show <router>
   cmd.command('show <router>')
     .description('Show routing configuration for a router')
+    .option('--json', 'Output the effective ranking algorithm and policies as JSON')
     .addHelpText('after', `
 Examples:
   routerly router routing show my-api
+  routerly router routing show my-api --json
 `)
-    .action(async (nameOrId: string) => {
+    .action(async (nameOrId: string, opts: { json?: boolean }) => {
       try {
         const router = await resolveRouter(nameOrId);
+        const ranking = await resolveRanking(router);
+        if (opts.json) {
+          console.log(JSON.stringify({
+            routerId: router.id,
+            routingProfileId: ranking.profileId,
+            rankingAlgorithm: ranking.algorithm,
+            rankingSource: ranking.source,
+            policies: ranking.policies,
+          }, null, 2));
+          return;
+        }
         console.log(chalk.bold(`\nRouting — ${router.name}`));
         console.log(chalk.gray(`  Auto-routing:    `) + (router.autoRouting ? chalk.green('enabled') : chalk.yellow('disabled')));
         console.log(chalk.gray(`  Routing model:   `) + (router.routingModelId ?? chalk.gray('(not set)')));
         const fallbacks = router.fallbackRoutingModelIds ?? [];
         console.log(chalk.gray(`  Fallback models: `) + (fallbacks.length ? fallbacks.join(', ') : chalk.gray('(none)')));
+        console.log(chalk.gray(`  Ranking algorithm: `) + ranking.algorithm + chalk.gray(ranking.source === 'profile' ? ` (profile ${ranking.profileLabel})` : ' (router)'));
 
         const policies = router.policies ?? [];
         if (policies.length === 0) {
@@ -199,7 +230,7 @@ Examples:
 
   // routing update <router>
   cmd.command('update <router>')
-    .description('Update routing model and auto-routing settings')
+    .description('Update routing model, auto-routing and ranking algorithm settings')
     .addHelpText('after', `
 Examples:
   # Enable auto-routing with a specific routing model
@@ -210,12 +241,16 @@ Examples:
 
   # Set fallback routing models
   routerly router routing update my-api --fallback-models gpt-4o-mini,claude-3-5-haiku
+
+  # Set the ranking algorithm (how policy results become the candidate order)
+  routerly router routing update my-api --ranking-algorithm default
 `)
     .option('--routing-model <id>', 'Model ID to use for routing decisions')
     .option('--fallback-models <ids>', 'Comma-separated fallback routing model IDs')
     .option('--auto-routing', 'Enable auto-routing')
     .option('--no-auto-routing', 'Disable auto-routing')
-    .action(async (nameOrId: string, opts: { routingModel?: string; fallbackModels?: string; autoRouting?: boolean }) => {
+    .addOption(new Option('--ranking-algorithm <id>', 'Ranking algorithm: how policy results become the candidate order').choices(RANKING_ALGORITHMS))
+    .action(async (nameOrId: string, opts: { routingModel?: string; fallbackModels?: string; autoRouting?: boolean; rankingAlgorithm?: string }) => {
       try {
         const router = await resolveRouter(nameOrId);
         const body: Record<string, unknown> = {
@@ -228,7 +263,14 @@ Examples:
           fallbackRoutingModelIds: opts.fallbackModels
             ? opts.fallbackModels.split(',').map(s => s.trim()).filter(Boolean)
             : router.fallbackRoutingModelIds,
+          ...(opts.rankingAlgorithm !== undefined ? { rankingAlgorithm: opts.rankingAlgorithm } : {}),
         };
+        if (opts.rankingAlgorithm !== undefined) {
+          const { source, profileLabel } = await resolveRanking(router);
+          if (source === 'profile') {
+            console.error(chalk.yellow(`warning: router uses profile "${profileLabel}"; its ranking algorithm applies`));
+          }
+        }
         await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, body);
         console.log(chalk.green(`✓ Routing updated for "${router.name}".`));
       } catch (err) {
@@ -1296,6 +1338,7 @@ Examples:
         const policies = router.policies ?? [];
         const enabledPolicies = policies.filter(p => p.enabled).map(p => p.type);
         console.log(chalk.gray(`    Policies:        `) + (enabledPolicies.length ? enabledPolicies.join(', ') : chalk.gray('(none enabled)')));
+        console.log(chalk.gray(`    Ranking:         `) + (router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM));
 
         // Models
         console.log(chalk.bold('\n  Target Models'));

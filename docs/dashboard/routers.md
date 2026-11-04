@@ -87,6 +87,23 @@ start them from a profile, use **Copy into custom**; when custom policies
 already exist it asks for confirmation before replacing them, and the copy is
 still unsaved until you save.
 
+### Ranking Algorithm
+
+Above the policy editor, a **Ranking algorithm** select chooses how policy
+results become the order in which models are tried. `Default` (weighted mean
+of the policy scores) is the only option today, and it applies when nothing
+was ever set. Changing it marks the tab as unsaved; **Save Routing
+Configuration** persists it.
+
+In **Profile** mode the select is hidden. A line under the profile dropdown
+shows the profile's algorithm with a `from profile` note, because the
+profile's value wins. Change it on the [Profiles](./profiles.md) page.
+
+On an Orchestrator, the same select sits above the candidate policies, with a
+description about ordering candidate Routers, and **Save Candidates**
+persists it. A routing profile does not apply to an Orchestrator. Without
+`router:write` the select is read-only.
+
 ### Adding Models
 
 Use the **+ Add Model** button to pick from registered models. Models appear in a numbered list — their order determines the default routing priority (position 0 is highest).

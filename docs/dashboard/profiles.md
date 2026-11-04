@@ -104,6 +104,10 @@ not editable and no save button is shown. Clone one to customize it.
 
 ### Routing configuration
 
+- **Ranking algorithm**: select above the policies. `Default` (weighted mean
+  of the policy scores) is the only option today. It is saved only when you
+  change it, so an untouched profile keeps what is stored. Routers bound to
+  the profile use this value.
 - **Policies**: `health`, `context`, `capability`, `budget-remaining`,
   `rate-limit`, `semantic-intent`, `llm`, `performance`, `fairness`,
   `cheapest`, `model-preference`. Drag to reorder, toggle **Enabled**, remove

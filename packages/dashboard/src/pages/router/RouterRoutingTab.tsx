@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
 import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type RoutingProfile } from '../../api';
-import { PASSTHROUGH_MODEL_ID, type CallConfig } from '@routerly/shared';
+import { PASSTHROUGH_MODEL_ID, DEFAULT_RANKING_ALGORITHM, type CallConfig, type RankingAlgorithmId } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
 import { useAuth } from '../../AuthContext';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -31,6 +31,7 @@ export function RouterRoutingTab() {
 
   const [policies, setPolicies] = useState<PolicyItem[]>([]);
   const [targetModels, setTargetModels] = useState<TargetModel[]>([]);
+  const [rankingAlgorithm, setRankingAlgorithm] = useState<RankingAlgorithmId>(DEFAULT_RANKING_ALGORITHM);
   const [profiles, setProfiles] = useState<RoutingProfile[]>([]);
   // undefined until the operator touches the editor: then the save keeps the stored value.
   const [callConfig, setCallConfig] = useState<CallConfig | undefined>(undefined);
@@ -63,8 +64,8 @@ export function RouterRoutingTab() {
         setPolicies([]);
       }
 
+      setRankingAlgorithm(router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM);
       setCallConfig(router.callConfig);
-
       setTargetModels(router.models.map(m => ({
         internalId: Math.random().toString(36).substring(7),
         modelId: m.modelId,
@@ -76,6 +77,8 @@ export function RouterRoutingTab() {
   const isDirty = (() => {
     /* v8 ignore next */
     if (!router) return false;
+
+    if (rankingAlgorithm !== (router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM)) return true;
 
     const savedPolicies = router.policies || [];
     if (policies.length !== savedPolicies.length) return true;
@@ -236,6 +239,7 @@ export function RouterRoutingTab() {
           ...(m.prompt.trim() ? { prompt: m.prompt.trim() } : {}),
         })),
         ...(router.timeoutMs !== undefined && { timeoutMs: router.timeoutMs }),
+        ...(rankingAlgorithm !== (router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM) && { rankingAlgorithm }),
         ...(callConfig !== undefined && { callConfig }),
       };
       let updated = await updateRouter(router.id, payload);
@@ -348,6 +352,9 @@ export function RouterRoutingTab() {
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
                 {t('routers.routing.form.profileHint')}
               </p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                {t('common.rankingAlgorithm.title')}: {t(`common.rankingAlgorithm.options.${profiles.find(p => p.id === assignedProfileId)?.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM}.label`)} ({t('common.rankingAlgorithm.fromProfile')})
+              </p>
             </>
           )}
         </div>
@@ -366,6 +373,9 @@ export function RouterRoutingTab() {
                 setPolicies={setPolicies}
                 availableModels={availableModels}
                 {...((router?.kind ?? 'router') === 'orchestrator' ? { allowedTypes: ORCHESTRATOR_POLICY_TYPES } : {})}
+                rankingAlgorithm={rankingAlgorithm}
+                onRankingAlgorithmChange={setRankingAlgorithm}
+                rankingAlgorithmContext={(router?.kind ?? 'router') === 'orchestrator' ? 'orchestrator' : 'router'}
                 llmDefaults={{
                   ...(router?.routingModelId ? { routingModelId: router.routingModelId } : {}),
                   ...(router?.fallbackRoutingModelIds ? { fallbackModelIds: router.fallbackRoutingModelIds } : {}),

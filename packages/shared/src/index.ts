@@ -189,10 +189,9 @@ export { AUTO_MODEL, CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './cl
 
 // Notification event taxonomy (runtime value + derived type)
 export {
-  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, isCompletionCall, blocksResponseStreaming,
+  RANKING_ALGORITHMS, DEFAULT_RANKING_ALGORITHM, NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, isCompletionCall, blocksResponseStreaming,
   suggestConnectionLabel, isConnectionLabelTaken, suggestRouterSlug,
 } from './types/config.js';
-export type { NotificationEvent } from './types/config.js';
 
 // Call configuration (effort / max output tokens / verbosity by request complexity)
 export {
@@ -202,6 +201,7 @@ export type {
   CallSettingId, CallTier, CallLevel, CallClientPolicy, CallSettings, CallConfig,
   CallSkipReason, CallSettingSkip, AppliedCallConfig,
 } from './types/config.js';
+export type { NotificationEvent, RankingAlgorithmId } from './types/config.js';
 export type { PermissionCheckStatus } from './types/config.js';
 
 // Update channel vocabulary: 'latest' | 'current' | 'next' | 'stable' | 'develop'

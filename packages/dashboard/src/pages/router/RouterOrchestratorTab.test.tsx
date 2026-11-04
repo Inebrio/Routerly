@@ -4,6 +4,17 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { RouterOrchestratorTab } from './RouterOrchestratorTab';
 
+let mockCanWrite = true;
+vi.mock('../../AuthContext', () => ({
+  useAuth: () => ({ can: (p: string) => (p === 'router:write' ? mockCanWrite : true) }),
+}));
+
+// A second algorithm so a change can be exercised (the registry holds one until ROUT-299).
+vi.mock('@routerly/shared', async (importActual) => ({
+  ...(await importActual<typeof import('@routerly/shared')>()),
+  RANKING_ALGORITHMS: ['default', 'alt'],
+}));
+
 vi.mock('../../api', () => ({
   getRouters: vi.fn(),
   updateRouter: vi.fn(),
@@ -84,6 +95,7 @@ function renderTab(router: Record<string, unknown> = orchestrator) {
 }
 
 beforeEach(() => {
+  mockCanWrite = true;
   mockGetRouters.mockResolvedValue(allRouters);
   mockUpdateRouter.mockResolvedValue({ ...orchestrator });
 });
@@ -250,5 +262,33 @@ describe('RouterOrchestratorTab — save failure', () => {
     await waitFor(() =>
       expect(screen.getByText('Error saving orchestrator candidates')).toBeTruthy()
     );
+  });
+});
+
+describe('RouterOrchestratorTab — ranking algorithm', () => {
+  it('shows the orchestrator description and omits the field when unchanged', async () => {
+    renderTab();
+    await screen.findByDisplayValue('Default');
+    expect(screen.getByText(/orders the candidate routers/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Save Candidates/i }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    expect(mockUpdateRouter.mock.calls[0]![1]).not.toHaveProperty('rankingAlgorithm');
+  });
+
+  it('sends rankingAlgorithm when changed', async () => {
+    renderTab();
+    await userEvent.selectOptions(await screen.findByDisplayValue('Default'), 'alt');
+    await userEvent.click(screen.getByRole('button', { name: /Save Candidates/i }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalledWith('orch-1', expect.objectContaining({ rankingAlgorithm: 'alt' })));
+  });
+});
+
+describe('RouterOrchestratorTab — without router:write', () => {
+  it('disables every control and hides Save', async () => {
+    mockCanWrite = false;
+    const { container } = renderTab();
+    await screen.findByDisplayValue('Default');
+    expect(container.querySelector('fieldset')).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /Save Candidates/i })).not.toBeInTheDocument();
   });
 });

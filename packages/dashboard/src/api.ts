@@ -1,4 +1,4 @@
-import type { PermissionCheckStatus } from '@routerly/shared';
+import type { PermissionCheckStatus, RankingAlgorithmId } from '@routerly/shared';
 export type { PermissionCheckStatus } from '@routerly/shared';
 
 const BASE = '/api';
@@ -426,6 +426,7 @@ export const createRouter = (data: {
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
   policies?: RoutingPolicy[];
+  rankingAlgorithm?: RankingAlgorithmId;
   models: { modelId: string; prompt?: string }[];
   timeoutMs?: number;
 }) => request<Router>('/routers', { method: 'POST', body: JSON.stringify(data) });
@@ -438,6 +439,7 @@ export const updateRouter = (id: string, data: {
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
   policies?: RoutingPolicy[];
+  rankingAlgorithm?: RankingAlgorithmId;
   models: { modelId: string; prompt?: string }[];
   timeoutMs?: number;
   guardrails?: GuardrailConfig | null;
@@ -1129,13 +1131,13 @@ export type {
 
 /** Body of a create: kind and label are required, the rest defaults server-side. */
 export type CreateProfileBody =
-  | ({ kind: 'routing'; label: string } & Partial<Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy' | 'callConfig'>>)
+  | ({ kind: 'routing'; label: string } & Partial<Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy' | 'rankingAlgorithm' | 'callConfig'>>)
   | ({ kind: 'optimizer'; label: string } & Partial<Pick<OptimizerProfile, 'optimizers'>>)
   | ({ kind: 'security'; label: string } & Partial<Pick<SecurityProfile, 'guardrails' | 'pii'>>);
 
 /** Patch body: only the fields of the profile's own kind are accepted server-side. */
 export type UpdateProfileBody = { label?: string } & Partial<
-  Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy' | 'callConfig'> &
+  Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy' | 'rankingAlgorithm' | 'callConfig'> &
   Pick<OptimizerProfile, 'optimizers'> &
   Pick<SecurityProfile, 'guardrails' | 'pii'>
 >;

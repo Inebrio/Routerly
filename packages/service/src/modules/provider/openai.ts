@@ -58,9 +58,10 @@ export class OpenAIAdapter implements ProviderAdapter {
     return { headers: { ...headers, ...opts?.headers } };
   }
 
-  // o-series models (o1, o3, o4-mini, …) support reasoning_effort; GPT-family models do not.
+  // o-series (o1, o3, o4-mini, …) and gpt-5 reasoning models support reasoning_effort;
+  // gpt-5-chat* (non-reasoning) and older GPT models reject it.
   private isReasoningModel(modelId: string): boolean {
-    return /^o\d/.test(modelId);
+    return /^o\d/.test(modelId) || (/^gpt-5/.test(modelId) && !/^gpt-5[\w.-]*-chat/.test(modelId));
   }
 
   // Strip reasoning-model-only params when forwarding to non-o-series models.

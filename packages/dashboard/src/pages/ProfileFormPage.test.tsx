@@ -24,7 +24,12 @@ vi.mock('../AuthContext', () => ({
 // The three config editors are covered by their own tests; here they only need
 // to prove the right one is mounted for the selected kind.
 vi.mock('../components/RoutingPoliciesEditor', () => ({
-  RoutingPoliciesEditor: () => <div data-testid="routing-editor" />,
+  RoutingPoliciesEditor: ({ rankingAlgorithm, onRankingAlgorithmChange }: { rankingAlgorithm?: string; onRankingAlgorithmChange?: (v: string) => void }) => (
+    <div data-testid="routing-editor">
+      <span data-testid="ranking">{rankingAlgorithm}</span>
+      <button type="button" onClick={() => onRankingAlgorithmChange?.('alt')}>pick-alt</button>
+    </div>
+  ),
   mkPolicyId: () => 'pid',
 }));
 vi.mock('../components/OptimizerStepsEditor', () => ({
@@ -284,5 +289,33 @@ describe('ProfileFormPage — edit', () => {
     await waitFor(() => expect(screen.getByLabelText('Label')).toHaveValue('Mine'));
     await user.click(screen.getByRole('button', { name: /back to profiles/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/profiles');
+  });
+});
+
+describe('ProfileFormPage — ranking algorithm', () => {
+  it('loads the stored value and omits it from the payload when unchanged', async () => {
+    mockGetProfiles.mockResolvedValue([{ ...customRouting, rankingAlgorithm: 'alt' }]);
+    renderPage('/dashboard/profiles/mine');
+    await waitFor(() => expect(screen.getByTestId('ranking')).toHaveTextContent('alt'));
+    await userEvent.click(screen.getByRole('button', { name: /save/i }));
+    await waitFor(() => expect(mockUpdateProfile).toHaveBeenCalled());
+    expect(mockUpdateProfile.mock.calls[0]![1]).not.toHaveProperty('rankingAlgorithm');
+  });
+
+  it('sends the new value when changed on edit', async () => {
+    renderPage('/dashboard/profiles/mine');
+    await waitFor(() => expect(screen.getByTestId('ranking')).toHaveTextContent('default'));
+    await userEvent.click(screen.getByRole('button', { name: 'pick-alt' }));
+    await userEvent.click(screen.getByRole('button', { name: /save/i }));
+    await waitFor(() => expect(mockUpdateProfile).toHaveBeenCalledWith('mine', expect.objectContaining({ rankingAlgorithm: 'alt' })));
+  });
+
+  it('sends a non-default pick on create', async () => {
+    renderPage('/dashboard/profiles/new');
+    await waitFor(() => screen.getByTestId('routing-editor'));
+    await userEvent.type(screen.getByLabelText('Label'), 'X');
+    await userEvent.click(screen.getByRole('button', { name: 'pick-alt' }));
+    await userEvent.click(screen.getByRole('button', { name: /save|create/i }));
+    await waitFor(() => expect(mockCreateProfile).toHaveBeenCalledWith(expect.objectContaining({ rankingAlgorithm: 'alt' })));
   });
 });
