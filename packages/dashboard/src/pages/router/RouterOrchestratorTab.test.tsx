@@ -4,6 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { RouterOrchestratorTab } from './RouterOrchestratorTab';
 
+let mockCanWrite = true;
+vi.mock('../../AuthContext', () => ({
+  useAuth: () => ({ can: (p: string) => (p === 'router:write' ? mockCanWrite : true) }),
+}));
+
 // A second algorithm so a change can be exercised (the registry holds one until ROUT-299).
 vi.mock('@routerly/shared', async (importActual) => ({
   ...(await importActual<typeof import('@routerly/shared')>()),
@@ -90,6 +95,7 @@ function renderTab(router: Record<string, unknown> = orchestrator) {
 }
 
 beforeEach(() => {
+  mockCanWrite = true;
   mockGetRouters.mockResolvedValue(allRouters);
   mockUpdateRouter.mockResolvedValue({ ...orchestrator });
 });
@@ -274,5 +280,15 @@ describe('RouterOrchestratorTab — ranking algorithm', () => {
     await userEvent.selectOptions(await screen.findByDisplayValue('Default'), 'alt');
     await userEvent.click(screen.getByRole('button', { name: /Save Candidates/i }));
     await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalledWith('orch-1', expect.objectContaining({ rankingAlgorithm: 'alt' })));
+  });
+});
+
+describe('RouterOrchestratorTab — without router:write', () => {
+  it('disables every control and hides Save', async () => {
+    mockCanWrite = false;
+    const { container } = renderTab();
+    await screen.findByDisplayValue('Default');
+    expect(container.querySelector('fieldset')).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /Save Candidates/i })).not.toBeInTheDocument();
   });
 });
