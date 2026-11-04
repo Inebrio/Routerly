@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Changed
 
+- **Release versions are chosen by hand.** `release.yml` takes a required `version` input (`gh workflow run release.yml --ref <branch> -f version=X.Y.Z`) instead of computing it from commits; semantic-release and `release.config.mjs` are removed. Tag, GitHub Release (tarball, install scripts, git-cliff notes), Docker, docs and channel pointers behave as before; a version not above the latest reachable tag is refused, an existing tag is promoted to the dispatched channel (ROUT-548).
 - **`/v1/messages` message id in Anthropic shape.** Non-stream responses converted from a chat completion (e.g. via anthropic-web) return `msg_…` instead of `chatcmpl-…` (ROUT-488).
 - **CLI test suite stable under load.** `packages/cli` sets `testTimeout` to 30s so cold dynamic imports no longer fail `auth login` / `router pii add` tests on a busy machine (ROUT-556).
 - **Dashboard test suite stable under load.** `packages/dashboard` test setup raises the Testing Library `waitFor` timeout from 1s to 10s so `App.test` no longer times out on a busy machine (ROUT-559).
