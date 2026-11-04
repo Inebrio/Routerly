@@ -20,6 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Installer no longer deletes files it did not install.** `scripts/install.mjs` records the copied files in `.routerly-manifest`; updates and uninstall remove only manifest files (plus `node_modules`/`dist`), not other content of `/opt/routerly`. An existing `/opt/routerly` without a Routerly install no longer selects the `system` scope with `--yes`, `--scope user` (with a space) is honoured like `--scope=user`, and an invalid scope fails with an error (ROUT-579).
 - **Docs version cut publishes on release.** The `Publish documentation cut to docs-versions` step uses `mktemp -u` for the temporary git index (git rejects an empty index file) and commits with the non-releasable `ci(docs):` type (ROUT-577).
 
 - **Release on `next` no longer fails.** The `addChannel` step runs `gh release edit --latest` only on `main`; GitHub rejects `--latest` on a prerelease with HTTP 422 (ROUT-576).
