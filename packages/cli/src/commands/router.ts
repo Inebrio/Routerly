@@ -1143,7 +1143,7 @@ Examples:
         if (Object.entries(opts).every(([k, v]) => k === 'json' || v === undefined)) cliFail('Error: nothing to set. Pass at least one option (see --help).');
 
         const router = await resolveRouter(nameOrId);
-        let cc: CallConfig = opts.fromFile
+        const cc: CallConfig = opts.fromFile
           ? readCallConfigArg(`@${opts.fromFile}`) as CallConfig
           : structuredClone(router.callConfig ?? { enabled: false, tiers: {} });
         if (typeof cc !== 'object' || cc === null || Array.isArray(cc)) cliFail('Error: the call configuration file must contain a JSON object.');
