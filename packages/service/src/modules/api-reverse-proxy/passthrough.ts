@@ -52,6 +52,17 @@ export function pickUpstreamModel(
 }
 
 /**
+ * A body naming the model by its registered Routerly id (e.g. `vendor/name`)
+ * gets the upstream model name instead: the provider does not know the id.
+ * Any other body (bare name, unknown model, non-JSON) is returned untouched.
+ */
+export function withUpstreamModelName(body: IncomingBody, model: ModelConfig): IncomingBody {
+  if (!body || Buffer.isBuffer(body) || typeof body !== 'object') return body;
+  if (body.model !== model.id || !model.upstreamModelId) return body;
+  return { ...body, model: model.upstreamModelId };
+}
+
+/**
  * Build the upstream URL: the origin of the model's configured endpoint plus
  * the full incoming path and query. e.g. endpoint `https://api.openai.com/v1`
  * + `/v1/embeddings` → `https://api.openai.com/v1/embeddings`.
@@ -198,10 +209,11 @@ export async function passthroughHandler(
   const headers = buildUpstreamHeaders(model, request.headers);
 
   let body: Buffer | string | undefined;
-  if (method !== 'GET' && method !== 'HEAD' && request.body != null) {
-    if (Buffer.isBuffer(request.body)) body = request.body;
-    else if (typeof request.body === 'string') body = request.body;
-    else body = JSON.stringify(request.body);
+  const outgoing = withUpstreamModelName(request.body as IncomingBody, model);
+  if (method !== 'GET' && method !== 'HEAD' && outgoing != null) {
+    if (Buffer.isBuffer(outgoing)) body = outgoing;
+    else if (typeof outgoing === 'string') body = outgoing;
+    else body = JSON.stringify(outgoing);
   }
 
   const startedAt = Date.now();
