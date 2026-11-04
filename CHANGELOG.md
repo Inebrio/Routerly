@@ -29,6 +29,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **RA-09 docs-version tests no longer time out under load.** The two happy-path tests in `test/docs-version.test.ts` now allow 300 s instead of 120 s. Tests only (ROUT-522).
 - **Service test suite no longer flaky under load.** `packages/service/vitest.config.ts` now sets `testTimeout`/`hookTimeout` to 60 s (was the 5 s default), so `api.test` and `profiles.test` stop timing out on a loaded machine (ROUT-615).
 - **Router Orchestrator tab is read-only without `router:write`.** Controls are disabled and the Save button is hidden, as on the Routing tab.
 - **OpenAI adapter forwards `reasoning_effort` to gpt-5 models.** `reasoning_effort`/`reasoning_summary` were dropped for everything except the o-series; gpt-5 reasoning models now receive the client's value, while `gpt-5*-chat*` and older GPT models still have it stripped.
