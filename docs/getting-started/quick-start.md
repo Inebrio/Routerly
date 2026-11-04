@@ -12,11 +12,11 @@ From zero to your first routed AI response in under 5 minutes.
 ## Step 1: Install Routerly
 
 ```bash
-# macOS / Linux — installs v0.5.3
-curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.5.3
+# macOS / Linux — installs v0.6.0
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.6.0
 
-# Windows (PowerShell) — installs v0.5.3
-powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Version v0.5.3"
+# Windows (PowerShell) — installs v0.6.0
+powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Version v0.6.0"
 ```
 
 The installer defaults to the **`current`** channel — the latest production-ready release. To install a different channel or a specific version:
@@ -26,14 +26,16 @@ The installer defaults to the **`current`** channel — the latest production-re
 curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --channel latest
 
 # Pin to a specific version
-curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.5.2
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.5.4
 ```
 
-After the installer finishes, start the service if it isn't already running:
+After the installer finishes, the service is already running (unless you passed `--no-daemon`). Check it with:
 
 ```bash
-routerly start
+routerly service status
 ```
+
+If it is not running, start it with `systemctl --user start routerly` (Linux) or `launchctl load ~/Library/LaunchAgents/ai.routerly.service.plist` (macOS). See [Installation](./installation.md#auto-start-configuration).
 
 ---
 
