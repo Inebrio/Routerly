@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import type { ModelConfig } from '@routerly/shared'
-import { buildOpenAIOAuthHeaders, forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, resolveCodexToken, resolveOpenAICodexAuth } from './openaiOAuthForward.js'
+import { buildOpenAIOAuthHeaders, forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, resolveCodexToken, resolveOpenAICodexAuth, buildCodexPayload } from './openaiOAuthForward.js'
 
 vi.mock('../../config/loader.js', () => ({ getOrCreateSecret: vi.fn().mockResolvedValue('d'.repeat(64)), readConfig: vi.fn().mockResolvedValue([]) }))
 vi.mock('../../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
@@ -891,5 +891,24 @@ describe('streamOpenAIOAuthChunks — trace entries', () => {
       for await (const _ of streamOpenAIOAuthChunks({ messages: [] }, oauthModel, makeLog(), { traceId: 't', routerId: 'r', emit })) { /* drain */ }
     })()).rejects.toThrow('HTTP 500')
     expect(emit.mock.calls.at(-1)![0]).toMatchObject({ panel: 'response', message: 'model:error' })
+  })
+})
+
+describe('buildCodexPayload call settings (ROUT-306)', () => {
+  const body = { messages: [{ role: 'system', content: 'sys' }, { role: 'user', content: 'hi' }] }
+
+  it('without settings or with empty settings the payload is identical and has no reasoning or text', () => {
+    const plain = buildCodexPayload(body, 'gpt-5')
+    expect(buildCodexPayload(body, 'gpt-5', {})).toEqual(plain)
+    expect(plain).not.toHaveProperty('reasoning')
+    expect(plain).not.toHaveProperty('text')
+  })
+
+  it('effort and verbosity use the Responses forms; no token cap is ever written', () => {
+    const p = buildCodexPayload(body, 'gpt-5', { effort: 'high', verbosity: 'low', maxOutputTokens: 100 })
+    expect(p.reasoning).toEqual({ effort: 'high' })
+    expect(p.text).toEqual({ verbosity: 'low' })
+    expect(p).not.toHaveProperty('max_output_tokens')
+    expect(p).not.toHaveProperty('max_tokens')
   })
 })
