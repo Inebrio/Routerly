@@ -1267,3 +1267,48 @@ describe('AnthropicAdapter developer role', () => {
     }
   })
 })
+
+describe('AnthropicAdapter callSettings (ROUT-306)', () => {
+  const ok = { id: 'm', model: 'claude', content: [{ type: 'text', text: 'hi' }], stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } }
+  const call = async (request: Record<string, unknown>, model: ModelConfig, callSettings?: Record<string, unknown>) => {
+    mockCreate.mockResolvedValue(ok)
+    await adapter.chatCompletion({ model: 'auto', messages: [{ role: 'user', content: 'hi' }], ...request } as never, model, callSettings ? { callSettings } as never : undefined)
+    return mockCreate.mock.calls[0]![0] as Record<string, unknown>
+  }
+  const think = makeModel({ capabilities: { thinking: true } })
+
+  it('no callSettings: no output_config', async () => {
+    expect(await call({}, makeModel())).not.toHaveProperty('output_config')
+  })
+
+  it('effort is sent as output_config.effort', async () => {
+    expect((await call({}, makeModel(), { effort: 'high' })).output_config).toEqual({ effort: 'high' })
+  })
+
+  it('thinking model without a router cap keeps today floor and budget', async () => {
+    const p = await call({ max_tokens: 2000 }, think, { effort: 'low' })
+    expect(p.thinking).toEqual({ type: 'enabled', budget_tokens: 10000 })
+    expect(p.max_tokens).toBe(16000)
+  })
+
+  it('thinking model with a router cap: no 16000 floor, budget clamped below max_tokens', async () => {
+    const p = await call({ max_tokens: 4000 }, think, { maxOutputTokens: 4000 })
+    expect(p.max_tokens).toBe(4000)
+    expect(p.thinking).toEqual({ type: 'enabled', budget_tokens: 3999 })
+    const q = await (async () => { mockCreate.mockClear(); return call({ max_tokens: 50000 }, think, { maxOutputTokens: 50000 }) })()
+    expect(q.thinking).toEqual({ type: 'enabled', budget_tokens: 10000 })
+    expect(q.max_tokens).toBe(50000)
+  })
+
+  it('thinking model with a router cap <= 1024: thinking omitted', async () => {
+    const p = await call({ max_tokens: 1024 }, think, { maxOutputTokens: 1024 })
+    expect(p).not.toHaveProperty('thinking')
+    expect(p.max_tokens).toBe(1024)
+  })
+
+  it('stream path writes output_config too', async () => {
+    mockCreate.mockResolvedValue((async function* () { yield { type: 'message_stop' } })())
+    for await (const _ of adapter.streamCompletion({ model: 'x', messages: [{ role: 'user', content: 'hi' }] }, makeModel(), { callSettings: { effort: 'medium' } } as never)) { void _ }
+    expect((mockCreate.mock.calls[0]![0] as Record<string, unknown>).output_config).toEqual({ effort: 'medium' })
+  })
+})

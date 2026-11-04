@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import type { FastifyBaseLogger } from 'fastify';
 import type { ServerResponse } from 'node:http';
 import type {
-  ChatCompletionResponse, ChoiceDelta, ModelConfig, PiiConfig, StreamChoice, StreamChunk, TraceEntry,
+  AppliedCallConfig, CallSettings, ChatCompletionResponse, ChoiceDelta, ModelConfig, PiiConfig, StreamChoice, StreamChunk, TraceEntry,
 } from '@routerly/shared';
 import { mergePolicies, StreamingScrubber } from '../../pii/piiScrubber.js';
 import { trackUsage } from '../../usage/tracker.js';
@@ -219,6 +219,7 @@ function toResponsesToolChoice(choice: unknown): unknown {
 export function buildCodexPayload(
   body: Record<string, unknown>,
   modelId: string,
+  settings?: CallSettings,
 ): Record<string, unknown> {
   const messages = (body.messages as Array<Record<string, unknown>> | undefined) ?? [];
   const systemMsg = messages.find((m) => m.role === 'system');
@@ -233,6 +234,9 @@ export function buildCodexPayload(
     store: false,
     ...(tools ? { tools } : {}),
     ...(toolChoice ? { tool_choice: toolChoice } : {}),
+    // Router-chosen call settings in their Responses form (the Codex backend takes no token cap).
+    ...(settings?.effort ? { reasoning: { effort: settings.effort } } : {}),
+    ...(settings?.verbosity ? { text: { verbosity: settings.verbosity } } : {}),
   };
 }
 
@@ -275,7 +279,7 @@ export async function* streamOpenAIOAuthChunks(
   body: Record<string, unknown>,
   model: ModelConfig,
   log: FastifyBaseLogger,
-  opts: { traceId: string; routerId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined; emit?: ((entry: TraceEntry) => void) | undefined },
+  opts: { traceId: string; routerId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined; emit?: ((entry: TraceEntry) => void) | undefined; callSettings?: AppliedCallConfig | undefined },
 ): AsyncGenerator<StreamChunk> {
   const startMs = Date.now();
   const modelId = model.id.includes('/') ? model.id.split('/').slice(1).join('/') : model.id;
@@ -294,7 +298,10 @@ export async function* streamOpenAIOAuthChunks(
   opts.emit?.({
     panel: 'request',
     message: 'model:request',
-    details: { modelId: model.id, provider: model.provider, stream: true, messageCount: Array.isArray(body.messages) ? body.messages.length : 0 },
+    details: {
+      modelId: model.id, provider: model.provider, stream: true, messageCount: Array.isArray(body.messages) ? body.messages.length : 0,
+      ...(opts.callSettings ? { callSettings: { applied: opts.callSettings.applied, ...(opts.callSettings.skipped ? { skipped: opts.callSettings.skipped } : {}) } } : {}),
+    },
   });
 
   const chunk = (
@@ -316,7 +323,7 @@ export async function* streamOpenAIOAuthChunks(
     const upstream = await fetch(endpoint, {
       method: 'POST',
       headers: buildOpenAIOAuthHeaders(accessToken, accountId, {}),
-      body: JSON.stringify(buildCodexPayload(body, modelId)),
+      body: JSON.stringify(buildCodexPayload(body, modelId, opts.callSettings?.applied)),
     });
 
     log.info(
@@ -449,6 +456,7 @@ export async function* streamOpenAIOAuthChunks(
         routerId: opts.routerId, model, inputTokens, outputTokens,
         latencyMs: Date.now() - startMs, outcome, callType: 'completion', traceId: opts.traceId,
         ...(opts.tokenId ? { tokenId: opts.tokenId } : {}),
+        ...(opts.callSettings ? { callConfig: opts.callSettings } : {}),
       }).catch(() => {});
     }
   }

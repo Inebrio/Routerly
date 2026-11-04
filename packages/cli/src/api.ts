@@ -126,9 +126,18 @@ async function rawRequest<T>(
     // Some routes answer with a machine code plus a sentence (`label_taken` +
     // "Label ... is already used"); the sentence is the one worth printing.
     // Validation answers add the failing field messages in `details`.
-    const body = data as { error?: string; message?: string; details?: { message?: string }[] };
-    const why = Array.isArray(body.details) ? body.details.map(d => d.message).filter(Boolean).join('; ') : '';
-    const text = body.message ?? body.error ?? res.statusText;
+    // A zod `flatten()` payload ({ formErrors, fieldErrors }) is read the same way,
+    // whether it sits in `details` or is the `error` itself (profiles answer that way).
+    type Flat = { formErrors?: string[]; fieldErrors?: Record<string, string[] | undefined> };
+    const flat = (v: unknown): string => {
+      const f = v as Flat | null;
+      if (!f || typeof f !== 'object' || Array.isArray(f)) return '';
+      const fields = Object.entries(f.fieldErrors ?? {}).map(([k, m]) => `${k}: ${(m ?? []).join(', ')}`);
+      return [...(f.formErrors ?? []), ...fields].join('; ');
+    };
+    const body = data as { error?: string | Flat; message?: string; details?: { message?: string }[] | Flat };
+    const why = Array.isArray(body.details) ? body.details.map(d => d.message).filter(Boolean).join('; ') : flat(body.details);
+    const text = body.message ?? (typeof body.error === 'string' ? body.error : flat(body.error) || res.statusText);
     throw new ApiError(res.status, why ? `${text}: ${why}` : text);
   }
 

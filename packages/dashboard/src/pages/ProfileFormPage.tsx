@@ -9,6 +9,8 @@ import {
   type CreateProfileBody, type FallbackStrategyType, type InstalledOptimizer, type Model,
   type PiiPolicy, type Profile, type ProfileKind, type SelectorType,
 } from '../api';
+import type { CallConfig } from '@routerly/shared';
+import { CallConfigEditor, callConfigError } from '../components/CallConfigEditor';
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../components/RoutingPoliciesEditor';
 import {
   OptimizerStepsEditor, buildOptimizerSteps, mergeOptimizerRows, type OptimizerRow,
@@ -70,6 +72,8 @@ export function ProfileFormPage() {
   const [selector, setSelector] = useState<SelectorType>('argmax');
   const [fallbackStrategy, setFallbackStrategy] = useState<FallbackStrategyType>('next-best');
   const [models, setModels] = useState<Model[]>([]);
+  // undefined until touched: the save then leaves the stored value alone.
+  const [callConfig, setCallConfig] = useState<CallConfig | undefined>(undefined);
 
   // Optimizer
   const [rows, setRows] = useState<OptimizerRow[]>([]);
@@ -87,6 +91,7 @@ export function ProfileFormPage() {
       if (!isCreate) setStoredRanking(p.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM);
       setSelector(p.selector);
       setFallbackStrategy(p.fallbackStrategy);
+      setCallConfig(p.callConfig);
     } else if (p.kind === 'optimizer') {
       setRows(mergeOptimizerRows(p.optimizers.steps, installedOptimizers));
     } else {
@@ -121,11 +126,11 @@ export function ProfileFormPage() {
   const { regexErrorsByRule, moderationErrorIds } = validateSecurityRules(rules);
   const securityInvalid = Object.keys(regexErrorsByRule).length > 0 || moderationErrorIds.size > 0;
   const readOnly = builtin || !canManage;
-  const saveDisabled = saving || !label.trim() || (kind === 'security' && securityInvalid);
+  const saveDisabled = saving || !label.trim() || (kind === 'security' && securityInvalid) || (kind === 'routing' && !!callConfigError(callConfig));
 
   function configBody() {
     if (kind === 'routing') {
-      return { policies: policies.map(({ internalId: _drop, ...rest }) => rest), selector, fallbackStrategy, ...(rankingAlgorithm !== storedRanking && { rankingAlgorithm }) };
+      return { policies: policies.map(({ internalId: _drop, ...rest }) => rest), selector, fallbackStrategy, ...(rankingAlgorithm !== storedRanking && { rankingAlgorithm }), ...(callConfig !== undefined && { callConfig }) };
     }
     if (kind === 'optimizer') {
       return { optimizers: { steps: buildOptimizerSteps(rows) } };
@@ -201,6 +206,12 @@ export function ProfileFormPage() {
             {/* Each editor prints its own heading, so the form does not repeat it. */}
             {kind === 'routing' && (
               <RoutingPoliciesEditor policies={policies} setPolicies={setPolicies} availableModels={models} rankingAlgorithm={rankingAlgorithm} onRankingAlgorithmChange={setRankingAlgorithm} />
+            )}
+
+            {kind === 'routing' && (
+              <div style={{ marginTop: 24 }}>
+                <CallConfigEditor value={callConfig} onChange={setCallConfig} readOnly={readOnly} />
+              </div>
             )}
 
             {kind === 'optimizer' && (

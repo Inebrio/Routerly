@@ -2,8 +2,9 @@ import { Command, Option } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import { DEFAULT_RANKING_ALGORITHM, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, RANKING_ALGORITHMS } from '@routerly/shared';
-import type { Profile, RouterConfig, RouterKind, RouterModelRef, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
+import { DEFAULT_RANKING_ALGORITHM, RANKING_ALGORITHMS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TIERS, CALL_SETTINGS, CALL_MAX_OUTPUT_TOKENS_MIN, CALL_MAX_OUTPUT_TOKENS_MAX } from '@routerly/shared';
+import { readCallConfigArg, printCallConfig } from '../lib/call-config.js';
+import type { CallConfig, CallLevel, CallSettings, CallTier, Profile, RouterConfig, RouterKind, RouterModelRef, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
 
 /**
  * Wire shape of an Orchestrator's candidate as returned by GET /api/routers —
@@ -1073,6 +1074,188 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
 
 // ─── Main router command ─────────────────────────────────────────────────────
 
+// ─── call-config ─────────────────────────────────────────────────────────────
+
+function cliFail(message: string): never {
+  console.error(chalk.red(message));
+  process.exit(1);
+}
+
+function pickLevel(flag: string, raw: string): CallLevel | 'unset' {
+  if (raw === 'unset' || raw === 'low' || raw === 'medium' || raw === 'high') return raw;
+  return cliFail(`${flag} must be one of: low, medium, high, unset.`);
+}
+
+/** Parses `--client-values effort=override,verbosity=keep`. */
+function parseClientValues(raw: string): NonNullable<CallConfig['clientValues']> {
+  const out: NonNullable<CallConfig['clientValues']> = {};
+  for (const pair of raw.split(',').map(s => s.trim()).filter(Boolean)) {
+    const [setting, policy, ...rest] = pair.split('=');
+    if (!(CALL_SETTINGS as readonly string[]).includes(setting ?? '') || rest.length || (policy !== 'keep' && policy !== 'override')) {
+      cliFail(`--client-values entries must look like <setting>=<keep|override>, setting one of: ${CALL_SETTINGS.join(', ')}. Got "${pair}".`);
+    }
+    out[setting as keyof typeof out] = policy as 'keep' | 'override';
+  }
+  return out;
+}
+
+/** Parses `--thresholds <medium>,<high>`: positive integers, medium below high. */
+function parseThresholds(raw: string): { mediumFromTokens: number; highFromTokens: number } {
+  const [medium, high, ...rest] = raw.split(',').map(s => Number(s.trim()));
+  if (medium === undefined || high === undefined || rest.length || ![medium, high].every(n => Number.isInteger(n) && n > 0) || medium >= high) {
+    cliFail('--thresholds must be <medium>,<high>: two positive integers (estimated input tokens) with medium below high.');
+  }
+  return { mediumFromTokens: medium, highFromTokens: high };
+}
+
+interface CallConfigSetOpts {
+  enable?: boolean; disable?: boolean; tier?: string; effort?: string; maxOutputTokens?: string;
+  verbosity?: string; clientValues?: string; thresholds?: string; fromFile?: string; json?: boolean;
+}
+
+/** Router PUT needs the identity fields; mirrors `router routing update`. */
+function callConfigBody(router: RouterConfig, callConfig: CallConfig | null): Record<string, unknown> {
+  return { name: router.name, models: router.models, callConfig };
+}
+
+function makeCallConfigCommand(): Command {
+  const cmd = new Command('call-config').description('Manage how models are called (effort, max output tokens, verbosity) by request complexity');
+
+  cmd.command('show <router>')
+    .description('Show the call configuration in force for a router and where it comes from')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly router call-config show my-api
+  routerly router call-config show my-api --json
+`)
+    .action(async (nameOrId: string, opts: { json?: boolean }) => {
+      try {
+        const router = await resolveRouter(nameOrId);
+        // A bound routing profile wins entirely over the router's own config.
+        let source: 'router' | 'profile' = 'router';
+        let callConfig = router.callConfig;
+        if (router.routingProfileId) {
+          const profiles = await api<Profile[]>('GET', '/api/profiles?kind=routing');
+          const profile = profiles.find(p => p.id === router.routingProfileId);
+          if (profile?.kind === 'routing') {
+            source = 'profile';
+            callConfig = profile.callConfig;
+          }
+        }
+        if (opts.json) {
+          console.log(JSON.stringify({ source, ...(source === 'profile' ? { profileId: router.routingProfileId } : {}), callConfig: callConfig ?? null }, null, 2));
+          return;
+        }
+        console.log(chalk.bold(`\nCall configuration — ${router.name}`));
+        console.log(chalk.gray('  Source:        ') + (source === 'profile' ? `routing profile "${router.routingProfileId}"` : 'router'));
+        printCallConfig(callConfig);
+        console.log('');
+      } catch (err) {
+        cliFail(`Error: ${(err as Error).message}`);
+      }
+    });
+
+  cmd.command('set <router>')
+    .description('Create or modify the router call configuration (only the options you pass change)')
+    .option('--enable', 'Turn the call configuration on')
+    .option('--disable', 'Turn it off (tier data is kept)')
+    .option('--tier <tier>', `Tier the settings below apply to: ${CALL_TIERS.join(', ')}`)
+    .option('--effort <level>', 'Reasoning effort for --tier: low, medium, high or unset')
+    .option('--max-output-tokens <n>', `Output token cap for --tier (${CALL_MAX_OUTPUT_TOKENS_MIN}-${CALL_MAX_OUTPUT_TOKENS_MAX}) or unset. A hard cap: longer answers are cut`)
+    .option('--verbosity <level>', 'Verbosity for --tier: low, medium, high or unset')
+    .option('--client-values <list>', 'Per-setting policy, e.g. effort=override,verbosity=keep (keep = respect what the client sent)')
+    .option('--thresholds <medium>,<high>', 'Estimated input tokens at which the medium and high tiers start')
+    .option('--from-file <path>', 'Replace the whole config from a JSON file (applied before the other options)')
+    .option('--json', 'Output the saved router as JSON')
+    .addHelpText('after', `
+Examples:
+  routerly router call-config set my-api --enable --tier low --effort low --max-output-tokens 512
+  routerly router call-config set my-api --tier high --effort high --max-output-tokens unset
+  routerly router call-config set my-api --client-values effort=override --thresholds 3000,20000
+  routerly router call-config set my-api --from-file call-config.json
+`)
+    .action(async (nameOrId: string, opts: CallConfigSetOpts) => {
+      try {
+        if (opts.enable && opts.disable) cliFail('Error: --enable and --disable are mutually exclusive.');
+        const tierSettings = [opts.effort, opts.maxOutputTokens, opts.verbosity].some(v => v !== undefined);
+        if (tierSettings && !opts.tier) cliFail('Error: --effort, --max-output-tokens and --verbosity need --tier.');
+        if (opts.tier && !(CALL_TIERS as readonly string[]).includes(opts.tier)) cliFail(`Error: --tier must be one of: ${CALL_TIERS.join(', ')}.`);
+        if (opts.tier && !tierSettings) cliFail('Error: --tier needs at least one of --effort, --max-output-tokens, --verbosity.');
+        if (Object.entries(opts).every(([k, v]) => k === 'json' || v === undefined)) cliFail('Error: nothing to set. Pass at least one option (see --help).');
+
+        const router = await resolveRouter(nameOrId);
+        const cc: CallConfig = opts.fromFile
+          ? readCallConfigArg(`@${opts.fromFile}`) as CallConfig
+          : structuredClone(router.callConfig ?? { enabled: false, tiers: {} });
+        if (typeof cc !== 'object' || cc === null || Array.isArray(cc)) cliFail('Error: the call configuration file must contain a JSON object.');
+        cc.tiers ??= {};
+        if (opts.enable) cc.enabled = true;
+        if (opts.disable) cc.enabled = false;
+        if (opts.tier) {
+          const tier = opts.tier as CallTier;
+          const next: CallSettings = { ...cc.tiers[tier] };
+          if (opts.effort !== undefined) {
+            const v = pickLevel('--effort', opts.effort);
+            if (v === 'unset') delete next.effort; else next.effort = v;
+          }
+          if (opts.verbosity !== undefined) {
+            const v = pickLevel('--verbosity', opts.verbosity);
+            if (v === 'unset') delete next.verbosity; else next.verbosity = v;
+          }
+          if (opts.maxOutputTokens !== undefined) {
+            if (opts.maxOutputTokens === 'unset') delete next.maxOutputTokens;
+            else {
+              const n = Number(opts.maxOutputTokens);
+              if (!Number.isInteger(n) || n < CALL_MAX_OUTPUT_TOKENS_MIN || n > CALL_MAX_OUTPUT_TOKENS_MAX) {
+                cliFail(`Error: --max-output-tokens must be an integer from ${CALL_MAX_OUTPUT_TOKENS_MIN} to ${CALL_MAX_OUTPUT_TOKENS_MAX}, or unset.`);
+              }
+              next.maxOutputTokens = n;
+            }
+          }
+          if (Object.keys(next).length) cc.tiers[tier] = next; else delete cc.tiers[tier];
+        }
+        if (opts.clientValues) cc.clientValues = { ...cc.clientValues, ...parseClientValues(opts.clientValues) };
+        if (opts.thresholds) cc.thresholds = parseThresholds(opts.thresholds);
+
+        if (router.routingProfileId) {
+          console.error(chalk.yellow(`Warning: router "${router.name}" is bound to routing profile "${router.routingProfileId}"; the profile's call configuration is in force, this router's own is ignored until the profile is unbound.`));
+        }
+        const saved = await api<RouterConfig>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, callConfigBody(router, cc));
+        if (opts.json) {
+          console.log(JSON.stringify(saved, null, 2));
+          return;
+        }
+        console.log(chalk.green(`✓ Call configuration saved for "${router.name}" (${cc.enabled ? 'enabled' : 'disabled'}).`));
+      } catch (err) {
+        cliFail(`Error: ${(err as Error).message}`);
+      }
+    });
+
+  cmd.command('clear <router>')
+    .description('Remove the call configuration of a router')
+    .option('--json', 'Output the saved router as JSON')
+    .addHelpText('after', `
+Examples:
+  routerly router call-config clear my-api
+`)
+    .action(async (nameOrId: string, opts: { json?: boolean }) => {
+      try {
+        const router = await resolveRouter(nameOrId);
+        const saved = await api<RouterConfig>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, callConfigBody(router, null));
+        if (opts.json) {
+          console.log(JSON.stringify(saved, null, 2));
+          return;
+        }
+        console.log(chalk.green(`✓ Call configuration cleared for "${router.name}".`));
+      } catch (err) {
+        cliFail(`Error: ${(err as Error).message}`);
+      }
+    });
+
+  return cmd;
+}
+
 export function makeRouterCommand(): Command {
   const cmd = new Command('router').description('Manage Routerly routers');
 
@@ -1424,6 +1607,7 @@ Examples:
 
   // ── subgroups ────────────────────────────────────────────────────────────────
   cmd.addCommand(makeRoutingCommand());
+  cmd.addCommand(makeCallConfigCommand());
   cmd.addCommand(makeModelSubCommand());
   cmd.addCommand(makeTokenSubCommand());
   cmd.addCommand(makeMemberCommand());  

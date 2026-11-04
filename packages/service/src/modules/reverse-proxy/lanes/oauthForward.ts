@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
-import type { ModelConfig } from '@routerly/shared';
+import type { AppliedCallConfig, CallSettings, ModelConfig } from '@routerly/shared';
 import { protocolError } from '../../../lib/protocol-errors.js';
 import { buildUpstreamUrl } from '../../api-reverse-proxy/passthrough.js';
 import { trackUsage } from '../../usage/tracker.js';
@@ -63,18 +63,25 @@ export function upstreamModelName(model: ModelConfig): string {
  * rewrite — forward it byte-verbatim (wire-transparency contract). This is a
  * deliberate pass-through, not a catch-all that hides serialization bugs.
  */
-function rewriteBodyModel(rawBody: unknown, model: ModelConfig): string {
+function rewriteBodyModel(rawBody: unknown, model: ModelConfig, settings?: CallSettings): string {
   const upstreamModel = upstreamModelName(model);
+  let parsed: unknown = rawBody;
   if (typeof rawBody === 'string') {
-    let parsed: unknown;
     try {
       parsed = JSON.parse(rawBody);
     } catch {
       return rawBody; // not JSON, nothing to rewrite — pass through as-is
     }
-    return JSON.stringify({ ...(parsed as Record<string, unknown>), model: upstreamModel });
   }
-  return JSON.stringify({ ...(rawBody as Record<string, unknown>), model: upstreamModel });
+  const body = parsed as Record<string, unknown>;
+  // Router-chosen call settings (already gated for this model); with none, the output is unchanged.
+  const outputConfig = body.output_config as Record<string, unknown> | undefined;
+  return JSON.stringify({
+    ...body,
+    model: upstreamModel,
+    ...(settings?.effort ? { output_config: { ...outputConfig, effort: settings.effort } } : {}),
+    ...(settings?.maxOutputTokens !== undefined ? { max_tokens: settings.maxOutputTokens } : {}),
+  });
 }
 
 /**
@@ -156,6 +163,8 @@ export async function forwardAnthropicOAuth(
   scrub?: PassthroughScrub,
   /** More candidates remain: a non-2xx answer is returned (nothing sent to the client) so the caller can fall back. */
   deferFailure = false,
+  /** Call configuration resolved for this candidate (the router's effort / output cap). */
+  callSettings?: AppliedCallConfig,
 ): Promise<unknown> {
   const startMs = Date.now();
   const routerId = request.router?.id ?? '';
@@ -166,7 +175,7 @@ export async function forwardAnthropicOAuth(
 
   let body: string | undefined;
   if (method !== 'GET' && method !== 'HEAD' && request.body != null) {
-    body = rewriteBodyModel(request.body, model);
+    body = rewriteBodyModel(request.body, model, callSettings?.applied);
   }
 
   let upstream: Response;
@@ -179,7 +188,7 @@ export async function forwardAnthropicOAuth(
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'oauth pass-through upstream error');
     if (routerId) {
-      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
+      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}) }).catch(() => {});
     }
     return reply.code(502).send({
       type: 'error',
@@ -212,6 +221,7 @@ export async function forwardAnthropicOAuth(
       latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion',
       ...(errorMessage !== undefined ? { errorMessage } : {}),
       ...(tokenId ? { tokenId } : {}),
+      ...(callSettings ? { callConfig: callSettings } : {}),
     }).catch(() => {});
   };
 
@@ -258,6 +268,8 @@ export async function forwardAnthropicApiKey(
   scrub?: PassthroughScrub,
   /** More candidates remain: a non-2xx answer is returned (nothing sent to the client) so the caller can fall back. */
   deferFailure = false,
+  /** Call configuration resolved for this candidate (the router's effort / output cap). */
+  callSettings?: AppliedCallConfig,
 ): Promise<unknown> {
   const startMs = Date.now();
   const routerId = request.router?.id ?? '';
@@ -277,7 +289,7 @@ export async function forwardAnthropicApiKey(
 
   let body: string | undefined;
   if (method !== 'GET' && method !== 'HEAD' && request.body != null) {
-    body = rewriteBodyModel(request.body, model);
+    body = rewriteBodyModel(request.body, model, callSettings?.applied);
   }
 
   let upstream: Response;
@@ -288,7 +300,7 @@ export async function forwardAnthropicApiKey(
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'api-key pass-through upstream error');
     if (routerId) {
-      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
+      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}) }).catch(() => {});
     }
     return reply.code(502).send({ type: 'error', error: { type: 'api_error', message: err instanceof Error ? err.message : 'upstream request failed' } });
   }
@@ -307,6 +319,7 @@ export async function forwardAnthropicApiKey(
       latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion',
       ...(errorMessage !== undefined ? { errorMessage } : {}),
       ...(tokenId ? { tokenId } : {}),
+      ...(callSettings ? { callConfig: callSettings } : {}),
     }).catch(() => {});
   };
 

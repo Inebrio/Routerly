@@ -183,6 +183,26 @@ export class AnthropicAdapter implements ProviderAdapter {
     return 'stop';
   }
 
+  /**
+   * Extended thinking (requires min 16k max_tokens per Anthropic spec) and the router's
+   * `output_config.effort`. When the router chose the output cap, the 16k floor would silently
+   * override it: keep the cap, clamp `budget_tokens` below it, and omit thinking when the cap
+   * is under the documented 1024 minimum budget.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
+  private applyThinkingAndEffort(params: any, model: ModelConfig, opts?: CallOptions): void {
+    const cs = opts?.callSettings;
+    if (cs?.effort) params.output_config = { effort: cs.effort };
+    if (model.capabilities?.thinking !== true) return;
+    const max = params.max_tokens as number;
+    if (cs?.maxOutputTokens === undefined) {
+      params.thinking = { type: 'enabled', budget_tokens: 10000 };
+      if (max < 16000) params.max_tokens = 16000;
+    } else if (max > 1024) {
+      params.thinking = { type: 'enabled', budget_tokens: Math.min(10000, max - 1) };
+    }
+  }
+
   async chatCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
@@ -209,12 +229,7 @@ export class AnthropicAdapter implements ProviderAdapter {
     }
     this.applyTools(params, request);
 
-    // Extended thinking — requires min 16k max_tokens per Anthropic spec
-    const thinkingEnabled = model.capabilities?.thinking === true;
-    if (thinkingEnabled) {
-      params.thinking = { type: 'enabled', budget_tokens: 10000 };
-      if ((params.max_tokens as number) < 16000) params.max_tokens = 16000;
-    }
+    this.applyThinkingAndEffort(params, model, opts);
 
     const { data: response, response: raw } = await client.messages.create(params).withResponse();
     opts?.onResponseHeaders?.(forwardableResponseHeaders(raw.headers as unknown as Headers));
@@ -288,12 +303,7 @@ export class AnthropicAdapter implements ProviderAdapter {
     }
     this.applyTools(params, request);
 
-    // Extended thinking — requires min 16k max_tokens per Anthropic spec
-    const thinkingEnabled = model.capabilities?.thinking === true;
-    if (thinkingEnabled) {
-      params.thinking = { type: 'enabled', budget_tokens: 10000 };
-      if ((params.max_tokens as number) < 16000) params.max_tokens = 16000;
-    }
+    this.applyThinkingAndEffort(params, model, opts);
 
     const { data, response: raw } = await (client.messages.create(params) as unknown as { withResponse(): Promise<{ data: unknown; response: Response }> }).withResponse();
     opts?.onResponseHeaders?.(forwardableResponseHeaders(raw.headers));

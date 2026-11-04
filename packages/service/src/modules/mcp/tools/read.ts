@@ -81,7 +81,7 @@ export const getModelInstanceTool: McpToolEntry = {
 export const routePreviewTool: McpToolEntry = {
   name: 'route_preview',
   description:
-    'Preview which model(s) a router would route a request to (ordered candidates + reasoning trace). Does not call any provider. No secrets are returned.',
+    'Preview which model(s) a router would route a request to (ordered candidates + reasoning trace). When the router has an enabled call configuration, also returns callConfig: the complexity tier and the effort / max output tokens / verbosity chosen for it, plus what each candidate would apply or skip (tools are not part of the preview input). Does not call any provider. No secrets are returned.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -105,7 +105,12 @@ export const routePreviewTool: McpToolEntry = {
 
     const request: ChatCompletionRequest = { model: inp.model ?? '', messages: inp.messages ?? [] }
     const result = await routeRequest(request, resolved.router)
-    return jsonResult({ models: result.models, trace: result.trace })
+    const call = result.callDecision
+    return jsonResult({
+      models: result.models,
+      trace: result.trace,
+      ...(call ? { callConfig: { tier: call.tier, source: call.source, signals: call.signals, desired: call.desired } } : {}),
+    })
   },
 }
 

@@ -21,15 +21,20 @@ import type { PolicyFn } from './types.js';
 const WARN_THRESHOLD = 0.80; // sopra l'80% di utilizzo inizia la penalità
 const MIN_SCORE      = 0.10; // punteggio minimo per una richiesta quasi al limite
 
-export const contextPolicy: PolicyFn = async ({ request, candidates }) => {
+/** Rough input size of a request: 1 token ≈ 4 characters of message text. */
+export function estimateInputTokens(request: { messages?: { content?: unknown }[] }): number {
   const totalChars = (request.messages ?? []).reduce((sum, m) => {
     if (typeof m.content === 'string') return sum + m.content.length;
     if (Array.isArray(m.content)) {
-      return sum + m.content.reduce((s, p) => s + (p.text?.length ?? 0), 0);
+      return sum + m.content.reduce((s: number, p: { text?: string }) => s + (p.text?.length ?? 0), 0);
     }
     return sum;
   }, 0);
-  const estimatedTokens = Math.ceil(totalChars / 4);
+  return Math.ceil(totalChars / 4);
+}
+
+export const contextPolicy: PolicyFn = async ({ request, candidates }) => {
+  const estimatedTokens = estimateInputTokens(request);
 
   const routing = candidates.map(c => {
     const ctx = c.model.contextWindow;

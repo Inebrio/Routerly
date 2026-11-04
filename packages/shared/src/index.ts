@@ -192,6 +192,15 @@ export {
   RANKING_ALGORITHMS, DEFAULT_RANKING_ALGORITHM, NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, isCompletionCall, blocksResponseStreaming,
   suggestConnectionLabel, isConnectionLabelTaken, suggestRouterSlug,
 } from './types/config.js';
+
+// Call configuration (effort / max output tokens / verbosity by request complexity)
+export {
+  CALL_SETTINGS, CALL_TIERS, CALL_MAX_OUTPUT_TOKENS_MIN, CALL_MAX_OUTPUT_TOKENS_MAX, CALL_DEFAULT_THRESHOLDS,
+} from './types/config.js';
+export type {
+  CallSettingId, CallTier, CallLevel, CallClientPolicy, CallSettings, CallConfig,
+  CallSkipReason, CallSettingSkip, AppliedCallConfig,
+} from './types/config.js';
 export type { NotificationEvent, RankingAlgorithmId } from './types/config.js';
 export type { PermissionCheckStatus } from './types/config.js';
 

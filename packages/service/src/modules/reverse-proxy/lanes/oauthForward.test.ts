@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import Fastify from 'fastify'
-import type { RouterConfig, ModelConfig } from '@routerly/shared'
+import type { RouterConfig, ModelConfig, AppliedCallConfig } from '@routerly/shared'
 import { buildOAuthForwardHeaders, forwardAnthropicOAuth, forwardAnthropicApiKey, upstreamModelName } from './oauthForward.js'
 
 vi.mock('../../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
@@ -605,5 +605,62 @@ describe('forwardAnthropicApiKey upstream failure', () => {
     expect(res.statusCode).toBe(299)
     expect(returned).toMatchObject({ status: 400, message: 'Upstream returned 400: max_tokens: 128000 > 64000' })
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ errorMessage: expect.stringContaining('128000') }))
+  })
+})
+
+describe('forwardAnthropicOAuth call settings (ROUT-306)', () => {
+  const payload = { model: 'claude-sonnet-4-5', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }
+
+  const send = async (body: unknown, callSettings?: AppliedCallConfig) => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response('{"type":"message"}', { status: 200, headers: { 'content-type': 'application/json' } }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const app = Fastify({ logger: false })
+    app.decorateRequest('router', null as any)
+    app.addContentTypeParser('text/plain', { parseAs: 'string' }, (_r, b, done) => done(null, b as string))
+    app.addHook('preHandler', async (req: any) => { req.router = testRouter })
+    app.route({
+      method: 'POST', url: '/v1/messages',
+      handler: (req, reply) => forwardAnthropicOAuth(req, reply, oauthModel, undefined, false, callSettings),
+    })
+    await app.ready()
+    await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': typeof body === 'string' ? 'text/plain' : 'application/json' },
+      payload: typeof body === 'string' ? body : JSON.stringify(body),
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+    return (fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string
+  }
+
+  it('without settings the body is exactly today\'s (model rewrite only)', async () => {
+    expect(await send(payload)).toBe(JSON.stringify({ ...payload, model: 'claude-max' }))
+  })
+
+  it('empty applied settings leave the body byte-identical', async () => {
+    expect(await send(payload, { tier: 'low', source: 'router', applied: {} })).toBe(JSON.stringify({ ...payload, model: 'claude-max' }))
+  })
+
+  it('applied effort and max tokens are written in the documented fields, nothing else changes', async () => {
+    const out = JSON.parse(await send(payload, { tier: 'high', source: 'router', applied: { effort: 'high', maxOutputTokens: 4000 } }))
+    expect(out).toEqual({ ...payload, model: 'claude-max', max_tokens: 4000, output_config: { effort: 'high' } })
+  })
+
+  it('effort merges into an existing output_config instead of replacing it', async () => {
+    const withCfg = { ...payload, output_config: { format: { type: 'json_schema' } } }
+    const out = JSON.parse(await send(withCfg, { tier: 'high', source: 'router', applied: { effort: 'low' } }))
+    expect(out.output_config).toEqual({ format: { type: 'json_schema' }, effort: 'low' })
+  })
+
+  it('a non-JSON body is forwarded verbatim even with settings', async () => {
+    expect(await send('not json', { tier: 'high', source: 'router', applied: { effort: 'high' } })).toBe('not json')
+  })
+
+  it('usage record carries callConfig', async () => {
+    const cc: AppliedCallConfig = { tier: 'low', source: 'profile', applied: { maxOutputTokens: 50 } }
+    await send(payload, cc)
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ callConfig: cc }))
   })
 })

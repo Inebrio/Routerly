@@ -2828,5 +2828,56 @@
       "modelsLink": "Modelos",
       "worksToo": "también funciona."
     }
+  },
+  "callConfig": {
+    "title": "Configuración de la llamada",
+    "hint": "Deja que el router fije el esfuerzo, los tokens máximos de salida y la verbosidad de cada solicitud según su complejidad estimada. Desactivada por defecto: si está apagada, la llamada al proveedor no cambia.",
+    "fromProfileHint": "Se muestra la configuración del perfil de enrutamiento asignado. Edítala en la página del perfil.",
+    "enable": "Activar la configuración de la llamada",
+    "disabled": "La configuración de la llamada está desactivada. Las solicitudes se reenvían con los parámetros del cliente.",
+    "fromProfile": "Del perfil",
+    "tierColumn": "Complejidad",
+    "unset": "Sin definir",
+    "clientPolicy": "Si el cliente ya lo define",
+    "keep": "Mantener el valor del cliente",
+    "override": "Sobrescribir con el valor del router",
+    "mediumFromTokens": "Medio desde (tokens de entrada)",
+    "highFromTokens": "Alto desde (tokens de entrada)",
+    "thresholdsHint": "Los tokens de entrada estimados por debajo del umbral medio son complejidad baja; desde el umbral alto son alta. Déjalo vacío para los valores por defecto (2000 y 16000).",
+    "hardCapWarning": "Los tokens máximos de salida son un límite estricto: las respuestas más largas se cortan (finish_reason `length` / stop_reason `max_tokens`). En Anthropic también limita el thinking.",
+    "invalidMax": "Los tokens máximos de salida deben ser un entero entre {{min}} y {{max}}.",
+    "invalidThresholds": "El umbral medio debe ser menor que el alto.",
+    "tier": {
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta"
+    },
+    "setting": {
+      "effort": "Esfuerzo",
+      "maxOutputTokens": "Tokens máximos de salida",
+      "verbosity": "Verbosidad"
+    },
+    "reason": {
+      "client_kept": "valor del cliente conservado",
+      "unsupported": "no admitido por el modelo",
+      "invalid": "valor no válido"
+    },
+    "trace": {
+      "title": "CONFIGURACIÓN DE LLAMADA",
+      "tier": "nivel",
+      "source": {
+        "router": "router",
+        "profile": "perfil"
+      },
+      "inputTokens": "Tokens de entrada (est.)",
+      "tools": "Herramientas",
+      "messages": "Mensajes",
+      "thresholds": "Umbrales",
+      "desired": "Configurado",
+      "skipped": "omitidos",
+      "none": "sin ajustes",
+      "yes": "sí",
+      "no": "no"
+    }
   }
 }

@@ -7,6 +7,7 @@ import { getRouters, getUsageRecord, type Router, type UsageRecord } from '../ap
 import { tokenLabel } from '../utils/tokenLabel';
 import { TraceLog } from '../components/TraceLog';
 import { TraceSummary } from '../components/TraceSummary';
+import { CallSettingsText, CallSkippedText } from '../components/CallConfigEditor';
 
 function Field({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
@@ -173,6 +174,20 @@ export function UsageRecordPage() {
                 }
               />
               <Field label={t('usage.record.fields.timestamp')} value={new Date(record.timestamp).toISOString()} mono />
+              {record.callConfig && (
+                <Field
+                  label={t('callConfig.title')}
+                  value={
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.85rem' }}>
+                      <span>
+                        {t('callConfig.trace.tier')} <b>{record.callConfig.tier}</b> · {t(`callConfig.trace.source.${record.callConfig.source}`)}
+                      </span>
+                      <CallSettingsText settings={record.callConfig.applied} />
+                      <CallSkippedText skipped={record.callConfig.skipped} />
+                    </span>
+                  }
+                />
+              )}
               {record.guardrailTriggered && (
                 <Field label={t('usage.record.fields.guardrailTriggered')} value={record.guardrailTriggered} mono />
               )}

@@ -1900,3 +1900,83 @@ describe('upstreamResponseFromError', () => {
     expect(upstreamResponseFromError(new Error('Vertex token exchange failed 401: invalid_grant'))).toMatchObject({ status: 401 })
   })
 })
+
+describe('call settings (ROUT-306)', () => {
+  const applied = { tier: 'high', source: 'router', applied: { effort: 'high', maxOutputTokens: 777 }, skipped: [{ setting: 'verbosity', reason: 'unsupported' }] } as const
+
+  it('llmChat: router cap goes into a per-call copy, the caller request is untouched, adapter gets callSettings', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const adapter = { chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) }
+    mockGetProvider.mockReturnValue(adapter as any)
+    const emit = vi.fn()
+    const req = { messages: [], max_completion_tokens: 50, temperature: 0.2 } as any
+    const snapshot = JSON.stringify(req)
+
+    await llmChat(req, makeModel(), makeCtx({ callSettings: applied, emit }))
+
+    expect(JSON.stringify(req)).toBe(snapshot)
+    const sent = adapter.chatCompletion.mock.calls[0]![0]
+    expect(sent).toEqual({ messages: [], max_tokens: 777, temperature: 0.2 })
+    expect(adapter.chatCompletion.mock.calls[0]![2]).toMatchObject({ callSettings: { effort: 'high', maxOutputTokens: 777 } })
+    const modelRequest = emit.mock.calls.map(c => c[0]).find((e: any) => e.message === 'model:request')
+    expect(modelRequest.details).toMatchObject({ maxTokens: 777, callSettings: { applied: applied.applied, skipped: applied.skipped } })
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'success', callConfig: applied }))
+  })
+
+  it('llmChat: no callSettings leaves the request object and the usage record untouched', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const adapter = { chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) }
+    mockGetProvider.mockReturnValue(adapter as any)
+    const emit = vi.fn()
+    const req = { messages: [], max_tokens: 50 } as any
+
+    await llmChat(req, makeModel(), makeCtx({ emit }))
+
+    expect(adapter.chatCompletion.mock.calls[0]![0]).toBe(req)
+    expect(adapter.chatCompletion.mock.calls[0]![2]).not.toHaveProperty('callSettings')
+    const modelRequest = emit.mock.calls.map(c => c[0]).find((e: any) => e.message === 'model:request')
+    expect(modelRequest.details).not.toHaveProperty('callSettings')
+    expect(mockTrackUsage.mock.calls.at(-1)![0]).not.toHaveProperty('callConfig')
+  })
+
+  it('llmChat: settings without a cap (effort only) keep the request identical', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const adapter = { chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) }
+    mockGetProvider.mockReturnValue(adapter as any)
+    const req = { messages: [], max_completion_tokens: 50 } as any
+    await llmChat(req, makeModel(), makeCtx({ callSettings: { tier: 'low', source: 'router', applied: { effort: 'low' } } }))
+    expect(adapter.chatCompletion.mock.calls[0]![0]).toBe(req)
+  })
+
+  it('llmChat: usage record carries callConfig on error too', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('boom')) } as any)
+    await expect(llmChat({ messages: [] } as any, makeModel(), makeCtx({ callSettings: applied }))).rejects.toThrow('boom')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'error', callConfig: applied }))
+  })
+
+  it('llmStream: per-call cap copy, callSettings to adapter, callConfig on the usage record', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const sc = vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'x' } }] }))
+    mockGetProvider.mockReturnValue({ streamCompletion: sc } as any)
+    const req = { messages: [], max_tokens: 10 } as any
+    const result = await llmStream(req, makeModel(), makeCtx({ callSettings: applied }))
+    for await (const _ of result.chunks) { /* consume */ }
+    expect(req.max_tokens).toBe(10)
+    expect(sc.mock.calls[0]![0].max_tokens).toBe(777)
+    expect(sc.mock.calls[0]![2]).toMatchObject({ callSettings: { effort: 'high' } })
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'success', callConfig: applied }))
+  })
+
+  it('fallback: each candidate call carries its own settings', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const adapter = { chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) }
+    mockGetProvider.mockReturnValue(adapter as any)
+    const req = { messages: [] } as any
+    await llmChat(req, makeModel('a'), makeCtx({ callSettings: applied }))
+    await llmChat(req, makeModel('b'), makeCtx({ callSettings: { tier: 'high', source: 'router', applied: {} } }))
+    expect(adapter.chatCompletion.mock.calls[0]![0].max_tokens).toBe(777)
+    expect(adapter.chatCompletion.mock.calls[1]![0]).toBe(req)
+    expect(adapter.chatCompletion.mock.calls[1]![2].callSettings).toEqual({})
+  })
+})

@@ -22,6 +22,7 @@ const sidebars: SidebarsConfig = {
         'concepts/models',
         'concepts/routers',
         'concepts/routing',
+        'concepts/call-configuration',
         'concepts/budgets-and-limits',
         'concepts/notifications',
         'concepts/security',

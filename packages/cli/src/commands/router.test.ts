@@ -3776,3 +3776,185 @@ describe('branch coverage extras', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Required permission: user:read'));
   });
 });
+
+// ─── router call-config ──────────────────────────────────────────────────────
+
+describe('router call-config', () => {
+  const cc = { enabled: true, tiers: { low: { effort: 'low', maxOutputTokens: 512 } } };
+  let out: string[];
+  let err: string[];
+  let exitSpy: ReturnType<typeof vi.spyOn>;
+  const run = (...args: string[]) => makeCmd().parseAsync(['node', 'router', 'call-config', ...args]);
+  const putBody = () => mockApi.mock.calls.find(c => c[0] === 'PUT')![2] as Record<string, unknown>;
+
+  beforeEach(() => {
+    out = [];
+    err = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => { out.push(a.join(' ')); });
+    vi.spyOn(console, 'error').mockImplementation((...a) => { err.push(a.join(' ')); });
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+  });
+  afterEach(() => exitSpy.mockRestore());
+
+  it('show --json prints the router config with source "router"', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, callConfig: cc }]);
+    await run('show', 'my-api', '--json');
+    expect(JSON.parse(out.join('\n'))).toEqual({ source: 'router', callConfig: cc });
+  });
+
+  it('show --json prints callConfig null when none is set', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    await run('show', 'my-api', '--json');
+    expect(JSON.parse(out.join('\n'))).toEqual({ source: 'router', callConfig: null });
+  });
+
+  it('show reports the bound routing profile config as the one in force', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, routingProfileId: 'p1', callConfig: { enabled: false, tiers: {} } }]);
+    mockApi.mockResolvedValueOnce([{ id: 'p1', kind: 'routing', callConfig: cc }]);
+    await run('show', 'my-api', '--json');
+    expect(mockApi).toHaveBeenCalledWith('GET', '/api/profiles?kind=routing');
+    expect(JSON.parse(out.join('\n'))).toEqual({ source: 'profile', profileId: 'p1', callConfig: cc });
+  });
+
+  it('show table prints source, enabled and tier settings', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, callConfig: cc }]);
+    await run('show', 'my-api');
+    const text = out.join('\n');
+    expect(text).toContain('effort=low');
+    expect(text).toContain('max-output-tokens=512');
+    expect(text).toContain('2000');
+  });
+
+  it('set merges one tier setting into the stored config and PUTs it', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, callConfig: cc }]);
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
+    await run('set', 'my-api', '--tier', 'high', '--effort', 'high', '--verbosity', 'low');
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/routers/proj-1', expect.anything());
+    expect(putBody()).toEqual({
+      name: 'my-api', models: [],
+      callConfig: { enabled: true, tiers: { low: cc.tiers.low, high: { effort: 'high', verbosity: 'low' } } },
+    });
+  });
+
+  it('set starts from a disabled empty config and honours --enable, --client-values and --thresholds', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
+    await run('set', 'my-api', '--enable', '--tier', 'medium', '--max-output-tokens', '1024', '--client-values', 'effort=override, verbosity=keep', '--thresholds', '3000,20000');
+    expect(putBody().callConfig).toEqual({
+      enabled: true,
+      tiers: { medium: { maxOutputTokens: 1024 } },
+      clientValues: { effort: 'override', verbosity: 'keep' },
+      thresholds: { mediumFromTokens: 3000, highFromTokens: 20000 },
+    });
+  });
+
+  it('set unset removes a setting and drops an empty tier', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, callConfig: cc }]);
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
+    await run('set', 'my-api', '--tier', 'low', '--effort', 'unset', '--max-output-tokens', 'unset', '--disable');
+    expect(putBody().callConfig).toEqual({ enabled: false, tiers: {} });
+  });
+
+  it('set --from-file replaces the whole config', async () => {
+    const { mkdtempSync, writeFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { tmpdir } = await import('node:os');
+    const file = join(mkdtempSync(join(tmpdir(), 'cc-')), 'cc.json');
+    writeFileSync(file, JSON.stringify({ enabled: true, tiers: { high: { effort: 'high' } } }));
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, callConfig: cc }]);
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
+    await run('set', 'my-api', '--from-file', file);
+    expect(putBody().callConfig).toEqual({ enabled: true, tiers: { high: { effort: 'high' } } });
+  });
+
+  it('set warns on stderr when a routing profile is bound, still saves', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, routingProfileId: 'p1' }]);
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
+    await run('set', 'my-api', '--enable');
+    expect(err.join('\n')).toContain('routing profile "p1"');
+    expect(mockApi).toHaveBeenCalledWith('PUT', expect.any(String), expect.anything());
+  });
+
+  it('set --json prints the saved router as parseable JSON', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    mockApi.mockResolvedValueOnce({ ...baseRouter, callConfig: cc });
+    await run('set', 'my-api', '--enable', '--json');
+    expect(JSON.parse(out.join('\n'))).toEqual({ ...baseRouter, callConfig: cc });
+  });
+
+  it.each([
+    [['--tier', 'high'], '--tier needs'],
+    [['--effort', 'low'], 'need --tier'],
+    [['--tier', 'ultra', '--effort', 'low'], '--tier must be one of'],
+    [['--tier', 'low', '--effort', 'max'], '--effort must be one of'],
+    [['--tier', 'low', '--max-output-tokens', '8'], '--max-output-tokens must be'],
+    [['--tier', 'low', '--max-output-tokens', 'abc'], '--max-output-tokens must be'],
+    [['--client-values', 'effort=maybe'], '--client-values entries'],
+    [['--client-values', 'temperature=keep'], '--client-values entries'],
+    [['--thresholds', '5000,1000'], '--thresholds must be'],
+    [['--thresholds', '5000'], '--thresholds must be'],
+    [['--enable', '--disable'], 'mutually exclusive'],
+    [[], 'nothing to set'],
+  ])('set %j exits 1 with a message on stderr, without calling the API write', async (args, msg) => {
+    mockApi.mockResolvedValue([baseRouter]);
+    await expect(run('set', 'my-api', ...args)).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(err.join('\n')).toContain(msg);
+    expect(mockApi.mock.calls.some(c => c[0] === 'PUT')).toBe(false);
+  });
+
+  it('set exits 1 on an unreadable --from-file', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    await expect(run('set', 'my-api', '--from-file', '/nonexistent/cc.json')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(err.join('\n')).toContain('ENOENT');
+  });
+
+  it('set exits 1 and prints the service message on 400', async () => {
+    const { ApiError } = await import('../api.js');
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    mockApi.mockRejectedValueOnce(new ApiError(400, 'Invalid callConfig: thresholds: bad'));
+    await expect(run('set', 'my-api', '--enable')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(err.join('\n')).toContain('Invalid callConfig');
+  });
+
+  it('set exits 1 on 403', async () => {
+    const { ApiError } = await import('../api.js');
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    mockApi.mockRejectedValueOnce(new ApiError(403, 'Forbidden'));
+    await expect(run('set', 'my-api', '--enable')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(err.join('\n')).toContain('Forbidden');
+    expect(out).toEqual([]);
+  });
+
+  it('clear PUTs callConfig null', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, callConfig: cc }]);
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
+    await run('clear', 'my-api');
+    expect(putBody()).toEqual({ name: 'my-api', models: [], callConfig: null });
+    expect(out.join('\n')).toContain('cleared');
+  });
+
+  it('clear --json prints the saved router', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, callConfig: cc }]);
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
+    await run('clear', 'my-api', '--json');
+    expect(JSON.parse(out.join('\n'))).toEqual(baseRouter);
+  });
+
+  it('clear exits 1 on 403', async () => {
+    const { ApiError } = await import('../api.js');
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    mockApi.mockRejectedValueOnce(new ApiError(403, 'Forbidden'));
+    await expect(run('clear', 'my-api')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it('exits 1 when the router is not found', async () => {
+    mockApi.mockResolvedValueOnce([]);
+    await expect(run('show', 'nope')).rejects.toThrow('exit');
+    expect(err.join('\n')).toContain('not found');
+  });
+});

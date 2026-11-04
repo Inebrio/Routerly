@@ -75,6 +75,17 @@ export class OpenAIAdapter implements ProviderAdapter {
     return normalized;
   }
 
+  // Router-chosen effort / verbosity, written after normalizeForModel so it cannot strip them.
+  private withCallSettings<T extends Record<string, unknown>>(body: T, opts?: CallOptions): T {
+    const cs = opts?.callSettings;
+    if (!cs) return body;
+    return {
+      ...body,
+      ...(cs.effort ? { reasoning_effort: cs.effort } : {}),
+      ...(cs.verbosity ? { verbosity: cs.verbosity } : {}),
+    };
+  }
+
   async chatCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
@@ -84,7 +95,7 @@ export class OpenAIAdapter implements ProviderAdapter {
 
     // Override the requested model with the actual selected candidate model ID
     const upstreamModel = this.getUpstreamModelId(model);
-    const rest = this.normalizeForModel(request, upstreamModel);
+    const rest = this.withCallSettings(this.normalizeForModel(request, upstreamModel), opts);
 
     // `stream` is forwarded exactly as the client sent it (absent stays absent).
     const { stream: _s, ...body } = rest;
@@ -103,7 +114,7 @@ export class OpenAIAdapter implements ProviderAdapter {
   ): AsyncIterable<StreamChunk> {
     const client = this.getClient(model);
     const upstreamModel = this.getUpstreamModelId(model);
-    const rest = this.normalizeForModel(request, upstreamModel);
+    const rest = this.withCallSettings(this.normalizeForModel(request, upstreamModel), opts);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: stream, response } = await (client.chat.completions.create({ ...rest, model: upstreamModel, stream: true } as any, this.requestOptions(opts)) as any).withResponse();

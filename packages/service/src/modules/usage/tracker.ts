@@ -1,4 +1,4 @@
-import type { UsageRecord, CallType, OptimizerCallStat, RequestType } from '@routerly/shared';
+import type { AppliedCallConfig, UsageRecord, CallType, OptimizerCallStat, RequestType } from '@routerly/shared';
 import { appendUsageRecord } from '../config/loader.js';
 import { calculateCost } from '../../lib/cost.js';
 import { getTrace, isTraceOpen } from '../trace/store.js';
@@ -47,6 +47,8 @@ export interface TrackUsageParams {
   experimentVariantId?: string;
   /** Set when this call was forwarded through an Orchestrator (RTR-02). */
   orchestratorId?: string;
+  /** Call configuration applied to this call (tier, applied, skipped); absent when no decision existed. */
+  callConfig?: AppliedCallConfig;
 }
 
 /**
@@ -108,6 +110,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     ...(params.experimentId ? { experimentId: params.experimentId } : {}),
     ...(params.experimentVariantId ? { experimentVariantId: params.experimentVariantId } : {}),
     ...(params.orchestratorId ? { orchestratorId: params.orchestratorId } : {}),
+    ...(params.callConfig ? { callConfig: params.callConfig } : {}),
   };
 
   // A trace still open keeps growing (response guardrails, PII on the answer,

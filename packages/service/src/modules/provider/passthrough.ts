@@ -4,12 +4,19 @@
  * reach the client.
  */
 
+import type { CallSettings } from '@routerly/shared';
+
 /** Per-call options an adapter may honour. Adapters that ignore them stay valid. */
 export interface CallOptions {
   /** Client request headers to forward to the provider (already filtered). */
   headers?: Record<string, string>;
   /** Called with the provider's response headers (already filtered) once known. */
   onResponseHeaders?: (headers: Record<string, string>) => void;
+  /**
+   * Router-chosen call settings already gated for this model. The adapter writes effort /
+   * verbosity in its own wire form; the output token cap arrives as the request's `max_tokens`.
+   */
+  callSettings?: CallSettings;
 }
 
 /**

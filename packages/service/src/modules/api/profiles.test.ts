@@ -547,3 +547,66 @@ describe('PUT /api/routers/:id/profiles', () => {
     expect(JSON.stringify(body)).not.toContain('sha256-secret-hash')
   })
 })
+
+// ─── callConfig on routing profiles (ROUT-306) ───────────────────────────────
+
+describe('routing profile callConfig', () => {
+  const CC = { enabled: true, tiers: { low: { effort: 'low', maxOutputTokens: 256 }, high: { effort: 'high' } } }
+  const stored = { ...userProfile, callConfig: CC }
+  const lastProfiles = () => mockWriteConfig.mock.calls.filter(c => c[0] === 'profiles').at(-1)![1] as any[]
+
+  it('POST stores a valid callConfig (profiles:manage)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'routing', label: 'X', callConfig: CC } })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect(JSON.parse(res.body).callConfig).toEqual(CC)
+  })
+
+  it('POST with callConfig null stores no key', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'routing', label: 'X', callConfig: null } })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect('callConfig' in JSON.parse(res.body)).toBe(false)
+  })
+
+  it('POST rejects an invalid callConfig with 400', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'routing', label: 'X', callConfig: { enabled: 'yes', tiers: {} } } })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('POST forbids without profiles:manage', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:read'), payload: { kind: 'routing', label: 'X', callConfig: CC } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('PATCH replaces, keeps when omitted, and clears on null', async () => {
+    const patch = async (payload: unknown) => {
+      const app = await buildApp()
+      const res = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:manage', { profiles: [structuredClone(stored)] }), payload: payload as object })
+      await app.close()
+      return res
+    }
+    const next = { enabled: false, tiers: {} }
+    expect(JSON.parse((await patch({ callConfig: next })).body).callConfig).toEqual(next)
+    expect(JSON.parse((await patch({ label: 'Renamed' })).body).callConfig).toEqual(CC)
+    const cleared = await patch({ callConfig: null })
+    expect(cleared.statusCode).toBe(200)
+    expect('callConfig' in JSON.parse(cleared.body)).toBe(false)
+    expect('callConfig' in lastProfiles()[0]).toBe(false)
+  })
+
+  it('PATCH rejects an invalid callConfig with 400 and forbids without profiles:manage', async () => {
+    const app = await buildApp()
+    const bad = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:manage', { profiles: [stored] }), payload: { callConfig: { enabled: true, tiers: { low: { verbosity: 'loud' } } } } })
+    const forbidden = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:read', { profiles: [stored] }), payload: { callConfig: CC } })
+    await app.close()
+    expect(bad.statusCode).toBe(400)
+    expect(forbidden.statusCode).toBe(403)
+  })
+})

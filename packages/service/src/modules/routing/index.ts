@@ -5,6 +5,7 @@ import type { ProxyContext } from '../reverse-proxy/context.js'
 import { recallUpstreamError } from '../reverse-proxy/last-upstream-error.js'
 import { upstreamErrorBody } from '../../lib/protocol-errors.js'
 import { routeRequest } from './router.js'
+import type { CallDecision } from './call-config.js'
 import { migrateProfiles } from './profiles/migrate.js'
 import { addRoutingDecision } from './routingMemoryStore.js'
 import { forwardPassthroughRaw } from '../api-reverse-proxy/router-passthrough.js'
@@ -37,6 +38,12 @@ async function forwardPassthroughFallback(ctx: ProxyContext): Promise<void> {
 // Store resolution is optional-safe: if the resilience module isn't registered in a given
 // kernel/test composition, resilienceStore is undefined and routeRequest skips the filter
 // entirely, unchanged from before this wiring.
+// prepare re-runs per candidate router under an Orchestrator: a stale decision must not leak.
+function setCallDecision(ctx: ProxyContext, decision: CallDecision | undefined): void {
+  if (decision) ctx.callDecision = decision
+  else delete ctx.callDecision
+}
+
 function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<ProxyContext> {
   return {
     id: 'routing.prepare',
@@ -60,7 +67,7 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
         // passthrough router per validate-passthrough.ts) — score real models normally,
         // falling back to raw-forward only when none turn out eligible (AC9).
         try {
-          const { models } = await routeRequest(
+          const { models, callDecision } = await routeRequest(
             ctx.request,
             ctx.router,
             ctx.log,
@@ -71,6 +78,7 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
             resilienceStore,
           )
           ctx.candidates = models
+          setCallDecision(ctx, callDecision)
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err)
           if (NO_ELIGIBLE_CANDIDATE_PREFIXES.some((prefix) => message.startsWith(prefix))) {
@@ -84,7 +92,7 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
       // The trace routeRequest returns is for callers without an event bus (the MCP
       // read tool): here every entry already went out through ctx.emit.
       try {
-        const { models } = await routeRequest(
+        const { models, callDecision } = await routeRequest(
           ctx.request,
           ctx.router,
           ctx.log,
@@ -95,6 +103,7 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
           resilienceStore,
         )
         ctx.candidates = models
+        setCallDecision(ctx, callDecision)
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         const noModels = message.startsWith('no_models_available')

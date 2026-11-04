@@ -566,6 +566,64 @@ routerly router routing policy reorder my-api health,context,budget-remaining,ll
 
 ---
 
+### Call configuration - `routerly router call-config`
+
+Set how a router calls its models (effort, max output tokens, verbosity) by request complexity. Off by default. See [Concepts: Call configuration](../concepts/call-configuration.md).
+
+#### `routerly router call-config show <router>`
+
+```
+routerly router call-config show <router> [--json]
+```
+
+Shows the configuration in force and where it comes from. When the router is bound to a routing profile, the profile's configuration is shown (`Source` names it). `--json` prints `{ "source": "router" | "profile", "profileId"?, "callConfig": {...} | null }`. Requires `router:read`.
+
+```bash
+routerly router call-config show my-api
+```
+
+#### `routerly router call-config set <router>`
+
+```
+routerly router call-config set <router> [options]
+```
+
+Only the options you pass change. At least one option is required.
+
+| Option | Description |
+|--------|-------------|
+| `--enable` / `--disable` | Turn the configuration on or off (tier data is kept). Mutually exclusive |
+| `--tier <tier>` | `low`, `medium` or `high`: the tier the next three options apply to. Needs at least one of them |
+| `--effort <level>` | `low`, `medium`, `high` or `unset` |
+| `--max-output-tokens <n>` | Integer 16 to 1000000, or `unset`. A hard cap: longer answers are cut |
+| `--verbosity <level>` | `low`, `medium`, `high` or `unset` |
+| `--client-values <list>` | Per-setting policy, e.g. `effort=override,verbosity=keep` |
+| `--thresholds <medium>,<high>` | Estimated input tokens where each tier starts; medium below high |
+| `--from-file <path>` | Replace the whole configuration from a JSON file, before the other options apply |
+| `--json` | Print the saved router as JSON |
+
+```bash
+routerly router call-config set my-api --enable --tier low --effort low --max-output-tokens 512
+routerly router call-config set my-api --client-values effort=override --thresholds 3000,20000
+```
+
+**Output on success:**
+```
+✓ Call configuration saved for "my-api" (enabled).
+```
+
+If the router is bound to a routing profile, a warning goes to stderr: the profile's configuration is in force and the router's own is ignored until the profile is unbound. Invalid options print the error to stderr and exit 1. Requires `router:write`.
+
+#### `routerly router call-config clear <router>`
+
+```
+routerly router call-config clear <router> [--json]
+```
+
+Removes the router's call configuration. Output: `✓ Call configuration cleared for "my-api".` Requires `router:write`.
+
+---
+
 ### Models - `routerly router model`
 
 A passthrough-kind router's model list always contains one **pass-through
@@ -1360,7 +1418,7 @@ routerly profiles show <id> [--json]
 
 Show full details of one profile. There is no single-item GET endpoint for profiles; `show` fetches the full list and filters client-side by ID.
 
-Prints the common fields (`id`, `kind`, `label`, `builtin`, `version`, and `baseId` if the profile was cloned), followed by a kind-specific block: policies for `routing`, the pipeline in execution order for `optimizer`, guardrail rules and PII policies for `security`.
+Prints the common fields (`id`, `kind`, `label`, `builtin`, `version`, and `baseId` if the profile was cloned), followed by a kind-specific block: policies and the call configuration for `routing`, the pipeline in execution order for `optimizer`, guardrail rules and PII policies for `security`.
 
 The selector and the fallback strategy of a routing profile are engine internals and are not printed; `--json` returns the stored profile as the API serves it, both fields included.
 
@@ -1387,11 +1445,13 @@ Create an empty profile of the given kind. The CLI has no editor for profile bod
 | `--kind <kind>` | `routing`, `optimizer` or `security` - required |
 | `--label <label>` | Label for the new profile - required |
 | `--ranking-algorithm <id>` | Ranking algorithm, `routing` profiles only (`default`); with another kind the command exits 1 |
+| `--call-config <json\|@file>` | Routing kind only: a [call configuration](../concepts/call-configuration.md) as inline JSON or `@path` |
 | `--json` | Output the created profile as raw JSON |
 
 ```bash
 routerly profiles create --kind routing --label "My Routing"
 routerly profiles create --kind routing --label "My Routing" --ranking-algorithm default
+routerly profiles create --kind routing --label "Capped" --call-config '{"enabled":true,"tiers":{"low":{"maxOutputTokens":512}}}'
 routerly profiles create --kind security --label "My Guardrails" --json
 ```
 
@@ -1405,19 +1465,23 @@ Requires `profiles:manage` permission.
 ### `routerly profiles update`
 
 ```
-routerly profiles update <id> [--label <label>] [--ranking-algorithm <id>] [--json]
+routerly profiles update <id> [--label <label>] [--ranking-algorithm <id>] [--call-config <json|@file> | --clear-call-config] [--json]
 ```
 
-Update a user profile. At least one of `--label` or `--ranking-algorithm` is required, otherwise the command exits 1 with `Error: provide --label and/or --ranking-algorithm.` Built-in profiles cannot be changed.
+Update a user profile. At least one of `--label`, `--ranking-algorithm`, `--call-config` or `--clear-call-config` is required, otherwise the command exits 1 with `Error: provide --label, --ranking-algorithm, --call-config and/or --clear-call-config.` Built-in profiles cannot be changed. `--call-config` and `--clear-call-config` are mutually exclusive; the service validates the call configuration JSON and answers `400` when it is invalid.
 
 | Option | Description |
 |--------|-------------|
 | `--label <label>` | New label |
 | `--ranking-algorithm <id>` | Ranking algorithm, `routing` profiles only (`default`) |
+| `--call-config <json\|@file>` | Replace the [call configuration](../concepts/call-configuration.md), `routing` profiles only |
+| `--clear-call-config` | Remove the call configuration |
 | `--json` | Output the updated profile as raw JSON |
 
 ```bash
 routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --ranking-algorithm default
+routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --call-config @call-config.json
+routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --clear-call-config
 ```
 
 **Output on success:**

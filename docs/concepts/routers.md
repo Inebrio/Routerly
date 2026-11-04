@@ -17,6 +17,7 @@ A `router`-kind Router has:
 - Its own **API tokens** that your applications use to authenticate
 - Its own **routing configuration** (which models to use and in what order)
 - Its own **budget limits** (optional)
+- An optional [call configuration](./call-configuration.md): effort, max output tokens and verbosity chosen by request complexity
 - Its own **usage logs**
 - A set of **members** with specific roles (for dashboard access)
 

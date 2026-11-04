@@ -9,6 +9,7 @@ import { forwardToRouter } from '../../routing/orchestrate.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
 import { llmChat, llmStream, loadEffectiveModel, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
+import { resolveAttemptCallConfig } from '../../routing/call-config.js'
 import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
 import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
 import { traceEgress } from '../helpers.js'
@@ -105,16 +106,32 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     const router = ctx.router
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const endUserId = (body as any).user as string | undefined || undefined
+    // Call configuration resolved for THIS candidate (re-evaluated on every fallback attempt).
+    const callSettings = resolveAttemptCallConfig(ctx)
 
     // ── OAuth models: verbatim pass-through with OAuth token (anthropic.ts L221-224). ──
     // listEffectiveModels() above is a static resolve (no live token fetch) — reload via
     // loadEffectiveModel() so the OAuth token is decrypted and refreshed if near expiry,
     // same as llmChat/llmStream already do for the SDK path (execute.ts). Without this the
     // passthrough forwards `Bearer ` with no/stale token and every request 401s immediately.
+    if (callSettings && (model.provider === 'anthropic-oauth' || model.provider === 'anthropic')) {
+      // The verbatim forwarders emit no model:request of their own; this carries the call settings.
+      ctx.emit?.({
+        panel: 'request',
+        message: 'model:request',
+        details: {
+          modelId: model.id,
+          provider: model.provider,
+          stream: body.stream === true,
+          messageCount: Array.isArray(body.messages) ? body.messages.length : 0,
+          callSettings: { applied: callSettings.applied, ...(callSettings.skipped ? { skipped: callSettings.skipped } : {}) },
+        },
+      })
+    }
     if (model.provider === 'anthropic-oauth') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      if (deferredFailure(ctx, await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx)))) { ctx.passthrough = false; return }
+      if (deferredFailure(ctx, await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx), callSettings))) { ctx.passthrough = false; return }
       ctx.result = { kind: 'passthrough' }
       return
     }
@@ -125,7 +142,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     if (model.provider === 'anthropic') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      if (deferredFailure(ctx, await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx)))) { ctx.passthrough = false; return }
+      if (deferredFailure(ctx, await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx), callSettings))) { ctx.passthrough = false; return }
       ctx.result = { kind: 'passthrough' }
       return
     }
@@ -141,6 +158,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
           ...(router.pii ? { pii: router.pii } : {}),
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
           ...(ctx.emit ? { emit: ctx.emit } : {}),
+          ...(callSettings ? { callSettings } : {}),
         })
         if (!body.stream) {
           const chatResp = await chunksToChatResponse(chunks, model.id)
@@ -179,6 +197,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       ...(ctx.token?.tags ? { tags: ctx.token.tags } : {}),
       ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
       onUpstreamHeaders: (h) => { upstreamHeaders = h },
+      ...(callSettings ? { callSettings } : {}),
     }
 
     if (body.stream) {

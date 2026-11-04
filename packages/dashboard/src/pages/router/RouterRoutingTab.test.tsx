@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { RouterRoutingTab } from './RouterRoutingTab';
@@ -2392,6 +2392,33 @@ describe('RouterRoutingTab — without router:write', () => {
     expect(screen.getByRole('button', { name: /^Profile$/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /^Custom$/ })).toBeDisabled();
     expect(screen.queryByRole('button', { name: /save routing configuration/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('RouterRoutingTab — call configuration', () => {
+  const withCfg = { ...mockRouter, callConfig: { enabled: true, tiers: { low: { effort: 'low' } } } };
+
+  it('is editable with router:write', async () => {
+    renderTab(withCfg);
+    await waitFor(() => expect(screen.getAllByRole('spinbutton')[0]!).not.toBeDisabled());
+  });
+
+  it('is read-only without router:write', async () => {
+    mockCanWrite = false;
+    renderTab(withCfg);
+    await waitFor(() => expect(screen.getByTestId('call-config-editor')).toBeInTheDocument());
+    screen.getAllByRole('spinbutton').forEach(i => expect(i).toBeDisabled());
+    expect(screen.getAllByRole('checkbox').pop()).toBeDisabled();
+  });
+
+  it('save sends callConfig only after the editor was touched', async () => {
+    mockUpdateRouter.mockResolvedValue({ ...withCfg });
+    renderTab(withCfg);
+    await waitFor(() => expect(screen.getByTestId('call-config-editor')).toBeInTheDocument());
+    fireEvent.change(screen.getAllByRole('spinbutton')[0]!, { target: { value: '2048' } });
+    await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    expect(mockUpdateRouter.mock.calls[mockUpdateRouter.mock.calls.length - 1]![1]).toMatchObject({ callConfig: { enabled: true, tiers: { low: { effort: 'low', maxOutputTokens: 2048 } } } });
   });
 });
 

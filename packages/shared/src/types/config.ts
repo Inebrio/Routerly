@@ -343,11 +343,48 @@ export interface ProfileBase {
   baseId?: string;
 }
 
+/**
+ * Call configuration (ROUT-306): how a model is called (reasoning effort,
+ * output token cap, verbosity), chosen by request complexity. Opt-in: absent
+ * or `enabled: false` leaves the upstream payload untouched.
+ */
+export const CALL_SETTINGS = ['effort', 'maxOutputTokens', 'verbosity'] as const
+export type CallSettingId = typeof CALL_SETTINGS[number]
+export const CALL_TIERS = ['low', 'medium', 'high'] as const
+export type CallTier = typeof CALL_TIERS[number]
+export type CallLevel = 'low' | 'medium' | 'high'            // effort and verbosity values
+export type CallClientPolicy = 'keep' | 'override'
+export const CALL_MAX_OUTPUT_TOKENS_MIN = 16
+export const CALL_MAX_OUTPUT_TOKENS_MAX = 1_000_000
+export const CALL_DEFAULT_THRESHOLDS = { mediumFromTokens: 2000, highFromTokens: 16000 } as const
+
+export interface CallSettings {
+  effort?: CallLevel
+  maxOutputTokens?: number            // integer 16..1_000_000
+  verbosity?: CallLevel
+}
+export interface CallConfig {
+  enabled: boolean
+  clientValues?: Partial<Record<CallSettingId, CallClientPolicy>>   // missing = 'keep'
+  tiers: Partial<Record<CallTier, CallSettings>>
+  thresholds?: { mediumFromTokens?: number; highFromTokens?: number } // defaults 2000 / 16000
+}
+export type CallSkipReason = 'client_kept' | 'unsupported' | 'invalid'
+export interface CallSettingSkip { setting: CallSettingId; reason: CallSkipReason }
+export interface AppliedCallConfig {
+  tier: CallTier
+  source: 'router' | 'profile'
+  applied: CallSettings               // what reached the provider
+  skipped?: CallSettingSkip[]
+}
+
 export interface RoutingProfile extends ProfileBase {
   kind: 'routing';
   policies: RoutingPolicy[];
   selector: SelectorType;
   fallbackStrategy: FallbackStrategyType;
+  /** Call configuration (effort / max output tokens / verbosity by complexity). */
+  callConfig?: CallConfig;
   /** Absent means 'default'. */
   rankingAlgorithm?: RankingAlgorithmId;
 }
@@ -654,6 +691,8 @@ export interface RouterConfig {
    * a trace carries metadata only (models, scores, tokens, cost, latency).
    */
   traceContent?: boolean;
+  /** Call configuration used when no routing profile is bound (a bound profile wins entirely). */
+  callConfig?: CallConfig;
 }
 
 /**
@@ -1305,6 +1344,8 @@ export interface UsageRecord {
    * (and model) that actually executed the call — never the Orchestrator.
    */
   orchestratorId?: string;
+  /** Call configuration decision applied to this call. Absent when no decision existed. */
+  callConfig?: AppliedCallConfig;
 }
 
 /** Per-model aggregate row in the GET /api/usage response (`byModel`). */

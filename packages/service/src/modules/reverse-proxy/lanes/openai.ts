@@ -9,6 +9,7 @@ import { forwardToRouter } from '../../routing/orchestrate.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
+import { resolveAttemptCallConfig } from '../../routing/call-config.js'
 import { emitEvent } from '../../notifications/emitter.js'
 import { forwardableRequestHeaders } from '../../provider/passthrough.js'
 import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
@@ -102,6 +103,8 @@ export const openaiUpstream: Processor<ProxyContext> = {
 
     // Provider response headers of the call that answers (a failed candidate's are overwritten).
     let upstreamHeaders: Record<string, string> | undefined
+    // Call configuration resolved for THIS candidate (re-evaluated on every fallback attempt).
+    const callSettings = resolveAttemptCallConfig(ctx)
     const cctx: LLMCallContext = {
       routerId: router.id,
       router,
@@ -120,6 +123,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
       ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
       forwardHeaders: forwardableRequestHeaders(ctx.req?.headers ?? {}),
       onUpstreamHeaders: (h) => { upstreamHeaders = h },
+      ...(callSettings ? { callSettings } : {}),
     }
 
     // ── openai-oauth: Codex Responses backend, mapped back to OpenAI chunks. ──
@@ -133,6 +137,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
             ...(router.pii ? { pii: router.pii } : {}),
             ...(ctx.token ? { tokenId: ctx.token.id } : {}),
           ...(ctx.emit ? { emit: ctx.emit } : {}),
+          ...(callSettings ? { callSettings } : {}),
           })
           ctx.result = { kind: 'json', body: await chunksToChatResponse(chunks, model.id) }
         } catch (err) {
@@ -153,6 +158,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
           ...(router.pii ? { pii: router.pii } : {}),
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
           ...(ctx.emit ? { emit: ctx.emit } : {}),
+          ...(callSettings ? { callSettings } : {}),
         })
         ctx.result = { kind: 'stream', body: await primeStream(chunks) }
       } catch (err) {

@@ -8,6 +8,7 @@ import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 import { listProfiles, cloneProfile, bumpVersion, assertWritableProfile } from '../routing/profiles/store.js';
 import { getBuiltin } from '../routing/profiles/presets.js';
+import { callConfigSchema } from '../routing/call-config.js';
 import { validateRoutingModels } from '../routing/validate-routing-models.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema } from './schemas.js';
 
@@ -62,6 +63,7 @@ const CREATE_SCHEMAS = {
     policies: z.array(routingPolicySchema).default([]),
     selector: selectorTypeSchema.default('argmax'),
     fallbackStrategy: fallbackStrategyTypeSchema.default('next-best'),
+    callConfig: callConfigSchema.nullable().optional(),
     rankingAlgorithm: z.enum(RANKING_ALGORITHMS).optional(),
   }),
   optimizer: z.object({
@@ -96,6 +98,7 @@ const PATCH_SCHEMAS: Record<ProfileKind, z.ZodTypeAny> = {
     policies: z.array(routingPolicySchema).optional(),
     selector: selectorTypeSchema.optional(),
     fallbackStrategy: fallbackStrategyTypeSchema.optional(),
+    callConfig: callConfigSchema.nullable().optional(),
     rankingAlgorithm: z.enum(RANKING_ALGORITHMS).optional(),
   }).refine(b => Object.keys(b).length > 0, { message: 'At least one field must be provided' }),
   optimizer: z.object({
@@ -146,7 +149,9 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
       if (modelsError) return reply.status(400).send({ error: modelsError });
     }
 
-    const profile = { ...parsed.data, id: randomUUID(), version: 1, builtin: false } as Profile;
+    // `callConfig: null` means "none": the key is never stored.
+    const { callConfig: createCallConfig, ...createRest } = parsed.data as typeof parsed.data & { callConfig?: unknown };
+    const profile = { ...createRest, ...(createCallConfig ? { callConfig: createCallConfig } : {}), id: randomUUID(), version: 1, builtin: false } as Profile;
     const userProfiles = await readConfig('profiles');
     userProfiles.push(profile);
     await writeConfig('profiles', userProfiles);
@@ -195,7 +200,11 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
 
     // The schema for this kind already rejected every field that does not belong
     // to it, so the parsed body can be merged as-is.
-    const updated = bumpVersion({ ...current, ...(parsed.data as Record<string, unknown>) } as Profile);
+    // `callConfig: null` clears the stored config (the key is removed, not set to null).
+    const { callConfig: patchCallConfig, ...patchRest } = parsed.data as Record<string, unknown>;
+    const { callConfig: currentCallConfig, ...currentRest } = current as Profile & { callConfig?: unknown };
+    const nextCallConfig = patchCallConfig === undefined ? currentCallConfig : patchCallConfig;
+    const updated = bumpVersion({ ...currentRest, ...patchRest, ...(nextCallConfig ? { callConfig: nextCallConfig } : {}) } as Profile);
     assertWritableProfile(updated); // defensive - userProfiles entries are always builtin:false already
     userProfiles[idx] = updated;
     await writeConfig('profiles', userProfiles);
