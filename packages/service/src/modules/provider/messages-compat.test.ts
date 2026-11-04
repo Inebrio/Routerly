@@ -97,7 +97,7 @@ describe('openAIToAnthropicResponse', () => {
       usage: { prompt_tokens: 10, completion_tokens: 5 },
     }
     const result = openAIToAnthropicResponse(openAIRes, 'gpt-4')
-    expect(result.id).toBe('chatcmpl-123')
+    expect(result.id).toBe('msg_123')
     expect(result.type).toBe('message')
     expect(result.role).toBe('assistant')
     expect(result.content).toEqual([{ type: 'text', text: 'Hello!' }])
