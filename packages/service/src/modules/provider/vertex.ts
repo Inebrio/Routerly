@@ -2,6 +2,7 @@ import { createSign } from 'node:crypto';
 import OpenAI from 'openai';
 import type { ModelConfig } from '@routerly/shared';
 import { OpenAIAdapter } from './openai.js';
+import { unwrapGeminiError } from './gemini.js';
 
 // ── Google service-account JWT + token exchange ───────────────────────────────
 
@@ -75,6 +76,8 @@ export class VertexAdapter extends OpenAIAdapter {
       timeout:  model.timeout ?? 60000,
       maxRetries: 0, // retry/failover is Routerly's job (resilience + candidate loop); SDK retries multiplied the timeout x3
       defaultHeaders: { Authorization: `Bearer ${token}` },
+      // Vertex wraps errors in a JSON array like Gemini; unwrap so the SDK keeps Google's message.
+      fetch: unwrapGeminiError as unknown as NonNullable<ConstructorParameters<typeof OpenAI>[0]>['fetch'],
     });
   }
 
