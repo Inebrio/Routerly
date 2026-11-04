@@ -2814,5 +2814,56 @@
       "modelsLink": "Modelle",
       "worksToo": "Seite funktioniert ebenfalls."
     }
+  },
+  "callConfig": {
+    "title": "Aufrufkonfiguration",
+    "hint": "Lass den Router Aufwand, maximale Ausgabe-Tokens und Ausführlichkeit je Anfrage anhand der geschätzten Komplexität festlegen. Standardmäßig aus: ausgeschaltet bleibt der Aufruf an den Anbieter unverändert.",
+    "fromProfileHint": "Zeigt die Konfiguration des zugewiesenen Routing-Profils. Bearbeite sie auf der Profilseite.",
+    "enable": "Aufrufkonfiguration aktivieren",
+    "disabled": "Die Aufrufkonfiguration ist aus. Anfragen werden mit den Parametern des Clients weitergeleitet.",
+    "fromProfile": "Aus dem Profil",
+    "tierColumn": "Komplexität",
+    "unset": "Nicht gesetzt",
+    "clientPolicy": "Wenn der Client es bereits setzt",
+    "keep": "Wert des Clients behalten",
+    "override": "Mit Router-Wert überschreiben",
+    "mediumFromTokens": "Mittel ab (Eingabe-Tokens)",
+    "highFromTokens": "Hoch ab (Eingabe-Tokens)",
+    "thresholdsHint": "Geschätzte Eingabe-Tokens unter der mittleren Schwelle gelten als niedrige Komplexität; ab der hohen Schwelle als hoch. Leer lassen für die Standardwerte (2000 und 16000).",
+    "hardCapWarning": "Maximale Ausgabe-Tokens sind eine harte Grenze: längere Antworten werden abgeschnitten (finish_reason `length` / stop_reason `max_tokens`). Bei Anthropic begrenzt sie auch das Thinking.",
+    "invalidMax": "Maximale Ausgabe-Tokens müssen eine ganze Zahl zwischen {{min}} und {{max}} sein.",
+    "invalidThresholds": "Die mittlere Schwelle muss unter der hohen liegen.",
+    "tier": {
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch"
+    },
+    "setting": {
+      "effort": "Aufwand",
+      "maxOutputTokens": "Max. Ausgabe-Tokens",
+      "verbosity": "Ausführlichkeit"
+    },
+    "reason": {
+      "client_kept": "Wert des Clients behalten",
+      "unsupported": "vom Modell nicht unterstützt",
+      "invalid": "ungültiger Wert"
+    },
+    "trace": {
+      "title": "AUFRUFKONFIGURATION",
+      "tier": "Stufe",
+      "source": {
+        "router": "Router",
+        "profile": "Profil"
+      },
+      "inputTokens": "Eingabe-Tokens (gesch.)",
+      "tools": "Tools",
+      "messages": "Nachrichten",
+      "thresholds": "Schwellen",
+      "desired": "Konfiguriert",
+      "skipped": "übersprungen",
+      "none": "keine Einstellungen",
+      "yes": "ja",
+      "no": "nein"
+    }
   }
 }

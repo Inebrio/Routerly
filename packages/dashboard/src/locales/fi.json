@@ -2814,5 +2814,56 @@
       "modelsLink": "Mallit",
       "worksToo": "-sivulta toimii myös."
     }
+  },
+  "callConfig": {
+    "title": "Call configuration",
+    "hint": "Let the router set effort, max output tokens and verbosity for each request, based on its estimated complexity. Off by default: when off, the upstream call is not changed.",
+    "fromProfileHint": "Showing the configuration of the assigned routing profile. Edit it on the profile page.",
+    "enable": "Enable call configuration",
+    "disabled": "Call configuration is off. Requests are forwarded with the parameters the client sent.",
+    "fromProfile": "From profile",
+    "tierColumn": "Complexity",
+    "unset": "Unset",
+    "clientPolicy": "If the client already sets it",
+    "keep": "Keep client value",
+    "override": "Override with router value",
+    "mediumFromTokens": "Medium from (input tokens)",
+    "highFromTokens": "High from (input tokens)",
+    "thresholdsHint": "Estimated input tokens below the medium threshold are low complexity; from the high threshold they are high. Leave empty for the defaults (2000 and 16000).",
+    "hardCapWarning": "Max output tokens is a hard cap: responses longer than the cap are cut (finish_reason `length` / stop_reason `max_tokens`). On Anthropic it also caps thinking.",
+    "invalidMax": "Max output tokens must be an integer between {{min}} and {{max}}.",
+    "invalidThresholds": "The medium threshold must be lower than the high threshold.",
+    "tier": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "setting": {
+      "effort": "Effort",
+      "maxOutputTokens": "Max output tokens",
+      "verbosity": "Verbosity"
+    },
+    "reason": {
+      "client_kept": "client value kept",
+      "unsupported": "not supported by the model",
+      "invalid": "invalid value"
+    },
+    "trace": {
+      "title": "CALL CONFIGURATION",
+      "tier": "tier",
+      "source": {
+        "router": "router",
+        "profile": "profile"
+      },
+      "inputTokens": "Input tokens (est.)",
+      "tools": "Tools",
+      "messages": "Messages",
+      "thresholds": "Thresholds",
+      "desired": "Configured",
+      "skipped": "skipped",
+      "none": "no settings",
+      "yes": "yes",
+      "no": "no"
+    }
   }
 }

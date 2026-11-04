@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { CallSettingsText, CallSkippedText } from './CallConfigEditor';
 
 /**
  * TraceEntryRenderer
@@ -97,6 +98,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   const isThinking     = e.message === 'model:thinking';
   const isRecap        = e.message === 'router:recap';
   const isIntake       = e.message === 'router:intake';
+  const isCallConfig   = e.message === 'router:call-config';
   const isCacheEmbedding = e.message === 'cache:embedding';
   const isCacheHit     = e.message === 'cache:hit';
   const isCacheMiss    = e.message === 'cache:miss';
@@ -111,7 +113,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   // Events that draw their own titled box: the generic message header would repeat it.
   const isSelfTitled = isRecap || isCacheEmbedding || isCacheHit || isCacheMiss || isGuardrailTriggered
     || isGuardrailEvaluated || isGuardrailInjected || isPiiScrubbed || isPiiEvaluated
-    || isOptimizerStep || isBudgetChecked || isEgressSent;
+    || isOptimizerStep || isBudgetChecked || isEgressSent || isCallConfig;
 
   const labelColor = isError ? 'var(--danger)' : isGuardrailTriggered ? '#ef4444' : isGuardrailEvaluated ? '#fb923c' : isPiiScrubbed ? '#f97316' : isPiiEvaluated ? '#34d399' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : isCacheEmbedding ? '#38bdf8' : isCacheHit ? '#10b981' : isCacheMiss ? '#f59e0b' : 'var(--accent)';
   const hasDetails = e.details != null && Object.keys(e.details).length > 0;
@@ -180,6 +182,14 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>{t('common.trace.technicalDetails')}</summary>
             <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify(baseDetails, null, 2)}</pre>
           </details>
+
+          {isModelRequest && e.details?.callSettings && (
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', display: 'flex', flexWrap: 'wrap', gap: '2px 10px' }}>
+              <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{t('callConfig.title')}</span>
+              <CallSettingsText settings={e.details.callSettings.applied ?? {}} />
+              <CallSkippedText skipped={e.details.callSettings.skipped} />
+            </div>
+          )}
 
           {/* System prompt sempre espanso (solo chiamate routing) */}
           {systemPrompt != null && (
@@ -619,6 +629,34 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
               <span style={{ color: '#fca5a5', fontWeight: 600 }}>{String(v.metric)}</span>
               <span>{String(v.window)}</span>
               <span style={{ marginLeft: 'auto', color: '#f87171', fontVariantNumeric: 'tabular-nums' }}>{String(v.current)} / {String(v.limit)}</span>
+            </div>
+          ))}
+        </Box>
+
+      ) : isCallConfig ? (
+        <Box
+          color="#8b5cf6"
+          title={t('callConfig.trace.title')}
+          badge={<>
+            <Pill text={`${t('callConfig.trace.tier')} ${String(e.details?.tier ?? '—')}`} color="#8b5cf6" />
+            <Pill text={t(`callConfig.trace.source.${e.details?.source === 'profile' ? 'profile' : 'router'}`)} color="#94a3b8" />
+          </>}
+        >
+          <Facts items={[
+            [t('callConfig.trace.inputTokens'), String(e.details?.signals?.estimatedInputTokens ?? '—')],
+            [t('callConfig.trace.tools'), e.details?.signals?.hasTools ? t('callConfig.trace.yes') : t('callConfig.trace.no')],
+            [t('callConfig.trace.messages'), String(e.details?.signals?.messageCount ?? '—')],
+            [t('callConfig.trace.thresholds'), `${String(e.details?.thresholds?.mediumFromTokens ?? '—')} / ${String(e.details?.thresholds?.highFromTokens ?? '—')}`],
+          ]} />
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            {t('callConfig.trace.desired')} <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}><CallSettingsText settings={e.details?.desired ?? {}} /></span>
+          </div>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
+          {(e.details?.perModel as any[] | undefined)?.map((m: any, i: number) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '4px 10px', fontSize: '0.8rem' }}>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{String(m.model)}</span>
+              <CallSettingsText settings={m.applied ?? {}} />
+              <CallSkippedText skipped={m.skipped} />
             </div>
           ))}
         </Box>

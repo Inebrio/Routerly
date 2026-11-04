@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
 import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type RoutingProfile } from '../../api';
-import { PASSTHROUGH_MODEL_ID } from '@routerly/shared';
+import { PASSTHROUGH_MODEL_ID, type CallConfig } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
 import { useAuth } from '../../AuthContext';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { PendingProfileNotice, ReadOnlyFieldset, StartFromProfile } from '../../components/ProfileDraftControls';
 import { useProfileDraft } from '../../hooks/useProfileDraft';
+import { CallConfigEditor, callConfigError } from '../../components/CallConfigEditor';
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../../components/RoutingPoliciesEditor';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { ORCHESTRATOR_POLICY_TYPES } from './RouterOrchestratorTab';
@@ -31,6 +32,8 @@ export function RouterRoutingTab() {
   const [policies, setPolicies] = useState<PolicyItem[]>([]);
   const [targetModels, setTargetModels] = useState<TargetModel[]>([]);
   const [profiles, setProfiles] = useState<RoutingProfile[]>([]);
+  // undefined until the operator touches the editor: then the save keeps the stored value.
+  const [callConfig, setCallConfig] = useState<CallConfig | undefined>(undefined);
 
   // Drag state
   const [draggedTargetIdx, setDraggedTargetIdx] = useState<number | null>(null);
@@ -60,6 +63,8 @@ export function RouterRoutingTab() {
         setPolicies([]);
       }
 
+      setCallConfig(router.callConfig);
+
       setTargetModels(router.models.map(m => ({
         internalId: Math.random().toString(36).substring(7),
         modelId: m.modelId,
@@ -80,6 +85,8 @@ export function RouterRoutingTab() {
       if (p1.type !== p2.type || p1.enabled !== p2.enabled) return true;
       if (JSON.stringify(p1.config || {}) !== JSON.stringify(p2.config || {})) return true;
     }
+
+    if (JSON.stringify(callConfig ?? null) !== JSON.stringify(router.callConfig ?? null)) return true;
 
     /* v8 ignore next */
     const savedTargets = router.models || [];
@@ -210,6 +217,11 @@ export function RouterRoutingTab() {
       return;
     }
 
+    if (!profileAssigned && callConfigError(callConfig)) {
+      setErr(t(callConfigError(callConfig)!, { min: 16, max: 1000000 }));
+      return;
+    }
+
     setSaving(true);
     let assigning = false;
     try {
@@ -224,6 +236,7 @@ export function RouterRoutingTab() {
           ...(m.prompt.trim() ? { prompt: m.prompt.trim() } : {}),
         })),
         ...(router.timeoutMs !== undefined && { timeoutMs: router.timeoutMs }),
+        ...(callConfig !== undefined && { callConfig }),
       };
       let updated = await updateRouter(router.id, payload);
       assigning = draft.isPending;
@@ -524,6 +537,11 @@ export function RouterRoutingTab() {
             <Plus size={16} /> {t('routers.routing.targetModels.addTarget')}
           </button>
         </div>
+
+        <div style={{ margin: '32px 0 24px', borderTop: '1px solid var(--border)' }} />
+        {profileAssigned
+          ? <CallConfigEditor value={profiles.find(p => p.id === assignedProfileId)?.callConfig} onChange={() => {}} readOnly source="profile" />
+          : <CallConfigEditor value={callConfig} onChange={setCallConfig} readOnly={!canWrite} />}
         </>
         )}
 

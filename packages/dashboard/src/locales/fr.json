@@ -2814,5 +2814,56 @@
       "modelsLink": "Modèles",
       "worksToo": "page fonctionne aussi."
     }
+  },
+  "callConfig": {
+    "title": "Configuration de l'appel",
+    "hint": "Laisse le routeur fixer l'effort, le nombre maximal de jetons en sortie et la verbosité de chaque requête selon sa complexité estimée. Désactivée par défaut : désactivée, l'appel vers le fournisseur n'est pas modifié.",
+    "fromProfileHint": "Affiche la configuration du profil de routage assigné. Modifie-la sur la page du profil.",
+    "enable": "Activer la configuration de l'appel",
+    "disabled": "La configuration de l'appel est désactivée. Les requêtes sont transmises avec les paramètres du client.",
+    "fromProfile": "Du profil",
+    "tierColumn": "Complexité",
+    "unset": "Non défini",
+    "clientPolicy": "Si le client le définit déjà",
+    "keep": "Conserver la valeur du client",
+    "override": "Remplacer par la valeur du routeur",
+    "mediumFromTokens": "Moyen à partir de (jetons en entrée)",
+    "highFromTokens": "Élevé à partir de (jetons en entrée)",
+    "thresholdsHint": "Sous le seuil moyen, les jetons en entrée estimés donnent une complexité faible ; à partir du seuil élevé, elle est élevée. Laisse vide pour les valeurs par défaut (2000 et 16000).",
+    "hardCapWarning": "Le maximum de jetons en sortie est une limite stricte : les réponses plus longues sont coupées (finish_reason `length` / stop_reason `max_tokens`). Sur Anthropic, il plafonne aussi le thinking.",
+    "invalidMax": "Le maximum de jetons en sortie doit être un entier entre {{min}} et {{max}}.",
+    "invalidThresholds": "Le seuil moyen doit être inférieur au seuil élevé.",
+    "tier": {
+      "low": "Faible",
+      "medium": "Moyenne",
+      "high": "Élevée"
+    },
+    "setting": {
+      "effort": "Effort",
+      "maxOutputTokens": "Jetons max en sortie",
+      "verbosity": "Verbosité"
+    },
+    "reason": {
+      "client_kept": "valeur du client conservée",
+      "unsupported": "non pris en charge par le modèle",
+      "invalid": "valeur invalide"
+    },
+    "trace": {
+      "title": "CONFIGURATION D'APPEL",
+      "tier": "niveau",
+      "source": {
+        "router": "routeur",
+        "profile": "profil"
+      },
+      "inputTokens": "Jetons en entrée (est.)",
+      "tools": "Outils",
+      "messages": "Messages",
+      "thresholds": "Seuils",
+      "desired": "Configuré",
+      "skipped": "ignorés",
+      "none": "aucun réglage",
+      "yes": "oui",
+      "no": "non"
+    }
   }
 }

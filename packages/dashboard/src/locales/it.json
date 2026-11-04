@@ -2817,5 +2817,56 @@
       "modelsLink": "Modelli",
       "worksToo": "pagina funziona altrettanto bene."
     }
+  },
+  "callConfig": {
+    "title": "Configurazione della chiamata",
+    "hint": "Lascia che il router imposti effort, token massimi in output e verbosity di ogni richiesta, in base alla complessità stimata. Disattivata di default: quando è spenta, la chiamata verso il provider non cambia.",
+    "fromProfileHint": "Mostra la configurazione del profilo di routing assegnato. Modificala nella pagina del profilo.",
+    "enable": "Abilita la configurazione della chiamata",
+    "disabled": "La configurazione della chiamata è disattivata. Le richieste vengono inoltrate con i parametri inviati dal client.",
+    "fromProfile": "Dal profilo",
+    "tierColumn": "Complessità",
+    "unset": "Non impostato",
+    "clientPolicy": "Se il client lo imposta già",
+    "keep": "Mantieni il valore del client",
+    "override": "Sovrascrivi con il valore del router",
+    "mediumFromTokens": "Medio da (token in input)",
+    "highFromTokens": "Alto da (token in input)",
+    "thresholdsHint": "I token in input stimati sotto la soglia media sono complessità bassa; dalla soglia alta in su sono alta. Lascia vuoto per i valori predefiniti (2000 e 16000).",
+    "hardCapWarning": "I token massimi in output sono un limite rigido: le risposte più lunghe vengono troncate (finish_reason `length` / stop_reason `max_tokens`). Su Anthropic limitano anche il thinking.",
+    "invalidMax": "I token massimi in output devono essere un intero tra {{min}} e {{max}}.",
+    "invalidThresholds": "La soglia media deve essere inferiore a quella alta.",
+    "tier": {
+      "low": "Bassa",
+      "medium": "Media",
+      "high": "Alta"
+    },
+    "setting": {
+      "effort": "Effort",
+      "maxOutputTokens": "Token massimi in output",
+      "verbosity": "Verbosity"
+    },
+    "reason": {
+      "client_kept": "valore del client mantenuto",
+      "unsupported": "non supportato dal modello",
+      "invalid": "valore non valido"
+    },
+    "trace": {
+      "title": "CONFIGURAZIONE CHIAMATA",
+      "tier": "livello",
+      "source": {
+        "router": "router",
+        "profile": "profilo"
+      },
+      "inputTokens": "Token in input (stima)",
+      "tools": "Tool",
+      "messages": "Messaggi",
+      "thresholds": "Soglie",
+      "desired": "Configurato",
+      "skipped": "saltati",
+      "none": "nessuna impostazione",
+      "yes": "sì",
+      "no": "no"
+    }
   }
 }

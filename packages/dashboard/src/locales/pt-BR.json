@@ -2814,5 +2814,56 @@
       "modelsLink": "Modelos",
       "worksToo": "também funciona."
     }
+  },
+  "callConfig": {
+    "title": "Configuração da chamada",
+    "hint": "Deixe o router definir esforço, máximo de tokens de saída e verbosidade de cada requisição, com base na complexidade estimada. Desativada por padrão: desligada, a chamada ao provedor não muda.",
+    "fromProfileHint": "Mostra a configuração do perfil de roteamento atribuído. Edite-a na página do perfil.",
+    "enable": "Ativar a configuração da chamada",
+    "disabled": "A configuração da chamada está desligada. As requisições são encaminhadas com os parâmetros do cliente.",
+    "fromProfile": "Do perfil",
+    "tierColumn": "Complexidade",
+    "unset": "Não definido",
+    "clientPolicy": "Se o cliente já o definir",
+    "keep": "Manter o valor do cliente",
+    "override": "Substituir pelo valor do router",
+    "mediumFromTokens": "Médio a partir de (tokens de entrada)",
+    "highFromTokens": "Alto a partir de (tokens de entrada)",
+    "thresholdsHint": "Os tokens de entrada estimados abaixo do limite médio são complexidade baixa; a partir do limite alto são altos. Deixe vazio para os valores padrão (2000 e 16000).",
+    "hardCapWarning": "O máximo de tokens de saída é um limite rígido: respostas mais longas são cortadas (finish_reason `length` / stop_reason `max_tokens`). Na Anthropic também limita o thinking.",
+    "invalidMax": "O máximo de tokens de saída deve ser um inteiro entre {{min}} e {{max}}.",
+    "invalidThresholds": "O limite médio deve ser menor que o alto.",
+    "tier": {
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta"
+    },
+    "setting": {
+      "effort": "Esforço",
+      "maxOutputTokens": "Máx. de tokens de saída",
+      "verbosity": "Verbosidade"
+    },
+    "reason": {
+      "client_kept": "valor do cliente mantido",
+      "unsupported": "não suportado pelo modelo",
+      "invalid": "valor inválido"
+    },
+    "trace": {
+      "title": "CONFIGURAÇÃO DA CHAMADA",
+      "tier": "nível",
+      "source": {
+        "router": "router",
+        "profile": "perfil"
+      },
+      "inputTokens": "Tokens de entrada (est.)",
+      "tools": "Ferramentas",
+      "messages": "Mensagens",
+      "thresholds": "Limiares",
+      "desired": "Configurado",
+      "skipped": "ignorados",
+      "none": "sem definições",
+      "yes": "sim",
+      "no": "não"
+    }
   }
 }

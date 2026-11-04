@@ -333,6 +333,8 @@ import type {
   RouterToken as SharedRouterToken,
   RouterMember,
   RouterModelRef,
+  CallConfig,
+  AppliedCallConfig,
 } from '@routerly/shared';
 export type { RouterKind } from '@routerly/shared';
 
@@ -443,6 +445,7 @@ export const updateRouter = (id: string, data: {
   optimizers?: OptimizerConfig | null;
   notifications?: { channels: string[] } | null;
   traceContent?: boolean;
+  callConfig?: CallConfig;
 }) => request<Router>(`/routers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteRouter = (id: string) => request<void>(`/routers/${id}`, { method: 'DELETE' });
 export const createRouterToken = (id: string, labels?: string[], tags?: Record<string, string>, scopes?: string[]) => request<{ token: string; tokenInfo: RouterToken }>(`/routers/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels, ...(tags ? { tags } : {}), ...(scopes ? { scopes } : {}) }) });
@@ -541,6 +544,8 @@ export interface UsageRecord {
   sessionId?: string;
   endUserId?: string;
   tags?: Record<string, string>;
+  /** Call configuration decision applied to this call (absent when none). */
+  callConfig?: AppliedCallConfig;
 }
 
 import type { UsageByModelEntry, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries } from '@routerly/shared';
@@ -1124,13 +1129,13 @@ export type {
 
 /** Body of a create: kind and label are required, the rest defaults server-side. */
 export type CreateProfileBody =
-  | ({ kind: 'routing'; label: string } & Partial<Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy'>>)
+  | ({ kind: 'routing'; label: string } & Partial<Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy' | 'callConfig'>>)
   | ({ kind: 'optimizer'; label: string } & Partial<Pick<OptimizerProfile, 'optimizers'>>)
   | ({ kind: 'security'; label: string } & Partial<Pick<SecurityProfile, 'guardrails' | 'pii'>>);
 
 /** Patch body: only the fields of the profile's own kind are accepted server-side. */
 export type UpdateProfileBody = { label?: string } & Partial<
-  Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy'> &
+  Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy' | 'callConfig'> &
   Pick<OptimizerProfile, 'optimizers'> &
   Pick<SecurityProfile, 'guardrails' | 'pii'>
 >;
