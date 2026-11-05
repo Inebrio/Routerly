@@ -226,6 +226,12 @@ export type {
   RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary, UsageSeries, UsageSeriesPoint,
 } from './types/usage.js';
 
+// Unified call timeline (ROUT-563)
+export { TIMELINE_EVENT_KINDS } from './types/timeline.js';
+export type {
+  TimelineEventKind, ActivityKind, ActivityOutcome, ActivityRecord, TimelineEvent, TimelineGroup,
+} from './types/timeline.js';
+
 // Experiments: A/B tests that pick a whole router per request (T70)
 export {
   EXPERIMENT_ROTATIONS,

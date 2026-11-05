@@ -5,6 +5,7 @@ import { requestTypeFromPath } from '@routerly/shared';
 import { listEffectiveModels } from '../provider/list-effective.js';
 import { resolveRouterByToken, extractRouterToken } from '../auth/auth.js';
 import { trackUsage } from '../usage/tracker.js';
+import { appendActivity } from '../usage/activity.js';
 
 /**
  * Transparent pass-through proxy.
@@ -118,6 +119,10 @@ const HOP_BY_HOP_RESPONSE = new Set([
  * up next to the chat traffic instead of vanishing (T60). Only model API paths
  * are tracked: this handler also sees favicon probes and other noise.
  *
+ * A path that is not a model call has no usage record (it would pollute the
+ * Usage totals): it goes to the activity log instead, as method + path (no query
+ * string, no body), so the timeline shows it (ROUT-563).
+ *
  * ponytail: tokens and cost stay 0, the upstream body is piped to the client
  * and never parsed. Read the JSON `usage` block here if per-call cost for
  * pass-through embeddings ever matters.
@@ -125,14 +130,28 @@ const HOP_BY_HOP_RESPONSE = new Set([
 function trackPassthroughCall(
   routerId: string,
   model: ModelConfig,
+  method: string,
   path: string,
+  status: number,
   latencyMs: number,
   outcome: 'success' | 'error',
   errorMessage?: string,
   tokenId?: string,
 ): void {
   const requestType = requestTypeFromPath(path);
-  if (!requestType) return;
+  if (!requestType) {
+    void appendActivity({
+      kind: 'proxy',
+      outcome,
+      durationMs: latencyMs,
+      name: `${method} ${path}`,
+      status,
+      routerId,
+      ...(errorMessage !== undefined ? { errorMessage } : {}),
+      ...(tokenId ? { tokenId } : {}),
+    }).catch(() => {}); // ponytail: activity logging never blocks the proxied response
+    return;
+  }
   void trackUsage({
     routerId,
     model,
@@ -226,7 +245,7 @@ export async function passthroughHandler(
     } as RequestInit);
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'pass-through upstream error');
-    trackPassthroughCall(router.id, model, path, Date.now() - startedAt, 'error',
+    trackPassthroughCall(router.id, model, method, path, 502, Date.now() - startedAt, 'error',
       err instanceof Error ? err.message : 'upstream request failed', tokenId);
     return reply.code(502).send({
       error: 'upstream_error',
@@ -251,7 +270,7 @@ export async function passthroughHandler(
   );
 
   // Latency is time to response headers: the body is streamed, not awaited.
-  trackPassthroughCall(router.id, model, path, Date.now() - startedAt,
+  trackPassthroughCall(router.id, model, method, path, upstream.status, Date.now() - startedAt,
     upstream.status < 400 ? 'success' : 'error',
     upstream.status < 400 ? undefined : `upstream responded ${upstream.status}`,
     tokenId);

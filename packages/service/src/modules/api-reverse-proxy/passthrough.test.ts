@@ -4,6 +4,7 @@ import type { RouterConfig, ModelConfig } from '@routerly/shared'
 
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 vi.mock('../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../usage/activity.js', () => ({ appendActivity: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../auth/auth.js', async (importOriginal) => {
   const original = await importOriginal<typeof import('../auth/auth.js')>()
   return {
@@ -15,6 +16,7 @@ vi.mock('../auth/auth.js', async (importOriginal) => {
 import { readConfig } from '../config/loader.js'
 import { resolveRouterByToken } from '../auth/auth.js'
 import { trackUsage } from '../usage/tracker.js'
+import { appendActivity } from '../usage/activity.js'
 import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
 import {
   pickUpstreamModel,
@@ -26,6 +28,7 @@ import {
 const mockReadConfig = vi.mocked(readConfig)
 const mockResolveToken = vi.mocked(resolveRouterByToken)
 const mockTrackUsage = vi.mocked(trackUsage)
+const mockAppendActivity = vi.mocked(appendActivity)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -660,5 +663,75 @@ describe('passthroughHandler usage tracking', () => {
     vi.unstubAllGlobals()
 
     expect(mockTrackUsage).not.toHaveBeenCalled()
+  })
+})
+
+describe('passthroughHandler activity log (ROUT-563)', () => {
+  it('records a non-model path as a proxy event: method + path without query, status, router, token', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(new Response('{"data":[]}', { status: 200, headers: { 'content-type': 'application/json' } }))
+    vi.stubGlobal('fetch', mockFetch)
+    mockResolveToken.mockResolvedValue({ router: testRouter, token: testRouter.tokens[0]! })
+    mockModels([openaiModel])
+
+    const app = await buildApp(null)
+    const res = await app.inject({ method: 'GET', url: '/v1/files?purpose=secret-query', headers: { authorization: 'Bearer valid-token' } })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toBe('{"data":[]}') // wire untouched
+    expect(mockAppendActivity).toHaveBeenCalledOnce()
+    const event = mockAppendActivity.mock.calls[0]![0]
+    expect(event).toMatchObject({ kind: 'proxy', outcome: 'success', name: 'GET /v1/files', status: 200, routerId: 'proj-1', tokenId: testRouter.tokens[0]!.id })
+    expect(typeof event.durationMs).toBe('number')
+    expect(JSON.stringify(event)).not.toContain('secret-query')
+    expect(mockTrackUsage).not.toHaveBeenCalled()
+  })
+
+  it('records an upstream error status as an error event', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 404 })))
+    mockModels([openaiModel])
+    const app = await buildApp(testRouter)
+    const res = await app.inject({ method: 'GET', url: '/v1/files/abc' })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(404)
+    expect(mockAppendActivity.mock.calls[0]![0]).toMatchObject({ outcome: 'error', status: 404, errorMessage: 'upstream responded 404' })
+  })
+
+  it('records a failed upstream fetch as an error event with status 502', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')))
+    mockModels([openaiModel])
+    const app = await buildApp(testRouter)
+    await app.inject({ method: 'GET', url: '/v1/files' })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(mockAppendActivity.mock.calls[0]![0]).toMatchObject({ outcome: 'error', status: 502, name: 'GET /v1/files' })
+  })
+
+  it('does not record model calls as activity (they are usage records)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })))
+    mockModels([openaiModel])
+    const app = await buildApp(testRouter)
+    await app.inject({ method: 'POST', url: '/v1/embeddings', headers: { 'content-type': 'application/json' }, payload: '{"input":"x"}' })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(mockAppendActivity).not.toHaveBeenCalled()
+  })
+
+  it('a failing activity log does not break the proxied response', async () => {
+    mockAppendActivity.mockRejectedValueOnce(new Error('disk full'))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('ok', { status: 200 })))
+    mockModels([openaiModel])
+    const app = await buildApp(testRouter)
+    const res = await app.inject({ method: 'GET', url: '/v1/files' })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toBe('ok')
   })
 })

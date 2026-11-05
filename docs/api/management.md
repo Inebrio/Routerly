@@ -2062,6 +2062,43 @@ A comment line (`: ping`) is written every 15 seconds so idle streams survive pr
 
 ---
 
+## Timeline {#timeline}
+
+One entry per client request: its usage records (routing, guardrail and judge calls, each upstream attempt) and the activity that never produces a usage record (MCP tool calls, proxied routes that are not model calls) are grouped and ordered by time. Records without a `traceId` appear as single-event entries with `correlated: false`.
+
+### List Timeline Entries
+
+```
+GET /api/timeline
+```
+
+Requires `report:read`. Newest request first.
+
+| Query | Meaning |
+|-------|---------|
+| `period` | `daily`, `weekly`, `monthly` (default) or `all`; `from` / `to` (ISO dates) override it, as on [`/api/usage`](#usage) |
+| `routerId`, `sessionId`, `endUserId` | Exact match. Activity events carry no session or end user, so those two filters leave them out |
+| `tokenId` / `tokenIds` | One router token id, or a comma-separated list |
+| `kind` | Keep entries holding at least one event of this kind: `attempt`, `routing`, `guardrail`, `judge`, `mcp`, `proxy` |
+| `outcome` | `success`, `error`, `blocked`, `timeout` or `budget_exceeded`, matched on the entry |
+| `page`, `pageSize` | Default `1` and `50`; `pageSize` is capped at `200` |
+
+Response: `{ groups, totals: { groups, events, cost, eventsByKind }, pagination: { page, pageSize, totalRecords, totalPages } }`. `totals` covers every matching entry, not only the page. Each group carries `id`, `correlated`, `startedAt`, `endedAt`, `durationMs`, `outcome`, `attempts`, `fallback`, `cost` and the ordered `events`. An event cost of `null` means unknown. Entry `cost` and `totals.cost` count successful events only, so `totals.cost` equals `summary.totalCost` of `/api/usage` for the same filters when no `kind` filter is set.
+
+### Get a Timeline Entry
+
+```
+GET /api/timeline/:id
+```
+
+Requires `report:read`. `:id` is the group id (the trace id, or the record id for an uncorrelated record). Event `trace` entries are returned without their `content`.
+
+**Errors**: `404` entry not found · `403` missing `report:read`
+
+Activity events are stored in `data/activity.ndjson`, kept under the same retention as usage records. They never enter `usage.ndjson`, so Usage totals are unchanged. CLI: [`routerly report timeline`](../cli/commands.md#routerly-report-timeline).
+
+---
+
 ## Settings
 
 ### Get Settings
