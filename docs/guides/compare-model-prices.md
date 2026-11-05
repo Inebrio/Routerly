@@ -1,3 +1,8 @@
+---
+title: Compare prices across providers
+sidebar_label: Compare model prices
+---
+
 # Compare prices of the same model across providers
 
 Several providers sell access to the same model, and the list price often differs. This guide shows how to find those offers with the tools Routerly already has, how to turn list prices into a cost for your own workload, and where list prices stop being a reliable guide.
