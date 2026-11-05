@@ -90,4 +90,19 @@ describe('resolveEffectiveModel', () => {
     const inst: ModelInstance = { id: `${providerId}/m`, connectionId: 'c', upstreamModelId: 'm', cost: { inputPerMillion: 1, outputPerMillion: 1 }, contextWindow: 1000 };
     expect(resolveEffectiveModel(inst, conn).endpoint).toMatch(/^https:\/\//);
   });
+
+  describe('model state (ROUT-437)', () => {
+    const conn: ProviderConnection = { id: 'c', providerId: 'openai', label: 'L', credentials: { apiKey: 'k' }, enabled: true };
+    const base = { id: 'openai/m', connectionId: 'c', upstreamModelId: 'm', cost: { inputPerMillion: 1, outputPerMillion: 1 }, contextWindow: 1000 };
+
+    it('copies enabled, source, isNew and unavailable from the instance', () => {
+      const eff = resolveEffectiveModel({ ...base, enabled: false, source: 'catalog', isNew: true, unavailable: 'removed' } as ModelInstance, conn);
+      expect(eff).toMatchObject({ enabled: false, source: 'catalog', isNew: true, unavailable: 'removed' });
+    });
+
+    it('leaves the fields absent when the instance has none', () => {
+      const eff = resolveEffectiveModel(base as ModelInstance, conn);
+      for (const k of ['enabled', 'source', 'isNew', 'unavailable']) expect(eff).not.toHaveProperty(k);
+    });
+  });
 });

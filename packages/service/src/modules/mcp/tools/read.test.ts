@@ -104,9 +104,30 @@ describe('listModelsTool', () => {
     expect(res.isError).toBeUndefined()
     const parsed = JSON.parse(res.content[0]!.text)
     expect(parsed).toEqual([
-      { id: 'openai/gpt-4o', provider: 'openai', contextWindow: 128000 },
-      { id: 'anthropic/claude', provider: 'anthropic', contextWindow: 200000 },
+      { id: 'openai/gpt-4o', provider: 'openai', contextWindow: 128000, enabled: true, status: 'enabled' },
+      { id: 'anthropic/claude', provider: 'anthropic', contextWindow: 200000, enabled: true, status: 'enabled' },
     ])
+  })
+
+  it('reports enabled and status for disabled, new and unavailable models (ROUT-437)', async () => {
+    mockModels([
+      model({ id: 'a/on' }),
+      model({ id: 'a/off', enabled: false }),
+      model({ id: 'a/new', enabled: false, isNew: true, source: 'catalog' }),
+      model({ id: 'a/gone', source: 'catalog', unavailable: 'removed' }),
+      model({ id: 'a/dep', enabled: false, isNew: true, source: 'catalog', unavailable: 'deprecated' }),
+    ])
+
+    const res = await listModelsTool.handler({}, emptyAuthCtx)
+
+    const byId = Object.fromEntries(
+      (JSON.parse(res.content[0]!.text) as Array<{ id: string; enabled: boolean; status: string }>).map((m) => [m.id, m]),
+    )
+    expect(byId['a/on']).toMatchObject({ enabled: true, status: 'enabled' })
+    expect(byId['a/off']).toMatchObject({ enabled: false, status: 'disabled' })
+    expect(byId['a/new']).toMatchObject({ enabled: false, status: 'new' })
+    expect(byId['a/gone']).toMatchObject({ enabled: false, status: 'unavailable (removed)' })
+    expect(byId['a/dep']).toMatchObject({ enabled: false, status: 'unavailable (deprecated)' })
   })
 
   it('never leaks provider secrets in the output text', async () => {
@@ -137,8 +158,18 @@ describe('getModelInstanceTool', () => {
       id: 'openai/gpt-4o',
       provider: 'openai',
       contextWindow: 128000,
+      enabled: true,
+      status: 'enabled',
     })
     expectNoSecrets(res.content[0]!.text, [SECRET_KEY, SECRET_CF])
+  })
+
+  it('returns enabled and status for a disabled model (ROUT-437)', async () => {
+    mockModels([model({ enabled: false, isNew: true, source: 'catalog' })])
+
+    const res = await getModelInstanceTool.handler({ id: 'openai/gpt-4o' }, emptyAuthCtx)
+
+    expect(JSON.parse(res.content[0]!.text)).toMatchObject({ enabled: false, status: 'new' })
   })
 
   it('returns an isError result when the model is not found', async () => {

@@ -104,6 +104,7 @@ import bcrypt from 'bcrypt'
 import { resolveCodexToken } from '../reverse-proxy/lanes/openaiOAuthForward.js'
 import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../auth/totp.js'
 import { catalogFetcher } from '../catalog/fetcher.js'
+import { logAudit } from '../audit/logger.js'
 import { OptimizerRegistry, setOptimizerRegistry, type Optimizer } from '../optimizers/registry.js'
 import { readMessages, writeMessages, tokensOf } from '../optimizers/messages.js'
 import * as llmlingua2Model from '../optimizers/llmlingua2/model.js'
@@ -14931,5 +14932,191 @@ describe('PUT /api/routers/:id notifications override (ROUT-335)', () => {
     const role = { id: 'nw', name: 'NW', permissions: ['notification:write'] }
     setup({ id: 'nw-id', email: 'nw@x.com', passwordHash: '$2b$12$h', roleId: 'nw', routerIds: [] }, [role])
     expect((await put({ channels: ['wh1'] })).statusCode).toBe(403)
+  })
+})
+
+// ─── ROUT-437: catalog-managed model state ───────────────────────────────────
+
+describe('model availability state (ROUT-437)', () => {
+  const connection = { id: 'c1', providerId: 'openai', label: 'openai', credentials: { apiKey: 'secret' }, enabled: true, catalogSync: true }
+  const baseInstance = { connectionId: 'c1', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+  const catalogInstance = { ...baseInstance, id: 'openai/a', upstreamModelId: 'a', enabled: false, isNew: true, source: 'catalog' }
+  const handInstance = { ...baseInstance, id: 'hand', upstreamModelId: 'hand' }
+
+  const viewerUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'h', roleId: 'viewer', routerIds: [] }
+
+  function seed(instances: unknown[], opts: { viewer?: boolean; routers?: unknown[] } = {}) {
+    mockVerifyToken.mockReturnValue({ sub: opts.viewer ? 'viewer-id' : 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser, viewerUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return instances
+      if (t === 'connections') return [connection]
+      if (t === 'routers') return opts.routers ?? []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  const post = async (payload: unknown) => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/state', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify(payload) })
+    await app.close()
+    return res
+  }
+  const writtenInstances = () => mockWriteConfig.mock.calls.find(c => c[0] === 'instances')?.[1] as any[] | undefined
+
+  describe('GET /api/models', () => {
+    it('returns enabled normalised to a boolean plus source, isNew and unavailable', async () => {
+      seed([handInstance, { ...catalogInstance, unavailable: 'removed' }])
+      const app = await buildApp()
+      const res = await app.inject({ method: 'GET', url: '/api/models', headers: adminAuthHeaders() })
+      await app.close()
+      const body = res.json() as any[]
+      expect(body.find(m => m.id === 'hand').enabled).toBe(true)
+      expect(body.find(m => m.id === 'openai/a')).toMatchObject({ enabled: false, isNew: true, source: 'catalog', unavailable: 'removed' })
+      expect(body.find(m => m.id === 'hand').source).toBeUndefined()
+    })
+  })
+
+  describe('POST /api/models/state', () => {
+    it('enables models, clears isNew and returns the redacted models (200)', async () => {
+      seed([handInstance, catalogInstance])
+      const res = await post({ ids: ['openai/a'], enabled: true })
+      expect(res.statusCode).toBe(200)
+      const saved = writtenInstances()!.find(i => i.id === 'openai/a')
+      expect(saved.enabled).toBe(true)
+      expect(saved.isNew).toBeUndefined()
+      expect(saved.source).toBe('catalog')
+      const { models } = res.json() as { models: any[] }
+      expect(models).toHaveLength(1)
+      expect(models[0]).toMatchObject({ id: 'openai/a', enabled: true })
+      expect(models[0].apiKey).toBeUndefined()
+    })
+
+    it('disables models and audits model:disable with the ids', async () => {
+      seed([handInstance, catalogInstance])
+      const res = await post({ ids: ['hand', 'openai/a'], enabled: false })
+      expect(res.statusCode).toBe(200)
+      expect(writtenInstances()!.every(i => i.enabled === false)).toBe(true)
+      expect(vi.mocked(logAudit)).toHaveBeenCalledWith(expect.objectContaining({ action: 'model:disable', result: 'success', details: { ids: ['hand', 'openai/a'] } }))
+    })
+
+    it('audits model:enable', async () => {
+      seed([catalogInstance])
+      await post({ ids: ['openai/a'], enabled: true })
+      expect(vi.mocked(logAudit)).toHaveBeenCalledWith(expect.objectContaining({ action: 'model:enable', details: { ids: ['openai/a'] } }))
+    })
+
+    it('returns 403 without model:write and writes nothing', async () => {
+      seed([catalogInstance], { viewer: true })
+      const res = await post({ ids: ['openai/a'], enabled: true })
+      expect(res.statusCode).toBe(403)
+      expect(writtenInstances()).toBeUndefined()
+    })
+
+    it('returns 404 naming every unknown id and writes nothing', async () => {
+      seed([catalogInstance])
+      const res = await post({ ids: ['openai/a', 'ghost', 'ghost2'], enabled: true })
+      expect(res.statusCode).toBe(404)
+      expect((res.json() as any).unknown).toEqual(['ghost', 'ghost2'])
+      expect(writtenInstances()).toBeUndefined()
+    })
+
+    it.each([
+      ['empty ids', { ids: [], enabled: true }],
+      ['duplicate ids', { ids: ['a', 'a'], enabled: true }],
+      ['missing enabled', { ids: ['a'] }],
+      ['more than 1000 ids', { ids: Array.from({ length: 1001 }, (_, i) => `m${i}`), enabled: true }],
+    ])('returns 400 for %s', async (_name, payload) => {
+      seed([catalogInstance])
+      const res = await post(payload)
+      expect(res.statusCode).toBe(400)
+      expect(writtenInstances()).toBeUndefined()
+    })
+  })
+
+  describe('PUT /api/models/:id', () => {
+    const put = async (id: string, payload: unknown) => {
+      const app = await buildApp()
+      const res = await app.inject({ method: 'PUT', url: `/api/models/${encodeURIComponent(id)}`, headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify(payload) })
+      await app.close()
+      return res
+    }
+
+    it('keeps enabled, source, isNew and unavailable when the price is edited', async () => {
+      seed([{ ...catalogInstance, unavailable: 'deprecated' }])
+      const res = await put('openai/a', { inputPerMillion: 9, outputPerMillion: 15 })
+      expect(res.statusCode).toBe(200)
+      expect(writtenInstances()![0]).toMatchObject({ enabled: false, source: 'catalog', isNew: true, unavailable: 'deprecated' })
+      expect(res.json()).toMatchObject({ enabled: false, isNew: true, source: 'catalog', unavailable: 'deprecated' })
+    })
+
+    it('does not add state flags to a hand-made model', async () => {
+      seed([handInstance])
+      await put('hand', { inputPerMillion: 9, outputPerMillion: 15 })
+      const saved = writtenInstances()![0]
+      for (const k of ['enabled', 'source', 'isNew', 'unavailable']) expect(saved[k]).toBeUndefined()
+    })
+
+    const pinned = {
+      ...catalogInstance, enabled: true, isNew: undefined,
+      cost: { inputPerMillion: 9, outputPerMillion: 15 },
+      fieldOverrides: { inputPerMillion: true },
+      catalogDefaults: { inputPerMillion: 2, outputPerMillion: 15 },
+    }
+
+    it('applies the catalog value at once when a pinned field is unpinned', async () => {
+      seed([pinned])
+      const res = await put('openai/a', { fieldOverrides: {} })
+      expect(res.statusCode).toBe(200)
+      const saved = writtenInstances()![0]
+      expect(saved.cost.inputPerMillion).toBe(2)
+      expect(saved.fieldOverrides).toEqual({})
+    })
+
+    it('keeps the value from the body when the same request unpins and sets the field', async () => {
+      seed([pinned])
+      await put('openai/a', { fieldOverrides: {}, inputPerMillion: 7, outputPerMillion: 15 })
+      expect(writtenInstances()![0].cost.inputPerMillion).toBe(7)
+    })
+
+    it('leaves a field that stays pinned untouched', async () => {
+      seed([pinned])
+      await put('openai/a', { fieldOverrides: { inputPerMillion: true } })
+      expect(writtenInstances()![0].cost.inputPerMillion).toBe(9)
+    })
+
+    it('resets contextWindow and capabilities from the catalog defaults', async () => {
+      seed([{ ...pinned, contextWindow: 1, capabilities: { vision: false }, fieldOverrides: { contextWindow: true, capabilities: true }, catalogDefaults: { inputPerMillion: 2, outputPerMillion: 15, contextWindow: 128000, capabilities: { vision: true } } }])
+      await put('openai/a', { fieldOverrides: {} })
+      expect(writtenInstances()![0]).toMatchObject({ contextWindow: 128000, capabilities: { vision: true } })
+    })
+  })
+
+  describe('DELETE /api/models/:id', () => {
+    it('refuses a catalog model used by a router token (409)', async () => {
+      seed([catalogInstance], { routers: [{ id: 'r1', name: 'R', models: [], tokens: [{ id: 't', models: [{ modelId: 'openai/a' }] }] }] })
+      const app = await buildApp()
+      const res = await app.inject({ method: 'DELETE', url: '/api/models/openai%2Fa', headers: adminAuthHeaders() })
+      await app.close()
+      expect(res.statusCode).toBe(409)
+      expect((res.json() as any).usedBy).toEqual(['r1'])
+    })
+  })
+
+  describe('catalog refresh', () => {
+    it('runs the connection sync after the price sync and adds disabled new models', async () => {
+      seed([])
+      mockCatalogFetcher.getStatus.mockReturnValue([])
+      const app = await buildApp()
+      const res = await app.inject({ method: 'POST', url: '/api/catalog/refresh', headers: adminAuthHeaders() })
+      await app.close()
+      expect(res.statusCode).toBe(200)
+      expect(res.json()).toEqual([])
+      const added = writtenInstances()!.map(i => i.id)
+      expect(added).toEqual(['openai/gpt-4o', 'openai/gpt-4o-mini'])
+      expect(writtenInstances()![0]).toMatchObject({ enabled: false, isNew: true, source: 'catalog' })
+    })
   })
 })

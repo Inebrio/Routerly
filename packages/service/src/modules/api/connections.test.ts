@@ -1,7 +1,20 @@
 import { describe, it, expect, vi, afterEach, beforeEach, beforeAll } from 'vitest'
 import Fastify from 'fastify'
 
-vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn(), getOrCreateSecret: vi.fn(), ConfigUpdateAbort: class extends Error {} }))
+vi.mock('../config/loader.js', () => {
+  const readConfig = vi.fn()
+  const writeConfig = vi.fn()
+  // Same read-mutate-write contract as the real updateConfig, on top of the mocked read/write.
+  const updateConfig = vi.fn(async (key: string, mutate: (current: unknown) => unknown) => {
+    const current = await readConfig(key)
+    const next = await mutate(current)
+    if (next !== current) await writeConfig(key, next)
+    return next
+  })
+  return { readConfig, writeConfig, updateConfig, getOrCreateSecret: vi.fn(), ConfigUpdateAbort: class extends Error {} }
+})
+// The sync itself is covered in catalog/sync.test.ts; here it must never reach the network.
+vi.mock('../catalog/sync.js', () => ({ syncModelsFromCatalog: vi.fn(), syncConnectionsFromCatalog: vi.fn() }))
 vi.mock('../auth/jwt.js', () => ({
   createSessionToken: vi.fn(() => 'test-jwt'),
   verifyToken: vi.fn(),
@@ -20,12 +33,15 @@ import { apiRoutes } from './api.js'
 import { buildConnectionCredentials } from './connections.js'
 import { readConfig, writeConfig, getOrCreateSecret } from '../config/loader.js'
 import { verifyToken } from '../auth/jwt.js'
+import { syncConnectionsFromCatalog } from '../catalog/sync.js'
+import { logAudit } from '../audit/logger.js'
 import { loadCredentialKey, encryptCredential, decryptCredential } from '../../lib/crypto-cred.js'
 import { resolveAnthropicOAuthCredential } from '../provider/anthropic-oauth.js'
 
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
 const mockWriteConfig = vi.mocked(writeConfig as (key: string, value: any) => Promise<void>)
 const mockVerifyToken = vi.mocked(verifyToken)
+const mockSync = vi.mocked(syncConnectionsFromCatalog)
 const mockGetOrCreateSecret = vi.mocked(getOrCreateSecret)
 
 beforeAll(async () => {
@@ -40,6 +56,7 @@ afterEach(() => vi.clearAllMocks())
 // below replace it before the actual request is dispatched.
 beforeEach(() => {
   mockReadConfig.mockImplementation(async () => [])
+  mockSync.mockResolvedValue({ added: [], unavailable: [], restored: [], skipped: [], catalogAvailable: false })
 })
 
 async function buildApp() {
@@ -914,3 +931,202 @@ describe('DELETE /api/instances/:id', () => {
   })
 })
 
+
+// ─── ROUT-437: catalog sync on connections ───────────────────────────────────
+
+describe('catalog sync on connections (ROUT-437)', () => {
+  const headers = { authorization: 'Bearer valid-jwt-token' }
+  const summary = { added: ['openai/gpt-4o'], unavailable: [], restored: [], skipped: [], catalogAvailable: true }
+
+  function seed(perms: string[], data: { connections?: unknown[]; instances?: unknown[]; routers?: unknown[] } = {}) {
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: perms }]
+      if (type === 'connections') return data.connections ?? []
+      if (type === 'instances') return data.instances ?? []
+      if (type === 'routers') return data.routers ?? []
+      return []
+    })
+    mockWriteConfig.mockClear()
+  }
+  const conn = (over: Record<string, unknown> = {}) => ({ id: 'c1', providerId: 'openai', label: 'openai', credentials: {}, enabled: true, catalogSync: true, ...over })
+  const writtenConnection = () => (mockWriteConfig.mock.calls.find(c => c[0] === 'connections')?.[1] as any[])[0]
+
+  describe('POST /api/connections', () => {
+    const create = async (providerId: string, extra: Record<string, unknown> = {}) => {
+      const app = await buildApp()
+      const res = await app.inject({ method: 'POST', url: '/api/connections', headers, payload: { providerId, label: providerId, credentials: {}, enabled: true, ...extra } })
+      await app.close()
+      return res
+    }
+
+    it('defaults catalogSync to on, syncs the new connection and returns the summary', async () => {
+      seed(['connections:manage'])
+      mockSync.mockResolvedValue(summary)
+      const res = await create('openai')
+      expect(res.statusCode).toBe(200)
+      expect(res.json().sync).toEqual(summary)
+      expect(res.json().catalogSync).toBe(true)
+      expect(writtenConnection().catalogSync).toBe(true)
+      expect(mockSync).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ connectionId: 'test-uuid-1234', actor: expect.objectContaining({ id: 'test-user-id', email: 'test@example.com' }) }))
+    })
+
+    it.each(['ollama', 'custom', 'azure-openai'])('defaults catalogSync to off for %s and does not sync', async (providerId) => {
+      seed(['connections:manage'])
+      const res = await create(providerId)
+      expect(res.statusCode).toBe(200)
+      expect(res.json().catalogSync).toBe(false)
+      expect(res.json().sync).toEqual({ added: [], unavailable: [], restored: [], skipped: [], catalogAvailable: false })
+      expect(mockSync).not.toHaveBeenCalled()
+    })
+
+    it('honours an explicit catalogSync: false', async () => {
+      seed(['connections:manage'])
+      const res = await create('openai', { catalogSync: false })
+      expect(res.json().catalogSync).toBe(false)
+      expect(mockSync).not.toHaveBeenCalled()
+    })
+
+    it('still creates the connection when the sync fails', async () => {
+      seed(['connections:manage'])
+      mockSync.mockRejectedValue(new Error('catalog down'))
+      const res = await create('openai')
+      expect(res.statusCode).toBe(200)
+      expect(res.json().sync.catalogAvailable).toBe(false)
+      expect(writtenConnection().id).toBe('test-uuid-1234')
+    })
+
+    it('stays forbidden without connections:manage even with auto-load', async () => {
+      seed(['model:read'])
+      const res = await create('openai')
+      expect(res.statusCode).toBe(403)
+      expect(mockSync).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('PATCH /api/connections/:id', () => {
+    const patch = async (payload: Record<string, unknown>) => {
+      const app = await buildApp()
+      const res = await app.inject({ method: 'PATCH', url: '/api/connections/c1', headers, payload })
+      await app.close()
+      return res
+    }
+
+    it.each([[undefined], [false]])('syncs and returns the summary when catalogSync goes from %s to true', async (before) => {
+      seed(['connections:manage'], { connections: [conn(before === undefined ? { catalogSync: undefined } : { catalogSync: before })] })
+      mockSync.mockResolvedValue(summary)
+      const res = await patch({ catalogSync: true })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().sync).toEqual(summary)
+      expect(mockSync).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ connectionId: 'c1' }))
+    })
+
+    it('does not sync, and has no sync field, when catalogSync is already on', async () => {
+      seed(['connections:manage'], { connections: [conn()] })
+      const res = await patch({ catalogSync: true })
+      expect(res.json().sync).toBeUndefined()
+      expect(mockSync).not.toHaveBeenCalled()
+    })
+
+    it('turning catalogSync off does not sync', async () => {
+      seed(['connections:manage'], { connections: [conn()] })
+      const res = await patch({ catalogSync: false })
+      expect(res.json()).toMatchObject({ catalogSync: false })
+      expect(res.json().sync).toBeUndefined()
+      expect(mockSync).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('POST /api/connections/:id/sync', () => {
+    const sync = async () => {
+      const app = await buildApp()
+      const res = await app.inject({ method: 'POST', url: '/api/connections/c1/sync', headers })
+      await app.close()
+      return res
+    }
+
+    it('returns the summary (200) with connections:manage', async () => {
+      seed(['connections:manage'], { connections: [conn()] })
+      mockSync.mockResolvedValue(summary)
+      const res = await sync()
+      expect(res.statusCode).toBe(200)
+      expect(res.json()).toEqual(summary)
+      expect(mockSync).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ connectionId: 'c1' }))
+    })
+
+    it('records catalog:sync in the audit log even when nothing changed', async () => {
+      seed(['connections:manage'], { connections: [conn()] })
+      mockSync.mockResolvedValue({ added: [], unavailable: [], restored: [], skipped: [], catalogAvailable: true })
+      await sync()
+      expect(vi.mocked(logAudit)).toHaveBeenCalledWith(expect.objectContaining({ action: 'catalog:sync', result: 'success', userId: 'test-user-id' }))
+    })
+
+    it('returns 403 without connections:manage and audits forbidden', async () => {
+      seed(['connections:read'], { connections: [conn()] })
+      const res = await sync()
+      expect(res.statusCode).toBe(403)
+      expect(mockSync).not.toHaveBeenCalled()
+      expect(vi.mocked(logAudit)).toHaveBeenCalledWith(expect.objectContaining({ action: 'connections:manage', result: 'forbidden' }))
+    })
+
+    it('returns 404 for an unknown connection', async () => {
+      seed(['connections:manage'], { connections: [] })
+      expect((await sync()).statusCode).toBe(404)
+    })
+
+    it.each([[{ catalogSync: false }], [{ catalogSync: undefined }]])('returns 400 catalog_sync_disabled when catalogSync is off (%o)', async (over) => {
+      seed(['connections:manage'], { connections: [conn(over)] })
+      const res = await sync()
+      expect(res.statusCode).toBe(400)
+      expect(res.json().error).toBe('catalog_sync_disabled')
+      expect(mockSync).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('DELETE /api/connections/:id', () => {
+    const del = async () => {
+      const app = await buildApp()
+      const res = await app.inject({ method: 'DELETE', url: '/api/connections/c1', headers })
+      await app.close()
+      return res
+    }
+    const catalogModel = (id: string) => ({ id, connectionId: 'c1', upstreamModelId: id, source: 'catalog', enabled: false, isNew: true, cost: {}, contextWindow: 0 })
+    const instancesWritten = () => mockWriteConfig.mock.calls.find(c => c[0] === 'instances')?.[1] as any[] | undefined
+
+    it('drops unused catalog models with the connection and audits removedModels', async () => {
+      seed(['connections:manage'], {
+        connections: [conn()],
+        instances: [catalogModel('openai/a'), catalogModel('openai/b'), { id: 'other', connectionId: 'c2', upstreamModelId: 'o', cost: {}, contextWindow: 0 }],
+      })
+      const res = await del()
+      expect(res.statusCode).toBe(204)
+      expect(instancesWritten()!.map(i => i.id)).toEqual(['other'])
+      expect(mockWriteConfig).toHaveBeenCalledWith('connections', [])
+      expect(vi.mocked(logAudit)).toHaveBeenCalledWith(expect.objectContaining({ action: 'connection:delete', details: { id: 'c1', removedModels: ['openai/a', 'openai/b'] } }))
+    })
+
+    it('returns 409 naming a catalog model a router uses and writes nothing', async () => {
+      seed(['connections:manage'], {
+        connections: [conn()],
+        instances: [catalogModel('openai/a'), catalogModel('openai/b')],
+        routers: [{ id: 'r1', name: 'R', models: [{ modelId: 'openai/b' }], tokens: [] }],
+      })
+      const res = await del()
+      expect(res.statusCode).toBe(409)
+      expect(res.json().usedBy).toEqual(['openai/b'])
+      expect(mockWriteConfig).not.toHaveBeenCalled()
+    })
+
+    it('returns 409 for a hand-made model even next to unused catalog models', async () => {
+      seed(['connections:manage'], {
+        connections: [conn()],
+        instances: [catalogModel('openai/a'), { id: 'hand', connectionId: 'c1', upstreamModelId: 'hand', cost: {}, contextWindow: 0 }],
+      })
+      const res = await del()
+      expect(res.statusCode).toBe(409)
+      expect(res.json().usedBy).toEqual(['hand'])
+      expect(mockWriteConfig).not.toHaveBeenCalled()
+    })
+  })
+})
