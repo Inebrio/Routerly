@@ -41,7 +41,7 @@ const DEFAULT_REPO: ProviderRepo = {
   enabled: true,
 };
 
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+export const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 export interface RepoStatus {
   url: string;

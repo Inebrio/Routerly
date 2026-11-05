@@ -1,9 +1,11 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import type { ProviderConnection, ModelInstance, Permission } from '@routerly/shared';
-import { suggestConnectionLabel, isConnectionLabelTaken } from '@routerly/shared';
-import { readConfig, writeConfig } from '../config/loader.js';
+import type { ProviderConnection, ModelInstance, Permission, CatalogSyncSummary } from '@routerly/shared';
+import { suggestConnectionLabel, isConnectionLabelTaken, routerUsesModel, CATALOG_SYNC_DEFAULT_OFF } from '@routerly/shared';
+import { readConfig, writeConfig, updateConfig } from '../config/loader.js';
+import { syncConnectionsFromCatalog } from '../catalog/sync.js';
+import { PRODUCT_VERSION } from '../../core/version.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 import { isKnownProvider, providerDescriptorRegistry, getProviderDescriptor } from '../provider/descriptor.js';
@@ -38,6 +40,16 @@ const SAFE_CRED_FIELDS = [
   'awsAccessKeyId', 'awsRegion', 'azureResourceName', 'azureDeploymentId', 'azureApiVersion',
   'vertexProjectId', 'vertexLocation',
 ] as const;
+
+const emptySync = (): CatalogSyncSummary => ({ added: [], unavailable: [], restored: [], skipped: [], catalogAvailable: false });
+
+const syncActor = (req: FastifyRequest) =>
+  ({ id: req.dashUser?.id ?? 'unknown', email: req.dashUser?.email ?? 'unknown', endpoint: `${req.method} ${req.url}` });
+
+/** Per-connection catalog sync on behalf of the request's user. Best-effort: a catalog failure is an empty summary. */
+function syncConnection(req: FastifyRequest, connectionId: string): Promise<CatalogSyncSummary> {
+  return syncConnectionsFromCatalog(PRODUCT_VERSION, { connectionId, actor: syncActor(req) }).catch(emptySync);
+}
 
 function redactConnection(connection: ProviderConnection): Omit<ProviderConnection, 'credentials'> & { credentials?: Record<string, unknown> } {
   const safe: Record<string, unknown> = {};
@@ -195,6 +207,7 @@ const connectionSchema = z.object({
   credentials: credentialFieldsSchema,
   endpoint: z.string().optional(),
   enabled: z.boolean(),
+  catalogSync: z.boolean().optional(),
 });
 
 const connectionPatchSchema = connectionSchema.partial();
@@ -311,11 +324,13 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
       ...parsed.data,
       label: resolved.label,
       credentials,
+      catalogSync: parsed.data.catalogSync ?? !(CATALOG_SYNC_DEFAULT_OFF as readonly string[]).includes(parsed.data.providerId),
     } as ProviderConnection;
     connections.push(connection);
     await writeConfig('connections', connections);
     audit(req, 'connection:create', 'success', { id: connection.id });
-    return reply.send(redactConnection(connection));
+    const sync = connection.catalogSync ? await syncConnection(req, connection.id) : emptySync();
+    return reply.send({ ...redactConnection(connection), sync });
   });
 
   fastify.patch<{ Params: { id: string }; Body: unknown }>('/api/connections/:id', async (req, reply) => {
@@ -346,10 +361,12 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
       };
     }
     const updated = { ...connections[index]!, ...patchData } as ProviderConnection;
+    const catalogSyncTurnedOn = updated.catalogSync === true && connections[index]!.catalogSync !== true;
     connections[index] = updated;
     await writeConfig('connections', connections);
     audit(req, 'connection:update', 'success', { id: req.params.id });
-    return reply.send(redactConnection(updated));
+    if (!catalogSyncTurnedOn) return reply.send(redactConnection(updated));
+    return reply.send({ ...redactConnection(updated), sync: await syncConnection(req, updated.id) });
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/connections/:id', async (req, reply) => {
@@ -357,13 +374,35 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     const connections = await readConfig('connections');
     const filtered = connections.filter(c => c.id !== req.params.id);
     if (filtered.length === connections.length) return reply.status(404).send({ error: 'Not found' });
-    const usedBy = (await readConfig('instances')).filter(i => i.connectionId === req.params.id).map(i => i.id);
+    const [instances, routers] = await Promise.all([readConfig('instances'), readConfig('routers')]);
+    const own = instances.filter(i => i.connectionId === req.params.id);
+    // Catalog-loaded models no router uses go with the connection; anything else blocks the delete.
+    const removable = own.filter(i => i.source === 'catalog' && !routers.some(r => routerUsesModel(r, i.id))).map(i => i.id);
+    const usedBy = own.map(i => i.id).filter(id => !removable.includes(id));
     if (usedBy.length) {
       return reply.status(409).send({ error: `Connection is used by model(s): ${usedBy.join(', ')}`, usedBy });
     }
+    if (removable.length) {
+      await updateConfig('instances', (current) => current.filter(i => !removable.includes(i.id)));
+    }
     await writeConfig('connections', filtered);
-    audit(req, 'connection:delete', 'success', { id: req.params.id });
+    audit(req, 'connection:delete', 'success', { id: req.params.id, removedModels: removable });
     return reply.status(204).send();
+  });
+
+  fastify.post<{ Params: { id: string } }>('/api/connections/:id/sync', async (req, reply) => {
+    if (!requirePerm(req, 'connections:manage', reply)) return;
+    const connection = (await readConfig('connections')).find(c => c.id === req.params.id);
+    if (!connection) return reply.status(404).send({ error: 'Not found' });
+    if (connection.catalogSync !== true) {
+      return reply.status(400).send({ error: 'catalog_sync_disabled', message: 'Catalog sync is off for this connection' });
+    }
+    const summary = await syncConnectionsFromCatalog(PRODUCT_VERSION, { connectionId: connection.id, actor: syncActor(req) });
+    // The sync audits itself when it changed something; an explicit run that found nothing is still recorded.
+    if (!summary.added.length && !summary.unavailable.length && !summary.restored.length && !summary.skipped.length) {
+      audit(req, 'catalog:sync', 'success', { ...summary, connectionId: connection.id });
+    }
+    return reply.send(summary);
   });
 
   // ══════════════════════════════════════════════════════════════════════════

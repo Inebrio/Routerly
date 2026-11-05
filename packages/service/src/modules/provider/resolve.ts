@@ -67,5 +67,10 @@ export function resolveEffectiveModel(
     result.catalogDefaults = instance.catalogDefaults;
   }
 
+  if (instance.enabled !== undefined) result.enabled = instance.enabled;
+  if (instance.source !== undefined) result.source = instance.source;
+  if (instance.isNew !== undefined) result.isNew = instance.isNew;
+  if (instance.unavailable !== undefined) result.unavailable = instance.unavailable;
+
   return result;
 }

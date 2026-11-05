@@ -1,7 +1,35 @@
-import type { CatalogField, CatalogDefaults } from '@routerly/shared';
+import { routerUsesModel } from '@routerly/shared';
+import type { CatalogField, CatalogDefaults, CatalogSyncSummary, ModelInstance } from '@routerly/shared';
 import { catalogFetcher } from './fetcher.js';
-import { readConfig, writeConfig } from '../config/loader.js';
+import type { ProviderCatalog } from './fetcher.js';
+import { readConfig, writeConfig, updateConfig } from '../config/loader.js';
 import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
+import { defaultUpstreamModelId } from '../provider/resolve.js';
+import { emitEvent } from '../notifications/emitter.js';
+import { logAudit } from '../audit/logger.js';
+
+type CatalogModel = ProviderCatalog[string]['models'][number];
+
+/** Catalog-trackable values of one catalog entry (prices, context window, capabilities). */
+export function toCatalogDefaults(entry: CatalogModel): CatalogDefaults {
+  return {
+    inputPerMillion: entry.input,
+    outputPerMillion: entry.output,
+    ...(entry.cache !== undefined ? { cachePerMillion: entry.cache } : {}),
+    ...(entry.cacheWrite !== undefined ? { cacheWritePerMillion: entry.cacheWrite } : {}),
+    ...(entry.pricingTiers?.length ? {
+      pricingTiers: entry.pricingTiers.map(t => ({
+        metric: t.metric,
+        above: t.above,
+        inputPerMillion: t.input,
+        outputPerMillion: t.output,
+        ...(t.cache !== undefined ? { cachePerMillion: t.cache } : {}),
+      })),
+    } : {}),
+    ...(entry.contextWindow !== undefined ? { contextWindow: entry.contextWindow } : {}),
+    ...(entry.capabilities !== undefined ? { capabilities: entry.capabilities } : {}),
+  };
+}
 
 export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean> {
   // catalog cross-ref: sync disabled-connection models too, in case they get re-enabled later
@@ -21,23 +49,7 @@ export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean
     const entry = providerEntry.models.find(m => m.id === lookupId);
     if (!entry) continue;
 
-    const catalogDefaults: CatalogDefaults = {
-      inputPerMillion: entry.input,
-      outputPerMillion: entry.output,
-      ...(entry.cache !== undefined ? { cachePerMillion: entry.cache } : {}),
-      ...(entry.cacheWrite !== undefined ? { cacheWritePerMillion: entry.cacheWrite } : {}),
-      ...(entry.pricingTiers?.length ? {
-        pricingTiers: entry.pricingTiers.map(t => ({
-          metric: t.metric,
-          above: t.above,
-          inputPerMillion: t.input,
-          outputPerMillion: t.output,
-          ...(t.cache !== undefined ? { cachePerMillion: t.cache } : {}),
-        })),
-      } : {}),
-      ...(entry.contextWindow !== undefined ? { contextWindow: entry.contextWindow } : {}),
-      ...(entry.capabilities !== undefined ? { capabilities: entry.capabilities } : {}),
-    };
+    const catalogDefaults = toCatalogDefaults(entry);
 
     const overrides: Partial<Record<CatalogField, boolean>> = model.fieldOverrides ?? {};
     const isOverridden = (field: CatalogField): boolean => (overrides as Record<string, boolean | undefined>)[field] === true;
@@ -111,4 +123,133 @@ export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean
     await writeConfig('instances', updatedInstances);
   }
   return changed;
+}
+
+export interface CatalogSyncOptions {
+  /** Sync only this connection (default: every connection with catalogSync on). */
+  connectionId?: string;
+  /** Who triggered the run; absent = the background timer / first status read (audited as `system`). */
+  actor?: { id: string; email: string; endpoint: string };
+}
+
+type Unavailability = { modelId: string; connectionId: string; reason: 'removed' | 'deprecated' };
+
+/**
+ * Loads and tracks the catalog models of every connection with `catalogSync` on: new catalog
+ * models are created disabled + new, catalog-sourced models the catalog dropped or deprecated
+ * are flagged `unavailable` (and cleared when they return). `enabled` is never touched.
+ * A provider key missing from the catalog, or an empty one, changes nothing for that connection.
+ */
+export async function syncConnectionsFromCatalog(
+  pkgVersion: string,
+  opts: CatalogSyncOptions = {},
+): Promise<CatalogSyncSummary> {
+  const summary: CatalogSyncSummary = { added: [], unavailable: [], restored: [], skipped: [], catalogAvailable: false };
+  const catalog = await catalogFetcher.get(pkgVersion).catch((): ProviderCatalog => ({}));
+
+  const seenAdds = new Map<string, string[]>();
+  const nowUnavailable: Unavailability[] = [];
+  const nowRestored: { modelId: string; connectionId: string }[] = [];
+
+  await updateConfig('instances', async (instances) => {
+    const connections = (await readConfig('connections'))
+      .filter(c => c.catalogSync === true && (opts.connectionId === undefined || c.id === opts.connectionId));
+    const next = [...instances];
+    let changed = false;
+
+    for (const conn of connections) {
+      const providerEntry = catalog[conn.providerId];
+      if (!providerEntry?.models?.length) continue;
+      summary.catalogAvailable = true;
+
+      const upstreamOf = (i: ModelInstance) =>
+        i.upstreamModelId === i.id ? defaultUpstreamModelId(i.id) : i.upstreamModelId;
+      const present = new Set(next.filter(i => i.connectionId === conn.id).map(upstreamOf));
+      const seen = new Set(conn.catalogSeen ?? []);
+      const newlySeen: string[] = [];
+
+      for (const entry of providerEntry.models) {
+        if (entry.deprecated || seen.has(entry.id)) continue;
+        newlySeen.push(entry.id);
+        if (present.has(entry.id)) continue;
+        const id = `${conn.label}/${entry.id}`;
+        if (next.some(i => i.id === id)) {
+          summary.skipped.push({ upstreamModelId: entry.id, reason: 'id_taken' });
+          continue;
+        }
+        const d = toCatalogDefaults(entry);
+        next.push({
+          id,
+          connectionId: conn.id,
+          upstreamModelId: entry.id,
+          cost: {
+            inputPerMillion: d.inputPerMillion!,
+            outputPerMillion: d.outputPerMillion!,
+            ...(d.cachePerMillion !== undefined ? { cachePerMillion: d.cachePerMillion } : {}),
+            ...(d.cacheWritePerMillion !== undefined ? { cacheWritePerMillion: d.cacheWritePerMillion } : {}),
+            ...(d.pricingTiers !== undefined ? { pricingTiers: d.pricingTiers } : {}),
+          },
+          contextWindow: d.contextWindow ?? 0,
+          ...(d.capabilities !== undefined ? { capabilities: d.capabilities } : {}),
+          catalogDefaults: d,
+          enabled: false,
+          isNew: true,
+          source: 'catalog',
+        });
+        summary.added.push(id);
+        changed = true;
+      }
+      if (newlySeen.length) seenAdds.set(conn.id, newlySeen);
+
+      const byUpstream = new Map(providerEntry.models.map(m => [m.id, m]));
+      next.forEach((inst, idx) => {
+        if (inst.connectionId !== conn.id || inst.source !== 'catalog') return;
+        const entry = byUpstream.get(upstreamOf(inst));
+        const want: ModelInstance['unavailable'] = !entry ? 'removed' : entry.deprecated ? 'deprecated' : undefined;
+        if (want === inst.unavailable) return;
+        const { unavailable: was, ...rest } = inst;
+        next[idx] = want ? { ...rest, unavailable: want } : rest;
+        changed = true;
+        if (want && !was) {
+          summary.unavailable.push(inst.id);
+          nowUnavailable.push({ modelId: inst.id, connectionId: conn.id, reason: want });
+        } else if (!want) {
+          summary.restored.push(inst.id);
+          nowRestored.push({ modelId: inst.id, connectionId: conn.id });
+        }
+      });
+    }
+    return changed ? next : instances;
+  });
+
+  if (seenAdds.size) {
+    await updateConfig('connections', (conns) => conns.map(c => {
+      const add = seenAdds.get(c.id);
+      return add ? { ...c, catalogSeen: [...new Set([...(c.catalogSeen ?? []), ...add])] } : c;
+    }));
+  }
+
+  if (nowUnavailable.length || nowRestored.length) {
+    const routers = await readConfig('routers').catch(() => []);
+    const usedBy = (modelId: string) =>
+      routers.filter(r => routerUsesModel(r, modelId)).map(r => ({ id: r.id, name: r.name ?? r.id }));
+    for (const u of nowUnavailable) {
+      void emitEvent('config.model_unavailable', 'warning', { ...u, routers: usedBy(u.modelId) }).catch(() => {});
+    }
+    for (const r of nowRestored) {
+      void emitEvent('config.model_restored', 'info', { ...r, routers: usedBy(r.modelId) }).catch(() => {});
+    }
+  }
+
+  if (summary.added.length || summary.unavailable.length || summary.restored.length || summary.skipped.length) {
+    await logAudit({
+      userId: opts.actor?.id ?? 'system',
+      email: opts.actor?.email ?? 'system',
+      endpoint: opts.actor?.endpoint ?? 'catalog-sync',
+      action: 'catalog:sync',
+      result: 'success',
+      details: { ...summary, ...(opts.connectionId !== undefined ? { connectionId: opts.connectionId } : {}) },
+    });
+  }
+  return summary;
 }

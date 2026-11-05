@@ -1,3 +1,4 @@
+import { isModelRoutable } from '@routerly/shared';
 import type { EffectiveModel } from '@routerly/shared';
 import { readConfig } from '../config/loader.js';
 import { resolveEffectiveModel } from './resolve.js';
@@ -9,13 +10,13 @@ async function build(includeDisabled: boolean): Promise<EffectiveModel[]> {
   for (const instance of instances) {
     const connection = byId.get(instance.connectionId);
     if (!connection) continue; // dangling instance
-    if (!includeDisabled && !connection.enabled) continue;
+    if (!includeDisabled && (!connection.enabled || !isModelRoutable(instance))) continue;
     out.push(resolveEffectiveModel(instance, connection));
   }
   return out;
 }
 
-/** Effective models for routing/execution: instances of enabled connections only. Static resolve, no live token fetch. */
+/** Effective models for routing/execution: routable instances (not disabled, not unavailable) of enabled connections only. Static resolve, no live token fetch. */
 export const listEffectiveModels = (): Promise<EffectiveModel[]> => build(false);
 
 /** Effective models including those on disabled connections. For management/list endpoints. */

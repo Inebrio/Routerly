@@ -47,6 +47,10 @@ export function splitModelsIntoInstancesConnections(
       ...(m.capabilities !== undefined ? { capabilities: m.capabilities } : {}),
       ...(m.fieldOverrides !== undefined ? { fieldOverrides: m.fieldOverrides } : {}),
       ...(m.catalogDefaults !== undefined ? { catalogDefaults: m.catalogDefaults } : {}),
+      ...(m.enabled !== undefined ? { enabled: m.enabled } : {}),
+      ...(m.source !== undefined ? { source: m.source } : {}),
+      ...(m.isNew !== undefined ? { isNew: m.isNew } : {}),
+      ...(m.unavailable !== undefined ? { unavailable: m.unavailable } : {}),
     });
   }
 

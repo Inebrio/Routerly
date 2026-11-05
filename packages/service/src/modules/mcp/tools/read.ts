@@ -7,6 +7,8 @@ import {
   OBSERVABILITY,
   CONFIG_STORE,
 } from '../../../core/tokens.js'
+import { isModelRoutable } from '@routerly/shared'
+import type { EffectiveModel } from '@routerly/shared'
 import { listEffectiveModelsIncludingDisabled } from '../../provider/list-effective.js'
 import { routeRequest } from '../../routing/router.js'
 import { readUsageRecords } from '../../usage/usageStore.js'
@@ -15,10 +17,25 @@ import { getMetricsSnapshot, percentile } from '../../observability/metrics-snap
 import type { McpToolEntry } from '../registry.js'
 import { errorResult, jsonResult, resolveRouter, ROUTER_ID_PROPERTY } from './context.js'
 
+/** Same status string as the CLI: what an agent needs to know before picking a model. */
+function modelStatus(m: EffectiveModel): string {
+  if (m.unavailable) return `unavailable (${m.unavailable})`
+  if (m.enabled === false) return m.isNew ? 'new' : 'disabled'
+  return 'enabled'
+}
+
+const publicModel = (m: EffectiveModel) => ({
+  id: m.id,
+  provider: m.provider,
+  contextWindow: m.contextWindow,
+  enabled: isModelRoutable(m),
+  status: modelStatus(m),
+})
+
 /**
  * list_models: enumerate the models configured on this gateway for MCP clients.
  * Gateway-wide (models are not router-owned), so no router resolution. The
- * output whitelists only id/provider/contextWindow, a strictly safer stance than
+ * output whitelists only id/provider/contextWindow/enabled/status, a strictly safer stance than
  * api.ts's `apiKey: undefined, cfClearance: undefined` blacklist, since a fresh
  * object cannot carry any provider credential fields.
  * // ponytail: gated on CATALOG (the models feature's DI token); the handler
@@ -28,7 +45,7 @@ import { errorResult, jsonResult, resolveRouter, ROUTER_ID_PROPERTY } from './co
 export const listModelsTool: McpToolEntry = {
   name: 'list_models',
   description:
-    'List the models configured on this Routerly gateway (id, provider, context window). No secrets are returned.',
+    'List the models configured on this Routerly gateway (id, provider, context window, enabled, status). No secrets are returned.',
   inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   scope: 'read',
   permission: 'model:read',
@@ -36,9 +53,7 @@ export const listModelsTool: McpToolEntry = {
   async handler() {
     // read-only management listing: show disabled-connection models too
     const models = await listEffectiveModelsIncludingDisabled()
-    return jsonResult(
-      models.map((m) => ({ id: m.id, provider: m.provider, contextWindow: m.contextWindow })),
-    )
+    return jsonResult(models.map(publicModel))
   },
 }
 
@@ -50,7 +65,7 @@ export const listModelsTool: McpToolEntry = {
 export const getModelInstanceTool: McpToolEntry = {
   name: 'get_model',
   description:
-    'Get one configured model on this Routerly gateway by id (id, provider, context window). No secrets are returned.',
+    'Get one configured model on this Routerly gateway by id (id, provider, context window, enabled, status). No secrets are returned.',
   inputSchema: {
     type: 'object',
     properties: { id: { type: 'string' } },
@@ -66,7 +81,7 @@ export const getModelInstanceTool: McpToolEntry = {
     const models = await listEffectiveModelsIncludingDisabled()
     const m = models.find((x) => x.id === id)
     if (!m) return errorResult(`Model not found: ${String(id)}`)
-    return jsonResult({ id: m.id, provider: m.provider, contextWindow: m.contextWindow })
+    return jsonResult(publicModel(m))
   },
 }
 

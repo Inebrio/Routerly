@@ -19,9 +19,9 @@ import { validateRoutingModels } from '../routing/validate-routing-models.js';
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { RANKING_ALGORITHMS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug, LOG_LEVELS } from '@routerly/shared';
+import { routerUsesModel, RANKING_ALGORITHMS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug, LOG_LEVELS } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
-import { syncModelsFromCatalog } from '../catalog/sync.js';
+import { syncModelsFromCatalog, syncConnectionsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
 import { getTrace } from '../trace/store.js';
 import { setTraceLogLevel } from '../trace/console.js';
@@ -132,7 +132,7 @@ function inferFieldOverrides(
 const MODEL_SAFE_FIELDS = [
   'id', 'name', 'provider', 'connectionId', 'endpoint', 'upstreamModelId',
   'cost', 'contextWindow', 'limits', 'globalThresholds', 'capabilities', 'timeout',
-  'fieldOverrides', 'catalogDefaults',
+  'fieldOverrides', 'catalogDefaults', 'enabled', 'source', 'isNew', 'unavailable',
   // Non-secret connection config fields (identifiers/region/resource names, not credentials)
   'awsAccessKeyId', 'awsRegion', 'azureResourceName', 'azureDeploymentId', 'azureApiVersion',
   'vertexProjectId', 'vertexLocation',
@@ -143,9 +143,44 @@ function redactModelSecrets(model: EffectiveModel): Record<string, unknown> {
   for (const f of MODEL_SAFE_FIELDS) {
     if (model[f] !== undefined) out[f] = model[f];
   }
+  out['enabled'] = model.enabled !== false;
   return out;
 }
 
+const modelStateBodySchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(1000)
+    .refine(ids => new Set(ids).size === ids.length, { message: 'ids must be unique' }),
+  enabled: z.boolean(),
+});
+
+const CATALOG_FIELDS: readonly CatalogField[] = [
+  'inputPerMillion', 'outputPerMillion', 'cachePerMillion', 'cacheWritePerMillion', 'pricingTiers', 'contextWindow', 'capabilities',
+];
+
+/**
+ * A field that goes from pinned to unpinned takes the catalog value right away (not at the next sync),
+ * unless the same request sets it explicitly. Mutates `instance`.
+ */
+function applyCatalogReset(
+  instance: ModelInstance,
+  existing: ModelInstance,
+  overrides: Partial<Record<CatalogField, boolean>> | undefined,
+  body: Record<string, unknown>,
+): void {
+  const defaults = instance.catalogDefaults;
+  if (!defaults) return;
+  for (const f of CATALOG_FIELDS) {
+    if (existing.fieldOverrides?.[f] !== true || overrides?.[f] === true) continue;
+    if (defaults[f] === undefined || body[f] !== undefined) continue;
+    if (f === 'contextWindow') instance.contextWindow = defaults[f]!;
+    else if (f === 'capabilities') instance.capabilities = defaults[f]!;
+    else instance.cost = { ...instance.cost, [f]: defaults[f] };
+  }
+}
+
+function auditActor(req: FastifyRequest): { id: string; email: string; endpoint: string } {
+  return { id: req.dashUser?.id ?? 'unknown', email: req.dashUser?.email ?? 'unknown', endpoint: `${req.method} ${req.url}` };
+}
 
 /** 95th percentile of a numeric array (0 when empty). Nearest-rank method. */
 function p95(values: number[]): number {
@@ -759,6 +794,30 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(models.map(redactModelSecrets));
   });
 
+  // Bulk enable/disable. Acting on a model clears its `isNew` mark. All-or-nothing: one unknown id writes nothing.
+  fastify.post<{ Body: unknown }>('/api/models/state', async (req, reply) => {
+    if (!requirePerm(req, 'model:write', reply)) return;
+    const parsed = modelStateBodySchema.safeParse(req.body ?? {});
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+    const { ids, enabled } = parsed.data;
+    const target = new Set(ids);
+    const updated = await updateConfig('instances', (instances) => {
+      const known = new Set(instances.map(i => i.id));
+      const unknown = ids.filter(id => !known.has(id));
+      if (unknown.length) throw new ConfigUpdateAbort(404, { error: `Unknown model(s): ${unknown.join(', ')}`, unknown });
+      return instances.map(i => {
+        if (!target.has(i.id)) return i;
+        const { isNew: _acted, ...rest } = i;
+        return { ...rest, enabled };
+      });
+    });
+    audit(req, enabled ? 'model:enable' : 'model:disable', 'success', { ids });
+    const connections = new Map((await readConfig('connections')).map(c => [c.id, c]));
+    const models = updated.filter(i => target.has(i.id) && connections.has(i.connectionId))
+      .map(i => resolveEffectiveModel(i, connections.get(i.connectionId)!));
+    return reply.send({ models: models.map(redactModelSecrets) });
+  });
+
   fastify.post<{
     Body: {
       id: string; name?: string; provider: string; endpoint: string;
@@ -1071,7 +1130,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(req.body.catalogDefaults
         ? { catalogDefaults: req.body.catalogDefaults }
         : existing.catalogDefaults !== undefined ? { catalogDefaults: existing.catalogDefaults } : {}),
+      // Availability state is not editable here: keep it, or a price edit would enable a disabled model.
+      ...(existing.enabled !== undefined ? { enabled: existing.enabled } : {}),
+      ...(existing.source !== undefined ? { source: existing.source } : {}),
+      ...(existing.isNew !== undefined ? { isNew: existing.isNew } : {}),
+      ...(existing.unavailable !== undefined ? { unavailable: existing.unavailable } : {}),
     };
+    applyCatalogReset(instance, existing, overrides, req.body);
     instances[index] = instance;
     await writeConfig('instances', instances);
 
@@ -1153,9 +1218,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const instances = await readConfig('instances');
     const target = instances.find(i => i.id === req.params.id);
     if (!target) return reply.status(404).send({ error: 'Not found' });
-    const usedBy = (await readConfig('routers')).filter(r =>
-      (r.models ?? []).some(m => m.modelId === req.params.id) ||
-      (r.tokens ?? []).some(t => (t.models ?? []).some(m => m.modelId === req.params.id)));
+    const usedBy = (await readConfig('routers')).filter(r => routerUsesModel(r, req.params.id));
     if (usedBy.length) {
       return reply.status(409).send({ error: `Model "${req.params.id}" is used by router(s): ${usedBy.map(r => r.name ?? r.id).join(', ')}. Remove it from them first.`, usedBy: usedBy.map(r => r.id) });
     }
@@ -1221,6 +1284,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     catalogFetcher.invalidate();
     try { await catalogFetcher.get(pkgVersion); } catch { /* best-effort */ }
     await syncModelsFromCatalog(pkgVersion).catch(() => {});
+    await syncConnectionsFromCatalog(pkgVersion, { actor: auditActor(req) }).catch(() => {});
     audit(req, 'catalog:refresh', 'success');
     return reply.send(catalogFetcher.getStatus());
   });
@@ -1231,6 +1295,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (current.length > 0 && current.every(s => s.lastChecked === null && s.enabled !== false)) {
       try { await catalogFetcher.get(pkgVersion); } catch { /* best-effort */ }
       await syncModelsFromCatalog(pkgVersion).catch(() => {});
+      await syncConnectionsFromCatalog(pkgVersion).catch(() => {});
     }
     return reply.send(catalogFetcher.getStatus());
   });
