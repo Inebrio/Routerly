@@ -8,8 +8,8 @@ export function protocolForUrl(url: string): ErrorProtocol {
   return url.split('?')[0]!.startsWith('/v1/messages') ? 'anthropic' : 'openai';
 }
 
-/** Upstream statuses that are deterministic for the request/credential: returned to the client when no candidate succeeds (429/5xx stay a generic 503 so fallback semantics are unchanged). */
-export const UPSTREAM_PASSTHROUGH_STATUS = [400, 401, 403, 404, 413, 422];
+/** Upstream statuses that are deterministic for the request/credential: returned to the client when no candidate succeeds, with 429 so SDK clients can back off (5xx stays a generic 503). Fallback between candidates is unchanged. */
+export const UPSTREAM_PASSTHROUGH_STATUS = [400, 401, 403, 404, 413, 422, 429];
 
 const ANTHROPIC_TYPES: Record<number, string> = {
   400: 'invalid_request_error',

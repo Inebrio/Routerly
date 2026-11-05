@@ -31,6 +31,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Upstream 429 reaches the client as 429.** When every candidate fails and the last upstream answer is a 429 (e.g. `anthropic-web` rate limit), the OpenAI and Anthropic lanes return 429 with a provider-shaped `rate_limit_error` body instead of a generic 503, so SDK clients can apply their own backoff. Fallback to other candidates is unchanged (ROUT-511).
 - **Vertex AI: the Google error message is no longer lost.** Google wraps Vertex errors in a JSON array, so the Test button showed `401 status code (no body)` and the router returned a generic error. Vertex now unwraps the array like Gemini does, so the real Google message reaches Test and the router response (ROUT-489).
 - **`/v1/embeddings` accepts the registered model id.** A pass-through request whose `model` is the full registered id (e.g. `vendor/name`) now reaches the provider with the upstream model name instead of failing with `model not found` (ROUT-491).
 - **RA-09 docs-version tests no longer time out under load.** The two happy-path tests in `test/docs-version.test.ts` now allow 300 s instead of 120 s. Tests only (ROUT-522).

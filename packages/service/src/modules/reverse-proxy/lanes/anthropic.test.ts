@@ -816,6 +816,27 @@ describe('anthropic:attempt', () => {
     expect(ctx.result).toEqual({ kind: 'json', body: { type: 'message', model: 'model-b' } })
   })
 
+  it('all candidates exhausted with a provider 429: returns 429 rate_limit_error, not 503', async () => {
+    await seedModels([
+      { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+    ] as ModelConfig[])
+    const reg = new ProcessorRegistry<ProxyContext>()
+    reg.contribute({
+      id: 'openai:upstream', phase: 'upstream.execute',
+      run(ctx: ProxyContext) { ctx.attemptResponse = { status: 429, body: { error: { message: 'HTTP 429 Too Many Requests' } } } },
+    })
+    setProxyPipeline(reg)
+    const ctx = {
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
+      candidates: [{ model: 'model-a', weight: 1 }],
+    } as unknown as ProxyContext
+    await anthropicAttempt.run(ctx)
+    expect(ctx.result).toEqual({
+      kind: 'block', status: 429,
+      body: { type: 'error', error: { type: 'rate_limit_error', message: 'HTTP 429 Too Many Requests' } },
+    })
+  })
+
   it('all candidates exhausted: returns a 503 overloaded_error block', async () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
