@@ -3,9 +3,10 @@ import { ServiceContainer, EventBus, ProcessorRegistry } from '../../core/index.
 import { USAGE_TRACKER, CONFIG_STORE, PROXY_PIPELINE } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
 
-const { mockReadConfig, mockApplyRetention } = vi.hoisted(() => ({
+const { mockReadConfig, mockApplyRetention, mockApplyActivityRetention } = vi.hoisted(() => ({
   mockReadConfig: vi.fn(),
   mockApplyRetention: vi.fn(),
+  mockApplyActivityRetention: vi.fn(),
 }))
 vi.mock('../config/loader.js', () => ({
   readConfig: mockReadConfig,
@@ -15,6 +16,8 @@ vi.mock('../config/loader.js', () => ({
 vi.mock('../config/usageNdjson.js', () => ({
   applyUsageRetention: mockApplyRetention,
 }))
+
+vi.mock('./activity.js', () => ({ applyActivityRetention: mockApplyActivityRetention }))
 
 import { trackUsage } from './tracker.js'
 import { usageModule } from './index.js'
@@ -77,6 +80,18 @@ describe('usage module', () => {
         expect(mockApplyRetention).toHaveBeenCalledTimes(1)
       } finally {
         vi.useRealTimers()
+      }
+    })
+
+    it('also sweeps the activity log with the same policy, even when the usage sweep fails (ROUT-563 AC9)', async () => {
+      const policy = { maxAgeDays: 30 }
+      mockReadConfig.mockResolvedValue({ usageRetention: policy })
+      mockApplyRetention.mockRejectedValueOnce(new Error('usage sweep failed'))
+      try {
+        await usageModule.start!({} as never)
+        expect(mockApplyActivityRetention).toHaveBeenCalledWith(policy)
+      } finally {
+        await usageModule.stop!()
       }
     })
 

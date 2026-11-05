@@ -1,4 +1,4 @@
-import type { PermissionCheckStatus, RankingAlgorithmId } from '@routerly/shared';
+import type { PermissionCheckStatus, RankingAlgorithmId, TimelineGroup, TimelineEventKind } from '@routerly/shared';
 export type { PermissionCheckStatus } from '@routerly/shared';
 
 const BASE = '/api';
@@ -618,6 +618,35 @@ export const getUsage = (period = 'monthly', routerId?: string, from?: string, t
   if (opts?.savings) params.set('savings', '1');
   if (opts?.series) params.set('series', '1');
   return request<UsageStats>(`/usage?${params.toString()}`);
+};
+
+export interface TimelineFilters {
+  from?: string;
+  to?: string;
+  routerId?: string;
+  tokenId?: string;
+  sessionId?: string;
+  endUserId?: string;
+  kind?: string;
+  outcome?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface TimelineResponse {
+  groups: TimelineGroup[];
+  totals: { groups: number; events: number; cost: number | null; eventsByKind: Partial<Record<TimelineEventKind, number>> };
+  pagination: { page: number; pageSize: number; totalRecords: number; totalPages: number };
+}
+
+/** Unified call timeline (ROUT-563). Empty and `all` filters are left out of the query. */
+export const getTimeline = (f: TimelineFilters = {}) => {
+  const params = new URLSearchParams({ period: f.from || f.to ? 'custom' : 'all' });
+  for (const [k, v] of Object.entries(f)) {
+    if (v == null || v === '' || v === 'all') continue;
+    params.set(k, String(v));
+  }
+  return request<TimelineResponse>(`/timeline?${params.toString()}`);
 };
 
 export const getUsageRecord = (id: string) =>
