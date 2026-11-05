@@ -84,6 +84,7 @@ const sidebars: SidebarsConfig = {
         'guides/self-hosting',
         'guides/claude-subscription',
         'guides/mcp-clients',
+        'guides/compare-model-prices',
       ],
     },
     {
