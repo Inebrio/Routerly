@@ -116,6 +116,8 @@ Filters out models that are currently rate-limited (i.e. received a 429 response
 
 Distributes requests across models to balance load, or ensures that cheaper models are only used up to a configured share of traffic.
 
+`fairness` counts the traffic of the current router only. The other usage-based policies (`budget-remaining`, `rate-limit`, `performance`, `health`) read the model's usage across all routers.
+
 **Use when:** you have multiple capable models and want to spread load.
 
 ### `budget-remaining`
