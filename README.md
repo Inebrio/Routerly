@@ -162,6 +162,9 @@ Register equivalent models across several providers and enable `health`. Routerl
 ### Governance for teams
 Roles and permissions decide who can change what, the audit log records changes, guardrails and PII policies apply to every request, and notifications report budget and provider events.
 
+### Comparing prices of the same model across providers
+Use **Models › Discover** (or `routerly model discover`) to search a model, filter several providers and sort by input or output price, then work out the cost of your own workload. Routerly does not group offers automatically and does not treat similar names as the same model: see [Compare prices across providers](docs/guides/compare-model-prices.md).
+
 ### Comparing setups safely
 Run an experiment between two routers (for example a cheaper model set against the current one) and compare cost, latency and error rate in the dashboard.
 
