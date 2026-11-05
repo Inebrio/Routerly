@@ -1786,6 +1786,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   const updateTokenBodySchema = z.object({
     models: z.array(z.object({
       modelId: z.string(),
+      limitsMode: z.enum(['replace', 'extend', 'disable']).optional(),
       limits: z.array(z.any()).optional(),
     })).optional(),
     labels: z.array(z.string()).optional(),

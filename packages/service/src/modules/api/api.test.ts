@@ -5214,6 +5214,32 @@ describe('PUT /api/routers/:id/tokens/:tokenId', () => {
     expect(res.statusCode).toBe(200)
   })
 
+  it('stores and returns limitsMode; rejects an invalid value', async () => {
+    setupAdminAuth()
+    const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString(), models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [router]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const put = (limitsMode: string) => app.inject({
+      method: 'PUT', url: '/api/routers/p1/tokens/tok-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ models: [{ modelId: 'm1', limitsMode }] }),
+    })
+    const ok = await put('disable')
+    const bad = await put('bogus')
+    await app.close()
+    expect(ok.statusCode).toBe(200)
+    expect(JSON.parse(ok.body).models[0].limitsMode).toBe('disable')
+    expect(bad.statusCode).toBe(400)
+  })
+
   it('returns 404 for unknown token', async () => {
     setupAdminAuth()
     const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }

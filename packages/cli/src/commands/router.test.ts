@@ -2165,6 +2165,21 @@ describe('token edit', () => {
     expect(lines.join('\n')).toContain('updated');
   });
 
+  it('sets limitsMode on a model, keeping a mode-only entry', async () => {
+    const router = { ...baseRouter, tokens: [{ ...tokenWithLimits, models: [] }] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--limits-mode', 'openai/gpt-4:disable']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    const body = putCall![2] as { models: Array<{ modelId: string; limitsMode?: string }> };
+    expect(body.models).toEqual([{ modelId: 'openai/gpt-4', limitsMode: 'disable' }]);
+  });
+
+  it('rejects an invalid --limits-mode', async () => {
+    const router = { ...baseRouter, tokens: [{ ...tokenWithLimits }] };
+    mockApi.mockResolvedValueOnce([router]);
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--limits-mode', 'openai/gpt-4:bogus'])).rejects.toThrow('exit');
+  });
+
   it('adds a rolling limit to existing token', async () => {
     const router = { ...baseRouter, tokens: [{ ...tokenWithLimits, models: [] }] };
     mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
