@@ -192,10 +192,6 @@ Full endpoint catalogue: [API — Management](../api/management).
 | `GET` | `/api/settings` | Read service settings |
 | `PUT` | `/api/settings` | Update service settings |
 | `GET` | `/api/users` | List users (admin only) |
-| `GET` | `/api/spend-groups` | List org/team spend groups with usage |
-| `POST` | `/api/spend-groups` | Create a spend group |
-| `PUT` | `/api/spend-groups/:id` | Update a spend group |
-| `DELETE` | `/api/spend-groups/:id` | Delete a spend group |
 | `GET` | `/api/notifications/inbox` | List the current user's in-app notifications |
 | `POST` | `/api/notifications/inbox/read` | Mark notifications as read (`ids[]` or `all`) |
 | `GET` | `/api/me/mcp-tools` | List the MCP tools the caller's own tokens expose |

@@ -4,13 +4,16 @@ import type { RouterConfig } from '@routerly/shared';
 
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }));
 vi.mock('../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('../usage/activity.js', () => ({ appendActivity: vi.fn().mockResolvedValue(undefined) }));
 
 import { readConfig } from '../config/loader.js';
 import { trackUsage } from '../usage/tracker.js';
+import { appendActivity } from '../usage/activity.js';
 import { routerPassthroughRoutes } from './router-passthrough.js';
 
 const mockReadConfig = vi.mocked(readConfig);
 const mockTrackUsage = vi.mocked(trackUsage);
+const mockAppendActivity = vi.mocked(appendActivity);
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -101,6 +104,40 @@ describe('routerPassthroughRoutes', () => {
   it('400s on a path that matches no known wire format', async () => {
     const app = await buildApp([plainRouter]);
     const res = await app.inject({ method: 'GET', url: '/passthrough/my-openai/v1/totally-unknown' });
+    await app.close();
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toBe('unrecognized_wire_format');
+  });
+
+  it('records a non-model path as a proxy event (method + path without query, router, status 400) (ROUT-563)', async () => {
+    const app = await buildApp([plainRouter]);
+    await app.inject({ method: 'GET', url: '/passthrough/my-openai/v1/models?key=secret-query' });
+    await app.close();
+
+    expect(mockAppendActivity).toHaveBeenCalledOnce();
+    const event = mockAppendActivity.mock.calls[0]![0];
+    expect(event).toMatchObject({ kind: 'proxy', outcome: 'error', name: 'GET /v1/models', status: 400, routerId: 'pr-1' });
+    expect(JSON.stringify(event)).not.toContain('secret-query');
+    expect(mockTrackUsage).not.toHaveBeenCalled();
+  });
+
+  it('does not record model calls as activity (ROUT-563)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
+    const app = await buildApp([plainRouter]);
+    await app.inject({
+      method: 'POST', url: '/passthrough/my-openai/v1/chat/completions',
+      headers: { authorization: 'Bearer k', 'content-type': 'application/json' }, payload: '{"model":"gpt-4o","messages":[]}',
+    });
+    await app.close();
+
+    expect(mockAppendActivity).not.toHaveBeenCalled();
+  });
+
+  it('a failing activity log does not change the 400 response (ROUT-563)', async () => {
+    mockAppendActivity.mockRejectedValueOnce(new Error('disk full'));
+    const app = await buildApp([plainRouter]);
+    const res = await app.inject({ method: 'GET', url: '/passthrough/my-openai/v1/models' });
     await app.close();
 
     expect(res.statusCode).toBe(400);
