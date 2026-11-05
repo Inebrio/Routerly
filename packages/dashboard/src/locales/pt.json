@@ -1407,6 +1407,22 @@
         "addTarget": "Adicionar Modelo de Destino",
         "passthroughLabel": "Passagem direta (encaminhamento bruto)",
         "passthroughNotRemovable": "A entrada de passagem direta não pode ser removida"
+      },
+      "exceptions": {
+        "title": "Exceções",
+        "description": "Um pedido cujo modelo corresponde a uma regra é enviado para o modelo escolhido em vez de ser reencaminhado sem alterações. Vence a primeira correspondência. Use * como carácter universal. Aplica-se apenas a pedidos autenticados por token.",
+        "empty": "Sem exceções: cada pedido é reencaminhado sem alterações.",
+        "noRealModels": "Adicione primeiro um modelo a este router: as exceções só podem apontar para os modelos do router.",
+        "add": "Adicionar exceção",
+        "match": "Padrão do nome do modelo",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Modelo de destino",
+        "remove": "Remover exceção",
+        "errors": {
+          "matchRequired": "Cada exceção precisa de um padrão.",
+          "duplicateMatch": "Correspondência duplicada \"{{match}}\".",
+          "targetMissing": "O destino da exceção \"{{match}}\" não é um modelo deste router."
+        }
       }
     },
     "optimizer": {
@@ -2450,12 +2466,14 @@
         "piiRedacted": "PII Editada",
         "sessionId": "ID da sessão",
         "endUser": "Utilizador final",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Encaminhado por"
       },
       "errorMessage": "Mensagem de Erro",
       "eventCount": "{{count}} evento",
       "eventCount_other": "{{count}} eventos",
-      "noTrace": "Sem rastreamento disponível. Dados de rastreamento são capturados apenas para novas chamadas."
+      "noTrace": "Sem rastreamento disponível. Dados de rastreamento são capturados apenas para novas chamadas.",
+      "routedByException": "Exceção Passthrough"
     }
   },
   "timeline": {

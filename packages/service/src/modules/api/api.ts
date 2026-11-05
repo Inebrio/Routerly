@@ -12,11 +12,11 @@ import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { RankingAlgorithmId, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration, CallConfig } from '@routerly/shared';
+import type { RankingAlgorithmId, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration, CallConfig, PassthroughException } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
 import { validateRoutingModels } from '../routing/validate-routing-models.js';
-import { validatePassthroughModels } from '../routing/validate-passthrough.js';
+import { validatePassthroughModels, validatePassthroughExceptions } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { RANKING_ALGORITHMS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug, LOG_LEVELS, TIMELINE_EVENT_KINDS } from '@routerly/shared';
@@ -1131,6 +1131,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
               }
             }
           }
+          for (const rule of (router.exceptions ?? [])) {
+            if (rule.targetModelId === req.params.id) {
+              rule.targetModelId = newId;
+              routersChanged = true;
+            }
+          }
         }
         return routersChanged ? next : routers;
       });
@@ -1290,6 +1296,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   const routerKindSchema = z.enum(['router', 'orchestrator', 'passthrough']).optional();
   const rankingAlgorithmSchema = z.enum(RANKING_ALGORITHMS).optional();
+  const passthroughExceptionsSchema = z.array(
+    z.object({ match: z.string().trim().min(1).max(200), targetModelId: z.string().min(1) }).strict(),
+  ).max(50).optional();
   // Emptiness is rejected by validateOrchestratorCandidates (EC2), not here — that
   // path also produces the story's exact error message.
   const orchestratorCandidatesSchema = z.array(z.object({
@@ -1485,6 +1494,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
       rankingAlgorithm?: RankingAlgorithmId;
+      exceptions?: PassthroughException[];
     };
   }>('/api/routers/:id', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
@@ -1516,6 +1526,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsedRanking.success) return reply.status(400).send({ error: 'Invalid rankingAlgorithm', details: parsedRanking.error.issues });
     const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
     if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
+    const parsedExceptions = passthroughExceptionsSchema.safeParse(req.body.exceptions);
+    if (!parsedExceptions.success) return reply.status(400).send({ error: 'Invalid exceptions', details: parsedExceptions.error.issues });
     // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
     // `Limit[]` — same cast-after-parse pattern as guardrails/pii below.
     const candidates = parsedCandidates.data as OrchestratorCandidateRef[] | undefined;
@@ -1592,6 +1604,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         : bodyModels.filter(m => m.modelId !== PASSTHROUGH_MODEL_ID);
       const modelsError = validatePassthroughModels({ kind, models: normalizedModels });
       if (modelsError) throw new ConfigUpdateAbort(modelsError.status, { error: modelsError.message });
+      // Exceptions: undefined keeps the stored rules, [] clears, an array replaces. The
+      // stored list is re-validated against the new models, so a models edit that drops
+      // a targeted model is a 400. A kind switch away from passthrough drops the rules.
+      const exceptionsNext = parsedExceptions.data ?? routers[index]!.exceptions;
+      const exceptionsError = parsedExceptions.data?.length || kind === 'passthrough'
+        ? validatePassthroughExceptions({ kind, models: normalizedModels, exceptions: exceptionsNext })
+        : null;
+      if (exceptionsError) throw new ConfigUpdateAbort(exceptionsError.status, { error: exceptionsError.message });
       // Token issuance/revocation for passthrough routers (PR-E AC1/EC1): a real
       // model gets scored/authenticated like any other router's model and needs
       // a Routerly-issued token; dropping the last real model revokes it. Other
@@ -1646,7 +1666,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const notifChannels = req.body.notifications === null ? [] : notificationChannels ?? routers[index]!.notifications?.channels ?? [];
       const notificationsUpdate: { notifications?: { channels: string[] } } = notifChannels.length ? { notifications: { channels: notifChannels } } : {};
 
-      const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, kind: _k, candidates: _c, callConfig: existingCallConfig, ...existing } = routers[index]!;
+      const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, kind: _k, candidates: _c, exceptions: _e, callConfig: existingCallConfig, ...existing } = routers[index]!;
       const nextCallConfig = callConfigUpdate === undefined ? existingCallConfig : callConfigUpdate ?? undefined;
       updated = {
         ...existing,
@@ -1670,6 +1690,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...notificationsUpdate,
         ...(kind !== 'router' ? { kind } : {}),
         ...(kind === 'orchestrator' ? candidatesUpdate : {}),
+        ...(kind === 'passthrough' && exceptionsNext?.length ? { exceptions: exceptionsNext } : {}),
         ...tokensUpdate,
       };
       const next = [...routers];

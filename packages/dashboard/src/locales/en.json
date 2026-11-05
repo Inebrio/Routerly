@@ -1409,6 +1409,22 @@
         "addTarget": "Add Target Model",
         "passthroughLabel": "Pass-through (raw forward)",
         "passthroughNotRemovable": "The pass-through entry cannot be removed"
+      },
+      "exceptions": {
+        "title": "Exceptions",
+        "description": "A request whose model name matches a rule is sent to the chosen model instead of being forwarded unchanged. First match wins. Use * as a wildcard. Applies to token-authenticated requests only.",
+        "empty": "No exceptions: every request is forwarded unchanged.",
+        "noRealModels": "Add a model to this router first: exceptions can only target the router's own models.",
+        "add": "Add exception",
+        "match": "Model name pattern",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Target model",
+        "remove": "Remove exception",
+        "errors": {
+          "matchRequired": "Every exception needs a match pattern.",
+          "duplicateMatch": "Duplicate match \"{{match}}\".",
+          "targetMissing": "The target of exception \"{{match}}\" is not a model of this router."
+        }
       }
     },
     "optimizer": {
@@ -2454,12 +2470,14 @@
         "piiRedacted": "PII Redacted",
         "sessionId": "Session ID",
         "endUser": "End user",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Routed by"
       },
       "errorMessage": "Error Message",
       "eventCount": "{{count}} event",
       "eventCount_other": "{{count}} events",
-      "noTrace": "No trace available. Trace data is captured for new calls only."
+      "noTrace": "No trace available. Trace data is captured for new calls only.",
+      "routedByException": "Passthrough exception"
     }
   },
   "timeline": {

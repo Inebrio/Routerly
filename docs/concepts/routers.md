@@ -62,7 +62,7 @@ Only shown on an `orchestrator`-kind Router: the priority-ordered list of candid
 
 ### Routing
 
-Configure which models the Router can use and in what order. Drag routing policies into the list and set their parameters. Not shown for an Orchestrator or a Passthrough Router. See [Concepts: Routing](./routing.md) for details.
+Configure which models the Router can use and in what order. Drag routing policies into the list and set their parameters. Not shown for an Orchestrator. A Passthrough Router gets the model list and an **Exceptions** card instead of policies (see [Concepts: Architecture](./architecture.md#passthrough-exceptions)). See [Concepts: Routing](./routing.md) for details.
 
 ### Tokens
 

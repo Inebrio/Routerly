@@ -1407,6 +1407,22 @@
         "addTarget": "Ajouter un modèle cible",
         "passthroughLabel": "Transfert direct (retransmission brute)",
         "passthroughNotRemovable": "L'entrée de transfert direct ne peut pas être supprimée"
+      },
+      "exceptions": {
+        "title": "Exceptions",
+        "description": "Une requête dont le modèle correspond à une règle est envoyée au modèle choisi au lieu d'être transmise telle quelle. La première correspondance l'emporte. Utilisez * comme joker. S'applique uniquement aux requêtes authentifiées par jeton.",
+        "empty": "Aucune exception : chaque requête est transmise telle quelle.",
+        "noRealModels": "Ajoutez d'abord un modèle à ce routeur : les exceptions ne peuvent cibler que les modèles du routeur.",
+        "add": "Ajouter une exception",
+        "match": "Motif du nom de modèle",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Modèle cible",
+        "remove": "Supprimer l'exception",
+        "errors": {
+          "matchRequired": "Chaque exception nécessite un motif.",
+          "duplicateMatch": "Correspondance en double \"{{match}}\".",
+          "targetMissing": "La cible de l'exception \"{{match}}\" n'est pas un modèle de ce routeur."
+        }
       }
     },
     "optimizer": {
@@ -2450,12 +2466,14 @@
         "piiRedacted": "PII redoutée",
         "sessionId": "ID de session",
         "endUser": "Utilisateur final",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Routé par"
       },
       "errorMessage": "Message d'erreur",
       "eventCount": "{{count}} événement",
       "eventCount_other": "{{count}} événements",
-      "noTrace": "Aucune trace disponible. Les données de trace sont capturées pour les nouveaux appels uniquement."
+      "noTrace": "Aucune trace disponible. Les données de trace sont capturées pour les nouveaux appels uniquement.",
+      "routedByException": "Exception Passthrough"
     }
   },
   "timeline": {

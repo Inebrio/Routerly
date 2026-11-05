@@ -131,7 +131,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     if (model.provider === 'anthropic-oauth') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      if (deferredFailure(ctx, await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx), callSettings))) { ctx.passthrough = false; return }
+      if (deferredFailure(ctx, await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx), callSettings, ctx.routedBy))) { ctx.passthrough = false; return }
       ctx.result = { kind: 'passthrough' }
       return
     }
@@ -142,7 +142,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     if (model.provider === 'anthropic') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      if (deferredFailure(ctx, await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx), callSettings))) { ctx.passthrough = false; return }
+      if (deferredFailure(ctx, await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx), callSettings, ctx.routedBy))) { ctx.passthrough = false; return }
       ctx.result = { kind: 'passthrough' }
       return
     }
@@ -159,6 +159,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
           ...(ctx.emit ? { emit: ctx.emit } : {}),
           ...(callSettings ? { callSettings } : {}),
+          ...(ctx.routedBy ? { routedBy: ctx.routedBy } : {}),
         })
         if (!body.stream) {
           const chatResp = await chunksToChatResponse(chunks, model.id)
@@ -196,6 +197,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       ...(ctx.conversationId ? { sessionId: ctx.conversationId } : {}),
       ...(ctx.token?.tags ? { tags: ctx.token.tags } : {}),
       ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
+      ...(ctx.routedBy ? { routedBy: ctx.routedBy } : {}),
       onUpstreamHeaders: (h) => { upstreamHeaders = h },
       ...(callSettings ? { callSettings } : {}),
     }

@@ -167,6 +167,8 @@ The **Status** badge in the table uses colour coding:
 Click any row to open the full **Trace view** (`/dashboard/usage/<record id>`),
 where the same token appears as its own **Token** field in the Identity card.
 
+A call diverted by a [passthrough exception](../concepts/architecture.md#passthrough-exceptions) shows a **Routed by** field with the value **Passthrough exception** in the same card.
+
 ### Trace View
 
 The trace view reads on two levels: a **summary card** at the top of the page,

@@ -73,6 +73,8 @@ export interface ProxyContext {
    * plain Router.
    */
   orchestratorId?: string
+  /** Set by routing.prepare when a passthrough exception rule picked the target; read into usage records. */
+  routedBy?: 'exception'
 
   // routing / attempt loop
   candidates?: RoutingCandidate[]

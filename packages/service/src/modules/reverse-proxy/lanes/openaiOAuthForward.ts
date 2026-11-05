@@ -279,7 +279,7 @@ export async function* streamOpenAIOAuthChunks(
   body: Record<string, unknown>,
   model: ModelConfig,
   log: FastifyBaseLogger,
-  opts: { traceId: string; routerId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined; emit?: ((entry: TraceEntry) => void) | undefined; callSettings?: AppliedCallConfig | undefined },
+  opts: { traceId: string; routerId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined; emit?: ((entry: TraceEntry) => void) | undefined; callSettings?: AppliedCallConfig | undefined; routedBy?: 'exception' | undefined },
 ): AsyncGenerator<StreamChunk> {
   const startMs = Date.now();
   const modelId = model.id.includes('/') ? model.id.split('/').slice(1).join('/') : model.id;
@@ -457,6 +457,7 @@ export async function* streamOpenAIOAuthChunks(
         latencyMs: Date.now() - startMs, outcome, callType: 'completion', traceId: opts.traceId,
         ...(opts.tokenId ? { tokenId: opts.tokenId } : {}),
         ...(opts.callSettings ? { callConfig: opts.callSettings } : {}),
+        ...(opts.routedBy ? { routedBy: opts.routedBy } : {}),
       }).catch(() => {});
     }
   }

@@ -1407,6 +1407,22 @@
         "addTarget": "ターゲットモデルを追加",
         "passthroughLabel": "パススルー(生転送)",
         "passthroughNotRemovable": "パススルーエントリは削除できません"
+      },
+      "exceptions": {
+        "title": "例外",
+        "description": "モデルがルールに一致したリクエストは、そのまま転送されず、選択したモデルに送られます。最初に一致したルールが優先されます。ワイルドカードは * を使用します。トークン認証されたリクエストにのみ適用されます。",
+        "empty": "例外なし: すべてのリクエストがそのまま転送されます。",
+        "noRealModels": "先にこのルーターへモデルを追加してください。例外はルーター自身のモデルのみを対象にできます。",
+        "add": "例外を追加",
+        "match": "モデル名のパターン",
+        "matchPlaceholder": "gpt-4*",
+        "target": "対象モデル",
+        "remove": "例外を削除",
+        "errors": {
+          "matchRequired": "すべての例外にパターンが必要です。",
+          "duplicateMatch": "一致パターン「{{match}}」が重複しています。",
+          "targetMissing": "例外「{{match}}」の対象はこのルーターのモデルではありません。"
+        }
       }
     },
     "optimizer": {
@@ -2450,12 +2466,14 @@
         "piiRedacted": "PII編集",
         "sessionId": "セッションID",
         "endUser": "エンドユーザー",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "ルーティング元"
       },
       "errorMessage": "エラーメッセージ",
       "eventCount": "{{count}}イベント",
       "eventCount_other": "{{count}}イベント",
-      "noTrace": "トレースが利用できません。トレースデータは新しい呼び出しのみキャプチャされます。"
+      "noTrace": "トレースが利用できません。トレースデータは新しい呼び出しのみキャプチャされます。",
+      "routedByException": "Passthrough 例外"
     }
   },
   "timeline": {

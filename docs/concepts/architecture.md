@@ -102,6 +102,24 @@ itself on this fallback; it forwards it unaltered and returns whatever the
 upstream said, which is the wire-format transparency rule's guarantee, not a
 gap.
 
+### Passthrough exceptions
+
+A Passthrough Router can carry an ordered list of **exceptions**. Each rule
+is a `match` pattern and a `targetModelId`, one of the router's own real
+models. When a request arrives with its Routerly-issued token and the `model`
+in its body matches a rule (exact and case-sensitive, `*` stands for any
+sequence of characters, first match wins), the request goes to that target
+model instead of following the model list: no scoring and no raw-forward
+fallback. It is then authenticated, budgeted, metered and recorded like any
+other call to that model, and its usage record carries `routedBy: "exception"`.
+
+Exceptions apply only on the token-authenticated lanes. The unauthenticated
+`/passthrough/<slug>/*` route never evaluates them: it forwards the client's
+own credential and body untouched. The client's credential never reaches the
+exception's target: the target model is called with the provider connection's
+own credentials. A request that matches no rule behaves as described above.
+Nothing is added to the request or response: no header, no field.
+
 ## Request Lifecycle
 
 When your application sends a chat request to Routerly:

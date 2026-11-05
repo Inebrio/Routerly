@@ -1407,6 +1407,22 @@
         "addTarget": "添加目标模型",
         "passthroughLabel": "直通(原始转发)",
         "passthroughNotRemovable": "直通条目无法删除"
+      },
+      "exceptions": {
+        "title": "例外",
+        "description": "模型匹配某条规则的请求将发送到所选模型，而不是原样转发。以第一个匹配为准。使用 * 作为通配符。仅适用于通过令牌认证的请求。",
+        "empty": "没有例外：所有请求都原样转发。",
+        "noRealModels": "请先为此路由器添加模型：例外只能指向路由器自身的模型。",
+        "add": "添加例外",
+        "match": "模型名称模式",
+        "matchPlaceholder": "gpt-4*",
+        "target": "目标模型",
+        "remove": "移除例外",
+        "errors": {
+          "matchRequired": "每个例外都需要一个模式。",
+          "duplicateMatch": "匹配项重复“{{match}}”。",
+          "targetMissing": "例外“{{match}}”的目标不是此路由器的模型。"
+        }
       }
     },
     "optimizer": {
@@ -2450,12 +2466,14 @@
         "piiRedacted": "个人身份信息已编辑",
         "sessionId": "会话 ID",
         "endUser": "终端用户",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "路由方式"
       },
       "errorMessage": "错误消息",
       "eventCount": "{{count}} 个事件",
       "eventCount_other": "{{count}} 个事件",
-      "noTrace": "无可用跟踪。跟踪数据仅为新调用捕获。"
+      "noTrace": "无可用跟踪。跟踪数据仅为新调用捕获。",
+      "routedByException": "Passthrough 例外"
     }
   },
   "timeline": {

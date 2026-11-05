@@ -224,6 +224,12 @@ default depends on the pass-through entry's position in the list: see
 [Concepts: Architecture](./architecture.md#passthrough-which-path-a-request-takes)
 for the full ordering rule and the fallback's forwarded-credential caveat.
 
+**Exceptions.** A Passthrough Router can also list exception rules that send
+requests for specific model names to one of its own real models, regardless of
+the pass-through entry's position. They apply only to token-authenticated
+requests, never to `/passthrough/<slug>/*`. See
+[Concepts: Architecture](./architecture.md#passthrough-exceptions).
+
 ---
 
 ## Routing Profiles
