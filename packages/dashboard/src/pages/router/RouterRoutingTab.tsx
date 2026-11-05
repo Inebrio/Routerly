@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
 import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type RoutingProfile } from '../../api';
-import { PASSTHROUGH_MODEL_ID, DEFAULT_RANKING_ALGORITHM, type CallConfig, type RankingAlgorithmId } from '@routerly/shared';
+import { PASSTHROUGH_MODEL_ID, isModelRoutable, DEFAULT_RANKING_ALGORITHM, type CallConfig, type RankingAlgorithmId } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
 import { useAuth } from '../../AuthContext';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -42,6 +42,11 @@ export function RouterRoutingTab() {
 
   // Profile/custom choice, local until saved. The custom policies below always
   // show what is stored, whichever mode is selected.
+  // Models that routing skips stay selectable (a router keeps its references) but are flagged.
+  const statusSuffix = (m: Model) => isModelRoutable(m)
+    ? ''
+    : ` (${m.unavailable ? t('routers.routing.targetModels.unavailable') : t('routers.routing.targetModels.disabled')})`;
+
   const draft = useProfileDraft(router?.routingProfileId ?? '');
 
   useEffect(() => {
@@ -444,8 +449,16 @@ export function RouterRoutingTab() {
                           options={availableModels
                             .filter(m => !m.capabilities?.embedding && (m.id === item.modelId || !getUsedTargetModelIds(idx).has(m.id)))
                             .sort((a, b) => a.id.localeCompare(b.id))
-                            .map(m => ({ value: m.id, label: m.id }))}
+                                                        .map(m => ({ value: m.id, label: `${m.id}${statusSuffix(m)}` }))}
                         />
+                        {(() => {
+                          const picked = availableModels.find(m => m.id === item.modelId);
+                          return picked && !isModelRoutable(picked) && (
+                            <span className="badge badge-warning" style={{ marginTop: 6 }}>
+                              {picked.unavailable ? t('routers.routing.targetModels.unavailable') : t('routers.routing.targetModels.disabled')}
+                            </span>
+                          );
+                        })()}
                       </div>
 
                       {showPromptInput && (

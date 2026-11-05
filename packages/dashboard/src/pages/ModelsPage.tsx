@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw, ShieldOff } from 'lucide-react';
-import { getModels, deleteModel, testModel, getProviderHealth, resetResilience, getConnections, type Model, type ProviderHealth, type ResilienceState, type Connection } from '../api';
+import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw, ShieldOff, Power, PowerOff } from 'lucide-react';
+import { isModelRoutable } from '@routerly/shared';
+import { getModels, deleteModel, testModel, getProviderHealth, resetResilience, getConnections, getRouters, setModelsEnabled, routerReferencesModel, type Model, type ProviderHealth, type ResilienceState, type Connection, type Router } from '../api';
 import { useAuth } from '../AuthContext';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SearchableSelect } from '../components/SearchableSelect';
@@ -12,6 +13,30 @@ import { useProviderLabels } from '../hooks/useProviderLabels';
 type SortKey = 'id' | 'provider' | 'endpoint' | 'input' | 'output' | 'cache' | 'context';
 type HealthSortKey = 'id' | 'provider' | 'status' | 'circuit' | 'errorRate' | 'p95Latency' | 'requests' | 'lastSuccess' | 'cooldown';
 type SortDir = 'asc' | 'desc';
+
+type ModelStatus = 'enabled' | 'disabled' | 'new' | 'unavailable';
+const STATUS_FILTERS: ModelStatus[] = ['enabled', 'disabled', 'new', 'unavailable'];
+const STATUS_BADGE: Record<ModelStatus, string> = {
+  enabled: 'badge-success', disabled: 'badge-neutral', new: 'badge-completion', unavailable: 'badge-error',
+};
+
+// Display status (contract C2): unavailable > new > disabled > enabled.
+function modelStatus(m: Model): ModelStatus {
+  if (m.unavailable) return 'unavailable';
+  if (m.isNew && m.enabled === false) return 'new';
+  return m.enabled === false ? 'disabled' : 'enabled';
+}
+
+// Filter semantics differ from the display status: `new` matches every isNew model,
+// `unavailable` any unavailable one, `enabled` the routable ones.
+function matchesStatus(m: Model, f: ModelStatus): boolean {
+  switch (f) {
+    case 'new': return m.isNew === true;
+    case 'unavailable': return !!m.unavailable;
+    case 'disabled': return m.enabled === false && !m.isNew && !m.unavailable;
+    case 'enabled': return isModelRoutable(m);
+  }
+}
 
 const PAGE_SIZE = 20;
 const HEALTH_REFRESH_MS = 30_000;
@@ -154,6 +179,16 @@ export function ModelsPage() {
   const [search, setSearch] = useState('');
   const [providerFilter, setProviderFilter] = useState(() => searchParams.get('provider') ?? '');
   const [connectionFilter, setConnectionFilter] = useState(() => searchParams.get('connection') ?? '');
+  const [statusFilter, setStatusFilter] = useState<ModelStatus | ''>(() => {
+    const v = searchParams.get('status');
+    return STATUS_FILTERS.includes(v as ModelStatus) ? (v as ModelStatus) : '';
+  });
+  // Set by the connection form after the catalog loaded models into a new connection.
+  const loadedCount = Number(searchParams.get('loaded')) || 0;
+  const [routers, setRouters] = useState<Router[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [stateBusy, setStateBusy] = useState(false);
+  const [stateError, setStateError] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
@@ -190,6 +225,34 @@ export function ModelsPage() {
       if (v) next.set('provider', v); else next.delete('provider');
       return next;
     }, { replace: true });
+  }
+
+  function updateStatusFilter(v: string) {
+    setStatusFilter(v as ModelStatus | '');
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (v) next.set('status', v); else next.delete('status');
+      return next;
+    }, { replace: true });
+  }
+
+  // Which routers use a model is shown on unavailable rows; best-effort, needs router:read.
+  useEffect(() => { if (canRead && can('router:read')) getRouters().then(setRouters).catch(() => {}); }, []);
+
+  async function applyEnabled(ids: string[], enabled: boolean) {
+    if (ids.length === 0) return;
+    setStateBusy(true);
+    setStateError('');
+    try {
+      const { models: updated } = await setModelsEnabled(ids, enabled);
+      const byId = new Map(updated.map(u => [u.id, u]));
+      setModels(ms => ms.map(m => byId.get(m.id) ?? m));
+      setSelected(new Set());
+    } catch (e) {
+      setStateError(e instanceof Error ? e.message : t('models.page.state.failed'));
+    } finally {
+      setStateBusy(false);
+    }
   }
 
   function updateConnectionFilter(v: string) {
@@ -297,7 +360,7 @@ export function ModelsPage() {
   }
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [search, providerFilter, connectionFilter]);
+  useEffect(() => { setPage(1); setSelected(new Set()); }, [search, providerFilter, connectionFilter, statusFilter]);
 
   const providerOptions = useMemo(
     () => Array.from(new Set(models.map(m => m.provider))).sort(),
@@ -309,10 +372,11 @@ export function ModelsPage() {
     return models.filter(m => {
       if (providerFilter && m.provider !== providerFilter) return false;
       if (connectionFilter && m.connectionId !== connectionFilter) return false;
+      if (statusFilter && !matchesStatus(m, statusFilter)) return false;
       if (!q) return true;
       return m.id.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q) || (m.endpoint ?? '').toLowerCase().includes(q);
     });
-  }, [models, search, providerFilter, connectionFilter]);
+  }, [models, search, providerFilter, connectionFilter, statusFilter]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -333,6 +397,25 @@ export function ModelsPage() {
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   useEffect(() => { if (page > totalPages) setPage(Math.max(1, totalPages)); }, [page, totalPages]);
   const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // "Enable all new" acts on what the active filters show, not on the whole fleet.
+  const newIds = useMemo(() => filtered.filter(m => m.isNew && m.enabled === false).map(m => m.id), [filtered]);
+  const pageAllSelected = paginated.length > 0 && paginated.every(m => selected.has(m.id));
+  function toggleSelected(id: string) {
+    setSelected(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  }
+  function togglePage() {
+    setSelected(s => {
+      const n = new Set(s);
+      for (const m of paginated) { if (pageAllSelected) n.delete(m.id); else n.add(m.id); }
+      return n;
+    });
+  }
+  function usedByTitle(m: Model): string | undefined {
+    if (!can('router:read')) return undefined;
+    const names = routers.filter(r => routerReferencesModel(r, m.id)).map(r => r.name);
+    return names.length ? t('models.page.status.usedBy', { routers: names.join(', ') }) : undefined;
+  }
 
   // ── Health tab computed ────────────────────────────────────────────────────
   const hFiltered = useMemo(() => {
@@ -448,6 +531,13 @@ export function ModelsPage() {
                   placeholder={t('models.page.filters.allConnections')}
                   style={{ width: 180 }}
                 />
+                <SearchableSelect
+                  options={[{ value: '', label: t('models.page.filters.allStatuses') }, ...STATUS_FILTERS.map(s => ({ value: s, label: t(`models.page.status.${s}`) }))]}
+                  value={statusFilter}
+                  onChange={updateStatusFilter}
+                  placeholder={t('models.page.filters.allStatuses')}
+                  style={{ width: 150 }}
+                />
                 <div style={{ position: 'relative' }}>
                   <Search size={14} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                   <input
@@ -462,6 +552,11 @@ export function ModelsPage() {
                     </button>
                   )}
                 </div>
+                {canWriteModels && newIds.length > 0 && (
+                  <button className="btn" disabled={stateBusy} onClick={() => void applyEnabled(newIds, true)}>
+                    <Power size={16} /> {t('models.page.state.enableAllNew', { count: newIds.length })}
+                  </button>
+                )}
                 {canWriteModels && (
                   <>
                     <Link to="/dashboard/models/discover" className="btn">
@@ -477,6 +572,34 @@ export function ModelsPage() {
                 )}
               </div>
             </div>
+            {loadedCount > 0 && (
+              <div role="status" className="form-error" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(16,185,129,0.08)', color: 'var(--success)', borderColor: 'rgba(16,185,129,0.2)' }}>
+                <span style={{ flex: 1 }}>{t('models.page.state.loaded', { count: loadedCount })}</span>
+                <button className="btn-icon" aria-label={t('models.page.state.dismiss')} onClick={() => setSearchParams(prev => { const n = new URLSearchParams(prev); n.delete('loaded'); return n; }, { replace: true })}>
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            {stateError && <div className="form-error" role="alert" style={{ marginBottom: 16 }}>{stateError}</div>}
+            {canWriteModels && selected.size > 0 && (
+              <div role="toolbar" aria-label={t('models.page.state.bulkBar')} style={{
+                display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, padding: '8px 12px',
+                background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8,
+              }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginRight: 'auto' }}>
+                  {t('models.page.state.selected', { count: selected.size })}
+                </span>
+                <button className="btn btn-sm" disabled={stateBusy} onClick={() => void applyEnabled([...selected], true)}>
+                  <Power size={14} /> {t('models.page.state.enable')}
+                </button>
+                <button className="btn btn-sm btn-secondary" disabled={stateBusy} onClick={() => void applyEnabled([...selected], false)}>
+                  <PowerOff size={14} /> {t('models.page.state.disable')}
+                </button>
+                <button className="btn btn-sm btn-secondary" disabled={stateBusy} onClick={() => setSelected(new Set())}>
+                  <X size={14} /> {t('models.page.state.clear')}
+                </button>
+              </div>
+            )}
             {loading ? (
               <div className="loading-center"><div className="spinner" /></div>
             ) : models.length === 0 ? (
@@ -489,9 +612,15 @@ export function ModelsPage() {
                   <table style={{ minWidth: 700 }}>
                     <thead>
                       <tr>
+                        {canWriteModels && (
+                          <th style={{ width: 32 }}>
+                            <input type="checkbox" aria-label={t('models.page.state.selectPage')} checked={pageAllSelected} onChange={togglePage} />
+                          </th>
+                        )}
                         <th style={thStyle}>{thInner(t('models.page.columns.id'), 'id')}</th>
                         <th style={thStyle}>{thInner(t('models.page.columns.provider'), 'provider')}</th>
                         <th style={thStyle}>{thInner(t('models.page.columns.endpoint'), 'endpoint')}</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>{t('models.page.columns.status')}</th>
                         <th style={thStyle}>{thInner(t('models.page.columns.input'), 'input')}</th>
                         <th style={thStyle}>{thInner(t('models.page.columns.output'), 'output')}</th>
                         <th style={thStyle}>{thInner(t('models.page.columns.cache'), 'cache')}</th>
@@ -508,9 +637,28 @@ export function ModelsPage() {
                               onClick: () => navigate(`/dashboard/models/${encodeURIComponent(m.id)}`),
                             } : {})}
                           >
+                            {canWriteModels && (
+                              <td onClick={e => e.stopPropagation()}>
+                                <input type="checkbox" aria-label={t('models.page.state.selectRow', { id: m.id })} checked={selected.has(m.id)} onChange={() => toggleSelected(m.id)} />
+                              </td>
+                            )}
                             <td><span className="mono">{m.id}</span></td>
                             <td><span className={`badge badge-${m.provider}`}>{providerLabel(m.provider)}</span></td>
                             <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{m.endpoint}</span></td>
+                            <td style={{ whiteSpace: 'nowrap' }}>
+                              {(() => {
+                                const st = modelStatus(m);
+                                const reason = st === 'unavailable' && m.unavailable ? ` (${t(`models.page.status.reason.${m.unavailable}`)})` : '';
+                                return (
+                                  <span className={`badge ${STATUS_BADGE[st]}`} title={st === 'unavailable' ? usedByTitle(m) : undefined}>
+                                    {t(`models.page.status.${st}`)}{reason}
+                                  </span>
+                                );
+                              })()}
+                              {m.isNew && m.enabled === false && m.unavailable && (
+                                <span className="badge badge-completion" style={{ marginLeft: 4 }}>{t('models.page.status.new')}</span>
+                              )}
+                            </td>
                             <td>{price(m.cost.inputPerMillion)}</td>
                             <td>{price(m.cost.outputPerMillion)}</td>
                             <td>{price(m.cost.cachePerMillion)}</td>
@@ -531,6 +679,13 @@ export function ModelsPage() {
                               </button>
                               {canWriteModels && (
                                 <>
+                                  <button
+                                    className="btn-icon" disabled={stateBusy}
+                                    onClick={() => void applyEnabled([m.id], m.enabled === false)}
+                                    title={m.enabled === false ? t('models.page.state.enableRow') : t('models.page.state.disableRow')}
+                                  >
+                                    {m.enabled === false ? <Power size={15} /> : <PowerOff size={15} />}
+                                  </button>
                                   <Link to={`/dashboard/models/new?clone=${encodeURIComponent(m.id)}`} className="btn-icon" title={t('models.page.actions.clone')}>
                                     <Copy size={15} />
                                   </Link>

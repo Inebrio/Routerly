@@ -183,6 +183,16 @@ describe('OverviewPage — loaded state', () => {
     expect(screen.queryByText('Models')).not.toBeNull();
   });
 
+  it('counts only routable models (disabled and unavailable catalog models are left out)', async () => {
+    mockGetModels.mockResolvedValue([
+      { id: 'm1' }, { id: 'm2', enabled: true }, { id: 'm3' },
+      { id: 'm4', enabled: false }, { id: 'm5', unavailable: 'removed' }, { id: 'm6', enabled: false, isNew: true },
+    ]);
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('3')).not.toBeNull());
+    expect(screen.queryByText('6')).toBeNull();
+  });
+
   it('renders router count from getRouters', async () => {
     renderPage();
     await waitFor(() => expect(screen.queryByText('1')).not.toBeNull());

@@ -1407,7 +1407,9 @@
         "empty": "No target models configured.",
         "addTarget": "Add Target Model",
         "passthroughLabel": "Pass-through (raw forward)",
-        "passthroughNotRemovable": "The pass-through entry cannot be removed"
+        "passthroughNotRemovable": "The pass-through entry cannot be removed",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
       }
     },
     "optimizer": {
@@ -1738,7 +1740,8 @@
         "label": "Label",
         "provider": "Provider",
         "endpoint": "Endpoint",
-        "status": "Status"
+        "status": "Status",
+        "models": "Models"
       },
       "status": {
         "enabled": "Enabled",
@@ -1747,7 +1750,20 @@
       "actions": {
         "models": "Models",
         "edit": "Edit",
-        "remove": "Remove"
+        "remove": "Remove",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1791,6 +1807,10 @@
         "loadFailed": "Failed to load connection",
         "updateFailed": "Failed to update connection",
         "createFailed": "Failed to create connection"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1977,7 +1997,8 @@
       "filters": {
         "allProviders": "All providers",
         "allConnections": "All connections",
-        "searchPlaceholder": "Filter models…"
+        "searchPlaceholder": "Filter models…",
+        "allStatuses": "All statuses"
       },
       "discover": "Discover",
       "addModel": "Add Model",
@@ -1993,7 +2014,8 @@
         "input": "Input $/1M",
         "output": "Output $/1M",
         "cache": "Cache $/1M",
-        "context": "Context Size"
+        "context": "Context Size",
+        "status": "Status"
       },
       "actions": {
         "test": "Test",
@@ -2055,6 +2077,34 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2223,7 +2273,8 @@
       "models": "Models",
       "registered": "registered",
       "routers": "Routers",
-      "active": "active"
+      "active": "active",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "Connect a client",

@@ -1,4 +1,5 @@
-import type { PermissionCheckStatus, RankingAlgorithmId } from '@routerly/shared';
+import { routerUsesModel } from '@routerly/shared';
+import type { CatalogSyncSummary, PermissionCheckStatus, RankingAlgorithmId } from '@routerly/shared';
 export type { PermissionCheckStatus } from '@routerly/shared';
 
 const BASE = '/api';
@@ -240,9 +241,20 @@ export interface Model {
     contextWindow?: number;
     capabilities?: ModelCapabilities;
   };
+  /** Absent/true = routable; false = disabled by the operator or not yet enabled. */
+  enabled?: boolean;
+  /** Created by catalog sync; absent = created by hand. */
+  source?: 'catalog';
+  /** Catalog-added and not yet acted on by an operator. */
+  isNew?: boolean;
+  /** Set by sync when the catalog dropped or deprecated the model. */
+  unavailable?: 'removed' | 'deprecated';
 }
 
 export const getModels = () => request<Model[]>('/models');
+/** Enable or disable several models in one call. */
+export const setModelsEnabled = (ids: string[], enabled: boolean) =>
+  request<{ models: Model[] }>('/models/state', { method: 'POST', body: JSON.stringify({ ids, enabled }) });
 
 export interface CatalogEntry {
   id: string;
@@ -417,6 +429,8 @@ export type Router = Omit<RouterConfig, 'models' | 'tokens' | 'members' | 'candi
 };
 
 export const getRouters = () => request<Router[]>('/routers');
+/** `routerUsesModel` on a list/detail response (only the raw token value differs from RouterConfig). */
+export const routerReferencesModel = (r: Router, modelId: string) => routerUsesModel(r as unknown as RouterConfig, modelId);
 
 export const createRouter = (data: {
   name: string;
@@ -1053,18 +1067,23 @@ export interface Connection {
   credentials?: Record<string, string>;
   endpoint?: string;
   enabled: boolean;
+  /** Models of this connection are loaded from the provider catalog (absent = off). */
+  catalogSync?: boolean;
+  catalogSeen?: string[];
 }
 
 export const getConnections = () => request<Connection[]>('/connections');
 /** `label` omitted or blank: the server names the connection after its provider. */
 export const createConnection = (data: {
   providerId: string; providerName?: string; label?: string; credentials: Record<string, string>;
-  endpoint?: string; enabled: boolean;
-}) => request<Connection>('/connections', { method: 'POST', body: JSON.stringify(data) });
+  endpoint?: string; enabled: boolean; catalogSync?: boolean;
+}) => request<Connection & { sync?: CatalogSyncSummary }>('/connections', { method: 'POST', body: JSON.stringify(data) });
 export const updateConnection = (id: string, data: Partial<{
   providerId: string; providerName: string; label: string; credentials: Record<string, string>;
-  endpoint?: string; enabled: boolean;
-}>) => request<Connection>(`/connections/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+  endpoint?: string; enabled: boolean; catalogSync: boolean;
+}>) => request<Connection & { sync?: CatalogSyncSummary }>(`/connections/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+export const syncConnection = (id: string) =>
+  request<CatalogSyncSummary>(`/connections/${encodeURIComponent(id)}/sync`, { method: 'POST' });
 export const deleteConnection = (id: string) => request<void>(`/connections/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 // ── Personal MCP surface (tools + tokens of the signed-in user) ──────────────

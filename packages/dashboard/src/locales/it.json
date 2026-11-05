@@ -1406,7 +1406,9 @@
         "empty": "Nessun modello di destinazione configurato.",
         "addTarget": "Aggiungi modello di destinazione",
         "passthroughLabel": "Pass-through (inoltro grezzo)",
-        "passthroughNotRemovable": "La voce pass-through non può essere rimossa"
+        "passthroughNotRemovable": "La voce pass-through non può essere rimossa",
+        "disabled": "Disabilitato",
+        "unavailable": "Non disponibile"
       }
     },
     "optimizer": {
@@ -1737,7 +1739,8 @@
         "label": "Etichetta",
         "provider": "Provider",
         "endpoint": "Endpoint",
-        "status": "Stato"
+        "status": "Stato",
+        "models": "Modelli"
       },
       "status": {
         "enabled": "Attivata",
@@ -1746,7 +1749,20 @@
       "actions": {
         "models": "Modelli",
         "edit": "Modifica",
-        "remove": "Rimuovi"
+        "remove": "Rimuovi",
+        "sync": "Sincronizza i modelli dal catalogo",
+        "syncOff": "La sincronizzazione col catalogo è disattivata per questa connessione. Attivala nelle impostazioni della connessione."
+      },
+      "counts": {
+        "new": "{{count}} nuovo",
+        "new_other": "{{count}} nuovi",
+        "unavailable": "{{count}} non disponibile",
+        "unavailable_other": "{{count}} non disponibili"
+      },
+      "sync": {
+        "done": "{{label}} sincronizzata: {{added}} aggiunti, {{unavailable}} non disponibili, {{restored}} ripristinati, {{skipped}} saltati.",
+        "catalogUnavailable": "{{label}}: il catalogo non è disponibile al momento, nulla è cambiato.",
+        "failed": "Sincronizzazione col catalogo non riuscita"
       }
     },
     "form": {
@@ -1790,6 +1806,10 @@
         "loadFailed": "Impossibile caricare la connessione",
         "updateFailed": "Impossibile aggiornare la connessione",
         "createFailed": "Impossibile creare la connessione"
+      },
+      "catalogSync": {
+        "label": "Carica i modelli dal catalogo",
+        "hint": "Aggiunge alla connessione i modelli del catalogo del provider, disabilitati. Abilita quelli su cui vuoi instradare."
       }
     }
   },
@@ -1976,7 +1996,8 @@
       "filters": {
         "allProviders": "Tutti i provider",
         "allConnections": "Tutte le connessioni",
-        "searchPlaceholder": "Filtra modelli…"
+        "searchPlaceholder": "Filtra modelli…",
+        "allStatuses": "Tutti gli stati"
       },
       "discover": "Scopri",
       "addModel": "Aggiungi modello",
@@ -1992,7 +2013,8 @@
         "input": "Ingresso $/1M",
         "output": "Uscita $/1M",
         "cache": "Cache $/1M",
-        "context": "Dimensione contesto"
+        "context": "Dimensione contesto",
+        "status": "Stato"
       },
       "actions": {
         "test": "Test",
@@ -2054,6 +2076,34 @@
           "cooldown": "Attesa {{time}}",
           "lockout": "Blocco {{time}}"
         }
+      },
+      "status": {
+        "enabled": "Abilitato",
+        "disabled": "Disabilitato",
+        "new": "Nuovo",
+        "unavailable": "Non disponibile",
+        "reason": {
+          "removed": "rimosso",
+          "deprecated": "deprecato"
+        },
+        "usedBy": "Usato da: {{routers}}"
+      },
+      "state": {
+        "enable": "Abilita",
+        "disable": "Disabilita",
+        "clear": "Deseleziona",
+        "selected": "{{count}} selezionato",
+        "selected_other": "{{count}} selezionati",
+        "bulkBar": "Azioni di gruppo",
+        "enableAllNew": "Abilita tutti i nuovi ({{count}})",
+        "enableRow": "Abilita",
+        "disableRow": "Disabilita",
+        "selectPage": "Seleziona tutti i modelli di questa pagina",
+        "selectRow": "Seleziona {{id}}",
+        "loaded": "{{count}} modello caricato dal catalogo, disabilitato. Abilita quelli su cui vuoi instradare.",
+        "loaded_other": "{{count}} modelli caricati dal catalogo, disabilitati. Abilita quelli su cui vuoi instradare.",
+        "dismiss": "Chiudi",
+        "failed": "Aggiornamento dei modelli non riuscito"
       }
     }
   },
@@ -2222,7 +2272,8 @@
       "models": "Modelli",
       "registered": "registrati",
       "routers": "Router",
-      "active": "attivi"
+      "active": "attivi",
+      "routable": "instradabili"
     },
     "connectCard": {
       "title": "Connetti client",

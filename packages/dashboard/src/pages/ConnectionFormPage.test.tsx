@@ -11,6 +11,11 @@ vi.mock('../api', () => ({
   testOpenAIOAuth: vi.fn(),
 }));
 
+let mockCanReadModels = true;
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: (p: string) => p !== 'model:read' || mockCanReadModels }),
+}));
+
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (importActual) => {
   const actual = await importActual<typeof import('react-router-dom')>();
@@ -394,5 +399,43 @@ describe('ConnectionFormPage — custom provider (T205)', () => {
     await waitFor(() => expect(mockUpdateConnection).toHaveBeenCalledWith('c1', expect.objectContaining({
       providerId: 'openai', providerName: '',
     })));
+  });
+});
+
+describe('ConnectionFormPage — catalog models (ROUT-437)', () => {
+  const boxLabel = /Load models from the catalog/;
+
+  it('defaults the catalog checkbox on for openai and off for ollama', async () => {
+    mockGetDescriptors.mockResolvedValue([makeDescriptor(), makeDescriptor({ id: 'ollama', label: 'Ollama' })]);
+    const user = userEvent.setup();
+    renderNew();
+    await waitFor(() => expect((screen.getByLabelText(boxLabel) as HTMLInputElement).checked).toBe(true));
+    await user.click(screen.getByRole('button', { name: 'Ollama' }));
+    expect((screen.getByLabelText(boxLabel) as HTMLInputElement).checked).toBe(false);
+  });
+
+  it('sends catalogSync and lands on the filtered models page with the loaded count', async () => {
+    mockCreateConnection.mockResolvedValue({ ...makeConnection({ id: 'c-new' }), sync: { added: ['a', 'b'], unavailable: [], restored: [], skipped: [], catalogAvailable: true } });
+    const user = userEvent.setup();
+    renderNew();
+    await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
+    await user.click(screen.getByRole('button', { name: /^create$/i }));
+    await waitFor(() => expect(mockCreateConnection).toHaveBeenCalledWith(expect.objectContaining({ catalogSync: true })));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard/models?connection=c-new&loaded=2'));
+  });
+
+  it('stays on the connections list when nothing was loaded', async () => {
+    mockCreateConnection.mockResolvedValue({ ...makeConnection({ id: 'c-new' }), sync: { added: [], unavailable: [], restored: [], skipped: [], catalogAvailable: false } });
+    const user = userEvent.setup();
+    renderNew();
+    await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
+    await user.click(screen.getByRole('button', { name: /^create$/i }));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard/connections'));
+  });
+
+  it('edit prefills the stored flag (absent = off)', async () => {
+    renderEdit();
+    await waitFor(() => expect(screen.queryByText('Edit Connection')).not.toBeNull());
+    expect((screen.getByLabelText(boxLabel) as HTMLInputElement).checked).toBe(false);
   });
 });

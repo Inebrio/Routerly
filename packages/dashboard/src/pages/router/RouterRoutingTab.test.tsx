@@ -2456,3 +2456,21 @@ describe('RouterRoutingTab — ranking algorithm', () => {
     expect(await screen.findByText(/Ranking algorithm: Default \(from profile\)/)).toBeInTheDocument();
   });
 });
+
+// ── Disabled / unavailable targets (ROUT-437) ─────────────────────────────────
+
+describe('RouterRoutingTab — disabled and unavailable target models', () => {
+  it('flags a disabled or unavailable target in its row and in the picker label', async () => {
+    mockGetModels.mockResolvedValue([
+      chatModel,
+      makeModel({ id: 'openai/gpt-4o-mini', enabled: false }),
+      makeModel({ id: 'openai/gpt-old', unavailable: 'removed' }),
+    ]);
+    renderTab({ ...mockRouter, models: [{ modelId: 'openai/gpt-4o-mini' }, { modelId: 'openai/gpt-old' }] });
+    await waitFor(() => expect(screen.getAllByText('Disabled').length).toBeGreaterThan(0));
+    expect(screen.getAllByText('Unavailable').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('openai/gpt-4o-mini (Disabled)').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('openai/gpt-old (Unavailable)').length).toBeGreaterThan(0);
+    expect(screen.queryByText('openai/gpt-4o (Disabled)')).toBeNull();
+  });
+});

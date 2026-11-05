@@ -6,6 +6,8 @@ import { MemoryRouter } from 'react-router-dom';
 vi.mock('../api', () => ({
   getConnections: vi.fn(),
   deleteConnection: vi.fn(),
+  getModels: vi.fn(),
+  syncConnection: vi.fn(),
 }));
 
 const mockNavigate = vi.fn();
@@ -29,11 +31,13 @@ vi.mock('../components/ConfirmDialog', () => ({
 }));
 
 import { ConnectionsPage } from './ConnectionsPage';
-import { getConnections, deleteConnection } from '../api';
+import { getConnections, deleteConnection, getModels, syncConnection } from '../api';
 import { useAuth } from '../AuthContext';
 
 const mockGetConnections = vi.mocked(getConnections as () => Promise<unknown>);
 const mockDeleteConnection = vi.mocked(deleteConnection as (...a: unknown[]) => Promise<unknown>);
+const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
+const mockSyncConnection = vi.mocked(syncConnection as (id: string) => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 
 function makeConnection(overrides: Record<string, unknown> = {}) {
@@ -54,6 +58,7 @@ function renderPage() {
 beforeEach(() => {
   mockGetConnections.mockResolvedValue([]);
   mockDeleteConnection.mockResolvedValue(undefined);
+  mockGetModels.mockResolvedValue([]);
   mockUseAuth.mockReturnValue({
     user: { id: 'u1', email: 'admin@test.com', role: 'admin' },
     isLoading: false,
@@ -269,5 +274,56 @@ describe('ConnectionsPage — remove connection', () => {
     renderPage();
     await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
     expect(screen.getByText('Disabled')).not.toBeNull();
+  });
+});
+
+describe('ConnectionsPage — catalog models and sync (ROUT-437)', () => {
+  const asRole = (perms: string[]) => mockUseAuth.mockReturnValue({
+    user: { id: 'u1', email: 'u@test.com', role: 'member' },
+    isLoading: false, login: vi.fn(), loginDirect: vi.fn(), logout: vi.fn(), updateUser: vi.fn(),
+    can: vi.fn((p: string) => perms.includes(p)),
+  });
+  const models = [
+    { id: 'a', connectionId: 'c1', isNew: true },
+    { id: 'b', connectionId: 'c1', isNew: true },
+    { id: 'c', connectionId: 'c1', unavailable: 'removed' },
+    { id: 'd', connectionId: 'c2' },
+  ];
+
+  it('shows total, new and unavailable counts linking to the filtered models page', async () => {
+    mockGetConnections.mockResolvedValue([makeConnection({ catalogSync: true })]);
+    mockGetModels.mockResolvedValue(models);
+    renderPage();
+    const link = await screen.findByRole('link', { name: /^3/ });
+    expect(link.getAttribute('href')).toBe('/dashboard/models?connection=c1');
+    expect(link.textContent).toContain('2 new');
+    expect(link.textContent).toContain('1 unavailable');
+  });
+
+  it('operator syncs and sees the summary', async () => {
+    mockGetConnections.mockResolvedValue([makeConnection({ catalogSync: true })]);
+    mockSyncConnection.mockResolvedValue({ added: ['x', 'y'], unavailable: [], restored: [], skipped: [], catalogAvailable: true });
+    renderPage();
+    await userEvent.click(await screen.findByTitle('Sync models from the catalog'));
+    expect(mockSyncConnection).toHaveBeenCalledWith('c1');
+    expect(await screen.findByText(/2 added/)).not.toBeNull();
+  });
+
+  it('disables Sync with a tooltip when catalog sync is off', async () => {
+    mockGetConnections.mockResolvedValue([makeConnection()]);
+    renderPage();
+    const btn = await screen.findByTitle(/Catalog sync is off/);
+    expect((btn as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('viewer sees counts but no Sync button', async () => {
+    asRole(['connections:read', 'model:read']);
+    mockGetConnections.mockResolvedValue([makeConnection({ catalogSync: true })]);
+    mockGetModels.mockResolvedValue(models);
+    renderPage();
+    await screen.findByText('My OpenAI');
+    expect(screen.queryByTitle('Sync models from the catalog')).toBeNull();
+    expect(screen.queryByTitle(/Catalog sync is off/)).toBeNull();
+    expect(screen.getByRole('link', { name: /^3/ })).not.toBeNull();
   });
 });

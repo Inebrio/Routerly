@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, Coins, DollarSign, XCircle, Boxes, FolderOpen, Terminal, TrendingUp } from 'lucide-react';
-import { CLIENT_REGISTRY } from '@routerly/shared';
+import { CLIENT_REGISTRY, isModelRoutable } from '@routerly/shared';
 import { getUsage, getModels, getRouters, type UsageStats } from '../api.js';
 import { useAuth } from '../AuthContext.js';
 import { useClientsEnabled } from './ConnectPage.js';
@@ -64,7 +64,7 @@ export function OverviewPage() {
   }, [dateRange]);
 
   useEffect(() => {
-    if (can('model:read')) getModels().then(m => setModelCount(m.length)).catch(console.error);
+    if (can('model:read')) getModels().then(m => setModelCount(m.filter(isModelRoutable).length)).catch(console.error);
     getRouters().then(p => setRouterCount(p.length)).catch(console.error);
   }, []);
 
@@ -144,7 +144,7 @@ export function OverviewPage() {
           <StatCard icon={<XCircle size={18} />} label={t('overview.stats.errors')} accentColor="#EF4444" valueColor="#EF4444"
             value={stats.summary.errorCalls} sub={t('overview.stats.failedRequests')} to="/dashboard/usage" />
           <StatCard icon={<Boxes size={18} />} label={t('overview.stats.models')} accentColor="#8B5CF6"
-            value={modelCount} sub={t('overview.stats.registered')} to="/dashboard/models" />
+            value={modelCount} sub={t('overview.stats.routable')} to="/dashboard/models" />
           <StatCard icon={<FolderOpen size={18} />} label={t('overview.stats.routers')} accentColor="#A78BFA"
             value={routerCount} sub={t('overview.stats.active')} to="/dashboard/routers" />
         </div>

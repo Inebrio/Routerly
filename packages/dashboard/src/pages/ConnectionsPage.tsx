@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Edit2, Boxes, Plug, ShieldOff } from 'lucide-react';
+import { Plus, Trash2, Edit2, Boxes, Plug, ShieldOff, RefreshCw } from 'lucide-react';
 import {
-  getConnections, deleteConnection,
-  type Connection,
+  getConnections, deleteConnection, getModels, syncConnection,
+  type Connection, type Model,
 } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useAuth } from '../AuthContext';
@@ -14,11 +14,15 @@ export function ConnectionsPage() {
   const { can } = useAuth();
   const canRead = can('connections:read');
   const canManage = can('connections:manage');
+  const canReadModels = can('model:read');
   const navigate = useNavigate();
 
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [models, setModels] = useState<Model[]>([]);
+  const [syncing, setSyncing] = useState<string | null>(null);
+  const [notice, setNotice] = useState('');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => { if (canRead) void load(); else setLoading(false); }, [canRead]);
@@ -29,6 +33,8 @@ export function ConnectionsPage() {
     try {
       const conns = await getConnections();
       setConnections(conns);
+      // Model counts are best-effort: the list still works without them.
+      if (canReadModels) setModels(await getModels().catch(() => []));
     } catch (e) {
       setError(e instanceof Error ? e.message : t('connections.list.errors.loadFailed'));
     } finally {
@@ -50,6 +56,32 @@ export function ConnectionsPage() {
         }
       },
     });
+  }
+
+  async function handleSync(conn: Connection) {
+    setSyncing(conn.id);
+    setError('');
+    setNotice('');
+    try {
+      const sum = await syncConnection(conn.id);
+      setNotice(sum.catalogAvailable
+        ? t('connections.list.sync.done', { label: conn.label, added: sum.added.length, unavailable: sum.unavailable.length, restored: sum.restored.length, skipped: sum.skipped.length })
+        : t('connections.list.sync.catalogUnavailable', { label: conn.label }));
+      if (canReadModels) setModels(await getModels().catch(() => models));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('connections.list.sync.failed'));
+    } finally {
+      setSyncing(null);
+    }
+  }
+
+  function modelCounts(connId: string) {
+    const own = models.filter(m => m.connectionId === connId);
+    return {
+      total: own.length,
+      fresh: own.filter(m => m.isNew).length,
+      unavailable: own.filter(m => m.unavailable).length,
+    };
   }
 
   if (!canRead) {
@@ -78,6 +110,8 @@ export function ConnectionsPage() {
           <div className="form-error" role="alert" style={{ marginBottom: 20 }} ref={el => el?.scrollIntoView?.({ block: 'center' })}>{error}</div>
         )}
 
+        {notice && <div role="status" className="form-error" style={{ marginBottom: 20, background: 'rgba(16,185,129,0.08)', color: 'var(--success)', borderColor: 'rgba(16,185,129,0.2)' }}>{notice}</div>}
+
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
         ) : (
@@ -103,6 +137,7 @@ export function ConnectionsPage() {
                       <th>{t('connections.list.columns.label')}</th>
                       <th>{t('connections.list.columns.provider')}</th>
                       <th>{t('connections.list.columns.endpoint')}</th>
+                      {canReadModels && <th>{t('connections.list.columns.models')}</th>}
                       <th>{t('connections.list.columns.status')}</th>
                       <th></th>
                     </tr>
@@ -125,6 +160,18 @@ export function ConnectionsPage() {
                           )}
                         </td>
                         <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{conn.endpoint || '—'}</span></td>
+                        {canReadModels && (() => {
+                          const c = modelCounts(conn.id);
+                          return (
+                            <td onClick={e => e.stopPropagation()} style={{ whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
+                              <Link to={`/dashboard/models?connection=${encodeURIComponent(conn.id)}`} style={{ color: 'inherit' }}>
+                                {c.total}
+                                {c.fresh > 0 && <span style={{ color: 'var(--primary)' }}> · {t('connections.list.counts.new', { count: c.fresh })}</span>}
+                                {c.unavailable > 0 && <span style={{ color: 'var(--danger)' }}> · {t('connections.list.counts.unavailable', { count: c.unavailable })}</span>}
+                              </Link>
+                            </td>
+                          );
+                        })()}
                         <td>
                           <span style={{ fontSize: '0.8rem', color: conn.enabled ? 'var(--success)' : 'var(--text-muted)' }}>
                             {conn.enabled ? t('connections.list.status.enabled') : t('connections.list.status.disabled')}
@@ -136,6 +183,13 @@ export function ConnectionsPage() {
                           </Link>
                           {canManage && (
                             <>
+                              <button
+                                className="btn-icon" disabled={!conn.catalogSync || syncing !== null}
+                                onClick={() => void handleSync(conn)}
+                                title={conn.catalogSync ? t('connections.list.actions.sync') : t('connections.list.actions.syncOff')}
+                              >
+                                {syncing === conn.id ? <span className="spinner" /> : <RefreshCw size={15} />}
+                              </button>
                               <button className="btn-icon" onClick={() => navigate(`/dashboard/connections/${encodeURIComponent(conn.id)}/edit`)} title={t('connections.list.actions.edit')}>
                                 <Edit2 size={15} />
                               </button>

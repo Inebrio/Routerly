@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, X } from 'lucide-react';
-import { providersConf, suggestConnectionLabel } from '@routerly/shared';
+import { providersConf, suggestConnectionLabel, CATALOG_SYNC_DEFAULT_OFF } from '@routerly/shared';
 import {
   getConnections, createConnection, updateConnection, getProviderDescriptors, testOpenAIOAuth,
   type ProviderDescriptor,
 } from '../api';
+import { useAuth } from '../AuthContext';
 import {
   ConnectionCredentialsFields, emptyCredentialValues, type CredentialValues,
 } from '../components/ConnectionCredentialsFields';
@@ -47,6 +48,7 @@ export function ConnectionFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
+  const { can } = useAuth();
 
   const [providers, setProviders] = useState<ProviderDescriptor[]>([]);
   const [providerId, setProviderId] = useState('');
@@ -54,6 +56,9 @@ export function ConnectionFormPage() {
   const [label, setLabel] = useState('');
   const [takenLabels, setTakenLabels] = useState<string[]>([]);
   const [enabled, setEnabled] = useState(true);
+  // null = not touched: follow the provider default (self-hosted/deployment-defined ones start off).
+  const [catalogSyncChoice, setCatalogSyncChoice] = useState<boolean | null>(null);
+  const catalogSync = catalogSyncChoice ?? !(CATALOG_SYNC_DEFAULT_OFF as readonly string[]).includes(providerId);
   const [values, setValues] = useState<CredentialValues>(emptyCredentialValues());
   const [oauthTest, setOauthTest] = useState<{ status: 'idle' | 'testing' | 'ok' | 'error'; msg?: string }>({ status: 'idle' });
   const [loading, setLoading] = useState(true);
@@ -77,6 +82,7 @@ export function ConnectionFormPage() {
             setProviderName(conn.providerName ?? '');
             setLabel(conn.label);
             setEnabled(conn.enabled);
+            setCatalogSyncChoice(conn.catalogSync ?? false);
             const c = conn.credentials ?? {};
             setValues({
               ...emptyCredentialValues(),
@@ -122,6 +128,13 @@ export function ConnectionFormPage() {
     }
   }
 
+  // Models loaded from the catalog arrive disabled: take the operator to them, filtered to this connection.
+  function afterLoad(connectionId: string, loaded: number): boolean {
+    if (loaded === 0 || !can('model:read')) return false;
+    navigate(`/dashboard/models?connection=${encodeURIComponent(connectionId)}&loaded=${loaded}`);
+    return true;
+  }
+
   async function handleSave() {
     setSaving(true);
     setErr('');
@@ -151,11 +164,13 @@ export function ConnectionFormPage() {
           label: label.trim(),
           ...(values.endpoint ? { endpoint: values.endpoint } : {}),
           enabled,
+          catalogSync,
         };
         if (Object.keys(credentials).length > 0) patch.credentials = credentials;
-        await updateConnection(id, patch);
+        const updated = await updateConnection(id, patch);
+        if (afterLoad(id, updated.sync?.added.length ?? 0)) return;
       } else {
-        await createConnection({
+        const created = await createConnection({
           providerId,
           ...(upstream ? { providerName: upstream } : {}),
           // Blank means "name it after the provider": the server generates the same slug
@@ -163,8 +178,10 @@ export function ConnectionFormPage() {
           label: label.trim(),
           ...(values.endpoint ? { endpoint: values.endpoint } : {}),
           enabled,
+          catalogSync,
           credentials,
         });
+        if (afterLoad(created.id, created.sync?.added.length ?? 0)) return;
       }
       navigate('/dashboard/connections');
     } catch (e) {
@@ -287,6 +304,15 @@ export function ConnectionFormPage() {
             {isEditing && (
               <p className="section-desc" style={{ marginTop: 4 }}>{t('connections.form.credentialsBlankHint')}</p>
             )}
+
+            <div className="form-group">
+              <label htmlFor="conn-catalog-sync" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', marginBottom: 0 }}>
+                <input type="checkbox" id="conn-catalog-sync" checked={catalogSync}
+                  onChange={e => setCatalogSyncChoice(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+                {t('connections.form.catalogSync.label')}
+              </label>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{t('connections.form.catalogSync.hint')}</div>
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>

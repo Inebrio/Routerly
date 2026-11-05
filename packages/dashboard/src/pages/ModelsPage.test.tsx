@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { ModelsPage } from './ModelsPage';
@@ -12,6 +12,9 @@ vi.mock('../api', () => ({
   resetResilience: vi.fn(),
   getConnections: vi.fn(),
   getProviderDescriptors: vi.fn(),
+  getRouters: vi.fn(),
+  setModelsEnabled: vi.fn(),
+  routerReferencesModel: (r: { models: { modelId: string }[] }, id: string) => r.models.some(m => m.modelId === id),
 }));
 
 // ponytail: stub SearchableSelect as a plain <select> so userEvent.selectOptions keeps working
@@ -69,7 +72,7 @@ vi.mock('../components/ConfirmDialog', () => ({
   ),
 }));
 
-import { getModels, deleteModel, getProviderHealth, testModel, resetResilience, getConnections, getProviderDescriptors } from '../api';
+import { getModels, deleteModel, getProviderHealth, testModel, resetResilience, getConnections, getProviderDescriptors, getRouters, setModelsEnabled } from '../api';
 
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockDeleteModel = vi.mocked(deleteModel as (id: string) => Promise<unknown>);
@@ -77,6 +80,8 @@ const mockGetProviderHealth = vi.mocked(getProviderHealth as () => Promise<unkno
 const mockTestModel = vi.mocked(testModel as (id: string) => Promise<unknown>);
 const mockResetResilience = vi.mocked(resetResilience as (body?: unknown) => Promise<unknown>);
 const mockGetConnections = vi.mocked(getConnections as () => Promise<unknown>);
+const mockGetRouters = vi.mocked(getRouters as () => Promise<unknown>);
+const mockSetModelsEnabled = vi.mocked(setModelsEnabled as (ids: string[], enabled: boolean) => Promise<unknown>);
 const mockGetProviderDescriptors = vi.mocked(getProviderDescriptors as () => Promise<unknown>);
 
 function makeModel(overrides: Record<string, unknown> = {}) {
@@ -122,6 +127,7 @@ beforeEach(() => {
   mockTestModel.mockResolvedValue({ ok: true, latencyMs: 120 });
   mockGetConnections.mockResolvedValue([]);
   mockGetProviderDescriptors.mockResolvedValue([]);
+  mockGetRouters.mockResolvedValue([]);
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -1412,5 +1418,81 @@ describe('ModelsPage — per-model Reset', () => {
   it('falls back to provider for legacy models without connectionId', async () => {
     await reset({});
     expect(mockResetResilience).toHaveBeenCalledWith({ level: 'connection', id: 'openai' });
+  });
+});
+
+// ── Catalog status (ROUT-437) ──────────────────────────────────────────────────
+
+describe('ModelsPage — catalog status', () => {
+  const fleet = () => [
+    makeModel({ id: 'on' }),
+    makeModel({ id: 'off', enabled: false }),
+    makeModel({ id: 'fresh', enabled: false, isNew: true, source: 'catalog' }),
+    makeModel({ id: 'gone', enabled: true, source: 'catalog', unavailable: 'removed' }),
+  ];
+
+  it('shows a status badge per model', async () => {
+    mockGetModels.mockResolvedValue(fleet());
+    renderPage();
+    await waitFor(() => expect(screen.getByText('fresh')).toBeTruthy());
+    expect(screen.getByText('Enabled')).toBeTruthy();
+    expect(screen.getByText('Disabled')).toBeTruthy();
+    expect(screen.getByText('New')).toBeTruthy();
+    expect(screen.getByText('Unavailable (removed)')).toBeTruthy();
+  });
+
+  it('filters by status from the URL', async () => {
+    mockGetModels.mockResolvedValue(fleet());
+    renderPage('?status=new');
+    await waitFor(() => expect(screen.getByText('fresh')).toBeTruthy());
+    expect(screen.queryByText('on')).toBeNull();
+    expect(screen.queryByText('gone')).toBeNull();
+  });
+
+  it('puts the routers using an unavailable model in the badge tooltip', async () => {
+    mockGetModels.mockResolvedValue(fleet());
+    mockGetRouters.mockResolvedValue([{ id: 'r1', name: 'Prod', models: [{ modelId: 'gone' }] }]);
+    renderPage();
+    const badge = await screen.findByText('Unavailable (removed)');
+    await waitFor(() => expect(badge.getAttribute('title')).toBe('Used by: Prod'));
+  });
+
+  it('operator selects rows, uses the bulk bar and Enable all new', async () => {
+    mockGetModels.mockResolvedValue(fleet());
+    mockSetModelsEnabled.mockResolvedValue({ models: [makeModel({ id: 'off', enabled: true })] });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('fresh')).toBeTruthy());
+    expect(screen.getByRole('button', { name: /Enable all new \(1\)/ })).toBeTruthy();
+    expect(screen.queryByRole('toolbar')).toBeNull();
+    await userEvent.click(screen.getByLabelText('Select off'));
+    expect(screen.getByText('1 selected')).toBeTruthy();
+    await userEvent.click(within(screen.getByRole('toolbar')).getByRole('button', { name: /Enable/ }));
+    await waitFor(() => expect(mockSetModelsEnabled).toHaveBeenCalledWith(['off'], true));
+    await waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull());
+    await userEvent.click(screen.getByRole('button', { name: /Enable all new/ }));
+    await waitFor(() => expect(mockSetModelsEnabled).toHaveBeenLastCalledWith(['fresh'], true));
+  });
+
+  it('viewer sees statuses but no checkboxes, bulk bar or enable controls', async () => {
+    mockCanWriteModels = false;
+    try {
+      mockGetModels.mockResolvedValue(fleet());
+      renderPage();
+      await waitFor(() => expect(screen.getByText('fresh')).toBeTruthy());
+      expect(screen.getByText('New')).toBeTruthy();
+      expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+      expect(screen.queryByRole('toolbar')).toBeNull();
+      expect(screen.queryByRole('button', { name: /Enable all new/ })).toBeNull();
+      expect(screen.queryByTitle('Enable')).toBeNull();
+      expect(screen.queryByTitle('Disable')).toBeNull();
+    } finally {
+      mockCanWriteModels = true;
+    }
+  });
+
+  it('shows the banner after a catalog load', async () => {
+    mockGetModels.mockResolvedValue(fleet());
+    renderPage('?connection=c1&loaded=3');
+    expect(await screen.findByText(/3 models loaded from the catalog, disabled/)).toBeTruthy();
   });
 });
