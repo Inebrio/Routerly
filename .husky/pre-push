@@ -2,7 +2,8 @@
 # 1. Dev-box guard: when IS_SANDBOX=1 (dispatcher runs), refuse any push whose
 #    remote ref is develop or main. Those pushes trigger the release pipeline
 #    and need the maintainer's confirmation. Not bypass-proof (--no-verify).
-# 2. Advisory only, never blocks: on release/* branches, proposes which
+# 2. Secret scan (gitleaks) of the commits being pushed: blocks on a finding.
+# 3. Advisory only, never blocks: on release/* branches, proposes which
 #    screenshots the pushed commits may have affected, using
 #    scripts/screenshots-affected.mjs.
 set +e
@@ -16,6 +17,15 @@ if [ "${IS_SANDBOX:-}" = "1" ]; then
   fi
 fi
 
+zero="0000000000000000000000000000000000000000"
+while read -r _ local_sha _ remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+  if [ "$remote_sha" = "$zero" ]; then range="$local_sha --not --remotes=origin"; else range="$remote_sha..$local_sha"; fi
+  sh scripts/secret-scan.sh range "$range" || exit 1
+done <<EOF_SCAN
+$refs
+EOF_SCAN
+
 branch=$(git rev-parse --abbrev-ref HEAD)
 
 case "$branch" in
@@ -23,7 +33,6 @@ case "$branch" in
   *) exit 0 ;;
 esac
 
-zero="0000000000000000000000000000000000000000"
 range="HEAD~1..HEAD"
 while read -r local_ref local_sha remote_ref remote_sha; do
   if [ -n "$local_sha" ] && [ "$local_sha" != "$zero" ] && [ -n "$remote_sha" ] && [ "$remote_sha" != "$zero" ]; then
