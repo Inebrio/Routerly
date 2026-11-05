@@ -300,6 +300,8 @@ behaviour. That is why neither the dashboard nor the CLI exposes it.
 
 ## Configuring Routing
 
+To keep routing inside one provider, attach only that provider's models: see [Route automatically within one provider](../guides/single-provider-routing.md).
+
 ### Dashboard (recommended)
 
 1. Open the Router → **Routing** tab
