@@ -38,6 +38,8 @@ export const NOTIFICATION_EVENT_CATALOG: Record<NotificationEvent, NotificationE
   'auth.token_invalid':       { category: 'security', title: 'Invalid API token' },
   'config.model_added':       { category: 'config',   title: 'Model added' },
   'config.model_deleted':     { category: 'config',   title: 'Model deleted' },
+  'config.model_unavailable': { category: 'config',   title: 'Model no longer available in the catalog' },
+  'config.model_restored':    { category: 'config',   title: 'Model available again' },
   'config.router_created':   { category: 'config',   title: 'Router created' },
   'config.router_deleted':   { category: 'config',   title: 'Router deleted' },
   'budget.threshold_reached': { category: 'budget',   title: 'Budget threshold reached' },

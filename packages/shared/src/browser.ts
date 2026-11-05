@@ -11,10 +11,11 @@ export { providersConf };
 export {
   RANKING_ALGORITHMS, DEFAULT_RANKING_ALGORITHM, NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, CALL_SETTINGS, CALL_TIERS, CALL_MAX_OUTPUT_TOKENS_MIN, CALL_MAX_OUTPUT_TOKENS_MAX, CALL_DEFAULT_THRESHOLDS, isCompletionCall, blocksResponseStreaming,
   suggestConnectionLabel, isConnectionLabelTaken, suggestRouterSlug,
+  isModelRoutable, routerUsesModel, CATALOG_SYNC_DEFAULT_OFF,
   UPDATE_CHANNELS, normalizeUpdateChannel,
   isValidUpdateChannel, UPDATE_CHANNEL_ERROR, LOG_LEVELS,
 } from './types/config.js';
-export type { NotificationEvent, RankingAlgorithmId, UpdateChannel, NormalizedUpdateChannel } from './types/config.js';
+export type { NotificationEvent, RankingAlgorithmId, UpdateChannel, NormalizedUpdateChannel, CatalogSyncSummary } from './types/config.js';
 
 // Readable catalog for those events (T51) — plain data plus pure functions
 export {

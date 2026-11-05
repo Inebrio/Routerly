@@ -191,7 +191,9 @@ export { AUTO_MODEL, CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './cl
 export {
   RANKING_ALGORITHMS, DEFAULT_RANKING_ALGORITHM, NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, isCompletionCall, blocksResponseStreaming,
   suggestConnectionLabel, isConnectionLabelTaken, suggestRouterSlug,
+  isModelRoutable, routerUsesModel, CATALOG_SYNC_DEFAULT_OFF,
 } from './types/config.js';
+export type { CatalogSyncSummary } from './types/config.js';
 
 // Call configuration (effort / max output tokens / verbosity by request complexity)
 export {

@@ -20,6 +20,26 @@ export interface ProviderConnection {
   credentials: Record<string, unknown>;
   endpoint?: string;
   enabled: boolean;
+  /** Load and track this provider's models from the catalog. Absent = off (existing connections never auto-load). */
+  catalogSync?: boolean;
+  /** Upstream model ids the catalog sync already offered on this connection; a deleted model is not re-added. */
+  catalogSeen?: string[];
+}
+
+/** Providers whose real model set is local or deployment-defined: catalog sync defaults to off for them. */
+export const CATALOG_SYNC_DEFAULT_OFF = ['ollama', 'custom', 'azure-openai'] as const;
+
+/** Result of one catalog sync run on a connection (or the total of a run). */
+export interface CatalogSyncSummary {
+  /** Model instance ids created. */
+  added: string[];
+  /** Model instance ids newly flagged unavailable. */
+  unavailable: string[];
+  /** Model instance ids whose unavailable flag was cleared. */
+  restored: string[];
+  skipped: { upstreamModelId: string; reason: 'id_taken' }[];
+  /** False when the provider key is missing from the catalog or the catalog is empty. */
+  catalogAvailable: boolean;
 }
 
 /**
@@ -93,6 +113,19 @@ export interface ModelInstance {
   fieldOverrides?: Partial<Record<CatalogField, boolean>>;
   /** Last known catalog values for catalog-trackable fields; used to show defaults in UI */
   catalogDefaults?: CatalogDefaults;
+  /** Absent = enabled. A disabled model is never routed to. */
+  enabled?: boolean;
+  /** Created by catalog sync. Absent = created by hand. */
+  source?: 'catalog';
+  /** Catalog-added and the operator has not acted on it yet (implies disabled). */
+  isNew?: boolean;
+  /** Set and cleared by catalog sync, only when `source === 'catalog'`. */
+  unavailable?: 'removed' | 'deprecated';
+}
+
+/** A model is routable unless the operator disabled it or the catalog no longer offers it. */
+export function isModelRoutable(m: { enabled?: boolean; unavailable?: unknown }): boolean {
+  return m.enabled !== false && !m.unavailable;
 }
 
 export interface PricingTier {
@@ -248,6 +281,14 @@ export interface ModelConfig {
   fieldOverrides?: Partial<Record<CatalogField, boolean>>;
   /** Last known catalog values for catalog-trackable fields; used to show defaults in UI */
   catalogDefaults?: CatalogDefaults;
+  /** Absent = enabled. A disabled model is never routed to. */
+  enabled?: boolean;
+  /** Created by catalog sync. Absent = created by hand. */
+  source?: 'catalog';
+  /** Catalog-added and the operator has not acted on it yet (implies disabled). */
+  isNew?: boolean;
+  /** Set and cleared by catalog sync, only when `source === 'catalog'`. */
+  unavailable?: 'removed' | 'deprecated';
 }
 
 /** Effective model computed from ModelInstance + ProviderConnection. Carries connectionId so resilience keys can target the real connection. */
@@ -693,6 +734,12 @@ export interface RouterConfig {
   traceContent?: boolean;
   /** Call configuration used when no routing profile is bound (a bound profile wins entirely). */
   callConfig?: CallConfig;
+}
+
+/** True when the router references the model directly or through one of its tokens. */
+export function routerUsesModel(router: RouterConfig, modelId: string): boolean {
+  return (router.models ?? []).some(m => m.modelId === modelId) ||
+    (router.tokens ?? []).some(t => (t.models ?? []).some(m => m.modelId === modelId));
 }
 
 /**
@@ -1159,6 +1206,8 @@ export const NOTIFICATION_EVENTS = [
   'auth.token_invalid',
   'config.model_added',
   'config.model_deleted',
+  'config.model_unavailable',
+  'config.model_restored',
   'config.router_created',
   'config.router_deleted',
   'budget.threshold_reached',
