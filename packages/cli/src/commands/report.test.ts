@@ -298,6 +298,18 @@ describe('report calls', () => {
     expect(mockApi).toHaveBeenCalled();
   });
 
+  it('marks a call diverted by a passthrough exception, leaves the others plain', async () => {
+    mockApi.mockResolvedValue({
+      ...usageFixture,
+      records: [{ ...usageFixture.records[0], modelId: 'openai/diverted', routedBy: 'exception' }, { ...usageFixture.records[0], modelId: 'openai/plain' }],
+    });
+    const { out } = await run('calls');
+    const text = stripAnsi(out.join('\n'));
+    expect(text).toContain('openai/diverted (exception)');
+    expect(text).toContain('openai/plain');
+    expect(text).not.toContain('openai/plain (exception)');
+  });
+
   it('colors success outcome green and error red', async () => {
     mockApi.mockResolvedValue(usageFixture);
     const { out } = await run('calls');

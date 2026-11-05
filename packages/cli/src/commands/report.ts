@@ -54,6 +54,8 @@ interface UsageResponse {
     outcome: string;
     callType?: string;
     requestType?: string;
+    /** Set when a passthrough exception rule picked the model. */
+    routedBy?: 'exception';
   }>;
   /** Present only when the request asked for it with `savings=1` (T61). */
   savings?: SavingsSummary;
@@ -300,7 +302,7 @@ Examples:
             r.routerId.slice(0, 8),
             // Records written before tokenId existed carry no caller token.
             r.tokenId ? r.tokenId.slice(0, 8) : '-',
-            r.modelId,
+            r.routedBy === 'exception' ? `${r.modelId} (exception)` : r.modelId,
             // Records written before requestType existed were all chat calls.
             requestTypeLabel((r.requestType ?? 'chat') as RequestType),
             // Same for callType: back then everything tracked was a completion.
