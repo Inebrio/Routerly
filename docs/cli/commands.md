@@ -411,7 +411,7 @@ routerly model discover [options]
 
 Displays a table of known models with their context window, modalities, and pricing. Models already configured in your Routerly instance are marked with a `★`.
 
-Pricing is shown as the per-1,000-token rate. Models that carry a `local` flag in the catalog **or** that are zero-priced on both input and output are labelled `free/local` in green - this covers Ollama and other self-hosted models regardless of whether the catalog explicitly marks them as local.
+Pricing is shown as the per-1,000-token rate (the dashboard Discovery page shows per 1,000,000 tokens: multiply by 1000 to compare). A context window of `0` in `--json` means the catalog does not state it. See [Compare prices across providers](../guides/compare-model-prices.md). Models that carry a `local` flag in the catalog **or** that are zero-priced on both input and output are labelled `free/local` in green - this covers Ollama and other self-hosted models regardless of whether the catalog explicitly marks them as local.
 
 If the server does not yet expose the model catalog (older versions), the command exits gracefully with a message instead of an error.
 
