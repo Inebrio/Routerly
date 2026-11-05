@@ -184,4 +184,6 @@ Click any column header to sort ascending; click again to reverse. All five colu
 
 Click **Reset filters** to clear all filters at once.
 
+The catalog does not show a cache price or the endpoint, and it does not group the same model offered by different providers: model ids differ per provider, so search for the model name and filter the providers you want to compare. A context window shown as `—` is not stated by the catalog. See [Compare prices across providers](../guides/compare-model-prices.md).
+
 Click **Add** next to any model, or anywhere else on its row, to open the new-model form with that model's details pre-filled. Pricing and context window are populated automatically from the catalog. You only need to supply the API key to complete registration.

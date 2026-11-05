@@ -974,6 +974,26 @@ describe('openai:attempt', () => {
     })
   })
 
+  it('all candidates exhausted with a provider 429: returns 429 with a provider-shaped body, not 503', async () => {
+    await seedModels([
+      { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+    ] as ModelConfig[])
+    const reg = new ProcessorRegistry<ProxyContext>()
+    reg.contribute({
+      id: 'openai:upstream', phase: 'upstream.execute',
+      run(ctx: ProxyContext) { ctx.attemptResponse = { status: 429, body: { error: { message: 'anthropic-web: HTTP 429 Too Many Requests' } } } },
+    })
+    setProxyPipeline(reg)
+    const ctx = {
+      protocol: 'openai', stream: false, log: makeLog(),
+      router: { id: 'p1' }, traceId: 't1',
+      request: { model: 'm', messages: [] },
+      candidates: [{ model: 'model-a', weight: 1 }],
+    } as unknown as ProxyContext
+    await openaiAttempt.run(ctx)
+    expect(ctx.result).toMatchObject({ kind: 'block', status: 429, body: { error: { message: 'anthropic-web: HTTP 429 Too Many Requests' } } })
+  })
+
   it('all candidates exhausted, non-streaming: returns a 503 block and emits routing.no_candidates', async () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },

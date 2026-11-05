@@ -5,6 +5,7 @@ import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective
 import { TRACE_COMPLETED_TOPIC, type TraceCompletedEvent } from '../trace/publish.js'
 import { readConfig } from '../config/loader.js'
 import { applyUsageRetention } from '../config/usageNdjson.js'
+import { applyActivityRetention } from './activity.js'
 import { flushTrace } from './pending.js'
 import { trackUsage } from './tracker.js'
 
@@ -19,7 +20,8 @@ async function runRetentionSweep(): Promise<void> {
   try {
     const { usageRetention } = await readConfig('settings')
     if (!usageRetention) return
-    await applyUsageRetention(usageRetention)
+    // Independent files: one failing sweep must not skip the other.
+    await Promise.allSettled([applyUsageRetention(usageRetention), applyActivityRetention(usageRetention)])
   } catch (_) {
     // ponytail: sweep failures must not crash the server — same discipline as
     // observability/runner.ts's silent catch around its periodic push.
