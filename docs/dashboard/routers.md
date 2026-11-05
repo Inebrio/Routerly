@@ -123,6 +123,22 @@ only as a last-resort fallback when none of them are eligible. See
 [Concepts: Architecture](../concepts/architecture.md#passthrough-which-path-a-request-takes)
 for the full rule, including the fallback's forwarded-credential caveat.
 
+#### Exceptions
+
+Passthrough routers show an **Exceptions** card below the model list on the
+Routing tab. Each row is a **Model name pattern** (exact and case-sensitive,
+`*` matches any sequence, for example `gpt-4*`) and a **Target model** picked
+from the router's own real models. Rows are evaluated top to bottom and the
+first match wins. **Add exception** appends a row, the trash button removes
+one, and the rows are saved together with the models by the tab's normal save.
+
+Empty states: with no rows the card reads "No exceptions: every request is
+forwarded unchanged."; with no real model on the router it asks you to add a
+model first. Saving is refused when a pattern is empty, two rows share the
+same pattern, or a target is no longer a model of the router. Exceptions
+apply to token-authenticated requests only, never to `/passthrough/<slug>/*`.
+See [Concepts: Architecture](../concepts/architecture.md#passthrough-exceptions).
+
 ### Adding Policies
 
 Drag policies from the policy panel on the right into the active-policies list on the left. Each policy can be expanded to configure its parameters.

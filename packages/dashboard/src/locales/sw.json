@@ -1407,6 +1407,22 @@
         "addTarget": "Ongeza Modeli ya Lengwa",
         "passthroughLabel": "Pass-through (usambazaji ghafi)",
         "passthroughNotRemovable": "Kipengee cha pass-through hakiwezi kuondolewa"
+      },
+      "exceptions": {
+        "title": "Vighairi",
+        "description": "Ombi ambalo modeli yake inalingana na kanuni hutumwa kwa modeli iliyochaguliwa badala ya kupelekwa bila mabadiliko. Mlinganisho wa kwanza hushinda. Tumia * kama kibadala. Inatumika kwa maombi yaliyothibitishwa kwa tokeni pekee.",
+        "empty": "Hakuna vighairi: kila ombi hupelekwa bila mabadiliko.",
+        "noRealModels": "Ongeza modeli kwenye kipanga njia hiki kwanza: vighairi vinaweza kulenga modeli za kipanga njia pekee.",
+        "add": "Ongeza kighairi",
+        "match": "Muundo wa jina la modeli",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Modeli lengwa",
+        "remove": "Ondoa kighairi",
+        "errors": {
+          "matchRequired": "Kila kighairi kinahitaji muundo.",
+          "duplicateMatch": "Mlinganisho unaorudiwa \"{{match}}\".",
+          "targetMissing": "Lengo la kighairi \"{{match}}\" si modeli ya kipanga njia hiki."
+        }
       }
     },
     "optimizer": {
@@ -2450,12 +2466,14 @@
         "piiRedacted": "PII Iliyochanjwa",
         "sessionId": "Kitambulisho cha kipindi",
         "endUser": "Mtumiaji wa mwisho",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Imeelekezwa na"
       },
       "errorMessage": "Ujumbe wa Hitilafu",
       "eventCount": "{{count}} tukio",
       "eventCount_other": "{{count}} matukio",
-      "noTrace": "Hakuna kuchukuza kinapatikana. Data ya kuchukuza inakamatia kwa simu jipya tu."
+      "noTrace": "Hakuna kuchukuza kinapatikana. Data ya kuchukuza inakamatia kwa simu jipya tu.",
+      "routedByException": "Kighairi cha Passthrough"
     }
   },
   "timeline": {

@@ -121,6 +121,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
       ...(ctx.conversationId ? { sessionId: ctx.conversationId } : {}),
       ...(ctx.token?.tags ? { tags: ctx.token.tags } : {}),
       ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
+      ...(ctx.routedBy ? { routedBy: ctx.routedBy } : {}),
       forwardHeaders: forwardableRequestHeaders(ctx.req?.headers ?? {}),
       onUpstreamHeaders: (h) => { upstreamHeaders = h },
       ...(callSettings ? { callSettings } : {}),
@@ -138,6 +139,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
             ...(ctx.token ? { tokenId: ctx.token.id } : {}),
           ...(ctx.emit ? { emit: ctx.emit } : {}),
           ...(callSettings ? { callSettings } : {}),
+          ...(ctx.routedBy ? { routedBy: ctx.routedBy } : {}),
           })
           ctx.result = { kind: 'json', body: await chunksToChatResponse(chunks, model.id) }
         } catch (err) {
@@ -159,6 +161,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
           ...(ctx.emit ? { emit: ctx.emit } : {}),
           ...(callSettings ? { callSettings } : {}),
+          ...(ctx.routedBy ? { routedBy: ctx.routedBy } : {}),
         })
         ctx.result = { kind: 'stream', body: await primeStream(chunks) }
       } catch (err) {

@@ -319,6 +319,8 @@ export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addContentTypeParser('application/json', { parseAs: 'buffer' }, rawParser);
   fastify.addContentTypeParser('*', { parseAs: 'buffer' }, rawParser);
 
+  // Unauthenticated and raw-forward only: it never enters the proxy pipeline, so the router's
+  // `exceptions` (routed to a model paid with Routerly's credentials) are never evaluated here.
   fastify.all('/passthrough/:slug/*', async (request, reply) => {
     const { slug } = request.params as { slug: string };
     const rest = (request.params as Record<string, string>)['*'] ?? '';

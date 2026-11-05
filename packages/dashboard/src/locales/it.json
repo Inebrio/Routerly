@@ -1408,6 +1408,22 @@
         "addTarget": "Aggiungi modello di destinazione",
         "passthroughLabel": "Pass-through (inoltro grezzo)",
         "passthroughNotRemovable": "La voce pass-through non può essere rimossa"
+      },
+      "exceptions": {
+        "title": "Eccezioni",
+        "description": "Una richiesta il cui modello corrisponde a una regola viene inviata al modello scelto invece di essere inoltrata invariata. Vince la prima corrispondenza. Usa * come carattere jolly. Vale solo per le richieste autenticate con token.",
+        "empty": "Nessuna eccezione: ogni richiesta viene inoltrata invariata.",
+        "noRealModels": "Aggiungi prima un modello a questo router: le eccezioni possono puntare solo ai modelli del router.",
+        "add": "Aggiungi eccezione",
+        "match": "Pattern del nome modello",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Modello di destinazione",
+        "remove": "Rimuovi eccezione",
+        "errors": {
+          "matchRequired": "Ogni eccezione richiede un pattern.",
+          "duplicateMatch": "Corrispondenza duplicata \"{{match}}\".",
+          "targetMissing": "La destinazione dell'eccezione \"{{match}}\" non è un modello di questo router."
+        }
       }
     },
     "optimizer": {
@@ -2453,12 +2469,14 @@
         "piiRedacted": "PII oscurata",
         "sessionId": "Session ID",
         "endUser": "Utente finale",
-        "tags": "Tag"
+        "tags": "Tag",
+        "routedBy": "Instradato da"
       },
       "errorMessage": "Messaggio di errore",
       "eventCount": "{{count}} evento",
       "eventCount_other": "{{count}} eventi",
-      "noTrace": "Nessuna traccia disponibile. I dati di traccia vengono catturati solo per le nuove chiamate."
+      "noTrace": "Nessuna traccia disponibile. I dati di traccia vengono catturati solo per le nuove chiamate.",
+      "routedByException": "Eccezione Passthrough"
     }
   },
   "timeline": {

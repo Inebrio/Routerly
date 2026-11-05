@@ -1407,6 +1407,22 @@
         "addTarget": "Célmodell Hozzáadása",
         "passthroughLabel": "Áteresztés (nyers továbbítás)",
         "passthroughNotRemovable": "Az áteresztő bejegyzés nem távolítható el"
+      },
+      "exceptions": {
+        "title": "Kivételek",
+        "description": "Az a kérés, amelynek modellje illeszkedik egy szabályra, a kiválasztott modellhez kerül ahelyett, hogy változatlanul továbbítanánk. Az első találat nyer. A * helyettesítő karakter. Csak tokennel hitelesített kérésekre vonatkozik.",
+        "empty": "Nincs kivétel: minden kérés változatlanul továbbítódik.",
+        "noRealModels": "Először adjon hozzá egy modellt ehhez a routerhez: a kivételek csak a router modelljeire mutathatnak.",
+        "add": "Kivétel hozzáadása",
+        "match": "Modellnév mintája",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Célmodell",
+        "remove": "Kivétel eltávolítása",
+        "errors": {
+          "matchRequired": "Minden kivételhez minta szükséges.",
+          "duplicateMatch": "Ismétlődő egyezés: \"{{match}}\".",
+          "targetMissing": "A(z) \"{{match}}\" kivétel célja nem ennek a routernek a modellje."
+        }
       }
     },
     "optimizer": {
@@ -2450,12 +2466,14 @@
         "piiRedacted": "PII Kitakarítva",
         "sessionId": "Munkamenet-azonosító",
         "endUser": "Végfelhasználó",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Irányította"
       },
       "errorMessage": "Hibaüzenet",
       "eventCount": "{{count}} esemény",
       "eventCount_other": "{{count}} esemény",
-      "noTrace": "Nincs elérhető nyom. A nyom adatok az új hívások rögzítésre kerülnek."
+      "noTrace": "Nincs elérhető nyom. A nyom adatok az új hívások rögzítésre kerülnek.",
+      "routedByException": "Passthrough kivétel"
     }
   },
   "timeline": {

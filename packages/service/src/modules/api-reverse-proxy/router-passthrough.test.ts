@@ -65,6 +65,33 @@ describe('routerPassthroughRoutes', () => {
     expect(res.body).toBe(sse);
   });
 
+  // ROUT-237: exceptions run only on the token-authenticated lanes. This route is unauthenticated,
+  // so a matching model must still be forwarded raw with the client's own credential.
+  it('never diverts a request to an exception target, even for a matching model', async () => {
+    const withExceptions: RouterConfig = {
+      ...plainRouter,
+      models: [{ modelId: '__passthrough__' }, { modelId: 'openai/x' }],
+      exceptions: [{ match: 'gpt-4o', targetModelId: 'openai/x' }],
+    };
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response('{"ok":true}', { status: 200, headers: { 'content-type': 'application/json' } }),
+    );
+    vi.stubGlobal('fetch', mockFetch);
+    const app = await buildApp([withExceptions]);
+    const res = await app.inject({
+      method: 'POST', url: '/passthrough/my-openai/v1/chat/completions',
+      headers: { authorization: 'Bearer client-key', 'content-type': 'application/json' },
+      payload: '{"model":"gpt-4o","messages":[]}',
+    });
+    await app.close();
+    expect(res.statusCode).toBe(200);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [url, init] = mockFetch.mock.calls[0] as [string, { headers: Record<string, string> }];
+    expect(url).toBe('https://api.openai.com/v1/chat/completions');
+    expect(JSON.stringify(init.headers).toLowerCase()).toContain('bearer client-key');
+    expect(mockTrackUsage.mock.calls.some((c) => (c[0] as { routedBy?: string }).routedBy)).toBe(false);
+  });
+
   it('404s when no passthrough router matches the slug', async () => {
     const app = await buildApp([]);
     const res = await app.inject({ method: 'POST', url: '/passthrough/unknown/v1/chat/completions' });

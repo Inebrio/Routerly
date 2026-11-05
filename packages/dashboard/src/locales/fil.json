@@ -1407,6 +1407,22 @@
         "addTarget": "Magdagdag ng Target Model",
         "passthroughLabel": "Pass-through (hilaw na pagpasa)",
         "passthroughNotRemovable": "Hindi maaaring alisin ang pass-through entry"
+      },
+      "exceptions": {
+        "title": "Mga exception",
+        "description": "Ang request na ang model ay tumutugma sa isang panuntunan ay ipapadala sa napiling model sa halip na ipasa nang walang pagbabago. Ang unang tugma ang masusunod. Gamitin ang * bilang wildcard. Para lang sa mga request na na-authenticate gamit ang token.",
+        "empty": "Walang exception: bawat request ay ipinapasa nang walang pagbabago.",
+        "noRealModels": "Magdagdag muna ng model sa router na ito: ang mga exception ay maaari lang tumarget sa mga model ng router.",
+        "add": "Magdagdag ng exception",
+        "match": "Pattern ng pangalan ng model",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Target na model",
+        "remove": "Alisin ang exception",
+        "errors": {
+          "matchRequired": "Kailangan ng pattern ang bawat exception.",
+          "duplicateMatch": "Duplicate na tugma \"{{match}}\".",
+          "targetMissing": "Ang target ng exception na \"{{match}}\" ay hindi model ng router na ito."
+        }
       }
     },
     "optimizer": {
@@ -2450,12 +2466,14 @@
         "piiRedacted": "Binurang PII",
         "sessionId": "Session ID",
         "endUser": "End user",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Na-route ng"
       },
       "errorMessage": "Mensahe ng Error",
       "eventCount": "{{count}} kaganapan",
       "eventCount_other": "{{count}} kaganapan",
-      "noTrace": "Walang available na trace. Ang trace data ay naitatala lamang para sa mga bagong tawag."
+      "noTrace": "Walang available na trace. Ang trace data ay naitatala lamang para sa mga bagong tawag.",
+      "routedByException": "Passthrough exception"
     }
   },
   "timeline": {

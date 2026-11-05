@@ -3958,3 +3958,114 @@ describe('router call-config', () => {
     expect(err.join('\n')).toContain('not found');
   });
 });
+
+// ─── passthrough exceptions ──────────────────────────────────────────────────
+
+describe('router passthrough exception', () => {
+  const ptRouter = {
+    ...baseRouter,
+    name: 'pt',
+    kind: 'passthrough' as const,
+    models: [{ modelId: '__passthrough__' }, { modelId: 'openai/x' }],
+  };
+  const rules = [{ match: 'gpt-4o', targetModelId: 'openai/x' }];
+
+  function capture() {
+    const out: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => { out.push(a.join(' ')); });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    return out;
+  }
+  const run = (...args: string[]) => makeCmd().parseAsync(['node', 'router', 'passthrough', 'exception', ...args]);
+  const exitThrows = () => vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
+
+  it('list prints a # | Match | Target table', async () => {
+    const out = capture();
+    mockApi.mockResolvedValueOnce([{ ...ptRouter, exceptions: rules }]);
+    await run('list', 'pt');
+    const text = out.join('\n');
+    expect(text).toContain('Match');
+    expect(text).toContain('gpt-4o');
+    expect(text).toContain('openai/x');
+  });
+
+  it('list prints the empty state', async () => {
+    const out = capture();
+    mockApi.mockResolvedValueOnce([ptRouter]);
+    await run('list', 'pt');
+    expect(out.join('\n')).toContain("No exceptions: every request follows the router's model list.");
+  });
+
+  it('list --json prints the array, [] when empty', async () => {
+    const out = capture();
+    mockApi.mockResolvedValueOnce([{ ...ptRouter, exceptions: rules }]).mockResolvedValueOnce([ptRouter]);
+    await run('list', 'pt', '--json');
+    await run('list', 'pt', '--json');
+    expect(JSON.parse(out[0]!)).toEqual(rules);
+    expect(JSON.parse(out[1]!)).toEqual([]);
+  });
+
+  it('add appends the rule with PUT { name, models, exceptions }; --json prints the saved array', async () => {
+    const out = capture();
+    const saved = [...rules, { match: 'claude-*', targetModelId: 'openai/x' }];
+    mockApi.mockResolvedValueOnce([{ ...ptRouter, exceptions: rules }]).mockResolvedValueOnce({ ...ptRouter, exceptions: saved });
+    await run('add', 'pt', '--match', 'claude-*', '--target', 'openai/x', '--json');
+    const put = mockApi.mock.calls.find(c => c[0] === 'PUT')!;
+    expect(put[1]).toBe('/api/routers/proj-1');
+    expect(put[2]).toEqual({ name: 'pt', models: ptRouter.models, exceptions: saved });
+    expect(JSON.parse(out.join('\n'))).toEqual(saved);
+  });
+
+  it('add exits 1 on a router that is not passthrough, without calling PUT', async () => {
+    capture();
+    exitThrows();
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, models: [{ modelId: 'openai/x' }] }]);
+    await expect(run('add', 'my-api', '--match', 'a', '--target', 'openai/x')).rejects.toThrow('exit');
+    expect(process.exit).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('only supported on passthrough routers'));
+    expect(mockApi.mock.calls.some(c => c[0] === 'PUT')).toBe(false);
+  });
+
+  it.each(['foreign/model', '__passthrough__'])('add exits 1 for target "%s" that is not a real model of the router', async (target) => {
+    capture();
+    exitThrows();
+    mockApi.mockResolvedValueOnce([ptRouter]);
+    await expect(run('add', 'pt', '--match', 'a', '--target', target)).rejects.toThrow('exit');
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('is not a model of router'));
+    expect(mockApi.mock.calls.some(c => c[0] === 'PUT')).toBe(false);
+  });
+
+  it('add surfaces a server error (viewer 403) on stderr with exit 1', async () => {
+    capture();
+    exitThrows();
+    mockApi.mockResolvedValueOnce([ptRouter]).mockRejectedValueOnce(new Error('Forbidden'));
+    await expect(run('add', 'pt', '--match', 'a', '--target', 'openai/x')).rejects.toThrow('exit');
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Forbidden'));
+    expect(process.exit).toHaveBeenCalledWith(1);
+  });
+
+  it('remove drops the 0-based index and PUTs the rest', async () => {
+    capture();
+    const two = [...rules, { match: 'b', targetModelId: 'openai/x' }];
+    mockApi.mockResolvedValueOnce([{ ...ptRouter, exceptions: two }]).mockResolvedValueOnce({ ...ptRouter, exceptions: [two[1]] });
+    await run('remove', 'pt', '0');
+    const put = mockApi.mock.calls.find(c => c[0] === 'PUT')!;
+    expect((put[2] as { exceptions: unknown[] }).exceptions).toEqual([two[1]]);
+  });
+
+  it('remove --json prints [] when the last rule goes', async () => {
+    const out = capture();
+    mockApi.mockResolvedValueOnce([{ ...ptRouter, exceptions: rules }]).mockResolvedValueOnce(ptRouter);
+    await run('remove', 'pt', '0', '--json');
+    expect(JSON.parse(out.join('\n'))).toEqual([]);
+  });
+
+  it.each(['99', '-1', 'foo'])('remove exits 1 for index "%s"', async (index) => {
+    capture();
+    exitThrows();
+    mockApi.mockResolvedValueOnce([{ ...ptRouter, exceptions: rules }]);
+    await expect(run('remove', 'pt', index)).rejects.toThrow('exit');
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid index'));
+    expect(mockApi.mock.calls.some(c => c[0] === 'PUT')).toBe(false);
+  });
+});

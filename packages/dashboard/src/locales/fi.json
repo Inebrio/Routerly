@@ -1407,6 +1407,22 @@
         "addTarget": "Lisää kohdemalli",
         "passthroughLabel": "Läpivienti (raakavälitys)",
         "passthroughNotRemovable": "Läpivientimerkintää ei voi poistaa"
+      },
+      "exceptions": {
+        "title": "Poikkeukset",
+        "description": "Pyyntö, jonka malli vastaa sääntöä, ohjataan valittuun malliin sen sijaan että se välitettäisiin muuttamattomana. Ensimmäinen osuma voittaa. Käytä * jokerimerkkinä. Koskee vain tokenilla todennettuja pyyntöjä.",
+        "empty": "Ei poikkeuksia: jokainen pyyntö välitetään muuttamattomana.",
+        "noRealModels": "Lisää ensin malli tähän reitittimeen: poikkeukset voivat viitata vain reitittimen omiin malleihin.",
+        "add": "Lisää poikkeus",
+        "match": "Mallin nimen kaava",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Kohdemalli",
+        "remove": "Poista poikkeus",
+        "errors": {
+          "matchRequired": "Jokainen poikkeus tarvitsee kaavan.",
+          "duplicateMatch": "Kaksoiskappale \"{{match}}\".",
+          "targetMissing": "Poikkeuksen \"{{match}}\" kohde ei ole tämän reitittimen malli."
+        }
       }
     },
     "optimizer": {
@@ -2450,12 +2466,14 @@
         "piiRedacted": "PII peitetty",
         "sessionId": "Istunnon tunnus",
         "endUser": "Loppukäyttäjä",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Reitittänyt"
       },
       "errorMessage": "Virheviesti",
       "eventCount": "{{count}} tapahtuma",
       "eventCount_other": "{{count}} tapahtumaa",
-      "noTrace": "Jäljitystä ei ole saatavilla. Jäljitystiedot tallennetaan vain uusille kutsuille."
+      "noTrace": "Jäljitystä ei ole saatavilla. Jäljitystiedot tallennetaan vain uusille kutsuille.",
+      "routedByException": "Passthrough-poikkeus"
     }
   },
   "timeline": {

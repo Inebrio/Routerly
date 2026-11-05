@@ -1407,6 +1407,22 @@
         "addTarget": "대상 모델 추가",
         "passthroughLabel": "패스스루 (원시 전달)",
         "passthroughNotRemovable": "패스스루 항목은 제거할 수 없습니다"
+      },
+      "exceptions": {
+        "title": "예외",
+        "description": "모델이 규칙과 일치하는 요청은 그대로 전달되는 대신 선택한 모델로 전송됩니다. 처음 일치하는 규칙이 적용됩니다. 와일드카드는 *를 사용합니다. 토큰으로 인증된 요청에만 적용됩니다.",
+        "empty": "예외 없음: 모든 요청이 그대로 전달됩니다.",
+        "noRealModels": "먼저 이 라우터에 모델을 추가하세요. 예외는 라우터 자체의 모델만 대상으로 지정할 수 있습니다.",
+        "add": "예외 추가",
+        "match": "모델 이름 패턴",
+        "matchPlaceholder": "gpt-4*",
+        "target": "대상 모델",
+        "remove": "예외 제거",
+        "errors": {
+          "matchRequired": "모든 예외에는 패턴이 필요합니다.",
+          "duplicateMatch": "중복된 일치 패턴 \"{{match}}\".",
+          "targetMissing": "예외 \"{{match}}\"의 대상이 이 라우터의 모델이 아닙니다."
+        }
       }
     },
     "optimizer": {
@@ -2450,12 +2466,14 @@
         "piiRedacted": "개인정보 제거됨",
         "sessionId": "세션 ID",
         "endUser": "최종 사용자",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "라우팅 주체"
       },
       "errorMessage": "오류 메시지",
       "eventCount": "{{count}}개 이벤트",
       "eventCount_other": "{{count}}개 이벤트",
-      "noTrace": "추적 사용 가능하지 않습니다. 추적 데이터는 새 호출에 대해서만 캡처됩니다."
+      "noTrace": "추적 사용 가능하지 않습니다. 추적 데이터는 새 호출에 대해서만 캡처됩니다.",
+      "routedByException": "Passthrough 예외"
     }
   },
   "timeline": {
