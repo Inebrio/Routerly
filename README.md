@@ -88,7 +88,7 @@ No database and no Redis: configuration lives in JSON files.
 
 - **Routers, orchestrators and passthrough.** A *router* scores models with routing policies. An *orchestrator* forwards to a priority-ordered list of other routers. A *passthrough* router forwards a client's own credential straight to OpenAI or Anthropic (optionally alongside real target models).
 - **11 routing policies**, combined into one ranking (table below), plus **routing profiles**: reusable presets for routing, optimizers and security. Four built-in routing profiles (`auto`, `cheap`, `fast`, `coding`), clonable.
-- **Budgets and cost tracking.** Every request is priced per token; hard limits (hourly, daily, weekly, monthly, yearly and rolling windows) at global, router and token level block overspending before the call.
+- **Budgets and cost tracking.** Every request is priced per token; hard limits (hourly, daily, weekly, monthly, yearly and rolling windows) at model, router and token level block overspending before the call. There are no organisation or team budget groups: a team is a router with its tokens.
 - **Guardrails and PII scrubbing.** Rule-based and judge-based content guardrails, and PII policies, on requests, responses, or both.
 - **8 token optimizers** (`session-dedup`, `ccr`, `rtk`, `headroom`, `json-table`, `relevance`, `caveman`, `llmlingua-2`), off by default, enabled per router.
 - **Experiments.** A/B test whole routers against each other (model sets, profiles, optimizer pipelines, guardrails) without any client change.
@@ -309,7 +309,7 @@ Contributions are welcome. See [Releasing](docs/contributing/releasing.md) for v
 ## Roadmap
 
 ### Enterprise SSO
-Log in to the dashboard with an existing identity provider (OAuth 2.0 / OIDC, LDAP). Not available yet: dashboard users are local accounts today.
+Log in to the dashboard with an existing identity provider (OAuth 2.0 / OIDC, LDAP). Not available yet: dashboard users are local accounts today, and there is no mapping of identity-provider groups to teams, routers or budgets.
 
 ---
 
