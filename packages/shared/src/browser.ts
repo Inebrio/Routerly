@@ -93,6 +93,7 @@ export type {
   ModelConfig,
   RouterModelRef,
   RouterConfig,
+  PassthroughException,
   RouterToken,
   RouterMember,
   RouterRole,

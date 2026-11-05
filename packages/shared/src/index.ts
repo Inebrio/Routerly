@@ -19,6 +19,7 @@ export type {
   EffectiveModel,
   RouterModelRef,
   RouterConfig,
+  PassthroughException,
   RouterKind,
   OrchestratorCandidateRef,
   PlaygroundPreset,

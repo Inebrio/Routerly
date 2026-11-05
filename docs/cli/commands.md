@@ -704,6 +704,45 @@ is revoked (all tokens removed) the moment the last real model is removed
 with `model remove`, leaving only the pass-through entry. A sentinel-only
 passthrough router, with no real models ever added, is never issued one.
 
+#### `routerly router passthrough exception`
+
+Exceptions send requests for specific model names to one of the passthrough
+router's own real models. They apply to token-authenticated requests only,
+never to `/passthrough/<slug>/*`. Rules are evaluated in order and the first
+match wins. See
+[Concepts: Architecture](../concepts/architecture.md#passthrough-exceptions).
+
+```
+routerly router passthrough exception list <router> [--json]
+routerly router passthrough exception add <router> --match <pattern> --target <model-id> [--json]
+routerly router passthrough exception remove <router> <index> [--json]
+```
+
+| Command | Option | Description |
+|---------|--------|-------------|
+| `list` | `--json` | Print the exceptions array (`[]` when empty) |
+| `add` | `--match <pattern>` | Requested model name to match: exact, case-sensitive, `*` matches any sequence (required) |
+| `add` | `--target <model-id>` | One of the router's own models, see `router model list` (required) |
+| `add` | `--json` | Print the saved exceptions array |
+| `remove` | `<index>` | 0-based position, as shown by `list` |
+| `remove` | `--json` | Print the remaining exceptions array |
+
+```
+routerly router passthrough exception add my-passthrough --match 'gpt-4*' --target openai/gpt-4o
+routerly router passthrough exception list my-passthrough
+routerly router passthrough exception remove my-passthrough 0
+```
+
+`list` prints a table with `#`, `Match` and `Target` columns, or `No
+exceptions: every request follows the router's model list.` when there are
+none. `add` prints `✓ Exception #<index> added to "<router>": <match> →
+<target>`; `remove` prints `✓ Exception #<index> removed from "<router>".`
+
+Errors go to stderr with exit code 1: a router that is not passthrough-kind, an
+empty `--match`, a `--target` that is not one of the router's models (the
+pass-through entry is rejected too), a duplicate `--match`, or an index outside
+the list.
+
 ---
 
 ### Tokens - `routerly router token`
@@ -2963,6 +3002,8 @@ routerly report calls [options]
 The table has a **Type** column showing what each call asked for and a **Caller** column showing who made it: `completion` for what a client asked for, `routing` for the router's own decision calls, `guardrail` for security-rule calls, `judge` for experiment judges. Records written before 0.4.0 carry neither field and are shown as `Chat` / `completion`, which is what the gateway tracked at the time.
 
 The **Token** column shows the head of the router token the call came in on, the one identifier that separates two clients of the same router. It reads `-` on records written before 0.4.0 and on calls the gateway made on its own behalf. Pass the full token ID to `--token` to keep only that client's traffic.
+
+When a passthrough exception rule picked the model, the **Model** cell reads `<model id> (exception)`.
 
 ```
 routerly report calls --type embedding --limit 10
