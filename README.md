@@ -87,6 +87,7 @@ No database and no Redis: configuration lives in JSON files.
 ## Capabilities
 
 - **Routers, orchestrators and passthrough.** A *router* scores models with routing policies. An *orchestrator* forwards to a priority-ordered list of other routers. A *passthrough* router forwards a client's own credential straight to OpenAI or Anthropic (optionally alongside real target models).
+- **Routing inside one provider.** A router only considers the models attached to it, so a pool made of one provider's models is routed automatically (cost, health, capability, context, client preference) with fallback that never leaves that provider. See [the recipe](docs/guides/single-provider-routing.md).
 - **11 routing policies**, combined into one ranking (table below), plus **routing profiles**: reusable presets for routing, optimizers and security. Four built-in routing profiles (`auto`, `cheap`, `fast`, `coding`), clonable.
 - **Budgets and cost tracking.** Every request is priced per token; hard limits (hourly, daily, weekly, monthly, yearly and rolling windows) at model, router and token level block overspending before the call. There are no organisation or team budget groups: a team is a router with its tokens.
 - **Guardrails and PII scrubbing.** Rule-based and judge-based content guardrails, and PII policies, on requests, responses, or both.
@@ -281,6 +282,7 @@ Full documentation is available at **[https://doc.routerly.ai](https://doc.route
 | [Dashboard](docs/dashboard/overview.md) | Web UI walkthrough |
 | [CLI Reference](docs/cli/commands.md) | Every command with examples |
 | [API Reference](docs/api/overview.md) | LLM proxy and management API |
+| [One-provider routing](docs/guides/single-provider-routing.md) | Automatic routing and fallback inside one provider's models |
 | [Self-Hosting Guide](docs/guides/self-hosting.md) | Docker, systemd, nginx, production checklist |
 | [Integrations](docs/integrations/overview.md) | Cursor, Open WebUI, LangChain, LibreChat, and more |
 
