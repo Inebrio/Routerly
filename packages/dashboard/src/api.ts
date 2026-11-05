@@ -1,4 +1,4 @@
-import type { PermissionCheckStatus, RankingAlgorithmId } from '@routerly/shared';
+import type { PassthroughException, PermissionCheckStatus, RankingAlgorithmId } from '@routerly/shared';
 export type { PermissionCheckStatus } from '@routerly/shared';
 
 const BASE = '/api';
@@ -448,6 +448,7 @@ export const updateRouter = (id: string, data: {
   notifications?: { channels: string[] } | null;
   traceContent?: boolean;
   callConfig?: CallConfig;
+  exceptions?: PassthroughException[];
 }) => request<Router>(`/routers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteRouter = (id: string) => request<void>(`/routers/${id}`, { method: 'DELETE' });
 export const createRouterToken = (id: string, labels?: string[], tags?: Record<string, string>, scopes?: string[]) => request<{ token: string; tokenInfo: RouterToken }>(`/routers/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels, ...(tags ? { tags } : {}), ...(scopes ? { scopes } : {}) }) });
@@ -546,6 +547,8 @@ export interface UsageRecord {
   sessionId?: string;
   endUserId?: string;
   tags?: Record<string, string>;
+  /** Set when the call was diverted by a passthrough exception rule. */
+  routedBy?: 'exception';
   /** Call configuration decision applied to this call (absent when none). */
   callConfig?: AppliedCallConfig;
 }

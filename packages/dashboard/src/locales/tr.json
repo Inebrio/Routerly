@@ -1406,6 +1406,22 @@
         "addTarget": "Hedef Model Ekle",
         "passthroughLabel": "Doğrudan geçiş (ham iletim)",
         "passthroughNotRemovable": "Doğrudan geçiş girdisi kaldırılamaz"
+      },
+      "exceptions": {
+        "title": "İstisnalar",
+        "description": "Modeli bir kuralla eşleşen istek, değiştirilmeden iletilmek yerine seçilen modele gönderilir. İlk eşleşme geçerlidir. Joker karakter olarak * kullanın. Yalnızca token ile doğrulanan isteklere uygulanır.",
+        "empty": "İstisna yok: her istek değiştirilmeden iletilir.",
+        "noRealModels": "Önce bu yönlendiriciye bir model ekleyin: istisnalar yalnızca yönlendiricinin kendi modellerini hedefleyebilir.",
+        "add": "İstisna ekle",
+        "match": "Model adı deseni",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Hedef model",
+        "remove": "İstisnayı kaldır",
+        "errors": {
+          "matchRequired": "Her istisna için bir desen gerekir.",
+          "duplicateMatch": "Yinelenen eşleşme \"{{match}}\".",
+          "targetMissing": "\"{{match}}\" istisnasının hedefi bu yönlendiricinin bir modeli değil."
+        }
       }
     },
     "optimizer": {
@@ -2449,12 +2465,14 @@
         "piiRedacted": "KKB Reddedildi",
         "sessionId": "Oturum kimliği",
         "endUser": "Son kullanıcı",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Yönlendiren"
       },
       "errorMessage": "Hata Mesajı",
       "eventCount": "{{count}} olay",
       "eventCount_other": "{{count}} olaylar",
-      "noTrace": "İzleme kullanılamaz. İzleme verileri yeni çağrılar için yakalanır."
+      "noTrace": "İzleme kullanılamaz. İzleme verileri yeni çağrılar için yakalanır.",
+      "routedByException": "Passthrough istisnası"
     }
   },
   "playground": {

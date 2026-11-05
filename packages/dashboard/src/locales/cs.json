@@ -1406,6 +1406,22 @@
         "addTarget": "Přidat cílový model",
         "passthroughLabel": "Průchod (nezpracované předání)",
         "passthroughNotRemovable": "Položku průchodu nelze odstranit"
+      },
+      "exceptions": {
+        "title": "Výjimky",
+        "description": "Požadavek, jehož model odpovídá pravidlu, je odeslán na zvolený model místo předání beze změny. Vyhrává první shoda. Použijte * jako zástupný znak. Platí jen pro požadavky ověřené tokenem.",
+        "empty": "Žádné výjimky: každý požadavek je předán beze změny.",
+        "noRealModels": "Nejprve přidejte do tohoto routeru model: výjimky mohou mířit jen na modely routeru.",
+        "add": "Přidat výjimku",
+        "match": "Vzor názvu modelu",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Cílový model",
+        "remove": "Odebrat výjimku",
+        "errors": {
+          "matchRequired": "Každá výjimka potřebuje vzor.",
+          "duplicateMatch": "Duplicitní shoda \"{{match}}\".",
+          "targetMissing": "Cíl výjimky \"{{match}}\" není modelem tohoto routeru."
+        }
       }
     },
     "optimizer": {
@@ -2449,12 +2465,14 @@
         "piiRedacted": "Osobní údaje redigovány",
         "sessionId": "ID relace",
         "endUser": "Koncový uživatel",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Směrováno přes"
       },
       "errorMessage": "Chybová zpráva",
       "eventCount": "{{count}} událost",
       "eventCount_other": "{{count}} událostí",
-      "noTrace": "Trasování nejsou k dispozici. Data trasování se zaznamenávají jen pro nová volání."
+      "noTrace": "Trasování nejsou k dispozici. Data trasování se zaznamenávají jen pro nová volání.",
+      "routedByException": "Výjimka Passthrough"
     }
   },
   "playground": {

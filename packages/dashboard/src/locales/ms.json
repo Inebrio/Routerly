@@ -1406,6 +1406,22 @@
         "addTarget": "Tambah Model Target",
         "passthroughLabel": "Pass-through (penghantaran mentah)",
         "passthroughNotRemovable": "Entri pass-through tidak boleh dialih keluar"
+      },
+      "exceptions": {
+        "title": "Pengecualian",
+        "description": "Permintaan yang modelnya sepadan dengan peraturan dihantar ke model yang dipilih dan bukannya dimajukan tanpa perubahan. Padanan pertama diguna pakai. Gunakan * sebagai kad liar. Hanya terpakai untuk permintaan yang disahkan token.",
+        "empty": "Tiada pengecualian: setiap permintaan dimajukan tanpa perubahan.",
+        "noRealModels": "Tambah model pada router ini dahulu: pengecualian hanya boleh menyasarkan model router itu sendiri.",
+        "add": "Tambah pengecualian",
+        "match": "Corak nama model",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Model sasaran",
+        "remove": "Buang pengecualian",
+        "errors": {
+          "matchRequired": "Setiap pengecualian memerlukan corak.",
+          "duplicateMatch": "Padanan pendua \"{{match}}\".",
+          "targetMissing": "Sasaran pengecualian \"{{match}}\" bukan model router ini."
+        }
       }
     },
     "optimizer": {
@@ -2449,12 +2465,14 @@
         "piiRedacted": "PII Diredaksi",
         "sessionId": "ID sesi",
         "endUser": "Pengguna akhir",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Dihalakan oleh"
       },
       "errorMessage": "Pesan Kesalahan",
       "eventCount": "{{count}} acara",
       "eventCount_other": "{{count}} acara",
-      "noTrace": "Tidak ada jejak tersedia. Data jejak ditangkap untuk panggilan baru saja."
+      "noTrace": "Tidak ada jejak tersedia. Data jejak ditangkap untuk panggilan baru saja.",
+      "routedByException": "Pengecualian Passthrough"
     }
   },
   "playground": {

@@ -1406,6 +1406,22 @@
         "addTarget": "Adaugă model țintă",
         "passthroughLabel": "Transmitere directă (redirecționare brută)",
         "passthroughNotRemovable": "Intrarea de transmitere directă nu poate fi eliminată"
+      },
+      "exceptions": {
+        "title": "Excepții",
+        "description": "O cerere al cărei model se potrivește cu o regulă este trimisă modelului ales în loc să fie redirecționată neschimbată. Câștigă prima potrivire. Folosiți * ca metacaracter. Se aplică doar cererilor autentificate cu token.",
+        "empty": "Nicio excepție: fiecare cerere este redirecționată neschimbată.",
+        "noRealModels": "Adăugați mai întâi un model acestui router: excepțiile pot viza doar modelele routerului.",
+        "add": "Adaugă excepție",
+        "match": "Tipar pentru numele modelului",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Model țintă",
+        "remove": "Elimină excepția",
+        "errors": {
+          "matchRequired": "Fiecare excepție necesită un tipar.",
+          "duplicateMatch": "Potrivire duplicată \"{{match}}\".",
+          "targetMissing": "Ținta excepției \"{{match}}\" nu este un model al acestui router."
+        }
       }
     },
     "optimizer": {
@@ -2449,12 +2465,14 @@
         "piiRedacted": "PII redactat",
         "sessionId": "ID sesiune",
         "endUser": "Utilizator final",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Direcționat de"
       },
       "errorMessage": "Mesaj eroare",
       "eventCount": "{{count}} eveniment",
       "eventCount_other": "{{count}} evenimente",
-      "noTrace": "Nicio trasă disponibilă. Date de trasă sunt capturate doar pentru apeluri noi."
+      "noTrace": "Nicio trasă disponibilă. Date de trasă sunt capturate doar pentru apeluri noi.",
+      "routedByException": "Excepție Passthrough"
     }
   },
   "playground": {

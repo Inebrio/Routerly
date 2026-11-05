@@ -1406,6 +1406,22 @@
         "addTarget": "Lägg till målmodell",
         "passthroughLabel": "Genomströmning (rå vidarebefordran)",
         "passthroughNotRemovable": "Genomströmningsposten kan inte tas bort"
+      },
+      "exceptions": {
+        "title": "Undantag",
+        "description": "En begäran vars modell matchar en regel skickas till den valda modellen i stället för att vidarebefordras oförändrad. Första träffen gäller. Använd * som jokertecken. Gäller endast token-autentiserade begäranden.",
+        "empty": "Inga undantag: varje begäran vidarebefordras oförändrad.",
+        "noRealModels": "Lägg först till en modell i routern: undantag kan bara peka på routerns egna modeller.",
+        "add": "Lägg till undantag",
+        "match": "Mönster för modellnamn",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Målmodell",
+        "remove": "Ta bort undantag",
+        "errors": {
+          "matchRequired": "Varje undantag kräver ett mönster.",
+          "duplicateMatch": "Dubblett av \"{{match}}\".",
+          "targetMissing": "Målet för undantaget \"{{match}}\" är inte en modell i den här routern."
+        }
       }
     },
     "optimizer": {
@@ -2449,12 +2465,14 @@
         "piiRedacted": "PII redigerad",
         "sessionId": "Sessions-ID",
         "endUser": "Slutanvändare",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Dirigerad av"
       },
       "errorMessage": "Felmeddelande",
       "eventCount": "{{count}} händelse",
       "eventCount_other": "{{count}} händelser",
-      "noTrace": "Inget spår tillgängligt. Spårdata är endast kapterad för nya samtal."
+      "noTrace": "Inget spår tillgängligt. Spårdata är endast kapterad för nya samtal.",
+      "routedByException": "Passthrough-undantag"
     }
   },
   "playground": {

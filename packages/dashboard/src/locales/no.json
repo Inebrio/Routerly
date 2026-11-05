@@ -1406,6 +1406,22 @@
         "addTarget": "Legg til målmodell",
         "passthroughLabel": "Gjennomstrømning (rå videresending)",
         "passthroughNotRemovable": "Gjennomstrømningsoppføringen kan ikke fjernes"
+      },
+      "exceptions": {
+        "title": "Unntak",
+        "description": "En forespørsel der modellen matcher en regel, sendes til den valgte modellen i stedet for å bli videresendt uendret. Første treff gjelder. Bruk * som jokertegn. Gjelder bare token-autentiserte forespørsler.",
+        "empty": "Ingen unntak: hver forespørsel videresendes uendret.",
+        "noRealModels": "Legg først til en modell i denne ruteren: unntak kan bare peke på ruterens egne modeller.",
+        "add": "Legg til unntak",
+        "match": "Mønster for modellnavn",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Målmodell",
+        "remove": "Fjern unntak",
+        "errors": {
+          "matchRequired": "Hvert unntak trenger et mønster.",
+          "duplicateMatch": "Duplisert treff \"{{match}}\".",
+          "targetMissing": "Målet for unntaket \"{{match}}\" er ikke en modell i denne ruteren."
+        }
       }
     },
     "optimizer": {
@@ -2449,12 +2465,14 @@
         "piiRedacted": "PII redigért",
         "sessionId": "Økt-ID",
         "endUser": "Sluttbruker",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Rutet av"
       },
       "errorMessage": "Feilmelding",
       "eventCount": "{{count}} hendelse",
       "eventCount_other": "{{count}} hendelser",
-      "noTrace": "Ingen spor tilgjengelig. Spordata hentes for nye anrop bare."
+      "noTrace": "Ingen spor tilgjengelig. Spordata hentes for nye anrop bare.",
+      "routedByException": "Passthrough-unntak"
     }
   },
   "playground": {

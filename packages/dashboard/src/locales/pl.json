@@ -1406,6 +1406,22 @@
         "addTarget": "Dodaj model docelowy",
         "passthroughLabel": "Przepuszczenie (surowe przekazanie)",
         "passthroughNotRemovable": "Nie można usunąć wpisu przepuszczenia"
+      },
+      "exceptions": {
+        "title": "Wyjątki",
+        "description": "Żądanie, którego model pasuje do reguły, trafia do wybranego modelu zamiast zostać przekazane bez zmian. Wygrywa pierwsze dopasowanie. Użyj * jako symbolu wieloznacznego. Dotyczy tylko żądań uwierzytelnionych tokenem.",
+        "empty": "Brak wyjątków: każde żądanie jest przekazywane bez zmian.",
+        "noRealModels": "Najpierw dodaj model do tego routera: wyjątki mogą wskazywać tylko modele routera.",
+        "add": "Dodaj wyjątek",
+        "match": "Wzorzec nazwy modelu",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Model docelowy",
+        "remove": "Usuń wyjątek",
+        "errors": {
+          "matchRequired": "Każdy wyjątek wymaga wzorca.",
+          "duplicateMatch": "Zduplikowane dopasowanie \"{{match}}\".",
+          "targetMissing": "Cel wyjątku \"{{match}}\" nie jest modelem tego routera."
+        }
       }
     },
     "optimizer": {
@@ -2449,12 +2465,14 @@
         "piiRedacted": "PII wycierany",
         "sessionId": "ID sesji",
         "endUser": "Użytkownik końcowy",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Skierowane przez"
       },
       "errorMessage": "Komunikat o błędzie",
       "eventCount": "{{count}} zdarzenie",
       "eventCount_other": "{{count}} zdarzeń",
-      "noTrace": "Brak śledz dostępny. Dane śledzenia są przechwytywane tylko dla nowych połączeń."
+      "noTrace": "Brak śledz dostępny. Dane śledzenia są przechwytywane tylko dla nowych połączeń.",
+      "routedByException": "Wyjątek Passthrough"
     }
   },
   "playground": {
