@@ -2407,7 +2407,8 @@
         "outputTokens": "Token in uscita",
         "costPer1k": "Costo / 1K",
         "cost": "Costo (USD)",
-        "bestCostPerformance": "Miglior rapporto qualità-prezzo"
+        "bestCostPerformance": "Miglior rapporto qualità-prezzo",
+        "deleted": "eliminato"
       },
       "showMoreModels": "Mostra {{count}} modello in più",
       "showMoreModels_other": "Mostra {{count}} modelli in più",

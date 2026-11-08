@@ -2633,6 +2633,31 @@ describe('GET /api/usage', () => {
     expect(body.records).toHaveLength(1)
   })
 
+  it('keeps cost of deleted models and lists them in deletedModelIds (ROUT-292)', async () => {
+    setupAdminAuth()
+    const now = new Date().toISOString()
+    const records = [
+      { id: 'd1', timestamp: now, routerId: 'p1', modelId: 'gone', inputTokens: 10, outputTokens: 5, cost: 0.5, priceInput: 1, priceOutput: 2, outcome: 'success', callType: 'completion', latencyMs: 10 },
+      { id: 'd2', timestamp: now, routerId: 'p1', modelId: 'live', inputTokens: 10, outputTokens: 5, cost: 0.25, priceInput: 1, priceOutput: 2, outcome: 'success', callType: 'completion', latencyMs: 10 },
+      { id: 'd3', timestamp: now, routerId: 'pt', modelId: 'claude-client-string', inputTokens: 0, outputTokens: 0, cost: null, outcome: 'success', callType: 'completion', latencyMs: 10 },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return records
+      if (t === 'instances') return [{ id: 'live' }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage?modelIds=live', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.deletedModelIds).toEqual(['gone'])
+    const all = await (async () => { const a2 = await buildApp(); const r = await a2.inject({ method: 'GET', url: '/api/usage', headers: adminAuthHeaders() }); await a2.close(); return JSON.parse(r.body) })()
+    expect(all.byModel.gone.cost).toBeCloseTo(0.5)
+    expect(all.summary.totalCost).toBeCloseTo(0.75)
+  })
+
   it('tolerates records without token fields (ROUT-442)', async () => {
     setupAdminAuth()
     const records = [

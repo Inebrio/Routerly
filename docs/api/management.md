@@ -1862,6 +1862,8 @@ Each `byModel` entry includes:
 | `avgLatencyMs` | Mean response time in milliseconds |
 | `p95LatencyMs` | 95th-percentile response time in milliseconds |
 
+Deleting a model never deletes its usage records: its calls and costs stay in `byModel` under the original model id for as long as the records are kept (see `usageRetention`). `deletedModelIds` lists the model ids that have records in the window (before the `modelIds` filter) but no longer exist in the configuration (only records priced against a model count, so passthrough client model names and records written before price snapshots are not listed), so a client can mark them and keep them in its filters. A model recreated with the same id is counted in the same `byModel` entry as before, and drops out of `deletedModelIds`.
+
 Every record in the `records` array carries `tokenId`, the router token the call authenticated with, taken from the bearer token that was presented and never from the payload. Records written before 0.4.0 have no such field. Internal calls that no client token stands behind, such as an experiment rotation firing on its own, are recorded without one.
 
 Guardrail judge call records appear in the `records` array with `callType: "guardrail"`. Blocked request records appear with `outcome: "blocked"` and `callType: "guardrail"`. The `errorCalls` counter excludes blocked requests -- a block is a normal guardrail outcome, not a model error.

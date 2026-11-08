@@ -565,6 +565,8 @@ export interface UsageStats {
     ttftMedianMs?: number; ttftP95Ms?: number; ttftSamples?: number;
   };
   byModel: Record<string, UsageByModelEntry>;
+  /** Model ids with records in the window that no longer exist in the config. */
+  deletedModelIds?: string[];
   /** Calls per caller in the window, before the caller filter narrowed it (T210). */
   byCallType?: Record<string, number>;
   /** Calls per request type in the window, before the type filter narrowed it (T210). */

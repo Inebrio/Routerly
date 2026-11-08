@@ -2404,7 +2404,8 @@
         "outputTokens": "Jetoane de ieșire",
         "costPer1k": "Cost / 1K",
         "cost": "Cost (USD)",
-        "bestCostPerformance": "Cea mai bună performanță cost"
+        "bestCostPerformance": "Cea mai bună performanță cost",
+        "deleted": "deleted"
       },
       "showMoreModels": "Arată {{count}} model mai mult",
       "showMoreModels_other": "Arată {{count}} modele mai mult",

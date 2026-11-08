@@ -2404,7 +2404,8 @@
         "outputTokens": "โทเค็นเอาต์พุต",
         "costPer1k": "ต้นทุน / 1K",
         "cost": "ต้นทุน (USD)",
-        "bestCostPerformance": "ต้นทุน-ประสิทธิภาพที่ดีที่สุด"
+        "bestCostPerformance": "ต้นทุน-ประสิทธิภาพที่ดีที่สุด",
+        "deleted": "deleted"
       },
       "showMoreModels": "แสดง {{count}} รุ่นเพิ่มเติม",
       "showMoreModels_other": "แสดง {{count}} รุ่นเพิ่มเติม",

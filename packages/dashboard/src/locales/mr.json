@@ -2404,7 +2404,8 @@
         "outputTokens": "आउटपुट टोकन्स",
         "costPer1k": "खर्च / 1K",
         "cost": "खर्च (USD)",
-        "bestCostPerformance": "सर्वोत्तम खर्च-कार्यक्षमता"
+        "bestCostPerformance": "सर्वोत्तम खर्च-कार्यक्षमता",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} अधिक मॉडेल दाखवा",
       "showMoreModels_other": "{{count}} अधिक मॉडेल्स दाखवा",

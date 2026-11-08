@@ -2404,7 +2404,8 @@
         "outputTokens": "Выходные токены",
         "costPer1k": "Стоимость / 1K",
         "cost": "Стоимость (USD)",
-        "bestCostPerformance": "Лучшее соотношение цены и производительности"
+        "bestCostPerformance": "Лучшее соотношение цены и производительности",
+        "deleted": "deleted"
       },
       "showMoreModels": "Показать {{count}} ещё модель",
       "showMoreModels_other": "Показать {{count}} ещё моделей",

@@ -2223,6 +2223,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // Dashboard filters (multiselect + type/outcome) — applied to records, byModel, summary and timeline alike (#80).
     const routerIdSet = csvSet(routerIds);
     if (routerIdSet) filtered = filtered.filter(r => routerIdSet.has(r.routerId));
+    // Models the window still holds records for but the config no longer has (ROUT-292):
+    // computed before the model filter so the dashboard filter keeps listing them.
+    const configuredModelIds = new Set((await readConfig('instances')).map(i => i.id));
+    // Only records priced against a resolved model (priceInput set) name a real model id;
+    // passthrough records carry the client's own model string, which is never configured.
+    const deletedModelIds = [...new Set(filtered.filter(r => r.priceInput !== undefined).map(r => r.modelId))]
+      .filter(id => !configuredModelIds.has(id)).sort();
     const modelIdSet = csvSet(modelIds);
     if (modelIdSet) filtered = filtered.filter(r => modelIdSet.has(r.modelId));
     // Which router token the call came in on: narrows a router's traffic down
@@ -2380,6 +2387,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ttftMedianMs: median(ttftSamples), ttftP95Ms: p95(ttftSamples), ttftSamples: ttftSamples.length,
       },
       byModel,
+      deletedModelIds,
       byCallType,
       byRequestType,
       timeline: Object.entries(timeline).sort(([a], [b]) => a.localeCompare(b)).slice(-30),

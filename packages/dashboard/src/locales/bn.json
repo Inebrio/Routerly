@@ -2404,7 +2404,8 @@
         "outputTokens": "আউটপুট টোকেন",
         "costPer1k": "খরচ / 1K",
         "cost": "খরচ (USD)",
-        "bestCostPerformance": "সেরা খরচ-কর্মক্ষমতা"
+        "bestCostPerformance": "সেরা খরচ-কর্মক্ষমতা",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} আরও মডেল দেখান",
       "showMoreModels_other": "{{count}} আরও মডেল দেখান",

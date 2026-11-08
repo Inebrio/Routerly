@@ -2404,7 +2404,8 @@
         "outputTokens": "Tokeny wyjściowe",
         "costPer1k": "Koszt / 1K",
         "cost": "Koszt (USD)",
-        "bestCostPerformance": "Najlepszy stosunek kosztu do wydajności"
+        "bestCostPerformance": "Najlepszy stosunek kosztu do wydajności",
+        "deleted": "deleted"
       },
       "showMoreModels": "Pokaż {{count}} więcej modelu",
       "showMoreModels_other": "Pokaż {{count}} więcej modeli",

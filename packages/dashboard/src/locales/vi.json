@@ -2404,7 +2404,8 @@
         "outputTokens": "Token đầu ra",
         "costPer1k": "Chi phí / 1K",
         "cost": "Chi phí (USD)",
-        "bestCostPerformance": "Hiệu suất chi phí tốt nhất"
+        "bestCostPerformance": "Hiệu suất chi phí tốt nhất",
+        "deleted": "deleted"
       },
       "showMoreModels": "Hiển thị {{count}} mô hình khác",
       "showMoreModels_other": "Hiển thị {{count}} mô hình khác",

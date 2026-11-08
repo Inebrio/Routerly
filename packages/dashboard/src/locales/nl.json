@@ -2404,7 +2404,8 @@
         "outputTokens": "Uitvoertokens",
         "costPer1k": "Kosten / 1K",
         "cost": "Kosten (USD)",
-        "bestCostPerformance": "Beste kosteneffectiviteit"
+        "bestCostPerformance": "Beste kosteneffectiviteit",
+        "deleted": "deleted"
       },
       "showMoreModels": "Toon {{count}} meer model",
       "showMoreModels_other": "Toon {{count}} meer modellen",

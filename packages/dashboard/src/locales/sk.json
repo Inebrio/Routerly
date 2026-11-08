@@ -2404,7 +2404,8 @@
         "outputTokens": "Výstupné tokeny",
         "costPer1k": "Náklady / 1K",
         "cost": "Náklady (USD)",
-        "bestCostPerformance": "Najlepšia cena výkonu"
+        "bestCostPerformance": "Najlepšia cena výkonu",
+        "deleted": "deleted"
       },
       "showMoreModels": "Zobraziť {{count}} viac modelov",
       "showMoreModels_other": "Zobraziť {{count}} viac modelov",

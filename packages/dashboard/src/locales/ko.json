@@ -2404,7 +2404,8 @@
         "outputTokens": "출력 토큰",
         "costPer1k": "비용/1K",
         "cost": "비용(USD)",
-        "bestCostPerformance": "최고 비용-성능"
+        "bestCostPerformance": "최고 비용-성능",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}}개 더 많은 모델 표시",
       "showMoreModels_other": "{{count}}개 더 많은 모델 표시",

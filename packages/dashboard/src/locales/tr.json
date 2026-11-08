@@ -2404,7 +2404,8 @@
         "outputTokens": "Çıkış jetonları",
         "costPer1k": "Maliyet / 1K",
         "cost": "Maliyet (USD)",
-        "bestCostPerformance": "En iyi maliyet-performans"
+        "bestCostPerformance": "En iyi maliyet-performans",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} daha fazla model göster",
       "showMoreModels_other": "{{count}} daha fazla modeller göster",

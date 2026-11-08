@@ -2404,7 +2404,8 @@
         "outputTokens": "آؤٹ پٹ ٹوکنز",
         "costPer1k": "لاگت / 1K",
         "cost": "لاگت (USD)",
-        "bestCostPerformance": "بہترین لاگت کارکردگی"
+        "bestCostPerformance": "بہترین لاگت کارکردگی",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} زیادہ ماڈل دکھائیں",
       "showMoreModels_other": "{{count}} زیادہ ماڈلز دکھائیں",

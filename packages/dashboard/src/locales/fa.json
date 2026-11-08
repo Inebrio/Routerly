@@ -2404,7 +2404,8 @@
         "outputTokens": "توکن‌های خروجی",
         "costPer1k": "هزینه / ۱ هزار",
         "cost": "هزینه (دلار)",
-        "bestCostPerformance": "بهترین نسبت هزینه به عملکرد"
+        "bestCostPerformance": "بهترین نسبت هزینه به عملکرد",
+        "deleted": "deleted"
       },
       "showMoreModels": "نمایش {{count}} مدل بیشتر",
       "showMoreModels_other": "نمایش {{count}} مدل بیشتر",

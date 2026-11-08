@@ -39,6 +39,7 @@ interface UsageResponse {
     guardrailCost?: number;
   };
   byModel: Record<string, UsageByModel>;
+  deletedModelIds?: string[];
   /** Calls per request type in the window, counted before `--type` narrowed it (T210). */
   byRequestType?: Record<string, number>;
   records: Array<{
@@ -261,7 +262,7 @@ Examples:
 
         for (const [model, stats] of Object.entries(data.byModel)) {
           table.push([
-            model,
+            data.deletedModelIds?.includes(model) ? `${model} (deleted)` : model,
             stats.calls,
             stats.errors > 0 ? chalk.red(String(stats.errors)) : '0',
             stats.inputTokens.toLocaleString(),

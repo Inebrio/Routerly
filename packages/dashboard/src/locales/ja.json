@@ -2404,7 +2404,8 @@
         "outputTokens": "出力トークン",
         "costPer1k": "コスト / 1K",
         "cost": "コスト(USD)",
-        "bestCostPerformance": "最高のコスト性能"
+        "bestCostPerformance": "最高のコスト性能",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}}個の追加モデルを表示",
       "showMoreModels_other": "{{count}}個の追加モデルを表示",

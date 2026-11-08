@@ -2404,7 +2404,8 @@
         "outputTokens": "Tulostetokenit",
         "costPer1k": "Kustannus / 1K",
         "cost": "Kustannus (USD)",
-        "bestCostPerformance": "Paras hinta-suorituskyky"
+        "bestCostPerformance": "Paras hinta-suorituskyky",
+        "deleted": "deleted"
       },
       "showMoreModels": "Näytä {{count}} lisää malli",
       "showMoreModels_other": "Näytä {{count}} lisää mallia",

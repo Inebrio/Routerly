@@ -2404,7 +2404,8 @@
         "outputTokens": "Вихідні токени",
         "costPer1k": "Вартість / 1K",
         "cost": "Вартість (USD)",
-        "bestCostPerformance": "Найкраще коефіцієнт вартості"
+        "bestCostPerformance": "Найкраще коефіцієнт вартості",
+        "deleted": "deleted"
       },
       "showMoreModels": "Показати {{count}} більше моделей",
       "showMoreModels_other": "Показати {{count}} більше моделей",

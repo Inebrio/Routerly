@@ -2404,7 +2404,8 @@
         "outputTokens": "అవుట్‌పుట్ టోకెన్‌లు",
         "costPer1k": "ధర / 1K",
         "cost": "ధర (USD)",
-        "bestCostPerformance": "ఉత్తమ ధర-పనితీరు"
+        "bestCostPerformance": "ఉత్తమ ధర-పనితీరు",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} ఇతర మోడల్ చూపండు",
       "showMoreModels_other": "{{count}} ఇతర మోడల్‌లు చూపండు",

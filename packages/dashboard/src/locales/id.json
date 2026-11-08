@@ -2404,7 +2404,8 @@
         "outputTokens": "Token output",
         "costPer1k": "Biaya / 1K",
         "cost": "Biaya (USD)",
-        "bestCostPerformance": "Performa biaya terbaik"
+        "bestCostPerformance": "Performa biaya terbaik",
+        "deleted": "deleted"
       },
       "showMoreModels": "Tampilkan {{count}} model lagi",
       "showMoreModels_other": "Tampilkan {{count}} model lagi",
