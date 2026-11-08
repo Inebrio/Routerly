@@ -4,7 +4,7 @@ import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import { DEFAULT_RANKING_ALGORITHM, RANKING_ALGORITHMS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TIERS, CALL_SETTINGS, CALL_MAX_OUTPUT_TOKENS_MIN, CALL_MAX_OUTPUT_TOKENS_MAX } from '@routerly/shared';
 import { readCallConfigArg, printCallConfig } from '../lib/call-config.js';
-import type { PassthroughException, CallConfig, CallLevel, CallSettings, CallTier, Profile, RouterConfig, RouterKind, RouterModelRef, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
+import type { PassthroughException, CallConfig, CallLevel, CallSettings, CallTier, Profile, RouterConfig, RouterKind, RouterModelRef, RoutingPolicy, RoutingPolicyType, TokenModelRef, LimitsMode, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
 
 /**
  * Wire shape of an Orchestrator's candidate as returned by GET /api/routers —
@@ -734,7 +734,7 @@ Examples:
             : chalk.gray('—');
           const created = new Date(t.createdAt).toLocaleString('it-IT');
           const limits = t.models?.length
-            ? t.models.map(m => `${m.modelId}(${m.limits?.length ?? 0})`).join(', ')
+            ? t.models.map(m => `${m.modelId}(${m.limits?.length ?? 0}${m.limitsMode ? `, ${m.limitsMode}` : ''})`).join(', ')
             : chalk.gray('—');
           table.push([t.id, t.tokenSnippet + '…', labels, tags, created, limits]);
         }
@@ -807,13 +807,17 @@ Examples:
 
   # Remove a limit
   routerly router token edit my-api <token-id> --remove-limit "openai/gpt-5.2:cost:period:hourly"
+
+  # Stack the token limits on the router limits (replace | extend | disable)
+  routerly router token edit my-api <token-id> --limits-mode "openai/gpt-5.2:extend"
 `)
     .option('--labels <tags>', 'Comma-separated labels (replaces existing labels)')
     .option('--scopes <list>', 'Comma-separated access scopes (replaces existing scopes)')
     .option('--tag <kv>', 'Key=value tag (repeatable; replaces all existing tags)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--add-limit <spec>', 'Add a per-model limit (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--remove-limit <spec>', 'Remove a limit: <model>:<metric>:<windowType> (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
-    .action(async (nameOrId: string, tokenId: string, opts: { labels?: string; scopes?: string; tag: string[]; addLimit: string[]; removeLimit: string[] }) => {
+    .option('--limits-mode <spec>', 'Set how a model\'s token limits combine with the router limits: <model>:replace|extend|disable (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
+    .action(async (nameOrId: string, tokenId: string, opts: { labels?: string; scopes?: string; tag: string[]; addLimit: string[]; removeLimit: string[]; limitsMode: string[] }) => {
       try {
         const router = await resolveRouter(nameOrId);
         const token = (router.tokens ?? []).find(t => t.id === tokenId);
@@ -845,8 +849,21 @@ Examples:
           }
         }
 
-        // Remove entries with no limits left (and no other config)
-        models = models.filter(m => m.limits && m.limits.length > 0);
+        for (const spec of opts.limitsMode) {
+          const sep = spec.lastIndexOf(':');
+          const modelId = spec.slice(0, sep);
+          const mode = spec.slice(sep + 1);
+          if (sep < 1 || !['replace', 'extend', 'disable'].includes(mode)) {
+            console.error(chalk.red(`Invalid --limits-mode "${spec}". Expected <model>:replace|extend|disable.`));
+            process.exit(1);
+          }
+          let entry = models.find(m => m.modelId === modelId);
+          if (!entry) { entry = { modelId }; models.push(entry); }
+          entry.limitsMode = mode as LimitsMode;
+        }
+
+        // Remove entries with no limits left and no mode set
+        models = models.filter(m => (m.limits && m.limits.length > 0) || m.limitsMode);
 
         const labels = opts.labels ? opts.labels.split(',').map(s => s.trim()).filter(Boolean) : token.labels;
         const scopes = opts.scopes ? opts.scopes.split(',').map(s => s.trim()).filter(Boolean) : token.scopes;

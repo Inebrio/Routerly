@@ -150,8 +150,10 @@ routerly router token edit "My App" <token-id> \
   --add-limit "gpt-5-mini:cost:period:daily:5"
 ```
 
-:::note Where `limitsMode` can be set
-The enforcement honours `limitsMode` (`replace`, `extend`, `disable`) on both the router level and the token level. No surface sets it today: the CLI and dashboard only write `limits`, and `PUT /api/routers/:id/tokens/:tokenId` ignores `limitsMode`. To use `extend` or `disable`, add `"limitsMode"` to the model entry of the router or of the token in `routers.json`. Router-level `limits` are also written there.
+The mode (`replace` by default, `extend` or `disable`, see Limit Modes) is set per model, with the CLI `--limits-mode "gpt-5-mini:extend"` (repeatable), with the **Limits mode** selector on the dashboard token editor, or with `limitsMode` on the model entry of `PUT /api/routers/:id/tokens/:tokenId` (400 for any other value).
+
+:::note
+The router level (`limits` on a router's model entry) is honoured at request time but has no dashboard or CLI editor yet: it can only be written directly in `routers.json`. Set budgets on the model or on the token instead.
 :::
 
 ---
