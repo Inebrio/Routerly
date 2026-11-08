@@ -4,7 +4,7 @@ import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import { DEFAULT_RANKING_ALGORITHM, RANKING_ALGORITHMS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TIERS, CALL_SETTINGS, CALL_MAX_OUTPUT_TOKENS_MIN, CALL_MAX_OUTPUT_TOKENS_MAX } from '@routerly/shared';
 import { readCallConfigArg, printCallConfig } from '../lib/call-config.js';
-import type { CallConfig, CallLevel, CallSettings, CallTier, Profile, RouterConfig, RouterKind, RouterModelRef, RoutingPolicy, RoutingPolicyType, TokenModelRef, LimitsMode, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
+import type { PassthroughException, CallConfig, CallLevel, CallSettings, CallTier, Profile, RouterConfig, RouterKind, RouterModelRef, RoutingPolicy, RoutingPolicyType, TokenModelRef, LimitsMode, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
 
 /**
  * Wire shape of an Orchestrator's candidate as returned by GET /api/routers —
@@ -421,6 +421,114 @@ Examples:
     });
 
   cmd.addCommand(policyCmd);
+  return cmd;
+}
+
+// ─── passthrough exceptions ──────────────────────────────────────────────────
+
+/** Router PUT needs the identity fields; mirrors `callConfigBody`. */
+function exceptionsBody(router: RouterConfig, exceptions: PassthroughException[]): Record<string, unknown> {
+  return { name: router.name, models: router.models, exceptions };
+}
+
+function requirePassthrough(router: RouterConfig): void {
+  if (router.kind !== 'passthrough') cliFail(`Router "${router.name}" is not a passthrough router: exceptions are only supported on passthrough routers.`);
+}
+
+function makePassthroughCommand(): Command {
+  const cmd = new Command('passthrough').description('Passthrough router settings');
+  const exc = new Command('exception').description('Send requests for specific models to one of the passthrough router\'s own models (token-authenticated requests only)');
+
+  exc.command('list <router>')
+    .description('List the exception rules of a passthrough router (first match wins)')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly router passthrough exception list my-passthrough
+  routerly router passthrough exception list my-passthrough --json
+`)
+    .action(async (nameOrId: string, opts: { json?: boolean }) => {
+      try {
+        const router = await resolveRouter(nameOrId);
+        const exceptions = router.exceptions ?? [];
+        if (opts.json) {
+          console.log(JSON.stringify(exceptions, null, 2));
+          return;
+        }
+        if (!exceptions.length) {
+          console.log(chalk.dim("No exceptions: every request follows the router's model list."));
+          return;
+        }
+        const table = new Table({ head: ['#', 'Match', 'Target'].map(h => chalk.cyan(h)) });
+        exceptions.forEach((e, i) => table.push([i, e.match, e.targetModelId]));
+        console.log(table.toString());
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  exc.command('add <router>')
+    .description('Add an exception rule: requests whose model matches go to a model of this router')
+    .requiredOption('--match <pattern>', 'Requested model to match: exact, case-sensitive; * matches any sequence (e.g. gpt-4o, claude-*)')
+    .requiredOption('--target <model-id>', "One of the router's own models (see `router model list`)")
+    .option('--json', 'Output the saved exceptions as JSON')
+    .addHelpText('after', `
+Examples:
+  routerly router passthrough exception add my-passthrough --match gpt-4o --target openai/gpt-4o
+  routerly router passthrough exception add my-passthrough --match 'claude-*' --target anthropic/claude-sonnet-4-5 --json
+`)
+    .action(async (nameOrId: string, opts: { match: string; target: string; json?: boolean }) => {
+      try {
+        const router = await resolveRouter(nameOrId);
+        requirePassthrough(router);
+        const match = opts.match.trim();
+        if (!match) cliFail('--match cannot be empty.');
+        if (opts.target === PASSTHROUGH_MODEL_ID || !router.models.some(m => m.modelId === opts.target)) {
+          cliFail(`Target "${opts.target}" is not a model of router "${router.name}". Run \`routerly router model list ${router.name}\`.`);
+        }
+        const exceptions = [...(router.exceptions ?? []), { match, targetModelId: opts.target }];
+        const saved = await api<RouterConfig>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, exceptionsBody(router, exceptions));
+        if (opts.json) {
+          console.log(JSON.stringify(saved.exceptions ?? [], null, 2));
+          return;
+        }
+        console.log(chalk.green(`✓ Exception #${exceptions.length - 1} added to "${router.name}": ${match} → ${opts.target}`));
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  exc.command('remove <router> <index>')
+    .description('Remove an exception rule by its index (see `exception list`)')
+    .option('--json', 'Output the remaining exceptions as JSON')
+    .addHelpText('after', `
+Examples:
+  routerly router passthrough exception remove my-passthrough 0
+`)
+    .action(async (nameOrId: string, indexStr: string, opts: { json?: boolean }) => {
+      try {
+        const router = await resolveRouter(nameOrId);
+        const before = router.exceptions ?? [];
+        const index = Number(indexStr);
+        if (!Number.isInteger(index) || index < 0 || index >= before.length) {
+          cliFail(`Invalid index "${indexStr}". Use \`exception list\` to see valid indices${before.length ? ` (0 to ${before.length - 1})` : ' (there are no exceptions)'}.`);
+        }
+        const exceptions = before.filter((_, i) => i !== index);
+        const saved = await api<RouterConfig>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, exceptionsBody(router, exceptions));
+        if (opts.json) {
+          console.log(JSON.stringify(saved.exceptions ?? [], null, 2));
+          return;
+        }
+        console.log(chalk.green(`✓ Exception #${index} removed from "${router.name}".`));
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  cmd.addCommand(exc);
   return cmd;
 }
 
@@ -1626,6 +1734,7 @@ Examples:
   cmd.addCommand(makeRoutingCommand());
   cmd.addCommand(makeCallConfigCommand());
   cmd.addCommand(makeModelSubCommand());
+  cmd.addCommand(makePassthroughCommand());
   cmd.addCommand(makeTokenSubCommand());
   cmd.addCommand(makeMemberCommand());  
 

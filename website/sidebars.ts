@@ -84,6 +84,7 @@ const sidebars: SidebarsConfig = {
         'guides/self-hosting',
         'guides/claude-subscription',
         'guides/mcp-clients',
+        'guides/compare-model-prices',
       ],
     },
     {
@@ -183,6 +184,7 @@ const sidebars: SidebarsConfig = {
       label: 'Contributing',
       items: [
         'contributing/releasing',
+        'contributing/secret-scanning',
       ],
     },
   ],

@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import { CALL_TYPES, REQUEST_TYPES, optimizerLabel, requestTypeLabel, type RequestType, type SavingsSummary, type UsageSeries } from '@routerly/shared';
+import { CALL_TYPES, REQUEST_TYPES, TIMELINE_EVENT_KINDS, optimizerLabel, requestTypeLabel, type RequestType, type SavingsSummary, type TimelineEvent, type TimelineGroup, type UsageSeries } from '@routerly/shared';
 import { api } from '../api.js';
 import { fmtUsd } from '../lib/fmt.js';
 
@@ -54,6 +54,8 @@ interface UsageResponse {
     outcome: string;
     callType?: string;
     requestType?: string;
+    /** Set when a passthrough exception rule picked the model. */
+    routedBy?: 'exception';
   }>;
   /** Present only when the request asked for it with `savings=1` (T61). */
   savings?: SavingsSummary;
@@ -85,6 +87,49 @@ function parseCallType(value: string): string {
   }
   return value;
 }
+
+interface TimelineResponse {
+  groups: TimelineGroup[];
+  totals: { groups: number; events: number; cost: number; eventsByKind: Record<string, number> };
+  pagination: { page: number; pageSize: number; totalRecords: number; totalPages: number };
+}
+
+/** The events of one request as a table; unknown cost reads `-`, never 0. */
+function printTimelineEvents(events: TimelineEvent[]): string {
+  const table = new Table({
+    head: ['Time', 'Kind', 'Model / name', 'Attempt', 'Outcome', 'Duration', 'TTFT', 'Cost', 'Detail'].map(h => chalk.cyan(h)),
+  });
+  for (const e of events) {
+    const detail = e.blockedBy ? `blocked by ${e.blockedBy}` : e.errorMessage ?? (e.status !== undefined ? `HTTP ${e.status}` : '');
+    table.push([
+      new Date(e.timestamp).toLocaleTimeString(),
+      e.kind,
+      eventLabel(e),
+      e.attempt !== undefined ? `${e.attempt}${e.final ? ' (final)' : ''}` : '-',
+      colorOutcome(e.outcome),
+      `${e.durationMs}ms`,
+      e.ttftMs !== undefined ? `${e.ttftMs}ms` : '-',
+      fmtUsd(e.cost, 6),
+      detail,
+    ]);
+  }
+  return table.toString();
+}
+
+/** Validate `--kind` against the timeline event kinds the service knows. */
+function parseTimelineKind(value: string): string {
+  if (!(TIMELINE_EVENT_KINDS as readonly string[]).includes(value)) {
+    console.error(chalk.red(`Error: unknown kind '${value}'. Expected one of: ${TIMELINE_EVENT_KINDS.join(', ')}`));
+    process.exit(1);
+  }
+  return value;
+}
+
+const colorOutcome = (outcome: string) =>
+  outcome === 'success' ? chalk.green(outcome) : outcome === 'blocked' ? chalk.yellow(outcome) : chalk.red(outcome);
+
+/** One-line label of an event: the model of a call, the tool or route of an activity event. */
+const eventLabel = (e: TimelineEvent) => e.name ?? e.modelId ?? '-';
 
 /**
  * What routing saved (T102), the same figures the Overview cards show, anchored
@@ -300,7 +345,7 @@ Examples:
             r.routerId.slice(0, 8),
             // Records written before tokenId existed carry no caller token.
             r.tokenId ? r.tokenId.slice(0, 8) : '-',
-            r.modelId,
+            r.routedBy === 'exception' ? `${r.modelId} (exception)` : r.modelId,
             // Records written before requestType existed were all chat calls.
             requestTypeLabel((r.requestType ?? 'chat') as RequestType),
             // Same for callType: back then everything tracked was a completion.
@@ -418,6 +463,93 @@ Examples:
         }
         console.log(table.toString());
         if (res.nextCursor) console.log(chalk.gray('More sessions available; raise --limit to see them.'));
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  // ── report timeline ──
+  cmd.command('timeline [id]')
+    .description('Show each client request as one ordered sequence of events (routing, guardrail, attempts, MCP calls, proxy routes)')
+    .addHelpText('after', `
+Examples:
+  # The latest requests this month
+  routerly report timeline
+
+  # Requests where an attempt failed
+  routerly report timeline --kind attempt --outcome error
+
+  # MCP tool calls for one router, as JSON
+  routerly report timeline --kind mcp --router my-api --json
+
+  # One request in detail (id from the first column)
+  routerly report timeline 3f2b1c4d-...
+`)
+    .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
+    .option('--router <name|id>', 'Filter by router name or ID')
+    .option('--session-id <id>', 'Filter by session ID')
+    .option('--token <id>', 'Filter by router token ID (comma-separated for several)')
+    .option('--end-user <id>', 'Filter by end-user ID')
+    .option('--kind <kind>', `Only requests holding this kind of event: ${TIMELINE_EVENT_KINDS.join(' | ')}`, parseTimelineKind)
+    .option('--outcome <outcome>', 'Filter by outcome: success | error | blocked | timeout | budget_exceeded')
+    .option('--limit <n>', 'Number of requests to show', '20')
+    .option('--json', 'Output as JSON')
+    .action(async (id: string | undefined, opts: { period: string; router?: string; sessionId?: string; token?: string; endUser?: string; kind?: string; outcome?: string; limit: string; json?: boolean }) => {
+      try {
+        if (id) {
+          const group = await api<TimelineGroup>('GET', `/api/timeline/${encodeURIComponent(id)}`);
+          if (opts.json) { console.log(JSON.stringify(group, null, 2)); return; }
+
+          console.log(chalk.bold(`\nRequest ${group.id}\n`));
+          console.log(chalk.gray('Outcome:  ') + colorOutcome(group.outcome)
+            + (group.fallback ? chalk.yellow(`  (fallback, ${group.attempts} attempts)`) : ''));
+          console.log(chalk.gray('Started:  ') + new Date(group.startedAt).toLocaleString() + chalk.gray(`  (${group.durationMs}ms)`));
+          for (const [label, value] of [['Router:   ', group.routerId], ['Token:    ', group.tokenId], ['Session:  ', group.sessionId], ['End user: ', group.endUserId], ['User:     ', group.userId]] as const) {
+            if (value) console.log(chalk.gray(label) + value);
+          }
+          console.log(chalk.gray('Cost:     ') + fmtUsd(group.cost, 6));
+          console.log(printTimelineEvents(group.events));
+          return;
+        }
+
+        const params = new URLSearchParams({ period: opts.period, pageSize: String(Math.min(200, Math.max(1, parseInt(opts.limit, 10) || 20))) });
+        if (opts.router) params.set('routerId', await resolveRouterId(opts.router));
+        if (opts.sessionId) params.set('sessionId', opts.sessionId);
+        if (opts.endUser) params.set('endUserId', opts.endUser);
+        if (opts.token) params.set('tokenIds', opts.token);
+        if (opts.kind) params.set('kind', opts.kind);
+        if (opts.outcome) params.set('outcome', opts.outcome);
+
+        const data = await api<TimelineResponse>('GET', `/api/timeline?${params.toString()}`);
+
+        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
+
+        if (data.groups.length === 0) {
+          console.log(chalk.yellow(`No timeline entries for period: ${opts.period}`));
+          return;
+        }
+
+        const table = new Table({
+          head: ['Started', 'Id', 'Router', 'Events', 'Attempts', 'Duration', 'Cost', 'Outcome'].map(h => chalk.cyan(h)),
+        });
+        for (const g of data.groups) {
+          const kinds = new Map<string, number>();
+          for (const e of g.events) kinds.set(e.kind, (kinds.get(e.kind) ?? 0) + 1);
+          table.push([
+            new Date(g.startedAt).toLocaleString(),
+            g.id,
+            g.routerId ? g.routerId.slice(0, 8) : '-',
+            [...kinds].map(([k, n]) => (n > 1 ? `${k} x${n}` : k)).join(', '),
+            g.fallback ? chalk.yellow(`${g.attempts} (fallback)`) : String(g.attempts),
+            `${g.durationMs}ms`,
+            fmtUsd(g.cost, 6),
+            colorOutcome(g.outcome),
+          ]);
+        }
+        console.log(table.toString());
+        console.log(chalk.gray(`${data.totals.groups} requests, ${data.totals.events} events, $${data.totals.cost.toFixed(6)} USD`
+          + (data.pagination.totalRecords > data.groups.length ? ` (showing ${data.groups.length}; raise --limit to see more)` : '')));
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);

@@ -1249,6 +1249,7 @@ unchanged, send `null` to clear it, or send an object to replace it.
 | `traceContent` | boolean | Trace content opt-in. Default `false`: traces record metadata only. Set to `true` to also store prompts and answers on the trace (`entry.content`) — they then reach the trace stream, the usage record and any integration exporting traces. |
 | `rankingAlgorithm` | string | `default` (the only id today). Optional, also accepted on `POST /api/routers`; any other value is a `400` (`Invalid rankingAlgorithm`). Absent means `default`. Ignored when a routing profile is bound to the router, except on `kind: "orchestrator"`, which never uses a profile. |
 | `candidates` | array | Only on `kind: "orchestrator"`. Request body: `{ routerId, limits? }[]`. Response also resolves each candidate's `name`: `{ routerId, name, limits? }[]`. Array order **is** the priority order (index 0 = highest) — there is no `weight` field. |
+| `exceptions` | array | Only on `kind: "passthrough"`. `{ match, targetModelId }[]`, ordered, first match wins. See [Passthrough exceptions](#passthrough-exceptions-router-field). |
 
 For a router with `kind: "passthrough"`, no request or response field
 changes here either — `toRouterResponse` still returns `tokens[]` as-is.
@@ -1260,6 +1261,47 @@ pass-through entry. See
 for the ordering rule that decides which of a passthrough router's real
 models get scored versus the pass-through entry's own raw-forward, and for
 the fallback's forwarded-credential caveat.
+
+### Passthrough exceptions (router field) {#passthrough-exceptions-router-field}
+
+`PUT /api/routers/:id` accepts `exceptions`, an ordered array of
+`{ match, targetModelId }`. A request with the router's token whose body
+`model` matches `match` is sent to `targetModelId` instead of following the
+model list. `match` is exact and case-sensitive; `*` stands for any sequence of
+characters. The first matching rule wins. Exceptions are never evaluated on
+`/passthrough/<slug>/*`. Permission: `router:write`.
+
+| Value sent | Effect |
+|------------|--------|
+| field omitted | The stored rules are kept |
+| `[]` | All rules are cleared |
+| array | The rules are replaced by the array |
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `match` | string | Trimmed, 1 to 200 characters |
+| `targetModelId` | string | One of the router's real `models[].modelId`, never the pass-through entry |
+
+At most 50 rules, no unknown keys. `POST /api/routers` does not accept
+`exceptions`. `GET /api/routers` and `GET /api/routers/:id` return the field as
+stored; the key is absent when there are no rules. Switching `kind` away from
+`passthrough` drops the rules, renaming a model updates `targetModelId` in the
+rules that point to it, and a `models` edit that drops a targeted model is a
+`400`.
+
+```bash
+curl -X PUT http://localhost:3000/api/routers/<id> \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"my-passthrough","models":[{"modelId":"__passthrough__"},{"modelId":"openai/gpt-4o"}],
+       "exceptions":[{"match":"gpt-4*","targetModelId":"openai/gpt-4o"}]}'
+```
+
+**Errors** (`400`, body `{ "error": "..." }`; indexes are 0-based):
+
+- `Exceptions are only supported on passthrough routers`
+- `Exception #<i>: target "<id>" is not a model of this router`
+- `Exception #<i>: duplicate match "<m>"`
+- `Invalid exceptions` (with `details`) for a shape violation: empty or longer than 200 characters `match`, more than 50 rules, an unknown key.
 
 ### Call Configuration (router and profile field) {#call-configuration-router-and-profile-field}
 
@@ -1725,67 +1767,6 @@ DELETE /api/roles/:name
 
 ---
 
-## Spend Groups
-
-Org- and team-level budget containers for the hierarchical spend-limit cascade
-(organisation -> team -> API key). A router belongs to a group via its
-`spendGroupId`; groups may nest via `parentGroupId`. When a request runs through
-a router that belongs to a group, the group chain's limits are enforced in
-addition to the per-model/router/token limits. Child limits cannot exceed
-parent limits (validated on create/update).
-
-A group object:
-
-```json
-{
-  "id": "uuid",
-  "name": "Engineering",
-  "limits": [{ "metric": "cost", "windowType": "period", "period": "monthly", "value": 1000 }],
-  "routerIds": ["proj-1"],
-  "tokenIds": [],
-  "parentGroupId": "org-uuid"
-}
-```
-
-### List Spend Groups
-
-```
-GET /api/spend-groups
-```
-
-Requires `report:read`. Returns each group with a `usage` array (current and
-remaining consumption per limit, aggregating its own and descendant groups'
-routers) for the consumption tree view and end-of-period forecast.
-
-### Create Spend Group
-
-```
-POST /api/spend-groups
-```
-
-Requires `router:write`. Body validated with Zod (`name` required; `limits`,
-`routerIds`, `tokenIds`, `parentGroupId` optional). Returns `400` if a child
-limit exceeds the parent's matching limit or the parent does not exist.
-
-### Update Spend Group
-
-```
-PUT /api/spend-groups/:id
-```
-
-Requires `router:write`. Same validation as create. A group cannot be its own
-parent.
-
-### Delete Spend Group
-
-```
-DELETE /api/spend-groups/:id
-```
-
-Requires `router:write`. Returns `409` if the group still has child groups.
-
----
-
 ## Usage {#usage}
 
 ### Query Usage Records
@@ -1813,7 +1794,7 @@ Query parameters:
 | `savings` | string | `1` adds the [savings block](#savings-block) to the response. Off by default: the computation is only paid for by the callers that show it |
 | `series` | string | `1` adds the [savings series](#savings-series) to the response. Same cost as `savings`, and equally off by default |
 
-`callType` and `requestType` are two different questions about the same record. A semantic-intent embedding fired by the router is `callType: "routing"`, `requestType: "embedding"`; a plain chat request from a client is `callType: "completion"`, `requestType: "chat"`. Calls the gateway forwards through the pass-through proxy (embeddings, images, audio) are recorded with their `requestType` and zero tokens, since their body is streamed to the client rather than parsed.
+`callType` and `requestType` are two different questions about the same record. A semantic-intent embedding fired by the router is `callType: "routing"`, `requestType: "embedding"`; a plain chat request from a client is `callType: "completion"`, `requestType: "chat"`. A call sent to a passthrough router's model by an exception rule carries `routedBy: "exception"`; the field is absent on every other record, and the trace has a `router:exception` entry with `rule`, `match`, `requestedModel` and `targetModelId`. Calls the gateway forwards through the pass-through proxy (embeddings, images, audio) are recorded with their `requestType` and zero tokens, since their body is streamed to the client rather than parsed.
 
 All filters are applied server-side. `routerIds`, `modelIds` and `tokenIds` accept comma-separated values for multi-value filtering; they combine with (AND) the single-value `router` and `model` parameters when both are provided, narrowing the result to records that match every active filter.
 
@@ -2120,6 +2101,43 @@ data: {"traceId":"018f3c2a-...","entry":{"phase":"routing.prepare","module":"rou
 This is how the Playground follows a request live: it picks a correlation id, sends it on the proxy request as `x-routerly-trace`, and reads it back here. The proxied request and its response are untouched — the id never reaches the provider and no header is added to the answer.
 
 A comment line (`: ping`) is written every 15 seconds so idle streams survive proxies.
+
+---
+
+## Timeline {#timeline}
+
+One entry per client request: its usage records (routing, guardrail and judge calls, each upstream attempt) and the activity that never produces a usage record (MCP tool calls, proxied routes that are not model calls) are grouped and ordered by time. Records without a `traceId` appear as single-event entries with `correlated: false`.
+
+### List Timeline Entries
+
+```
+GET /api/timeline
+```
+
+Requires `report:read`. Newest request first.
+
+| Query | Meaning |
+|-------|---------|
+| `period` | `daily`, `weekly`, `monthly` (default) or `all`; `from` / `to` (ISO dates) override it, as on [`/api/usage`](#usage) |
+| `routerId`, `sessionId`, `endUserId` | Exact match. Activity events carry no session or end user, so those two filters leave them out |
+| `tokenId` / `tokenIds` | One router token id, or a comma-separated list |
+| `kind` | Keep entries holding at least one event of this kind: `attempt`, `routing`, `guardrail`, `judge`, `mcp`, `proxy` |
+| `outcome` | `success`, `error`, `blocked`, `timeout` or `budget_exceeded`, matched on the entry |
+| `page`, `pageSize` | Default `1` and `50`; `pageSize` is capped at `200` |
+
+Response: `{ groups, totals: { groups, events, cost, eventsByKind }, pagination: { page, pageSize, totalRecords, totalPages } }`. `totals` covers every matching entry, not only the page. Each group carries `id`, `correlated`, `startedAt`, `endedAt`, `durationMs`, `outcome`, `attempts`, `fallback`, `cost` and the ordered `events`. An event cost of `null` means unknown. Entry `cost` and `totals.cost` count successful events only, so `totals.cost` equals `summary.totalCost` of `/api/usage` for the same filters when no `kind` filter is set.
+
+### Get a Timeline Entry
+
+```
+GET /api/timeline/:id
+```
+
+Requires `report:read`. `:id` is the group id (the trace id, or the record id for an uncorrelated record). Event `trace` entries are returned without their `content`.
+
+**Errors**: `404` entry not found · `403` missing `report:read`
+
+Activity events are stored in `data/activity.ndjson`, kept under the same retention as usage records. They never enter `usage.ndjson`, so Usage totals are unchanged. CLI: [`routerly report timeline`](../cli/commands.md#routerly-report-timeline).
 
 ---
 

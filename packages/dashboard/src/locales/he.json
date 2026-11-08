@@ -25,6 +25,7 @@
       "routers": "נתבים",
       "experiments": "ניסויים",
       "usage": "שימוש",
+      "timeline": "Timeline",
       "playground": "מגרש משחקים",
       "settings": "הגדרות",
       "connectApp": "חבר אפליקציה",
@@ -1406,6 +1407,22 @@
         "addTarget": "הוסף מודל יעד",
         "passthroughLabel": "מעבר ישיר (העברה גולמית)",
         "passthroughNotRemovable": "לא ניתן להסיר את רשומת המעבר הישיר"
+      },
+      "exceptions": {
+        "title": "חריגים",
+        "description": "בקשה שהמודל שלה תואם לכלל נשלחת למודל שנבחר במקום להיות מועברת ללא שינוי. ההתאמה הראשונה קובעת. השתמשו ב-* כתו כללי. חל רק על בקשות מאומתות באסימון.",
+        "empty": "אין חריגים: כל בקשה מועברת ללא שינוי.",
+        "noRealModels": "הוסיפו תחילה מודל לנתב זה: חריגים יכולים להצביע רק על מודלים של הנתב.",
+        "add": "הוספת חריג",
+        "match": "תבנית שם המודל",
+        "matchPlaceholder": "gpt-4*",
+        "target": "מודל יעד",
+        "remove": "הסרת חריג",
+        "errors": {
+          "matchRequired": "כל חריג דורש תבנית.",
+          "duplicateMatch": "התאמה כפולה \"{{match}}\".",
+          "targetMissing": "היעד של החריג \"{{match}}\" אינו מודל של נתב זה."
+        }
       }
     },
     "optimizer": {
@@ -2453,12 +2470,86 @@
         "piiRedacted": "מידע מזהה צונזר",
         "sessionId": "מזהה סשן",
         "endUser": "משתמש קצה",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "נותב על ידי"
       },
       "errorMessage": "הודעת שגיאה",
       "eventCount": "{{count}} אירוע",
       "eventCount_other": "{{count}} אירועים",
-      "noTrace": "אין עקבה זמינה. נתוני עקבה נלכדים עבור קריאות חדשות בלבד."
+      "noTrace": "אין עקבה זמינה. נתוני עקבה נלכדים עבור קריאות חדשות בלבד.",
+      "routedByException": "חריג Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

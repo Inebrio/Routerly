@@ -12,14 +12,14 @@ import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { RankingAlgorithmId, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration, CallConfig } from '@routerly/shared';
+import type { RankingAlgorithmId, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration, CallConfig, PassthroughException } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
 import { validateRoutingModels } from '../routing/validate-routing-models.js';
-import { validatePassthroughModels } from '../routing/validate-passthrough.js';
+import { validatePassthroughModels, validatePassthroughExceptions } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { RANKING_ALGORITHMS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug, LOG_LEVELS } from '@routerly/shared';
+import { RANKING_ALGORITHMS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug, LOG_LEVELS, TIMELINE_EVENT_KINDS } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -53,6 +53,8 @@ import { runPreview } from '../optimizers/preview.js';
 import { resolveOptimizerProfile, CUSTOM_PROFILE_ID } from '../routing/profiles/store.js';
 import * as llmlingua2Model from '../optimizers/llmlingua2/model.js';
 import { computeSavings, computeSeries } from '../usage/savings.js';
+import { readActivity } from '../usage/activity.js';
+import { groupTimeline, filterGroups, timelineTotals } from '../usage/timeline.js';
 import { isClientConfiguratorEnabled } from '../clients/module.js';
 import {
   isModuleEnabled,
@@ -146,6 +148,38 @@ function redactModelSecrets(model: EffectiveModel): Record<string, unknown> {
   return out;
 }
 
+
+/**
+ * The [since, until] window of a `period` query (daily|weekly|monthly|custom|anything else = all time).
+ * Shared by /api/usage and /api/timeline so both read the same window for the same query.
+ */
+function periodWindow(period: string, from?: string, to?: string): { since: Date; until: Date } {
+  const now = new Date();
+  let since = new Date(0);
+  let until = new Date(now.getTime() + 86400000); // tomorrow
+  if (period === 'daily') { since = new Date(now); since.setHours(0, 0, 0, 0); }
+  else if (period === 'weekly') {
+    since = new Date(now);
+    const d = since.getDay();
+    since.setDate(since.getDate() - (d === 0 ? 6 : d - 1));
+    since.setHours(0, 0, 0, 0);
+  } else if (period === 'monthly') { since = new Date(now); since.setDate(1); since.setHours(0, 0, 0, 0); }
+  else if (period === 'custom') {
+    if (from) {
+      since = new Date(from);
+      // Only normalize to day boundary for date-only strings (YYYY-MM-DD)
+      if (from.length <= 10) since.setHours(0, 0, 0, 0);
+    }
+    if (to) {
+      until = new Date(to);
+      if (to.length <= 10) until.setHours(23, 59, 59, 999);
+    }
+  }
+  return { since, until };
+}
+
+/** Comma-separated query value → set of trimmed non-empty items (null when absent). */
+const csvSet = (s?: string) => (s ? new Set(s.split(',').map(v => v.trim()).filter(Boolean)) : null);
 
 /** 95th percentile of a numeric array (0 when empty). Nearest-rank method. */
 function p95(values: number[]): number {
@@ -1097,6 +1131,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
               }
             }
           }
+          for (const rule of (router.exceptions ?? [])) {
+            if (rule.targetModelId === req.params.id) {
+              rule.targetModelId = newId;
+              routersChanged = true;
+            }
+          }
         }
         return routersChanged ? next : routers;
       });
@@ -1256,6 +1296,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   const routerKindSchema = z.enum(['router', 'orchestrator', 'passthrough']).optional();
   const rankingAlgorithmSchema = z.enum(RANKING_ALGORITHMS).optional();
+  const passthroughExceptionsSchema = z.array(
+    z.object({ match: z.string().trim().min(1).max(200), targetModelId: z.string().min(1) }).strict(),
+  ).max(50).optional();
   // Emptiness is rejected by validateOrchestratorCandidates (EC2), not here — that
   // path also produces the story's exact error message.
   const orchestratorCandidatesSchema = z.array(z.object({
@@ -1451,6 +1494,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
       rankingAlgorithm?: RankingAlgorithmId;
+      exceptions?: PassthroughException[];
     };
   }>('/api/routers/:id', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
@@ -1482,6 +1526,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsedRanking.success) return reply.status(400).send({ error: 'Invalid rankingAlgorithm', details: parsedRanking.error.issues });
     const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
     if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
+    const parsedExceptions = passthroughExceptionsSchema.safeParse(req.body.exceptions);
+    if (!parsedExceptions.success) return reply.status(400).send({ error: 'Invalid exceptions', details: parsedExceptions.error.issues });
     // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
     // `Limit[]` — same cast-after-parse pattern as guardrails/pii below.
     const candidates = parsedCandidates.data as OrchestratorCandidateRef[] | undefined;
@@ -1558,6 +1604,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         : bodyModels.filter(m => m.modelId !== PASSTHROUGH_MODEL_ID);
       const modelsError = validatePassthroughModels({ kind, models: normalizedModels });
       if (modelsError) throw new ConfigUpdateAbort(modelsError.status, { error: modelsError.message });
+      // Exceptions: undefined keeps the stored rules, [] clears, an array replaces. The
+      // stored list is re-validated against the new models, so a models edit that drops
+      // a targeted model is a 400. A kind switch away from passthrough drops the rules.
+      const exceptionsNext = parsedExceptions.data ?? routers[index]!.exceptions;
+      const exceptionsError = parsedExceptions.data?.length || kind === 'passthrough'
+        ? validatePassthroughExceptions({ kind, models: normalizedModels, exceptions: exceptionsNext })
+        : null;
+      if (exceptionsError) throw new ConfigUpdateAbort(exceptionsError.status, { error: exceptionsError.message });
       // Token issuance/revocation for passthrough routers (PR-E AC1/EC1): a real
       // model gets scored/authenticated like any other router's model and needs
       // a Routerly-issued token; dropping the last real model revokes it. Other
@@ -1612,7 +1666,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const notifChannels = req.body.notifications === null ? [] : notificationChannels ?? routers[index]!.notifications?.channels ?? [];
       const notificationsUpdate: { notifications?: { channels: string[] } } = notifChannels.length ? { notifications: { channels: notifChannels } } : {};
 
-      const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, kind: _k, candidates: _c, callConfig: existingCallConfig, ...existing } = routers[index]!;
+      const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, kind: _k, candidates: _c, exceptions: _e, callConfig: existingCallConfig, ...existing } = routers[index]!;
       const nextCallConfig = callConfigUpdate === undefined ? existingCallConfig : callConfigUpdate ?? undefined;
       updated = {
         ...existing,
@@ -1636,6 +1690,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...notificationsUpdate,
         ...(kind !== 'router' ? { kind } : {}),
         ...(kind === 'orchestrator' ? candidatesUpdate : {}),
+        ...(kind === 'passthrough' && exceptionsNext?.length ? { exceptions: exceptionsNext } : {}),
         ...tokensUpdate,
       };
       const next = [...routers];
@@ -2152,27 +2207,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (m && v) tagFilters[m[1]!] = v;
     }
 
-    const now = new Date();
-    let since = new Date(0);
-    let until = new Date(now.getTime() + 86400000); // tomorrow
-    if (period === 'daily') { since = new Date(now); since.setHours(0, 0, 0, 0); }
-    else if (period === 'weekly') {
-      since = new Date(now);
-      const d = since.getDay();
-      since.setDate(since.getDate() - (d === 0 ? 6 : d - 1));
-      since.setHours(0, 0, 0, 0);
-    } else if (period === 'monthly') { since = new Date(now); since.setDate(1); since.setHours(0, 0, 0, 0); }
-    else if (period === 'custom') {
-      if (from) {
-        since = new Date(from);
-        // Only normalize to day boundary for date-only strings (YYYY-MM-DD)
-        if (from.length <= 10) since.setHours(0, 0, 0, 0);
-      }
-      if (to) {
-        until = new Date(to);
-        if (to.length <= 10) until.setHours(23, 59, 59, 999);
-      }
-    }
+    const { since, until } = periodWindow(period, from, to);
 
     let filtered = records.filter(r => {
       const ts = new Date(r.timestamp);
@@ -2186,14 +2221,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     // Dashboard filters (multiselect + type/outcome) — applied to records, byModel, summary and timeline alike (#80).
-    const csv = (s?: string) => (s ? new Set(s.split(',').map(v => v.trim()).filter(Boolean)) : null);
-    const routerIdSet = csv(routerIds);
+    const routerIdSet = csvSet(routerIds);
     if (routerIdSet) filtered = filtered.filter(r => routerIdSet.has(r.routerId));
-    const modelIdSet = csv(modelIds);
+    const modelIdSet = csvSet(modelIds);
     if (modelIdSet) filtered = filtered.filter(r => modelIdSet.has(r.modelId));
     // Which router token the call came in on: narrows a router's traffic down
     // to one client without the client sending anything (T211).
-    const tokenIdSet = csv(tokenIds);
+    const tokenIdSet = csvSet(tokenIds);
     if (tokenIdSet) filtered = filtered.filter(r => r.tokenId !== undefined && tokenIdSet.has(r.tokenId));
     if (outcome && outcome !== 'all') {
       // 'error' is any outcome that is neither success nor blocked.
@@ -2365,6 +2399,64 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       records.find(r => r.traceId === req.params.id);
     if (!record) return reply.status(404).send({ error: 'Record not found' });
     return reply.send(record);
+  });
+
+  // ─── GET /api/timeline, /api/timeline/:id (ROUT-563) ──────────────────────
+  // One time-ordered view of a client request: usage records grouped by traceId
+  // (routing, guardrail, judge, every attempt) plus MCP tool calls and non-model
+  // proxy routes from the activity log. Read model only: totals.cost follows the
+  // /api/usage summary rule for the same filters.
+  const TIMELINE_OUTCOMES = ['success', 'error', 'blocked', 'timeout', 'budget_exceeded'];
+  fastify.get<{ Querystring: { period?: string; from?: string; to?: string; routerId?: string; sessionId?: string; tokenId?: string; tokenIds?: string; endUserId?: string; kind?: string; outcome?: string; page?: string; pageSize?: string } }>('/api/timeline', async (req, reply) => {
+    if (!requirePerm(req, 'report:read', reply)) return;
+    const { period = 'monthly', from, to, routerId, sessionId, tokenId, tokenIds, endUserId, kind, outcome } = req.query;
+    if (kind && kind !== 'all' && !(TIMELINE_EVENT_KINDS as readonly string[]).includes(kind)) {
+      return reply.status(400).send({ error: `Invalid kind. Expected one of: ${TIMELINE_EVENT_KINDS.join(', ')}` });
+    }
+    if (outcome && outcome !== 'all' && !TIMELINE_OUTCOMES.includes(outcome)) {
+      return reply.status(400).send({ error: `Invalid outcome. Expected one of: ${TIMELINE_OUTCOMES.join(', ')}` });
+    }
+    const page = Math.max(1, parseInt(req.query.page ?? '1', 10) || 1);
+    const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '50', 10) || 50));
+
+    const { since, until } = periodWindow(period, from, to);
+    const tokenIdSet = csvSet([tokenId, tokenIds].filter(Boolean).join(','));
+    const inWindow = (ts: string) => { const t = new Date(ts); return t >= since && t <= until; };
+    const matches = (r: { timestamp: string; routerId?: string | undefined; tokenId?: string | undefined }) =>
+      inWindow(r.timestamp) &&
+      (!routerId || r.routerId === routerId) &&
+      (!tokenIdSet || (r.tokenId !== undefined && tokenIdSet.has(r.tokenId)));
+
+    const usage = (await readConfig('usage')).filter(r =>
+      matches(r) && (!sessionId || r.sessionId === sessionId) && (!endUserId || r.endUserId === endUserId));
+    // Activity events carry no session or end user: those filters cannot match them.
+    const activity = sessionId || endUserId ? [] : (await readActivity()).filter(matches);
+
+    const groups = filterGroups(groupTimeline(usage, activity), { kind, outcome });
+    const totalRecords = groups.length;
+    const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+    const safePage = Math.min(page, totalPages);
+    return reply.send({
+      groups: groups.slice((safePage - 1) * pageSize, safePage * pageSize),
+      totals: timelineTotals(groups),
+      pagination: { page: safePage, pageSize, totalRecords, totalPages },
+    });
+  });
+
+  fastify.get<{ Params: { id: string } }>('/api/timeline/:id', async (req, reply) => {
+    if (!requirePerm(req, 'report:read', reply)) return;
+    const { id } = req.params;
+    const records = (await readConfig('usage')).filter(r => r.traceId === id || (!r.traceId && r.id === id));
+    const activity = records.length > 0 ? [] : (await readActivity()).filter(a => a.id === id);
+    const group = groupTimeline(records, activity)[0];
+    if (!group) return reply.status(404).send({ error: 'Timeline entry not found' });
+    // Metadata only: the trace entries of each record, without prompts or responses.
+    const traces = new Map(records.map(r => [r.id, r.trace]));
+    for (const e of group.events) {
+      const trace = e.recordId ? traces.get(e.recordId) : undefined;
+      if (trace) e.trace = trace.map(({ content: _content, ...entry }) => entry);
+    }
+    return reply.send(group);
   });
 
   // ─── GET /api/sessions (#94) ──────────────────────────────────────────────

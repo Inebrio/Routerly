@@ -11,6 +11,7 @@ import type { McpAuthContext, McpToolResult } from '@routerly/shared'
 import type { ServiceContainer } from '../../core/index.js'
 import type { McpToolRegistry } from './registry.js'
 import { logAudit } from '../audit/logger.js'
+import { appendActivity } from '../usage/activity.js'
 
 /**
  * Bridge the SDK's generic (OAuth-shaped) `AuthInfo` into our user-scoped
@@ -72,8 +73,24 @@ export function buildMcpServer(registry: McpToolRegistry, container: ServiceCont
   server.setRequestHandler(CallToolRequestSchema, async (request, extra): Promise<CallToolResult> => {
     const authCtx = toAuthContext(extra.authInfo)
     const name = request.params.name
+    const startedAt = Date.now()
+    // Activity log (ROUT-563): who called which tool, how it ended. Never the arguments.
+    // Fire-and-forget: a failing log must not change the tool call.
+    const args = (request.params.arguments ?? {}) as { routerId?: unknown; modelId?: unknown }
+    const record = (outcome: 'success' | 'error' | 'blocked', errorMessage?: string) => {
+      void appendActivity({
+        kind: 'mcp',
+        outcome,
+        durationMs: Date.now() - startedAt,
+        name,
+        userId: authCtx.user.id,
+        ...(typeof args.routerId === 'string' ? { routerId: args.routerId } : {}),
+        ...(errorMessage ? { errorMessage: errorMessage.slice(0, 200) } : {}),
+      }).catch(() => {})
+    }
     const tool = registry.get(name)
     if (!tool) {
+      record('error', `Unknown tool: ${name}`)
       return errorResult(`Unknown tool: ${name}`)
     }
 
@@ -90,15 +107,22 @@ export function buildMcpServer(registry: McpToolRegistry, container: ServiceCont
         result,
         details,
       })
-    const args = (request.params.arguments ?? {}) as { routerId?: unknown; modelId?: unknown }
     const target = { routerId: args.routerId, modelId: args.modelId }
     if (!authCtx.permissions.includes(tool.permission)) {
       if (audited) await auditWrite('forbidden', { ...target, permission: tool.permission })
+      record('blocked', `Permission denied: ${tool.permission}`)
       return errorResult(`Permission denied: ${tool.permission} is required to call ${name}.`)
     }
 
     // McpToolResult ({ content, isError? }) is structurally a CallToolResult.
-    const result = (await tool.handler(request.params.arguments ?? {}, authCtx)) as CallToolResult
+    let result: CallToolResult
+    try {
+      result = (await tool.handler(request.params.arguments ?? {}, authCtx)) as CallToolResult
+    } catch (err) {
+      record('error', 'Tool failed')
+      throw err
+    }
+    record(result.isError ? 'error' : 'success', result.isError ? (result.content[0] as { text?: string } | undefined)?.text : undefined)
     if (audited && !result.isError) {
       // Write tools never return the raw token; details carry only the ids and the tool's own result.
       let outcome: unknown

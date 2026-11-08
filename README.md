@@ -87,8 +87,9 @@ No database and no Redis: configuration lives in JSON files.
 ## Capabilities
 
 - **Routers, orchestrators and passthrough.** A *router* scores models with routing policies. An *orchestrator* forwards to a priority-ordered list of other routers. A *passthrough* router forwards a client's own credential straight to OpenAI or Anthropic (optionally alongside real target models).
+- **Routing inside one provider.** A router only considers the models attached to it, so a pool made of one provider's models is routed automatically (cost, health, capability, context, client preference) with fallback that never leaves that provider. See [the recipe](docs/guides/single-provider-routing.md).
 - **11 routing policies**, combined into one ranking (table below), plus **routing profiles**: reusable presets for routing, optimizers and security. Four built-in routing profiles (`auto`, `cheap`, `fast`, `coding`), clonable.
-- **Budgets and cost tracking.** Every request is priced per token; hard limits (hourly, daily, weekly, monthly, yearly and rolling windows) at global, router and token level block overspending before the call.
+- **Budgets and cost tracking.** Every request is priced per token; hard limits (hourly, daily, weekly, monthly, yearly and rolling windows) at model, router and token level block overspending before the call. There are no organisation or team budget groups: a team is a router with its tokens.
 - **Guardrails and PII scrubbing.** Rule-based and judge-based content guardrails, and PII policies, on requests, responses, or both.
 - **8 token optimizers** (`session-dedup`, `ccr`, `rtk`, `headroom`, `json-table`, `relevance`, `caveman`, `llmlingua-2`), off by default, enabled per router.
 - **Experiments.** A/B test whole routers against each other (model sets, profiles, optimizer pipelines, guardrails) without any client change.
@@ -161,6 +162,9 @@ Register equivalent models across several providers and enable `health`. Routerl
 
 ### Governance for teams
 Roles and permissions decide who can change what, the audit log records changes, guardrails and PII policies apply to every request, and notifications report budget and provider events.
+
+### Comparing prices of the same model across providers
+Use **Models › Discover** (or `routerly model discover`) to search a model, filter several providers and sort by input or output price, then work out the cost of your own workload. Routerly does not group offers automatically and does not treat similar names as the same model: see [Compare prices across providers](docs/guides/compare-model-prices.md).
 
 ### Comparing setups safely
 Run an experiment between two routers (for example a cheaper model set against the current one) and compare cost, latency and error rate in the dashboard.
@@ -278,6 +282,7 @@ Full documentation is available at **[https://doc.routerly.ai](https://doc.route
 | [Dashboard](docs/dashboard/overview.md) | Web UI walkthrough |
 | [CLI Reference](docs/cli/commands.md) | Every command with examples |
 | [API Reference](docs/api/overview.md) | LLM proxy and management API |
+| [One-provider routing](docs/guides/single-provider-routing.md) | Automatic routing and fallback inside one provider's models |
 | [Self-Hosting Guide](docs/guides/self-hosting.md) | Docker, systemd, nginx, production checklist |
 | [Integrations](docs/integrations/overview.md) | Cursor, Open WebUI, LangChain, LibreChat, and more |
 
@@ -306,7 +311,7 @@ Contributions are welcome. See [Releasing](docs/contributing/releasing.md) for v
 ## Roadmap
 
 ### Enterprise SSO
-Log in to the dashboard with an existing identity provider (OAuth 2.0 / OIDC, LDAP). Not available yet: dashboard users are local accounts today.
+Log in to the dashboard with an existing identity provider (OAuth 2.0 / OIDC, LDAP). Not available yet: dashboard users are local accounts today, and there is no mapping of identity-provider groups to teams, routers or budgets.
 
 ---
 

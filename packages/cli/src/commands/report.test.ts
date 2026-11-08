@@ -298,6 +298,18 @@ describe('report calls', () => {
     expect(mockApi).toHaveBeenCalled();
   });
 
+  it('marks a call diverted by a passthrough exception, leaves the others plain', async () => {
+    mockApi.mockResolvedValue({
+      ...usageFixture,
+      records: [{ ...usageFixture.records[0], modelId: 'openai/diverted', routedBy: 'exception' }, { ...usageFixture.records[0], modelId: 'openai/plain' }],
+    });
+    const { out } = await run('calls');
+    const text = stripAnsi(out.join('\n'));
+    expect(text).toContain('openai/diverted (exception)');
+    expect(text).toContain('openai/plain');
+    expect(text).not.toContain('openai/plain (exception)');
+  });
+
   it('colors success outcome green and error red', async () => {
     mockApi.mockResolvedValue(usageFixture);
     const { out } = await run('calls');
@@ -643,5 +655,130 @@ describe('report savings', () => {
     mockApi.mockRejectedValue(new Error('forbidden'));
     const { err } = await run('savings');
     expect(err.join('\n')).toContain('forbidden');
+  });
+});
+
+// ── report timeline ──────────────────────────────────────────────────────────
+
+const timelineGroup = {
+  id: 'trace-1',
+  startedAt: '2026-01-01T10:00:00.000Z',
+  endedAt: '2026-01-01T10:00:03.000Z',
+  durationMs: 3000,
+  routerId: 'r-id-1',
+  outcome: 'success',
+  attempts: 2,
+  fallback: true,
+  correlated: true,
+  cost: 0.0123,
+  events: [
+    { id: 'e1', timestamp: '2026-01-01T10:00:01.000Z', kind: 'routing', outcome: 'success', durationMs: 50, cost: 0.001, modelId: 'router-model' },
+    { id: 'e2', timestamp: '2026-01-01T10:00:02.000Z', kind: 'attempt', attempt: 1, outcome: 'error', durationMs: 100, cost: 0, modelId: 'gpt-4o', errorMessage: 'upstream 500' },
+    { id: 'e3', timestamp: '2026-01-01T10:00:03.000Z', kind: 'attempt', attempt: 2, final: true, outcome: 'success', durationMs: 800, ttftMs: 120, cost: null, modelId: 'claude-x' },
+  ],
+};
+const timelineFixture = {
+  groups: [timelineGroup],
+  totals: { groups: 1, events: 3, cost: 0.0123, eventsByKind: { routing: 1, attempt: 2 } },
+  pagination: { page: 1, pageSize: 20, totalRecords: 1, totalPages: 1 },
+};
+
+describe('report timeline', () => {
+  it('lists requests with fallback marker, event kinds and totals', async () => {
+    mockApi.mockResolvedValue(timelineFixture);
+    const { out, err } = await run('timeline');
+    const text = stripAnsi(out.join('\n'));
+    expect(err).toEqual([]);
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('/api/timeline?'));
+    expect(text).toContain('trace-1');
+    expect(text).toContain('routing, attempt x2');
+    expect(text).toContain('2 (fallback)');
+    expect(text).toContain('1 requests, 3 events');
+  });
+
+  it('prints parseable JSON with --json', async () => {
+    mockApi.mockResolvedValue(timelineFixture);
+    const { out } = await run('timeline', '--json');
+    expect(JSON.parse(out.join('\n'))).toEqual(timelineFixture);
+  });
+
+  it('maps the filters to query parameters', async () => {
+    mockWithRouters(timelineFixture);
+    await run('timeline', '--router', 'my-proj', '--session-id', 's1', '--end-user', 'eu', '--token', 'tk1,tk2', '--kind', 'mcp', '--outcome', 'error', '--period', 'all', '--limit', '5');
+    const url = mockApi.mock.calls.map(c => c[1] as string).find(u => u.startsWith('/api/timeline'))!;
+    const q = new URLSearchParams(url.split('?')[1]);
+    expect(Object.fromEntries(q)).toEqual({
+      period: 'all', pageSize: '5', routerId: 'r-id-1', sessionId: 's1', endUserId: 'eu', tokenIds: 'tk1,tk2', kind: 'mcp', outcome: 'error',
+    });
+  });
+
+  it('says so when nothing matches', async () => {
+    mockApi.mockResolvedValue({ ...timelineFixture, groups: [], totals: { groups: 0, events: 0, cost: 0, eventsByKind: {} } });
+    const { out } = await run('timeline');
+    expect(stripAnsi(out.join('\n'))).toContain('No timeline entries');
+  });
+
+  it('rejects an unknown --kind to stderr with exit code 1', async () => {
+    const { err } = await run('timeline', '--kind', 'garbage');
+    expect(stripAnsi(err.join('\n'))).toContain("unknown kind 'garbage'");
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unknown router to stderr', async () => {
+    mockWithRouters(timelineFixture);
+    const { err } = await run('timeline', '--router', 'nope');
+    expect(stripAnsi(err.join('\n'))).toContain('Router "nope" not found');
+  });
+
+  it('shows one request in detail: ordered events, attempts, final, error text, unknown cost as -', async () => {
+    mockApi.mockResolvedValue(timelineGroup);
+    const { out, err } = await run('timeline', 'trace-1');
+    const text = stripAnsi(out.join('\n'));
+    expect(err).toEqual([]);
+    expect(mockApi).toHaveBeenCalledWith('GET', '/api/timeline/trace-1');
+    expect(text).toContain('fallback, 2 attempts');
+    expect(text).toContain('2 (final)');
+    expect(text).toContain('upstream 500');
+    expect(text.indexOf('routing')).toBeLessThan(text.indexOf('upstream 500'));
+    const finalRow = text.split('\n').find(l => l.includes('2 (final)'))!;
+    expect(finalRow).toMatch(/│ -\s+│/);
+    expect(finalRow).not.toContain("$0");
+  });
+
+  it('detail --json prints the group', async () => {
+    mockApi.mockResolvedValue(timelineGroup);
+    const { out } = await run('timeline', 'trace-1', '--json');
+    expect(JSON.parse(out.join('\n')).id).toBe('trace-1');
+  });
+
+  it('shows blockedBy and MCP / proxy details', async () => {
+    mockApi.mockResolvedValue({
+      ...timelineGroup, outcome: 'blocked', fallback: false, attempts: 0,
+      events: [
+        { id: 'g', timestamp: '2026-01-01T10:00:01.000Z', kind: 'guardrail', outcome: 'blocked', durationMs: 0, cost: 0, blockedBy: 'no-pii' },
+        { id: 'm', timestamp: '2026-01-01T10:00:02.000Z', kind: 'mcp', outcome: 'success', durationMs: 5, cost: null, name: 'list_routers' },
+        { id: 'p', timestamp: '2026-01-01T10:00:03.000Z', kind: 'proxy', outcome: 'error', durationMs: 5, cost: null, name: 'GET /v1/files', status: 502 },
+      ],
+    });
+    const { out } = await run('timeline', 'trace-1');
+    const text = stripAnsi(out.join('\n'));
+    expect(text).toContain('blocked by no-pii');
+    expect(text).toContain('list_routers');
+    expect(text).toContain('GET /v1/files');
+    expect(text).toContain('HTTP 502');
+  });
+
+  it('an API refusal (no report:read) goes to stderr with exit code 1', async () => {
+    mockApi.mockRejectedValue(new Error('Forbidden: Required permission: report:read'));
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
+    const { err } = await run('timeline');
+    expect(err.join('\n')).toContain('report:read');
+    expect(exit).toHaveBeenCalledWith(1);
+  });
+
+  it('a missing request exits 1 with the service message', async () => {
+    mockApi.mockRejectedValue(new Error('Timeline entry not found'));
+    const { err } = await run('timeline', 'nope');
+    expect(err.join('\n')).toContain('Timeline entry not found');
   });
 });

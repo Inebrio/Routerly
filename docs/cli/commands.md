@@ -411,7 +411,7 @@ routerly model discover [options]
 
 Displays a table of known models with their context window, modalities, and pricing. Models already configured in your Routerly instance are marked with a `★`.
 
-Pricing is shown as the per-1,000-token rate. Models that carry a `local` flag in the catalog **or** that are zero-priced on both input and output are labelled `free/local` in green - this covers Ollama and other self-hosted models regardless of whether the catalog explicitly marks them as local.
+Pricing is shown as the per-1,000-token rate (the dashboard Discovery page shows per 1,000,000 tokens: multiply by 1000 to compare). A context window of `0` in `--json` means the catalog does not state it. See [Compare prices across providers](../guides/compare-model-prices.md). Models that carry a `local` flag in the catalog **or** that are zero-priced on both input and output are labelled `free/local` in green - this covers Ollama and other self-hosted models regardless of whether the catalog explicitly marks them as local.
 
 If the server does not yet expose the model catalog (older versions), the command exits gracefully with a message instead of an error.
 
@@ -703,6 +703,45 @@ configured, whether added on `router create` or with `model add`; the token
 is revoked (all tokens removed) the moment the last real model is removed
 with `model remove`, leaving only the pass-through entry. A sentinel-only
 passthrough router, with no real models ever added, is never issued one.
+
+#### `routerly router passthrough exception`
+
+Exceptions send requests for specific model names to one of the passthrough
+router's own real models. They apply to token-authenticated requests only,
+never to `/passthrough/<slug>/*`. Rules are evaluated in order and the first
+match wins. See
+[Concepts: Architecture](../concepts/architecture.md#passthrough-exceptions).
+
+```
+routerly router passthrough exception list <router> [--json]
+routerly router passthrough exception add <router> --match <pattern> --target <model-id> [--json]
+routerly router passthrough exception remove <router> <index> [--json]
+```
+
+| Command | Option | Description |
+|---------|--------|-------------|
+| `list` | `--json` | Print the exceptions array (`[]` when empty) |
+| `add` | `--match <pattern>` | Requested model name to match: exact, case-sensitive, `*` matches any sequence (required) |
+| `add` | `--target <model-id>` | One of the router's own models, see `router model list` (required) |
+| `add` | `--json` | Print the saved exceptions array |
+| `remove` | `<index>` | 0-based position, as shown by `list` |
+| `remove` | `--json` | Print the remaining exceptions array |
+
+```
+routerly router passthrough exception add my-passthrough --match 'gpt-4*' --target openai/gpt-4o
+routerly router passthrough exception list my-passthrough
+routerly router passthrough exception remove my-passthrough 0
+```
+
+`list` prints a table with `#`, `Match` and `Target` columns, or `No
+exceptions: every request follows the router's model list.` when there are
+none. `add` prints `✓ Exception #<index> added to "<router>": <match> →
+<target>`; `remove` prints `✓ Exception #<index> removed from "<router>".`
+
+Errors go to stderr with exit code 1: a router that is not passthrough-kind, an
+empty `--match`, a `--target` that is not one of the router's models (the
+pass-through entry is rejected too), a duplicate `--match`, or an index outside
+the list.
 
 ---
 
@@ -2964,6 +3003,8 @@ The table has a **Type** column showing what each call asked for and a **Caller*
 
 The **Token** column shows the head of the router token the call came in on, the one identifier that separates two clients of the same router. It reads `-` on records written before 0.4.0 and on calls the gateway made on its own behalf. Pass the full token ID to `--token` to keep only that client's traffic.
 
+When a passthrough exception rule picked the model, the **Model** cell reads `<model id> (exception)`.
+
 ```
 routerly report calls --type embedding --limit 10
 routerly report calls --caller routing --limit 10
@@ -3071,6 +3112,32 @@ With `--trend`, the series is added next to the savings fields rather than repla
 
 ```bash
 routerly report savings --json --trend | jq '.series.points[] | {bucket, saved: (.baselineCost - .cost)}'
+```
+
+### `routerly report timeline`
+
+Shows each client request as one ordered sequence of events: routing, guardrail and judge calls, upstream attempts, MCP tool calls and non-model proxy routes.
+
+```
+routerly report timeline [id] [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--period <p>` | `daily`, `weekly`, `monthly` (default) or `all` |
+| `--router <name\|id>` | Filter by router |
+| `--session-id <id>` / `--end-user <id>` / `--token <id>` | Filter by session, end user or router token |
+| `--kind <kind>` | Only requests holding this event kind: `attempt`, `routing`, `guardrail`, `judge`, `mcp`, `proxy` |
+| `--outcome <o>` | `success`, `error`, `blocked`, `timeout` or `budget_exceeded` |
+| `--limit <n>` | Requests to show (default 20, max 200) |
+| `--json` | Output the API response |
+
+With an `id` (first column of the list) the command prints that request's events in order. An unknown `--kind` exits 1 with the accepted values. Needs `report:read`; see [API: Timeline](../api/management.md#timeline).
+
+```bash
+routerly report timeline --kind attempt --outcome error
+routerly report timeline --kind mcp --router my-api --json
+routerly report timeline 3f2b1c4d-9a8b-4c7d-8e6f-1a2b3c4d5e6f
 ```
 
 ---

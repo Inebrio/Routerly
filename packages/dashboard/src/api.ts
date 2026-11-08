@@ -1,4 +1,4 @@
-import type { PermissionCheckStatus, RankingAlgorithmId } from '@routerly/shared';
+import type { PassthroughException, PermissionCheckStatus, RankingAlgorithmId, TimelineGroup, TimelineEventKind } from '@routerly/shared';
 export type { PermissionCheckStatus } from '@routerly/shared';
 
 const BASE = '/api';
@@ -448,6 +448,7 @@ export const updateRouter = (id: string, data: {
   notifications?: { channels: string[] } | null;
   traceContent?: boolean;
   callConfig?: CallConfig;
+  exceptions?: PassthroughException[];
 }) => request<Router>(`/routers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteRouter = (id: string) => request<void>(`/routers/${id}`, { method: 'DELETE' });
 export const createRouterToken = (id: string, labels?: string[], tags?: Record<string, string>, scopes?: string[]) => request<{ token: string; tokenInfo: RouterToken }>(`/routers/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels, ...(tags ? { tags } : {}), ...(scopes ? { scopes } : {}) }) });
@@ -546,6 +547,8 @@ export interface UsageRecord {
   sessionId?: string;
   endUserId?: string;
   tags?: Record<string, string>;
+  /** Set when the call was diverted by a passthrough exception rule. */
+  routedBy?: 'exception';
   /** Call configuration decision applied to this call (absent when none). */
   callConfig?: AppliedCallConfig;
 }
@@ -618,6 +621,35 @@ export const getUsage = (period = 'monthly', routerId?: string, from?: string, t
   if (opts?.savings) params.set('savings', '1');
   if (opts?.series) params.set('series', '1');
   return request<UsageStats>(`/usage?${params.toString()}`);
+};
+
+export interface TimelineFilters {
+  from?: string;
+  to?: string;
+  routerId?: string;
+  tokenId?: string;
+  sessionId?: string;
+  endUserId?: string;
+  kind?: string;
+  outcome?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface TimelineResponse {
+  groups: TimelineGroup[];
+  totals: { groups: number; events: number; cost: number | null; eventsByKind: Partial<Record<TimelineEventKind, number>> };
+  pagination: { page: number; pageSize: number; totalRecords: number; totalPages: number };
+}
+
+/** Unified call timeline (ROUT-563). Empty and `all` filters are left out of the query. */
+export const getTimeline = (f: TimelineFilters = {}) => {
+  const params = new URLSearchParams({ period: f.from || f.to ? 'custom' : 'all' });
+  for (const [k, v] of Object.entries(f)) {
+    if (v == null || v === '' || v === 'all') continue;
+    params.set(k, String(v));
+  }
+  return request<TimelineResponse>(`/timeline?${params.toString()}`);
 };
 
 export const getUsageRecord = (id: string) =>

@@ -25,6 +25,7 @@
       "routers": "Útválasztók",
       "experiments": "Kísérletek",
       "usage": "Használat",
+      "timeline": "Timeline",
       "playground": "Tesztkörnyezet",
       "settings": "Beállítások",
       "connectApp": "Alkalmazás csatlakoztatása",
@@ -1406,6 +1407,22 @@
         "addTarget": "Célmodell Hozzáadása",
         "passthroughLabel": "Áteresztés (nyers továbbítás)",
         "passthroughNotRemovable": "Az áteresztő bejegyzés nem távolítható el"
+      },
+      "exceptions": {
+        "title": "Kivételek",
+        "description": "Az a kérés, amelynek modellje illeszkedik egy szabályra, a kiválasztott modellhez kerül ahelyett, hogy változatlanul továbbítanánk. Az első találat nyer. A * helyettesítő karakter. Csak tokennel hitelesített kérésekre vonatkozik.",
+        "empty": "Nincs kivétel: minden kérés változatlanul továbbítódik.",
+        "noRealModels": "Először adjon hozzá egy modellt ehhez a routerhez: a kivételek csak a router modelljeire mutathatnak.",
+        "add": "Kivétel hozzáadása",
+        "match": "Modellnév mintája",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Célmodell",
+        "remove": "Kivétel eltávolítása",
+        "errors": {
+          "matchRequired": "Minden kivételhez minta szükséges.",
+          "duplicateMatch": "Ismétlődő egyezés: \"{{match}}\".",
+          "targetMissing": "A(z) \"{{match}}\" kivétel célja nem ennek a routernek a modellje."
+        }
       }
     },
     "optimizer": {
@@ -2453,12 +2470,86 @@
         "piiRedacted": "PII Kitakarítva",
         "sessionId": "Munkamenet-azonosító",
         "endUser": "Végfelhasználó",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Irányította"
       },
       "errorMessage": "Hibaüzenet",
       "eventCount": "{{count}} esemény",
       "eventCount_other": "{{count}} esemény",
-      "noTrace": "Nincs elérhető nyom. A nyom adatok az új hívások rögzítésre kerülnek."
+      "noTrace": "Nincs elérhető nyom. A nyom adatok az új hívások rögzítésre kerülnek.",
+      "routedByException": "Passthrough kivétel"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

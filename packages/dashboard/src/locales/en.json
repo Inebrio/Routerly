@@ -25,6 +25,7 @@
       "routers": "Routers",
       "experiments": "Experiments",
       "usage": "Usage",
+      "timeline": "Timeline",
       "playground": "Playground",
       "settings": "Settings",
       "connectApp": "Connect app",
@@ -1408,6 +1409,22 @@
         "addTarget": "Add Target Model",
         "passthroughLabel": "Pass-through (raw forward)",
         "passthroughNotRemovable": "The pass-through entry cannot be removed"
+      },
+      "exceptions": {
+        "title": "Exceptions",
+        "description": "A request whose model name matches a rule is sent to the chosen model instead of being forwarded unchanged. First match wins. Use * as a wildcard. Applies to token-authenticated requests only.",
+        "empty": "No exceptions: every request is forwarded unchanged.",
+        "noRealModels": "Add a model to this router first: exceptions can only target the router's own models.",
+        "add": "Add exception",
+        "match": "Model name pattern",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Target model",
+        "remove": "Remove exception",
+        "errors": {
+          "matchRequired": "Every exception needs a match pattern.",
+          "duplicateMatch": "Duplicate match \"{{match}}\".",
+          "targetMissing": "The target of exception \"{{match}}\" is not a model of this router."
+        }
       }
     },
     "optimizer": {
@@ -2457,12 +2474,86 @@
         "piiRedacted": "PII Redacted",
         "sessionId": "Session ID",
         "endUser": "End user",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Routed by"
       },
       "errorMessage": "Error Message",
       "eventCount": "{{count}} event",
       "eventCount_other": "{{count}} events",
-      "noTrace": "No trace available. Trace data is captured for new calls only."
+      "noTrace": "No trace available. Trace data is captured for new calls only.",
+      "routedByException": "Passthrough exception"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {
