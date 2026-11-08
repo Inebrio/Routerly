@@ -2383,7 +2383,8 @@
         "outputTokens": "Token keluaran",
         "costPer1k": "Biaya / 1K",
         "cost": "Biaya (USD)",
-        "bestCostPerformance": "Biaya-kinerja terbaik"
+        "bestCostPerformance": "Biaya-kinerja terbaik",
+        "deleted": "deleted"
       },
       "showMoreModels": "Tampilkan {{count}} model lagi",
       "showMoreModels_other": "Tampilkan {{count}} model lagi",

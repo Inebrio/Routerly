@@ -2383,7 +2383,8 @@
         "outputTokens": "Изходни токени",
         "costPer1k": "Разход / 1K",
         "cost": "Разход (USD)",
-        "bestCostPerformance": "Най-добро съотношение цена/производителност"
+        "bestCostPerformance": "Най-добро съотношение цена/производителност",
+        "deleted": "deleted"
       },
       "showMoreModels": "Показване на още {{count}} модел",
       "showMoreModels_other": "Показване на още {{count}} модела",

@@ -2383,7 +2383,8 @@
         "outputTokens": "输出令牌",
         "costPer1k": "成本 / 1K",
         "cost": "成本(美元)",
-        "bestCostPerformance": "最佳成本效益"
+        "bestCostPerformance": "最佳成本效益",
+        "deleted": "deleted"
       },
       "showMoreModels": "显示 {{count}} 个更多模型",
       "showMoreModels_other": "显示 {{count}} 个更多模型",

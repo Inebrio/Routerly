@@ -2383,7 +2383,8 @@
         "outputTokens": "טוקני פלט",
         "costPer1k": "עלות / 1K",
         "cost": "עלות (USD)",
-        "bestCostPerformance": "יחס עלות-ביצועים הטוב ביותר"
+        "bestCostPerformance": "יחס עלות-ביצועים הטוב ביותר",
+        "deleted": "deleted"
       },
       "showMoreModels": "הצג {{count}} מודל נוסף",
       "showMoreModels_other": "הצג {{count}} מודלים נוספים",

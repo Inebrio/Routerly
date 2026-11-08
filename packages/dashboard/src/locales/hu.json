@@ -2383,7 +2383,8 @@
         "outputTokens": "Kimeneti tokenek",
         "costPer1k": "Költség / 1K",
         "cost": "Költség (USD)",
-        "bestCostPerformance": "Legjobb költség-teljesítmény"
+        "bestCostPerformance": "Legjobb költség-teljesítmény",
+        "deleted": "deleted"
       },
       "showMoreModels": "Az {{count}} további modell megjelenítése",
       "showMoreModels_other": "Az {{count}} további modell megjelenítése",

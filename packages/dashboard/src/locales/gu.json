@@ -2383,7 +2383,8 @@
         "outputTokens": "આઉટપુટ ટોકન્સ",
         "costPer1k": "ખર્ચ / 1K",
         "cost": "ખર્ચ (USD)",
-        "bestCostPerformance": "સર્વોત્તમ ખર્ચ-કર્મક્ષમતા"
+        "bestCostPerformance": "સર્વોત્તમ ખર્ચ-કર્મક્ષમતા",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} વધુ મોડલ બતાવો",
       "showMoreModels_other": "{{count}} વધુ મોડલ્સ બતાવો",

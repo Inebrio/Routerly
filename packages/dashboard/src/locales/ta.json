@@ -2383,7 +2383,8 @@
         "outputTokens": "आउटपुट टोकन",
         "costPer1k": "लागत / 1K",
         "cost": "लागत (यूएसडी)",
-        "bestCostPerformance": "सर्वश्रेष्ठ लागत-प्रदर्शन"
+        "bestCostPerformance": "सर्वश्रेष्ठ लागत-प्रदर्शन",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} अधिक मॉडल दिखाएं",
       "showMoreModels_other": "{{count}} अधिक मॉडल दिखाएं",

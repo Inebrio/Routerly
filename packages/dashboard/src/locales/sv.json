@@ -2383,7 +2383,8 @@
         "outputTokens": "Utmatningstoken",
         "costPer1k": "Kostnad / 1K",
         "cost": "Kostnad (USD)",
-        "bestCostPerformance": "Bästa kostnadsprestanda"
+        "bestCostPerformance": "Bästa kostnadsprestanda",
+        "deleted": "deleted"
       },
       "showMoreModels": "Visa {{count}} fler modell",
       "showMoreModels_other": "Visa {{count}} fler modeller",

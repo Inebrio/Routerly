@@ -2383,7 +2383,8 @@
         "outputTokens": "Tokens za pato",
         "costPer1k": "Gharama / 1K",
         "cost": "Gharama (USD)",
-        "bestCostPerformance": "Utendaji wa bei ya nzuri"
+        "bestCostPerformance": "Utendaji wa bei ya nzuri",
+        "deleted": "deleted"
       },
       "showMoreModels": "Onyesha {{count}} zaidi modeli",
       "showMoreModels_other": "Onyesha {{count}} zaidi modeli",

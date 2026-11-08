@@ -2383,7 +2383,8 @@
         "outputTokens": "Utskrevne tokens",
         "costPer1k": "Kostnad / 1K",
         "cost": "Kostnad (USD)",
-        "bestCostPerformance": "Beste kostnads-ytelse"
+        "bestCostPerformance": "Beste kostnads-ytelse",
+        "deleted": "deleted"
       },
       "showMoreModels": "Vis {{count}} mer modell",
       "showMoreModels_other": "Vis {{count}} flere modeller",

@@ -2383,7 +2383,8 @@
         "outputTokens": "رموز الإخراج",
         "costPer1k": "التكلفة / 1000",
         "cost": "التكلفة (دولار)",
-        "bestCostPerformance": "أفضل نسبة تكلفة إلى أداء"
+        "bestCostPerformance": "أفضل نسبة تكلفة إلى أداء",
+        "deleted": "deleted"
       },
       "showMoreModels": "عرض {{count}} نموذج إضافي",
       "showMoreModels_other": "عرض {{count}} نماذج إضافية",

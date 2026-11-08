@@ -2383,7 +2383,8 @@
         "outputTokens": "Ausgabe-Tokens",
         "costPer1k": "Kosten / 1K",
         "cost": "Kosten (USD)",
-        "bestCostPerformance": "Bestes Preis-Leistungs-Verhältnis"
+        "bestCostPerformance": "Bestes Preis-Leistungs-Verhältnis",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} weiteres Modell anzeigen",
       "showMoreModels_other": "{{count}} weitere Modelle anzeigen",

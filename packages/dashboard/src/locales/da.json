@@ -2383,7 +2383,8 @@
         "outputTokens": "Output-tokens",
         "costPer1k": "Omkostning/1K",
         "cost": "Omkostning (USD)",
-        "bestCostPerformance": "Bedste omkostning-ydelse"
+        "bestCostPerformance": "Bedste omkostning-ydelse",
+        "deleted": "deleted"
       },
       "showMoreModels": "Vis {{count}} flere model",
       "showMoreModels_other": "Vis {{count}} flere modeller",

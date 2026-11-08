@@ -2383,7 +2383,8 @@
         "outputTokens": "Tokens de saída",
         "costPer1k": "Custo / 1K",
         "cost": "Custo (USD)",
-        "bestCostPerformance": "Melhor custo-performance"
+        "bestCostPerformance": "Melhor custo-performance",
+        "deleted": "deleted"
       },
       "showMoreModels": "Mostrar {{count}} mais modelo",
       "showMoreModels_other": "Mostrar {{count}} mais modelos",

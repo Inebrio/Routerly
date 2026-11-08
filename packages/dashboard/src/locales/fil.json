@@ -2383,7 +2383,8 @@
         "outputTokens": "Output tokens",
         "costPer1k": "Gastos / 1K",
         "cost": "Gastos (USD)",
-        "bestCostPerformance": "Pinakamahusay na cost-performance"
+        "bestCostPerformance": "Pinakamahusay na cost-performance",
+        "deleted": "deleted"
       },
       "showMoreModels": "Ipakita ang {{count}} pang model",
       "showMoreModels_other": "Ipakita ang {{count}} pang mga model",

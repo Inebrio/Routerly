@@ -2188,6 +2188,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const csv = (s?: string) => (s ? new Set(s.split(',').map(v => v.trim()).filter(Boolean)) : null);
     const routerIdSet = csv(routerIds);
     if (routerIdSet) filtered = filtered.filter(r => routerIdSet.has(r.routerId));
+    // Models the window still holds records for but the config no longer has (ROUT-292):
+    // computed before the model filter so the dashboard filter keeps listing them.
+    const configuredModelIds = new Set((await readConfig('instances')).map(i => i.id));
+    const deletedModelIds = [...new Set(filtered.map(r => r.modelId))].filter(id => !configuredModelIds.has(id)).sort();
     const modelIdSet = csv(modelIds);
     if (modelIdSet) filtered = filtered.filter(r => modelIdSet.has(r.modelId));
     // Which router token the call came in on: narrows a router's traffic down
@@ -2345,6 +2349,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ttftMedianMs: median(ttftSamples), ttftP95Ms: p95(ttftSamples), ttftSamples: ttftSamples.length,
       },
       byModel,
+      deletedModelIds,
       byCallType,
       byRequestType,
       timeline: Object.entries(timeline).sort(([a], [b]) => a.localeCompare(b)).slice(-30),

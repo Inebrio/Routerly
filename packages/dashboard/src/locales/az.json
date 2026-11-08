@@ -2383,7 +2383,8 @@
         "outputTokens": "Çıxış tokenləri",
         "costPer1k": "Dəyər / 1K",
         "cost": "Dəyər (USD)",
-        "bestCostPerformance": "Ən yaxşı dəyər-performans"
+        "bestCostPerformance": "Ən yaxşı dəyər-performans",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} model daha göstər",
       "showMoreModels_other": "{{count}} model daha göstər",

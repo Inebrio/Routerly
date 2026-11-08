@@ -201,6 +201,17 @@ describe('report usage', () => {
     expect(out.join('\n')).not.toContain('Types —');
   });
 
+  it('marks models removed from the config as deleted (ROUT-292)', async () => {
+    mockApi.mockResolvedValue({
+      summary: { totalCost: 0.01, totalCalls: 2, successCalls: 2, errorCalls: 0 },
+      byModel: { 'gone-model': { calls: 2, inputTokens: 100, outputTokens: 50, cost: 0.01, errors: 0 } },
+      deletedModelIds: ['gone-model'],
+      records: [],
+    });
+    const { out } = await run('usage');
+    expect(out.join('\n')).toContain('gone-model (deleted)');
+  });
+
   it('does not show breakdown when optional fields absent', async () => {
     // No completionCalls/routingCalls/guardrailCalls
     const minimal = {
