@@ -17,6 +17,7 @@
     "format": "prettier --write \"packages/*/src/**/*.ts\"",
     "prepare": "husky",
     "i18n:translate": "node scripts/i18n-translate.mjs",
+    "uat:lint": "node docs/uat/lint.mjs --repo .",
     "provider-mocks": "node tools/provider-mocks/index.mjs",
     "docs:cut": "node scripts/docs-version.mjs",
     "screenshots": "node scripts/capture-screenshots.mjs",

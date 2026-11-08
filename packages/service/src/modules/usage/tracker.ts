@@ -47,6 +47,8 @@ export interface TrackUsageParams {
   experimentVariantId?: string;
   /** Set when this call was forwarded through an Orchestrator (RTR-02). */
   orchestratorId?: string;
+  /** Set when a passthrough exception rule diverted this call. */
+  routedBy?: 'exception';
   /** Call configuration applied to this call (tier, applied, skipped); absent when no decision existed. */
   callConfig?: AppliedCallConfig;
 }
@@ -110,6 +112,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     ...(params.experimentId ? { experimentId: params.experimentId } : {}),
     ...(params.experimentVariantId ? { experimentVariantId: params.experimentVariantId } : {}),
     ...(params.orchestratorId ? { orchestratorId: params.orchestratorId } : {}),
+    ...(params.routedBy ? { routedBy: params.routedBy } : {}),
     ...(params.callConfig ? { callConfig: params.callConfig } : {}),
   };
 

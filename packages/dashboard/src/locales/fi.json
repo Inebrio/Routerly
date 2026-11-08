@@ -25,6 +25,7 @@
       "routers": "Reitittimet",
       "experiments": "Kokeilut",
       "usage": "Käyttö",
+      "timeline": "Timeline",
       "playground": "Testiympäristö",
       "settings": "Asetukset",
       "connectApp": "Yhdistä sovellus",
@@ -1406,6 +1407,22 @@
         "addTarget": "Lisää kohdemalli",
         "passthroughLabel": "Läpivienti (raakavälitys)",
         "passthroughNotRemovable": "Läpivientimerkintää ei voi poistaa"
+      },
+      "exceptions": {
+        "title": "Poikkeukset",
+        "description": "Pyyntö, jonka malli vastaa sääntöä, ohjataan valittuun malliin sen sijaan että se välitettäisiin muuttamattomana. Ensimmäinen osuma voittaa. Käytä * jokerimerkkinä. Koskee vain tokenilla todennettuja pyyntöjä.",
+        "empty": "Ei poikkeuksia: jokainen pyyntö välitetään muuttamattomana.",
+        "noRealModels": "Lisää ensin malli tähän reitittimeen: poikkeukset voivat viitata vain reitittimen omiin malleihin.",
+        "add": "Lisää poikkeus",
+        "match": "Mallin nimen kaava",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Kohdemalli",
+        "remove": "Poista poikkeus",
+        "errors": {
+          "matchRequired": "Jokainen poikkeus tarvitsee kaavan.",
+          "duplicateMatch": "Kaksoiskappale \"{{match}}\".",
+          "targetMissing": "Poikkeuksen \"{{match}}\" kohde ei ole tämän reitittimen malli."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "Ylikirjoita globaalit ja reitittimen tason rajat tätä tokenia käyttäville pyynnöille.",
         "noTargetModels": "Lisää kohdemalleja Reititys-välilehdellä ensin.",
         "noOverride": "ei ylikirjoitusta",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Ei rajoja",
         "noLimitsSet": "Rajoja ei ole asetettu — perii vanhemmalta. Lisää raja alle ylikirjoittaaksesi.",
         "metric": "Mittari",
@@ -2450,12 +2471,86 @@
         "piiRedacted": "PII peitetty",
         "sessionId": "Istunnon tunnus",
         "endUser": "Loppukäyttäjä",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Reitittänyt"
       },
       "errorMessage": "Virheviesti",
       "eventCount": "{{count}} tapahtuma",
       "eventCount_other": "{{count}} tapahtumaa",
-      "noTrace": "Jäljitystä ei ole saatavilla. Jäljitystiedot tallennetaan vain uusille kutsuille."
+      "noTrace": "Jäljitystä ei ole saatavilla. Jäljitystiedot tallennetaan vain uusille kutsuille.",
+      "routedByException": "Passthrough-poikkeus"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

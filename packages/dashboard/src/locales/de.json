@@ -25,6 +25,7 @@
       "routers": "Router",
       "experiments": "Experimente",
       "usage": "Nutzung",
+      "timeline": "Timeline",
       "playground": "Playground",
       "settings": "Einstellungen",
       "connectApp": "App verbinden",
@@ -1406,6 +1407,22 @@
         "addTarget": "Zielmodell hinzufügen",
         "passthroughLabel": "Durchleitung (unveränderte Weiterleitung)",
         "passthroughNotRemovable": "Der Durchleitungseintrag kann nicht entfernt werden"
+      },
+      "exceptions": {
+        "title": "Ausnahmen",
+        "description": "Eine Anfrage, deren Modellname zu einer Regel passt, wird an das gewählte Modell gesendet statt unverändert weitergeleitet. Die erste Übereinstimmung gilt. * ist ein Platzhalter. Gilt nur für Token-authentifizierte Anfragen.",
+        "empty": "Keine Ausnahmen: Jede Anfrage wird unverändert weitergeleitet.",
+        "noRealModels": "Fügen Sie diesem Router zuerst ein Modell hinzu: Ausnahmen können nur auf Modelle des Routers zeigen.",
+        "add": "Ausnahme hinzufügen",
+        "match": "Muster für den Modellnamen",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Zielmodell",
+        "remove": "Ausnahme entfernen",
+        "errors": {
+          "matchRequired": "Jede Ausnahme braucht ein Muster.",
+          "duplicateMatch": "Doppelte Übereinstimmung \"{{match}}\".",
+          "targetMissing": "Das Ziel der Ausnahme \"{{match}}\" ist kein Modell dieses Routers."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "Überschreibt globale und Router-Level-Limits für Anfragen, die diesen Token verwenden.",
         "noTargetModels": "Füge zuerst Zielmodelle im Tab Routing hinzu.",
         "noOverride": "keine Überschreibung",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Keine Limits",
         "noLimitsSet": "Keine Limits gesetzt — übernimmt vom Parent. Unten ein Limit hinzufügen, um zu überschreiben.",
         "metric": "Metrik",
@@ -2450,12 +2471,86 @@
         "piiRedacted": "PII geschwärzt",
         "sessionId": "Sitzungs-ID",
         "endUser": "Endbenutzer",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Weitergeleitet durch"
       },
       "errorMessage": "Fehlermeldung",
       "eventCount": "{{count}} Ereignis",
       "eventCount_other": "{{count}} Ereignisse",
-      "noTrace": "Keine Spur verfügbar. Spurdaten werden nur für neue Aufrufe erfasst."
+      "noTrace": "Keine Spur verfügbar. Spurdaten werden nur für neue Aufrufe erfasst.",
+      "routedByException": "Passthrough-Ausnahme"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

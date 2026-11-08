@@ -116,6 +116,8 @@ Filters out models that are currently rate-limited (i.e. received a 429 response
 
 Distributes requests across models to balance load, or ensures that cheaper models are only used up to a configured share of traffic.
 
+`fairness` counts the traffic of the current router only. The other usage-based policies (`budget-remaining`, `rate-limit`, `performance`, `health`) read the model's usage across all routers.
+
 **Use when:** you have multiple capable models and want to spread load.
 
 ### `budget-remaining`
@@ -224,6 +226,12 @@ default depends on the pass-through entry's position in the list: see
 [Concepts: Architecture](./architecture.md#passthrough-which-path-a-request-takes)
 for the full ordering rule and the fallback's forwarded-credential caveat.
 
+**Exceptions.** A Passthrough Router can also list exception rules that send
+requests for specific model names to one of its own real models, regardless of
+the pass-through entry's position. They apply only to token-authenticated
+requests, never to `/passthrough/<slug>/*`. See
+[Concepts: Architecture](./architecture.md#passthrough-exceptions).
+
 ---
 
 ## Routing Profiles
@@ -299,6 +307,8 @@ behaviour. That is why neither the dashboard nor the CLI exposes it.
 ---
 
 ## Configuring Routing
+
+To keep routing inside one provider, attach only that provider's models: see [Route automatically within one provider](../guides/single-provider-routing.md).
 
 ### Dashboard (recommended)
 

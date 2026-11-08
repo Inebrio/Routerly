@@ -25,6 +25,7 @@
       "routers": "ルーター",
       "experiments": "実験",
       "usage": "使用状況",
+      "timeline": "Timeline",
       "playground": "プレイグラウンド",
       "settings": "設定",
       "connectApp": "アプリを接続",
@@ -1406,6 +1407,22 @@
         "addTarget": "ターゲットモデルを追加",
         "passthroughLabel": "パススルー(生転送)",
         "passthroughNotRemovable": "パススルーエントリは削除できません"
+      },
+      "exceptions": {
+        "title": "例外",
+        "description": "モデルがルールに一致したリクエストは、そのまま転送されず、選択したモデルに送られます。最初に一致したルールが優先されます。ワイルドカードは * を使用します。トークン認証されたリクエストにのみ適用されます。",
+        "empty": "例外なし: すべてのリクエストがそのまま転送されます。",
+        "noRealModels": "先にこのルーターへモデルを追加してください。例外はルーター自身のモデルのみを対象にできます。",
+        "add": "例外を追加",
+        "match": "モデル名のパターン",
+        "matchPlaceholder": "gpt-4*",
+        "target": "対象モデル",
+        "remove": "例外を削除",
+        "errors": {
+          "matchRequired": "すべての例外にパターンが必要です。",
+          "duplicateMatch": "一致パターン「{{match}}」が重複しています。",
+          "targetMissing": "例外「{{match}}」の対象はこのルーターのモデルではありません。"
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "このトークンを使用するリクエストのグローバルおよびルーターレベルの制限をオーバーライド。",
         "noTargetModels": "ルーティングタブでまずターゲットモデルを追加してください。",
         "noOverride": "オーバーライドなし",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "制限なし",
         "noLimitsSet": "制限が設定されていません — 親から継承します。以下にオーバーライドする制限を追加してください。",
         "metric": "メトリック",
@@ -2450,12 +2471,86 @@
         "piiRedacted": "PII編集",
         "sessionId": "セッションID",
         "endUser": "エンドユーザー",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "ルーティング元"
       },
       "errorMessage": "エラーメッセージ",
       "eventCount": "{{count}}イベント",
       "eventCount_other": "{{count}}イベント",
-      "noTrace": "トレースが利用できません。トレースデータは新しい呼び出しのみキャプチャされます。"
+      "noTrace": "トレースが利用できません。トレースデータは新しい呼び出しのみキャプチャされます。",
+      "routedByException": "Passthrough 例外"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

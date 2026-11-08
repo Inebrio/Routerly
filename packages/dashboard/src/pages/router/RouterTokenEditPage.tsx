@@ -4,7 +4,7 @@ import type { TFunction } from 'i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { updateRouterToken, getModels } from '../../api';
-import type { Model, Limit, LimitMetric, LimitPeriod, RollingUnit } from '../../api';
+import type { Model, LimitsMode, Limit, LimitMetric, LimitPeriod, RollingUnit } from '../../api';
 import { useRouter } from './RouterLayout';
 import { LabelInput } from './RouterTokenTab';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -127,6 +127,7 @@ function inheritedLimitLabel(
 
 type EditModel = {
   modelId: string;
+  limitsMode: LimitsMode;
   limitRows: LimitRow[];
 };
 
@@ -163,6 +164,7 @@ export function RouterTokenEditPage() {
       setEditModels(
         (editingToken.models || []).map(m => ({
           modelId: m.modelId,
+          limitsMode: m.limitsMode ?? 'replace',
           limitRows: limitsToRows(m.limits),
         }))
       );
@@ -180,6 +182,7 @@ export function RouterTokenEditPage() {
     try {
       const cleanedModels = editModels.map(m => ({
         modelId: m.modelId,
+        ...(m.limitsMode !== 'replace' ? { limitsMode: m.limitsMode } : {}),
         limits: limitRowsToLimits(m.limitRows),
       }));
       const updated = await updateRouterToken(routerId, tokenId, cleanedModels, editLabels, editTags, editScopes);
@@ -195,7 +198,7 @@ export function RouterTokenEditPage() {
 
   function toggleModelOverride(modelId: string, enabled: boolean) {
     if (enabled) {
-      setEditModels(prev => [...prev, { modelId, limitRows: [] }]);
+      setEditModels(prev => [...prev, { modelId, limitsMode: 'replace', limitRows: [] }]);
     } else {
       setEditModels(prev => prev.filter(m => m.modelId !== modelId));
     }
@@ -427,6 +430,14 @@ export function RouterTokenEditPage() {
                               </div>
                             );
                           })}
+                          <div className="form-group" style={{ margin: '12px 0 0' }}>
+                            <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('routers.token.edit.limitsMode')}</label>
+                            <SearchableSelect
+                              value={override!.limitsMode}
+                              onChange={v => setEditModels(prev => prev.map(m => m.modelId === pm.modelId ? { ...m, limitsMode: v as LimitsMode } : m))}
+                              options={(['replace', 'extend', 'disable'] as const).map(v => ({ value: v, label: t(`routers.token.edit.limitsMode${v[0]!.toUpperCase()}${v.slice(1)}`) }))}
+                            />
+                          </div>
                           <button type="button" onClick={() => addLimitRow(pm.modelId)}
                             disabled={!freeCombo}
                             title={!freeCombo ? t('routers.token.edit.allCombosSet') : undefined}

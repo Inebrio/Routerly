@@ -25,6 +25,7 @@
       "routers": "Маршрутизаторы",
       "experiments": "Эксперименты",
       "usage": "Использование",
+      "timeline": "Timeline",
       "playground": "Песочница",
       "settings": "Параметры",
       "connectApp": "Подключить приложение",
@@ -1406,6 +1407,22 @@
         "addTarget": "Добавить целевую модель",
         "passthroughLabel": "Сквозной проход (необработанная пересылка)",
         "passthroughNotRemovable": "Запись сквозного прохода нельзя удалить"
+      },
+      "exceptions": {
+        "title": "Исключения",
+        "description": "Запрос, модель которого совпадает с правилом, отправляется на выбранную модель вместо передачи без изменений. Побеждает первое совпадение. Используйте * как подстановочный знак. Действует только для запросов, аутентифицированных токеном.",
+        "empty": "Исключений нет: каждый запрос передаётся без изменений.",
+        "noRealModels": "Сначала добавьте модель в этот роутер: исключения могут указывать только на модели роутера.",
+        "add": "Добавить исключение",
+        "match": "Шаблон имени модели",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Целевая модель",
+        "remove": "Удалить исключение",
+        "errors": {
+          "matchRequired": "Каждому исключению нужен шаблон.",
+          "duplicateMatch": "Повторяющееся совпадение \"{{match}}\".",
+          "targetMissing": "Цель исключения \"{{match}}\" не является моделью этого роутера."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "Переопределите глобальные и лимиты на уровне маршрутизатора для запросов с использованием этого токена.",
         "noTargetModels": "Сначала добавьте целевые модели на вкладку маршрутизации.",
         "noOverride": "нет переопределения",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Нет лимитов",
         "noLimitsSet": "Лимиты не установлены — наследуются от родителя. Добавьте лимит ниже для переопределения.",
         "metric": "Метрика",
@@ -2450,12 +2471,86 @@
         "piiRedacted": "PII отредактировано",
         "sessionId": "ID сессии",
         "endUser": "Конечный пользователь",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Маршрутизировано"
       },
       "errorMessage": "Сообщение об ошибке",
       "eventCount": "{{count}} событие",
       "eventCount_other": "{{count}} событий",
-      "noTrace": "Трассировка недоступна. Данные трассировки захватываются только для новых вызовов."
+      "noTrace": "Трассировка недоступна. Данные трассировки захватываются только для новых вызовов.",
+      "routedByException": "Исключение Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

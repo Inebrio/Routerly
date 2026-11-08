@@ -184,6 +184,7 @@ const sidebars: SidebarsConfig = {
       label: 'Contributing',
       items: [
         'contributing/releasing',
+        'contributing/secret-scanning',
       ],
     },
   ],
