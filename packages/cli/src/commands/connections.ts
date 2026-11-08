@@ -2,7 +2,8 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ProviderConnection } from '@routerly/shared';
+import type { ProviderConnection, CatalogSyncSummary } from '@routerly/shared';
+import { resolveConnection } from '../lib/model-status.js';
 
 // Canonical flat credential field set the server understands (all optional strings).
 // Keys are the camelCase Commander produces from the corresponding `--kebab` flags,
@@ -36,6 +37,14 @@ export function buildCredentialsFromOpts(opts: CredentialOpts): Record<string, u
   }
   return credentials;
 }
+
+/** Hint printed after a sync loaded models: they arrive disabled and need an explicit enable. */
+function printLoadedHint(label: string, sync: CatalogSyncSummary | undefined): void {
+  if (!sync || sync.added.length === 0) return;
+  console.log(`${sync.added.length} model${sync.added.length === 1 ? '' : 's'} loaded from the catalog (disabled). Enable with: routerly model enable --connection ${label} --new`);
+}
+
+const catalogSyncLabel = (c: ProviderConnection) => (c.catalogSync ? chalk.green('on') : chalk.gray('off'));
 
 /** Attach the provider-aware credential flags shared by `add` and `edit`. */
 function addCredentialOptions(c: Command): Command {
@@ -82,7 +91,7 @@ Examples:
           return;
         }
         const table = new Table({
-          head: ['ID', 'Provider', 'Label', 'Endpoint', 'Enabled'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Provider', 'Label', 'Endpoint', 'Enabled', 'Catalog sync'].map(h => chalk.cyan(h)),
         });
         for (const c of connections) {
           table.push([
@@ -91,6 +100,7 @@ Examples:
             c.label,
             c.endpoint ?? chalk.gray('-'),
             c.enabled ? chalk.green('yes') : chalk.gray('no'),
+            catalogSyncLabel(c),
           ]);
         }
         console.log(table.toString());
@@ -111,6 +121,8 @@ Examples:
   )
     .option('--enabled', 'Enable immediately (default: true)')
     .option('--no-enabled', 'Add disabled')
+    .option('--catalog-sync', 'Load the provider models from the catalog, disabled (default: on, except ollama, custom and azure-openai)')
+    .option('--no-catalog-sync', 'Do not load models from the catalog')
     .addHelpText('after', `
 Examples:
   routerly connections add --provider-id openai --api-key sk-...
@@ -124,7 +136,7 @@ Examples:
     --endpoint https://api.deepseek.com/v1 --api-key sk-...
 `)
     .action(async (opts: CredentialOpts & {
-      providerId: string; label?: string; providerName?: string; endpoint?: string; enabled?: boolean;
+      providerId: string; label?: string; providerName?: string; endpoint?: string; enabled?: boolean; catalogSync?: boolean;
     }) => {
       // ponytail: `--enabled`/`--no-enabled` both declared without a shared default leaves
       // opts.enabled undefined when neither flag is passed; the POST schema requires a boolean.
@@ -146,11 +158,14 @@ Examples:
         credentials,
         ...(opts.endpoint ? { endpoint: opts.endpoint } : {}),
         enabled,
+        // Omitted when not given: the server picks the default for the provider.
+        ...(opts.catalogSync !== undefined ? { catalogSync: opts.catalogSync } : {}),
       };
 
       try {
-        const created = await api<ProviderConnection>('POST', '/api/connections', body);
+        const created = await api<ProviderConnection & { sync?: CatalogSyncSummary }>('POST', '/api/connections', body);
         console.log(chalk.green(`✓ Connection "${created.label}" added (id: ${created.id}).`));
+        printLoadedHint(created.label, created.sync);
       } catch (err) {
         if (err instanceof ApiError) console.error(chalk.red(`API error ${err.status}: ${err.message}`));
         else console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -168,21 +183,25 @@ Examples:
   )
     .option('--enabled', 'Enable the connection')
     .option('--no-enabled', 'Disable the connection')
+    .option('--catalog-sync', 'Track the provider catalog: load new models (disabled) and flag withdrawn ones')
+    .option('--no-catalog-sync', 'Stop tracking the provider catalog (existing models are kept)')
     .addHelpText('after', `
 Examples:
   routerly connections edit c1 --label "Renamed"
   routerly connections edit c1 --api-key sk-new
   routerly connections edit c1 --no-enabled
+  routerly connections edit c1 --catalog-sync
   routerly connections edit c1 --aws-region us-west-2 --aws-access-key-id AKIA...
 `)
     .action(async (id: string, opts: CredentialOpts & {
-      label?: string; providerName?: string; endpoint?: string; enabled?: boolean;
+      label?: string; providerName?: string; endpoint?: string; enabled?: boolean; catalogSync?: boolean;
     }) => {
       const body: Record<string, unknown> = {};
       if (opts.label !== undefined) body['label'] = opts.label;
       if (opts.providerName !== undefined) body['providerName'] = opts.providerName;
       if (opts.endpoint !== undefined) body['endpoint'] = opts.endpoint;
       if (opts.enabled !== undefined) body['enabled'] = opts.enabled;
+      if (opts.catalogSync !== undefined) body['catalogSync'] = opts.catalogSync;
       if (hasAnyCredentialFlag(opts)) {
         try {
           body['credentials'] = buildCredentialsFromOpts(opts);
@@ -200,8 +219,9 @@ Examples:
       }
 
       try {
-        await api<ProviderConnection>('PATCH', `/api/connections/${encodeURIComponent(id)}`, body);
+        const updated = await api<(ProviderConnection & { sync?: CatalogSyncSummary }) | undefined>('PATCH', `/api/connections/${encodeURIComponent(id)}`, body);
         console.log(chalk.green(`✓ Connection "${id}" updated.`));
+        printLoadedHint(updated?.label ?? id, updated?.sync);
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
           console.error(chalk.red(`Connection "${id}" not found.`));
@@ -246,10 +266,50 @@ Examples:
           { [chalk.cyan('Label')]: safe.label },
           { [chalk.cyan('Endpoint')]: safe.endpoint ?? chalk.gray('-') },
           { [chalk.cyan('Enabled')]: safe.enabled ? chalk.green('yes') : chalk.gray('no') },
+          { [chalk.cyan('Catalog sync')]: catalogSyncLabel(safe as ProviderConnection) },
         );
         console.log(table.toString());
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  // ── connections sync ──
+  cmd.command('sync <idOrLabel>')
+    .description('Re-sync one connection with the provider catalog (needs catalog sync on)')
+    .option('--json', 'Output the sync summary as JSON')
+    .addHelpText('after', `
+Examples:
+  routerly connections sync openai
+  routerly connections sync c1 --json
+`)
+    .action(async (idOrLabel: string, opts: { json?: boolean }) => {
+      try {
+        const conn = await resolveConnection(idOrLabel);
+        const sync = await api<CatalogSyncSummary>('POST', `/api/connections/${encodeURIComponent(conn.id)}/sync`);
+        if (opts.json) {
+          console.log(JSON.stringify(sync, null, 2));
+          return;
+        }
+        if (!sync.catalogAvailable) {
+          console.log(chalk.yellow(`The catalog has no models for "${conn.label ?? idOrLabel}"; nothing changed.`));
+          return;
+        }
+        console.log(chalk.green(`✓ Connection "${conn.label ?? idOrLabel}" synced: ${sync.added.length} added, ${sync.unavailable.length} unavailable, ${sync.restored.length} restored, ${sync.skipped.length} skipped.`));
+        if (sync.added.length) console.log(`  Added:       ${sync.added.join(', ')}`);
+        if (sync.unavailable.length) console.log(`  Unavailable: ${sync.unavailable.join(', ')}`);
+        if (sync.restored.length) console.log(`  Restored:    ${sync.restored.join(', ')}`);
+        if (sync.skipped.length) console.log(`  Skipped:     ${sync.skipped.map(s => `${s.upstreamModelId} (${s.reason})`).join(', ')}`);
+        printLoadedHint(conn.label ?? idOrLabel, sync);
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 400 && err.message === 'catalog_sync_disabled') {
+          console.error(chalk.red(`Catalog sync is off for "${idOrLabel}". Turn it on with: routerly connections edit ${idOrLabel} --catalog-sync`));
+        } else if (err instanceof ApiError) {
+          console.error(chalk.red(`API error ${err.status}: ${err.message}`));
+        } else {
+          console.error(chalk.red(`Error: ${(err as Error).message}`));
+        }
         process.exit(1);
       }
     });

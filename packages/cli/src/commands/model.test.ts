@@ -1277,3 +1277,77 @@ describe('routerly model discover', () => {
     expect(out.join('\n')).toMatch(/1 model shown/);
   });
 });
+
+// ── model enable / disable / edit --reset (ROUT-437) ──────────────────────────
+
+describe('routerly model enable/disable', () => {
+  const instances = [
+    { id: 'openai/a', connectionId: 'c1', isNew: true, enabled: false },
+    { id: 'openai/b', connectionId: 'c1', enabled: false },
+    { id: 'other/x', connectionId: 'c2', isNew: true, enabled: false },
+  ];
+
+  it('enables explicit ids via POST /api/models/state', async () => {
+    mockApi.mockResolvedValueOnce({ models: [] });
+    const { out } = await run('enable', 'openai/a', 'openai/b');
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/models/state', { ids: ['openai/a', 'openai/b'], enabled: true });
+    expect(out.join(' ')).toContain('2 models enabled');
+  });
+
+  it('--connection --new targets only new models of that connection (label resolved)', async () => {
+    mockApi
+      .mockResolvedValueOnce([{ id: 'c1', label: 'openai' }, { id: 'c2', label: 'other' }])
+      .mockResolvedValueOnce(instances)
+      .mockResolvedValueOnce({ models: [] });
+    await run('enable', '--connection', 'openai', '--new');
+    expect(mockApi).toHaveBeenLastCalledWith('POST', '/api/models/state', { ids: ['openai/a'], enabled: true });
+  });
+
+  it('disable --connection targets every model of the connection', async () => {
+    mockApi
+      .mockResolvedValueOnce([{ id: 'c1', label: 'openai' }])
+      .mockResolvedValueOnce(instances)
+      .mockResolvedValueOnce({ models: [] });
+    await run('disable', '--connection', 'c1');
+    expect(mockApi).toHaveBeenLastCalledWith('POST', '/api/models/state', { ids: ['openai/a', 'openai/b'], enabled: false });
+  });
+
+  it('--new without --connection exits 1', async () => {
+    const { err } = await run('enable', '--new');
+    expect(err.join(' ')).toContain('--new needs --connection');
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('no ids and no --connection exits 1', async () => {
+    const { err } = await run('enable');
+    expect(err.join(' ')).toContain('Give model ids');
+  });
+
+  it('prints an API error to stderr', async () => {
+    mockApi.mockRejectedValueOnce(new ApiError(404, 'Unknown model(s): zz'));
+    const { err } = await run('disable', 'zz');
+    expect(err.join(' ')).toContain('404');
+  });
+
+  it('--json output parses', async () => {
+    mockApi.mockResolvedValueOnce({ models: [] });
+    const { out } = await run('enable', 'openai/a', '--json');
+    expect(JSON.parse(out.join('\n'))).toEqual({ ids: ['openai/a'], enabled: true });
+  });
+});
+
+describe('routerly model edit --reset', () => {
+  it('un-pins the given fields and keeps other pins', async () => {
+    const pinned = { ...baseModel, fieldOverrides: { inputPerMillion: true, contextWindow: true } };
+    mockApi.mockResolvedValueOnce([pinned]).mockResolvedValueOnce(pinned);
+    await run('edit', 'gpt-4o', '--reset', 'inputPerMillion');
+    const body = mockApi.mock.calls[1]![2] as { fieldOverrides: Record<string, boolean> };
+    expect(body.fieldOverrides).toEqual({ inputPerMillion: false, contextWindow: true });
+  });
+
+  it('rejects an unknown field before any call', async () => {
+    const { err } = await run('edit', 'gpt-4o', '--reset', 'bogus');
+    expect(err.join(' ')).toContain('unknown field "bogus"');
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+});

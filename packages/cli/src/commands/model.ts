@@ -4,6 +4,9 @@ import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import type { ModelConfig, TokenCost, Limit, PricingTier, CatalogField, ModelInstance } from '@routerly/shared';
 import { fmtUsd } from '../lib/fmt.js';
+import { modelStatus, resolveConnection } from '../lib/model-status.js';
+
+const RESETTABLE_FIELDS: readonly CatalogField[] = ['inputPerMillion', 'outputPerMillion', 'cachePerMillion', 'cacheWritePerMillion', 'pricingTiers', 'contextWindow', 'capabilities'];
 
 // ─── Interactive wizard helpers ───────────────────────────────────────────────
 
@@ -161,13 +164,15 @@ Examples:
         // ModelInstance, so the owning connection is resolved by matching instance.id === model.id.
         // Best-effort: a caller without connections:read still sees the table, just without this column.
         let connectionByModelId = new Map<string, string>();
+        let instanceById = new Map<string, ModelInstance>();
         try {
           const instances = await api<ModelInstance[]>('GET', '/api/instances');
           connectionByModelId = new Map(instances.map(i => [i.id, i.connectionId]));
+          instanceById = new Map(instances.map(i => [i.id, i]));
         } catch { /* no connections:read permission or endpoint unavailable — column stays blank */ }
 
         const table = new Table({
-          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M', 'Catalog', 'Connection ID'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M', 'Catalog', 'Status', 'Connection ID'].map(h => chalk.cyan(h)),
         });
         for (const m of models) {
           const overridden = m.fieldOverrides ? Object.values(m.fieldOverrides).some(Boolean) : false;
@@ -177,7 +182,7 @@ Examples:
               ? chalk.green('catalog')
               : '';
           const connectionId = connectionByModelId.get(m.id) ?? chalk.gray('-');
-          table.push([m.id, m.provider, m.endpoint, fmtUsd(m.cost?.inputPerMillion), fmtUsd(m.cost?.outputPerMillion), catalogLabel, connectionId]);
+          table.push([m.id, m.provider, m.endpoint, fmtUsd(m.cost?.inputPerMillion), fmtUsd(m.cost?.outputPerMillion), catalogLabel, modelStatus(instanceById.get(m.id) ?? m), connectionId]);
         }
         console.log(table.toString());
       } catch (err) {
@@ -220,6 +225,7 @@ Examples:
 
       console.log(chalk.bold(`\nModel: ${m.id}`));
       console.log(line('Provider', m.provider));
+      console.log(line('Status', modelStatus(m as ModelConfig & Partial<ModelInstance>)));
       console.log(line('Endpoint', m.endpoint ?? ''));
       if (m.contextWindow) console.log(line('Context window', `${m.contextWindow.toLocaleString()} tokens`));
       if (m.timeout) console.log(line('Timeout', `${m.timeout.toLocaleString()} ms`));
@@ -497,12 +503,19 @@ Examples:
     .option('--limits-json <json>', 'Limits array as JSON string (replaces existing limits)')
     .option('--pricing-tiers-json <json>', 'Pricing tiers as JSON string (replaces existing tiers)')
     .option('--interactive', 'Open interactive wizard for limits and pricing tiers')
+    .option('--reset <fields>', `Return fields to the catalog value (comma-separated: ${RESETTABLE_FIELDS.join(', ')})`)
     .action(async (id: string, opts: {
-      newId?: string; provider?: string; endpoint?: string; apiKey?: string;
+      reset?: string; newId?: string; provider?: string; endpoint?: string; apiKey?: string;
       inputPrice?: string; outputPrice?: string; cachePrice?: string; contextWindow?: string; timeout?: string;
       limitsJson?: string; pricingTiersJson?: string; interactive?: boolean;
     }) => {
       const timeout = parseTimeoutOpt(opts.timeout);
+      const resetFields = opts.reset ? opts.reset.split(',').map(f => f.trim()).filter(Boolean) : [];
+      const badField = resetFields.find(f => !(RESETTABLE_FIELDS as readonly string[]).includes(f));
+      if (badField) {
+        console.error(chalk.red(`--reset: unknown field "${badField}" (allowed: ${RESETTABLE_FIELDS.join(', ')})`));
+        process.exit(1);
+      }
       // Fetch existing model
       let existing: ModelConfig;
       try {
@@ -554,6 +567,8 @@ Examples:
         ...(opts.apiKey       ? { apiKey: opts.apiKey }                                      : {}),
         ...(opts.contextWindow ? { contextWindow: parseInt(opts.contextWindow, 10) }          : {}),
         ...(timeout !== undefined ? { timeout: timeout === 0 ? null : timeout } : {}),
+        // Un-pin the fields: the service takes the catalog value right away.
+        ...(resetFields.length ? { fieldOverrides: { ...existing.fieldOverrides, ...Object.fromEntries(resetFields.map(f => [f, false])) } } : {}),
         // PUT clears limits when the body omits them: resend the existing ones.
         ...(limits !== undefined ? { limits }
           : (existing as ModelConfig & { limits?: Limit[] }).limits?.length ? { limits: (existing as ModelConfig & { limits?: Limit[] }).limits } : {}),
@@ -575,6 +590,48 @@ Examples:
       }
     });
 
+
+  // ── model enable / disable ──
+  for (const enabled of [true, false]) {
+    const verb = enabled ? 'enable' : 'disable';
+    cmd.command(`${verb} [ids...]`)
+      .description(`${enabled ? 'Enable' : 'Disable'} models for routing (acting on a model clears its "new" mark)`)
+      .option('--connection <idOrLabel>', 'Act on every model of this connection (with --new: only the new ones)')
+      .option('--new', 'Only models marked new (needs --connection)')
+      .option('--json', 'Output the updated model ids as JSON')
+      .addHelpText('after', `
+Examples:
+  routerly model ${verb} openai/gpt-4o openai/gpt-4o-mini
+  routerly model ${verb} --connection openai --new
+`)
+      .action(async (ids: string[], opts: { connection?: string; new?: boolean; json?: boolean }) => {
+        try {
+          if (opts.new && !opts.connection) throw new Error('--new needs --connection');
+          let target = [...ids];
+          if (opts.connection) {
+            const conn = await resolveConnection(opts.connection);
+            const instances = await api<ModelInstance[]>('GET', '/api/instances');
+            target.push(...instances
+              .filter(i => i.connectionId === conn.id && (!opts.new || i.isNew === true))
+              .map(i => i.id));
+            target = [...new Set(target)];
+          }
+          if (target.length === 0) {
+            if (!opts.connection) throw new Error('Give model ids or --connection');
+            if (opts.json) console.log(JSON.stringify({ ids: [] }));
+            else console.log(chalk.yellow('No matching models; nothing changed.'));
+            return;
+          }
+          await api('POST', '/api/models/state', { ids: target, enabled });
+          if (opts.json) console.log(JSON.stringify({ ids: target, enabled }, null, 2));
+          else console.log(chalk.green(`✓ ${target.length} model${target.length === 1 ? '' : 's'} ${enabled ? 'enabled' : 'disabled'}.`));
+        } catch (err) {
+          if (err instanceof ApiError) console.error(chalk.red(`API error ${err.status}: ${err.message}`));
+          else console.error(chalk.red(`Error: ${(err as Error).message}`));
+          process.exit(1);
+        }
+      });
+  }
 
   // ── model discover ──
   cmd.command('discover')

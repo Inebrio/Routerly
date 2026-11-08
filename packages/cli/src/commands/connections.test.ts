@@ -389,3 +389,59 @@ describe('connections remove', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('internal error'));
   });
 });
+
+// ── sync / catalog-sync (ROUT-437) ────────────────────────────────────────────
+
+describe('connections sync', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  const summary = { added: ['openai/x'], unavailable: [], restored: [], skipped: [], catalogAvailable: true };
+
+  it('resolves the label and POSTs the sync', async () => {
+    mockApi.mockResolvedValueOnce([{ id: 'c1', label: 'openai' }]).mockResolvedValueOnce(summary);
+    await makeConnectionsCommand().parseAsync(['node', 'routerly', 'sync', 'openai']);
+    expect(mockApi).toHaveBeenLastCalledWith('POST', '/api/connections/c1/sync');
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('1 added'));
+  });
+
+  it('--json prints the summary', async () => {
+    mockApi.mockResolvedValueOnce([{ id: 'c1', label: 'openai' }]).mockResolvedValueOnce(summary);
+    await makeConnectionsCommand().parseAsync(['node', 'routerly', 'sync', 'c1', '--json']);
+    const printed = vi.mocked(console.log).mock.calls.map(c => c.join(' ')).join('\n');
+    expect(JSON.parse(printed)).toEqual(summary);
+  });
+
+  it('explains when catalog sync is off and exits 1', async () => {
+    mockApi.mockResolvedValueOnce([{ id: 'c1', label: 'openai' }]).mockRejectedValueOnce(new ApiError(400, 'catalog_sync_disabled'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeConnectionsCommand().parseAsync(['node', 'routerly', 'sync', 'c1'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--catalog-sync'));
+  });
+});
+
+describe('connections --catalog-sync', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  it('edit sends catalogSync', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'c1', label: 'openai' });
+    await makeConnectionsCommand().parseAsync(['node', 'routerly', 'edit', 'c1', '--catalog-sync']);
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/connections/c1', { catalogSync: true });
+  });
+
+  it('add omits catalogSync when no flag is given', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'c1', label: 'openai' });
+    await makeConnectionsCommand().parseAsync(['node', 'routerly', 'add', '--provider-id', 'openai', '--api-key', 'k']);
+    expect(mockApi.mock.calls[0]![2]).not.toHaveProperty('catalogSync');
+  });
+
+  it('add --no-catalog-sync sends false', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'c1', label: 'openai' });
+    await makeConnectionsCommand().parseAsync(['node', 'routerly', 'add', '--provider-id', 'openai', '--api-key', 'k', '--no-catalog-sync']);
+    expect(mockApi.mock.calls[0]![2]).toMatchObject({ catalogSync: false });
+  });
+});
