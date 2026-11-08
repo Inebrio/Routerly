@@ -2191,9 +2191,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // Models the window still holds records for but the config no longer has (ROUT-292):
     // computed before the model filter so the dashboard filter keeps listing them.
     const configuredModelIds = new Set((await readConfig('instances')).map(i => i.id));
-    // Passthrough routers record the client's own model string, which is never a configured model.
-    const passthroughRouterIds = new Set((await readConfig('routers')).filter(r => r.kind === 'passthrough').map(r => r.id));
-    const deletedModelIds = [...new Set(filtered.filter(r => !passthroughRouterIds.has(r.routerId)).map(r => r.modelId))]
+    // Only records priced against a resolved model (priceInput set) name a real model id;
+    // passthrough records carry the client's own model string, which is never configured.
+    const deletedModelIds = [...new Set(filtered.filter(r => r.priceInput !== undefined).map(r => r.modelId))]
       .filter(id => !configuredModelIds.has(id)).sort();
     const modelIdSet = csv(modelIds);
     if (modelIdSet) filtered = filtered.filter(r => modelIdSet.has(r.modelId));
