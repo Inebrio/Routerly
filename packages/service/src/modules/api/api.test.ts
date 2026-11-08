@@ -2639,11 +2639,13 @@ describe('GET /api/usage', () => {
     const records = [
       { id: 'd1', timestamp: now, routerId: 'p1', modelId: 'gone', inputTokens: 10, outputTokens: 5, cost: 0.5, outcome: 'success', callType: 'completion', latencyMs: 10 },
       { id: 'd2', timestamp: now, routerId: 'p1', modelId: 'live', inputTokens: 10, outputTokens: 5, cost: 0.25, outcome: 'success', callType: 'completion', latencyMs: 10 },
+      { id: 'd3', timestamp: now, routerId: 'pt', modelId: 'claude-client-string', inputTokens: 0, outputTokens: 0, cost: null, outcome: 'success', callType: 'completion', latencyMs: 10 },
     ]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'usage') return records
+      if (t === 'routers') return [{ id: 'pt', kind: 'passthrough' }]
       if (t === 'instances') return [{ id: 'live' }]
       return []
     })
