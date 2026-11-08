@@ -253,8 +253,8 @@ describe('ModelsPage — models list', () => {
     renderPage();
     await waitFor(() => screen.getByText('no-data'));
     const cells = (id: string) => Array.from(screen.getByText(id).closest('tr')!.querySelectorAll('td')).map(td => td.textContent);
-    expect(cells('no-data').slice(3, 7)).toEqual(['—', '—', '—', '—']);
-    expect(cells('free').slice(3, 5)).toEqual(['$0', '$0']);
+    expect(cells('no-data').slice(5, 9)).toEqual(['—', '—', '—', '—']);
+    expect(cells('free').slice(5, 7)).toEqual(['$0', '$0']);
   });
 
   it('sorts by provider when Provider header clicked', async () => {
@@ -1435,10 +1435,11 @@ describe('ModelsPage — catalog status', () => {
     mockGetModels.mockResolvedValue(fleet());
     renderPage();
     await waitFor(() => expect(screen.getByText('fresh')).toBeTruthy());
-    expect(screen.getByText('Enabled')).toBeTruthy();
-    expect(screen.getByText('Disabled')).toBeTruthy();
-    expect(screen.getByText('New')).toBeTruthy();
-    expect(screen.getByText('Unavailable (removed)')).toBeTruthy();
+    const inRows = (text: string) => within(document.querySelector('tbody')!).getByText(text);
+    expect(inRows('Enabled')).toBeTruthy();
+    expect(inRows('Disabled')).toBeTruthy();
+    expect(inRows('New')).toBeTruthy();
+    expect(inRows('Unavailable (removed)')).toBeTruthy();
   });
 
   it('filters by status from the URL', async () => {
@@ -1479,7 +1480,7 @@ describe('ModelsPage — catalog status', () => {
       mockGetModels.mockResolvedValue(fleet());
       renderPage();
       await waitFor(() => expect(screen.getByText('fresh')).toBeTruthy());
-      expect(screen.getByText('New')).toBeTruthy();
+      expect(within(document.querySelector('tbody')!).getByText('New')).toBeTruthy();
       expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
       expect(screen.queryByRole('toolbar')).toBeNull();
       expect(screen.queryByRole('button', { name: /Enable all new/ })).toBeNull();
