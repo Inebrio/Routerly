@@ -40,6 +40,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Pass-through traces were empty.** Requests forwarded verbatim to `anthropic-oauth` / `anthropic` models ended with `trace:recap` `incomplete`, 0 attempts and 0 tokens, and the usage record carried no trace. The trace now reports the attempt, the outcome, tokens, cost and latency once the response is relayed, plus prompt and answer text when the router has `traceContent` on. No wire-format change (ROUT-710).
 - **`/v1/messages` falls back on network errors.** With `anthropic` or `anthropic-oauth` candidates, a failed connection to the provider (DNS, refused connection, TLS) now moves on to the next candidate like an HTTP error does; the 502 `api_error` is returned only when no candidate remains. No wire-format change (ROUT-668).
 - **gpt-5.6 / gpt-6 with tools.** Requests with function tools to `gpt-5.6-*` and `gpt-6-*` no longer fail with HTTP 400 on chat completions: when neither the client nor the router sets a reasoning effort, the OpenAI adapter sends `reasoning_effort: "none"` (an effort set by the client or the router is forwarded untouched; other models are unchanged) (ROUT-669).
 - **Tool schemas through openai-oauth.** The `pattern` keyword is removed from tool `parameters` before the request goes to the Responses API, which rejected valid patterns such as `^[^\\0]*$` (Claude Code's `Artifact` tool) with 400 "is not a regex". Only the validation hint is dropped; payload otherwise unchanged (ROUT-703).

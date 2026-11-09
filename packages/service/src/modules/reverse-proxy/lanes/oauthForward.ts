@@ -8,9 +8,32 @@ import { createUsageTap, type TappedUsage } from './usageTap.js';
 import { createAnthropicScrubTransform } from './anthropicScrub.js';
 import type { EffectivePii } from '../../pii/piiScrubber.js';
 import type { TraceEntry } from '@routerly/shared';
+import { calculateCost } from '../../../lib/cost.js';
 
 /** Output-PII scrub applied to the pass-through response (set when the router has an output policy). */
 export interface PassthroughScrub { effective: EffectivePii; emit?: (entry: TraceEntry) => void }
+
+/** Trace hooks of the request: lets the verbatim lane report the call it forwards. */
+export interface PassthroughTrace { traceId: string; emit?: (entry: TraceEntry) => void; captureContent?: boolean }
+
+/** `model:success` / `model:error`, the entries the trace recap counts; a verbatim forward has no other emitter. */
+function emitOutcome(trace: PassthroughTrace | undefined, model: ModelConfig, u: TappedUsage, latencyMs: number, ok: boolean, errorMessage?: string): void {
+  if (!trace?.emit) return;
+  if (!ok) {
+    trace.emit({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: errorMessage ?? 'upstream error', latencyMs } });
+    return;
+  }
+  const totalCostUsd = calculateCost(u.inputTokens, u.outputTokens, model, u.cachedInputTokens, u.cacheCreationInputTokens);
+  trace.emit({
+    panel: 'response',
+    message: 'model:success',
+    details: {
+      modelId: model.id, inputTokens: u.inputTokens, cachedInputTokens: u.cachedInputTokens, outputTokens: u.outputTokens,
+      latencyMs, totalCostUsd, inputPerMillion: model.cost.inputPerMillion, outputPerMillion: model.cost.outputPerMillion,
+    },
+    ...(u.text ? { content: { responseText: u.text } } : {}),
+  });
+}
 
 /**
  * Faithful pass-through for subscription / OAuth models (Flow A).
@@ -167,6 +190,8 @@ export async function forwardAnthropicOAuth(
   callSettings?: AppliedCallConfig,
   /** Set when a passthrough exception rule picked this model (usage attribution only). */
   routedBy?: 'exception',
+  /** The request's trace: the forward is reported to it and the call returns once the response is complete. */
+  trace?: PassthroughTrace,
 ): Promise<unknown> {
   const startMs = Date.now();
   const routerId = request.router?.id ?? '';
@@ -190,9 +215,10 @@ export async function forwardAnthropicOAuth(
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'oauth pass-through upstream error');
     if (routerId) {
-      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}), ...(routedBy ? { routedBy } : {}) }).catch(() => {});
+      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(trace ? { traceId: trace.traceId } : {}), ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}), ...(routedBy ? { routedBy } : {}) }).catch(() => {});
     }
     const message = err instanceof Error ? err.message : 'upstream request failed';
+    emitOutcome(trace, model, ZERO_USAGE, Date.now() - startMs, false, message);
     const errorBody = { type: 'error', error: { type: 'api_error', message } };
     if (deferFailure) return { status: 502, body: errorBody, message } satisfies UpstreamFailure;
     return reply.code(502).send(errorBody);
@@ -211,13 +237,18 @@ export async function forwardAnthropicOAuth(
     'oauth pass-through',
   );
 
+  let release!: () => void;
+  const finished = new Promise<void>((resolve) => { release = resolve; });
   const record = (u: TappedUsage, errorMessage?: string): void => {
+    emitOutcome(trace, model, u, Date.now() - startMs, upstream.ok, errorMessage);
+    release();
     if (!routerId) return;
     void trackUsage({
       routerId, model, inputTokens: u.inputTokens, outputTokens: u.outputTokens,
       ...(u.cachedInputTokens > 0 ? { cachedInputTokens: u.cachedInputTokens } : {}),
       ...(u.cacheCreationInputTokens > 0 ? { cacheCreationInputTokens: u.cacheCreationInputTokens } : {}),
       latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion',
+      ...(trace ? { traceId: trace.traceId } : {}),
       ...(errorMessage !== undefined ? { errorMessage } : {}),
       ...(tokenId ? { tokenId } : {}),
       ...(callSettings ? { callConfig: callSettings } : {}),
@@ -242,10 +273,13 @@ export async function forwardAnthropicOAuth(
   if (upstream.body) {
     const ct = upstream.headers.get('content-type');
     const src = Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]);
-    return reply.send(
+    reply.send(
       (scrub ? src.pipe(createAnthropicScrubTransform(ct, scrub.effective, scrub.emit)) : src)
-        .pipe(createUsageTap(ct, record)),
+        .pipe(createUsageTap(ct, record, trace?.captureContent === true)),
     );
+    // The trace closes when the pipeline does: hold it until the response has been fully relayed.
+    if (trace) await finished;
+    return reply;
   }
   record({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 });
   return reply.send();
@@ -272,6 +306,8 @@ export async function forwardAnthropicApiKey(
   callSettings?: AppliedCallConfig,
   /** Set when a passthrough exception rule picked this model (usage attribution only). */
   routedBy?: 'exception',
+  /** The request's trace: the forward is reported to it and the call returns once the response is complete. */
+  trace?: PassthroughTrace,
 ): Promise<unknown> {
   const startMs = Date.now();
   const routerId = request.router?.id ?? '';
@@ -302,9 +338,10 @@ export async function forwardAnthropicApiKey(
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'api-key pass-through upstream error');
     if (routerId) {
-      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}), ...(routedBy ? { routedBy } : {}) }).catch(() => {});
+      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(trace ? { traceId: trace.traceId } : {}), ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}), ...(routedBy ? { routedBy } : {}) }).catch(() => {});
     }
     const message = err instanceof Error ? err.message : 'upstream request failed';
+    emitOutcome(trace, model, ZERO_USAGE, Date.now() - startMs, false, message);
     const errorBody = { type: 'error', error: { type: 'api_error', message } };
     if (deferFailure) return { status: 502, body: errorBody, message } satisfies UpstreamFailure;
     return reply.code(502).send(errorBody);
@@ -315,13 +352,18 @@ export async function forwardAnthropicApiKey(
     'api-key pass-through',
   );
 
+  let release!: () => void;
+  const finished = new Promise<void>((resolve) => { release = resolve; });
   const record = (u: TappedUsage, errorMessage?: string): void => {
+    emitOutcome(trace, model, u, Date.now() - startMs, upstream.ok, errorMessage);
+    release();
     if (!routerId) return;
     void trackUsage({
       routerId, model, inputTokens: u.inputTokens, outputTokens: u.outputTokens,
       ...(u.cachedInputTokens > 0 ? { cachedInputTokens: u.cachedInputTokens } : {}),
       ...(u.cacheCreationInputTokens > 0 ? { cacheCreationInputTokens: u.cacheCreationInputTokens } : {}),
       latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion',
+      ...(trace ? { traceId: trace.traceId } : {}),
       ...(errorMessage !== undefined ? { errorMessage } : {}),
       ...(tokenId ? { tokenId } : {}),
       ...(callSettings ? { callConfig: callSettings } : {}),
@@ -363,10 +405,13 @@ export async function forwardAnthropicApiKey(
   if (upstream.body) {
     const ct = upstream.headers.get('content-type');
     const src = Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]);
-    return reply.send(
+    reply.send(
       (scrub ? src.pipe(createAnthropicScrubTransform(ct, scrub.effective, scrub.emit)) : src)
-        .pipe(createUsageTap(ct, record)),
+        .pipe(createUsageTap(ct, record, trace?.captureContent === true)),
     );
+    // The trace closes when the pipeline does: hold it until the response has been fully relayed.
+    if (trace) await finished;
+    return reply;
   }
   record({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 });
   return reply.send();

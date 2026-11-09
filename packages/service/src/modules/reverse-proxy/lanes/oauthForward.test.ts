@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import Fastify from 'fastify'
-import type { RouterConfig, ModelConfig, AppliedCallConfig } from '@routerly/shared'
+import type { RouterConfig, ModelConfig, AppliedCallConfig, TraceEntry } from '@routerly/shared'
+import { buildRecap } from '../../trace/recap.js'
 import { buildOAuthForwardHeaders, forwardAnthropicOAuth, forwardAnthropicApiKey, upstreamModelName } from './oauthForward.js'
 
 vi.mock('../../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
@@ -696,4 +697,47 @@ describe('network failure with later candidates (deferFailure)', () => {
       })
     }
   }
+})
+
+describe('forwardAnthropicOAuth trace reporting', () => {
+  const run = async (upstream: Response, captureContent: boolean) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(upstream))
+    const entries: TraceEntry[] = []
+    const app = Fastify({ logger: false })
+    app.decorateRequest('router', null as any)
+    app.addHook('preHandler', async (req: any) => { req.router = testRouter })
+    app.post('/v1/messages', (req, reply) =>
+      forwardAnthropicOAuth(req, reply, oauthModel, undefined, false, undefined, undefined,
+        { traceId: 'tr-1', emit: (e) => entries.push(e), captureContent }))
+    const res = await app.inject({ method: 'POST', url: '/v1/messages', headers: { 'content-type': 'application/json' }, payload: '{"model":"x"}' })
+    await app.close()
+    vi.unstubAllGlobals()
+    return { res, entries }
+  }
+  const sse =
+    'event: message_start\ndata: {"type":"message_start","message":{"usage":{"input_tokens":5,"output_tokens":1}}}\n\n' +
+    'event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"type":"text_delta","text":"hi"}}\n\n' +
+    'event: message_delta\ndata: {"type":"message_delta","usage":{"output_tokens":16}}\n\n'
+
+  it('reports the finished stream so the recap counts tokens and success', async () => {
+    const { res, entries } = await run(new Response(sse, { status: 200, headers: { 'content-type': 'text/event-stream' } }), false)
+    expect(res.body).toBe(sse)
+    const ok = entries.find((e) => e.message === 'model:success')!
+    expect(ok.details).toMatchObject({ inputTokens: 5, outputTokens: 16 })
+    expect(ok.content).toBeUndefined()
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ traceId: 'tr-1' }))
+    const recap = buildRecap([{ panel: 'request', message: 'model:request', details: { provider: 'anthropic-oauth' } }, ...entries], 1)
+    expect(recap.details).toMatchObject({ outcome: 'ok', attempts: 1, tokens: { input: 5, output: 16 } })
+  })
+
+  it('carries the answer text only when content capture is on', async () => {
+    const { entries } = await run(new Response(sse, { status: 200, headers: { 'content-type': 'text/event-stream' } }), true)
+    expect(entries.find((e) => e.message === 'model:success')!.content).toEqual({ responseText: 'hi' })
+  })
+
+  it('reports an upstream error as model:error', async () => {
+    const { entries } = await run(new Response('{"error":{"message":"nope"}}', { status: 500, headers: { 'content-type': 'application/json' } }), false)
+    expect(entries.map((e) => e.message)).toEqual(['model:error'])
+    expect(entries[0]!.details).toMatchObject({ error: expect.stringContaining('nope') })
+  })
 })
