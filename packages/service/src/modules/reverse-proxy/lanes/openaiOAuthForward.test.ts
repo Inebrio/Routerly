@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import type { ModelConfig } from '@routerly/shared'
-import { buildOpenAIOAuthHeaders, forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, resolveCodexToken, resolveOpenAICodexAuth, buildCodexPayload } from './openaiOAuthForward.js'
+import { buildOpenAIOAuthHeaders, forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, resolveCodexToken, resolveOpenAICodexAuth, buildCodexPayload, stripSchemaPatterns } from './openaiOAuthForward.js'
 
 vi.mock('../../config/loader.js', () => ({ getOrCreateSecret: vi.fn().mockResolvedValue('d'.repeat(64)), readConfig: vi.fn().mockResolvedValue([]) }))
 vi.mock('../../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
@@ -910,5 +910,16 @@ describe('buildCodexPayload call settings (ROUT-306)', () => {
     expect(p.text).toEqual({ verbosity: 'low' })
     expect(p).not.toHaveProperty('max_output_tokens')
     expect(p).not.toHaveProperty('max_tokens')
+  })
+})
+
+describe('stripSchemaPatterns / buildCodexPayload tools', () => {
+  it('drops string pattern keywords recursively, keeps a property named "pattern"', () => {
+    const schema = { type: 'object', properties: { path: { type: 'string', pattern: '^[^\\0]*$' }, pattern: { type: 'string' }, list: { type: 'array', items: { type: 'string', pattern: 'x' } } } }
+    expect(stripSchemaPatterns(schema)).toEqual({ type: 'object', properties: { path: { type: 'string' }, pattern: { type: 'string' }, list: { type: 'array', items: { type: 'string' } } } })
+  })
+  it('sanitizes tool parameters in the codex payload', () => {
+    const body = buildCodexPayload({ model: 'gpt-6-astra', messages: [{ role: 'user', content: 'hi' }], tools: [{ type: 'function', function: { name: 'Artifact', parameters: { type: 'object', properties: { f: { type: 'string', pattern: '^[^\\0]*$' } } } } }] } as never, 'gpt-6-astra' as never)
+    expect(JSON.stringify(body.tools)).not.toContain('pattern')
   })
 })
