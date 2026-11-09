@@ -39,6 +39,7 @@ the change itself — never reconstructed after the fact. See
 - **Version 0.6.0.** The next release is numbered 0.6.0: while the major is 0, `release.config.mjs` maps a BREAKING CHANGE to a minor bump instead of 1.0.0. The breaking change in this release is that `develop` is now its own channel instead of an alias for `next` (ROUT-539).
 
 ### Fixed
+- **Catalog sync removes dropped fields.** When the catalog no longer carries `cache`, `cacheWrite`, `pricingTiers`, `contextWindow` (reset to 0 = unknown) or `capabilities` for a model, the sync now removes them from the model unless the field is overridden, so cost and `catalogDefaults` no longer diverge (ROUT-645).
 
 - **gpt-5.6 / gpt-6 with tools.** Requests with function tools to `gpt-5.6-*` and `gpt-6-*` no longer fail with HTTP 400 on chat completions: when neither the client nor the router sets a reasoning effort, the OpenAI adapter sends `reasoning_effort: "none"` (an effort set by the client or the router is forwarded untouched; other models are unchanged) (ROUT-669).
 - **Tool schemas through openai-oauth.** The `pattern` keyword is removed from tool `parameters` before the request goes to the Responses API, which rejected valid patterns such as `^[^\\0]*$` (Claude Code's `Artifact` tool) with 400 "is not a regex". Only the validation hint is dropped; payload otherwise unchanged (ROUT-703).
