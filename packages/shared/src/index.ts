@@ -54,6 +54,7 @@ export type {
   IntentClassification,
   UserConfig,
   McpToken,
+  ApiToken,
   RoleConfig,
   ModuleRecord,
   Permission,

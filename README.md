@@ -98,6 +98,7 @@ No database and no Redis: configuration lives in JSON files.
 - **Audit log** of management actions.
 - **Notifications** to the in-app inbox, email (SMTP, SES, SendGrid, Azure, Google) and webhooks (generic, Slack, Teams, PagerDuty, Discord).
 - **MCP server.** Personal MCP tokens let Claude Code, Cursor, Cline and other MCP clients inspect and adjust Routerly with your own permissions.
+- **Management API tokens.** Long-lived, scoped, revocable tokens for scripts and CI, with a mandatory expiry and per-request audit.
 - **Dashboard, CLI and API.** Every function is available in all three; the dashboard also has a Playground with routing trace and cost breakdown.
 - **Updates.** Built-in update check against GitHub Releases; channels `latest`, `current`, `next`, `develop`; update with `routerly update run` or from the dashboard.
 
