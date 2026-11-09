@@ -2451,6 +2451,12 @@ describe('RouterRoutingTab — ranking algorithm', () => {
     expect(await screen.findByDisplayValue('Default')).toBeDisabled();
   });
 
+  it('lists the profile policies read-only in profile mode (ROUT-685)', async () => {
+    renderTab({ ...mockRouter, routingProfileId: 'auto', policies: [] });
+    const list = await screen.findByTestId('profile-policies');
+    expect(list).toHaveTextContent('cheapest');
+  });
+
   it('shows a read-only line in profile mode', async () => {
     renderTab({ ...mockRouter, routingProfileId: 'auto' });
     expect(await screen.findByText(/Ranking algorithm: Default \(from profile\)/)).toBeInTheDocument();
