@@ -8,8 +8,8 @@ import {
   getProfiles, createProfile, updateProfile, getModels, getInstalledOptimizers,
   type CreateProfileBody, type FallbackStrategyType, type InstalledOptimizer, type Model,
   type PiiPolicy, type Profile, type ProfileKind, type SelectorType,
-  isChatModel,
 } from '../api';
+import { isChatModel } from '../utils/models';
 import type { CallConfig } from '@routerly/shared';
 import { CallConfigEditor, callConfigError } from '../components/CallConfigEditor';
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../components/RoutingPoliciesEditor';

@@ -1040,9 +1040,6 @@ export interface ProviderDescriptor {
   nativeCapabilities: ModelCapabilities;
 }
 
-/** True for models that can serve chat requests (decision models cannot). */
-export const isChatModel = (m: Model) => m.capabilities?.decision !== true;
-
 export const getProviderDescriptors = () => request<ProviderDescriptor[]>('/providers/descriptors');
 
 /**

@@ -6,8 +6,8 @@ import {
   createExperiment, updateExperiment, getRouters, getModels,
   type CreateExperimentBody, type ExperimentRotation, type ExperimentStickyKey,
   type ExperimentVariant, type Model, type Router,
-  isChatModel,
 } from '../../api';
+import { isChatModel } from '../../utils/models';
 import {
   EXPERIMENT_ROTATIONS, ROTATION_CATALOG, STICKY_KEYS, STICKY_KEY_CATALOG,
   DEFAULT_MIN_SAMPLES_PER_VARIANT, variantShares,

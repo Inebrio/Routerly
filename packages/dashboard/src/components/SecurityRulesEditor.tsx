@@ -13,8 +13,8 @@ import {
   type RegexGuardConfig,
   type SemanticGuardConfig,
   type TopicGuardConfig,
-  isChatModel,
 } from '../api';
+import { isChatModel } from '../utils/models';
 import { blocksResponseStreaming } from '@routerly/shared';
 import { SearchableSelect } from './SearchableSelect';
 import { MultiSelect } from './MultiSelect';

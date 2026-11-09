@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
-import { updateRouter, getModels, getProfiles, assignRouterProfiles, isChatModel, type Model, type RoutingProfile } from '../../api';
+import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type RoutingProfile } from '../../api';
+import { isChatModel } from '../../utils/models';
 import { PASSTHROUGH_MODEL_ID, DEFAULT_RANKING_ALGORITHM, type CallConfig, type RankingAlgorithmId } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
 import { useAuth } from '../../AuthContext';

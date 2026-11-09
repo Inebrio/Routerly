@@ -14,8 +14,8 @@ import {
   type Model,
   type OptimizerProfile,
   type OptimizerPreviewResult,
-  isChatModel,
 } from '../../api';
+import { isChatModel } from '../../utils/models';
 import { useRouter } from './RouterLayout';
 import { useAuth } from '../../AuthContext';
 import { SearchableSelect } from '../../components/SearchableSelect';
