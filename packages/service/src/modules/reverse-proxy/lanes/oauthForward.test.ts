@@ -664,3 +664,36 @@ describe('forwardAnthropicOAuth call settings (ROUT-306)', () => {
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ callConfig: cc }))
   })
 })
+
+describe('network failure with later candidates (deferFailure)', () => {
+  const cases: Array<[string, typeof forwardAnthropicOAuth, ModelConfig]> = [
+    ['forwardAnthropicOAuth', forwardAnthropicOAuth, oauthModel],
+    ['forwardAnthropicApiKey', forwardAnthropicApiKey, { ...oauthModel, provider: 'anthropic' }],
+  ]
+  for (const [name, fn, model] of cases) {
+    for (const defer of [true, false]) {
+      it(`${name}: fetch rejection ${defer ? 'returns UpstreamFailure without replying' : 'answers 502 on the last candidate'}`, async () => {
+        vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('getaddrinfo ENOTFOUND')))
+        const app = Fastify({ logger: false })
+        app.decorateRequest('router', null as any)
+        app.addHook('preHandler', async (req: any) => { req.router = testRouter })
+        let returned: unknown
+        app.post('/v1/messages', async (req, reply) => {
+          returned = await fn(req, reply, model, undefined, defer)
+          return defer ? reply.code(299).send('deferred') : returned
+        })
+        await app.ready()
+        const res = await app.inject({ method: 'POST', url: '/v1/messages', headers: { 'content-type': 'application/json' }, payload: '{"model":"x","max_tokens":1}' })
+        await app.close()
+        vi.unstubAllGlobals()
+        if (defer) {
+          expect(res.statusCode).toBe(299)
+          expect(returned).toMatchObject({ status: 502, message: 'getaddrinfo ENOTFOUND' })
+        } else {
+          expect(res.statusCode).toBe(502)
+          expect(res.json().error.type).toBe('api_error')
+        }
+      })
+    }
+  }
+})
