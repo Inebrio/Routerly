@@ -574,6 +574,9 @@ Examples:
           : (existing as ModelConfig & { limits?: Limit[] }).limits?.length ? { limits: (existing as ModelConfig & { limits?: Limit[] }).limits } : {}),
       };
 
+      // The service skips a reset field that is present in the body: do not resend it.
+      for (const f of resetFields) if (!(f === 'inputPerMillion' && opts.inputPrice) && !(f === 'outputPerMillion' && opts.outputPrice)) delete body[f];
+
       try {
         await api<ModelConfig>('PUT', `/api/models/${encodeURIComponent(id)}`, body);
         const newId = opts.newId ?? id;

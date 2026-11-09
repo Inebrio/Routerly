@@ -1345,6 +1345,15 @@ describe('routerly model edit --reset', () => {
     expect(body.fieldOverrides).toEqual({ inputPerMillion: false, contextWindow: true });
   });
 
+  it('does not resend the existing value of a reset field', async () => {
+    const pinned = { ...baseModel, cost: { inputPerMillion: 9.99, outputPerMillion: 1 }, fieldOverrides: { inputPerMillion: true } };
+    mockApi.mockResolvedValueOnce([pinned]).mockResolvedValueOnce(pinned);
+    await run('edit', 'gpt-4o', '--reset', 'inputPerMillion');
+    const body = mockApi.mock.calls[1]![2] as Record<string, unknown>;
+    expect(body).not.toHaveProperty('inputPerMillion');
+    expect(body.outputPerMillion).toBe(1);
+  });
+
   it('rejects an unknown field before any call', async () => {
     const { err } = await run('edit', 'gpt-4o', '--reset', 'bogus');
     expect(err.join(' ')).toContain('unknown field "bogus"');
