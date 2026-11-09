@@ -112,3 +112,21 @@ export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean
   }
   return changed;
 }
+
+// Just above the fetcher's 6h cache TTL, so every tick finds the cache expired and refetches.
+const SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000 + 60_000;
+
+/** One automatic run: fetch the catalog and apply it. A failed fetch changes nothing (status keeps the error). */
+export async function runCatalogSync(pkgVersion: string): Promise<void> {
+  try {
+    await catalogFetcher.get(pkgVersion);
+    if (catalogFetcher.getStatus().some(s => s.enabled && s.error)) return;
+    await syncModelsFromCatalog(pkgVersion);
+  } catch { /* best-effort: the next tick retries */ }
+}
+
+/** Sync at startup, then every ~6h. The timer is unref'd: the listening socket keeps the process alive. */
+export function startCatalogSync(pkgVersion: string): NodeJS.Timeout {
+  void runCatalogSync(pkgVersion);
+  return setInterval(() => void runCatalogSync(pkgVersion), SYNC_INTERVAL_MS).unref();
+}

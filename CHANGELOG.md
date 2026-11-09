@@ -44,6 +44,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Catalog sync runs on its own.** The service now applies the provider catalog to registered models at startup and every ~6 hours, without opening the dashboard or pressing Refresh; `fieldOverrides` are respected and a failed fetch changes nothing (the error shows in `catalog status`).
 - **DeepSeek thinking mode with tools.** A conversation with `tools` routed to DeepSeek no longer fails with 400 "reasoning_content … must be passed back" on the turn after a tool call: when the history lacks `reasoning_content` and the client set no `thinking`/`reasoning`, the request goes out with `thinking: {type: "disabled"}` (ROUT-704).
 - **`/v1/messages` falls back on network errors.** With `anthropic` or `anthropic-oauth` candidates, a failed connection to the provider (DNS, refused connection, TLS) now moves on to the next candidate like an HTTP error does; the 502 `api_error` is returned only when no candidate remains. No wire-format change (ROUT-668).
 - **gpt-5.6 / gpt-6 with tools.** Requests with function tools to `gpt-5.6-*` and `gpt-6-*` no longer fail with HTTP 400 on chat completions: when neither the client nor the router sets a reasoning effort, the OpenAI adapter sends `reasoning_effort: "none"` (an effort set by the client or the router is forwarded untouched; other models are unchanged) (ROUT-669).
