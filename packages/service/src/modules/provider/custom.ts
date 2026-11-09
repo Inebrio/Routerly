@@ -27,6 +27,20 @@ async function upstreamError(response: Response, provider: string): Promise<Erro
 }
 
 /**
+ * DeepSeek thinking mode (default on) returns 400 when `tools` are sent and an earlier assistant turn
+ * lacks `reasoning_content` (history from another model). Disable thinking, only in that case, unless
+ * the client chose a thinking mode itself. https://api-docs.deepseek.com/guides/thinking_mode
+ */
+function deepseekThinking(model: ModelConfig, body: { tools?: unknown[]; messages?: unknown[]; thinking?: unknown }): { thinking?: { type: 'disabled' } } {
+  if (model.provider !== 'deepseek' || body.thinking !== undefined || !body.tools?.length) return {};
+  const missing = (body.messages ?? []).some((m) => {
+    const x = m as { role?: string; reasoning_content?: unknown };
+    return x.role === 'assistant' && !x.reasoning_content;
+  });
+  return missing ? { thinking: { type: 'disabled' } } : {};
+}
+
+/**
  * Generic adapter for any provider that exposes an OpenAI-compatible API.
  * `developer` messages are sent as `system`: DeepSeek and most compatible servers reject the role.
  * Requires a custom endpoint in ModelConfig.
@@ -66,7 +80,7 @@ export class CustomAdapter implements ProviderAdapter {
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
       // `stream` stays exactly as the client sent it.
-      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), ...(request.stream === false ? { stream: false } : {}), model: upstreamModel }),
+      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), ...(request.stream === false ? { stream: false } : {}), model: upstreamModel, ...deepseekThinking(model, rest) }),
       signal: AbortSignal.timeout(model.timeout ?? 60000),
     });
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
@@ -96,7 +110,7 @@ export class CustomAdapter implements ProviderAdapter {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
-      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), model: upstreamModel, stream: true }),
+      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), model: upstreamModel, stream: true, ...deepseekThinking(model, rest) }),
       signal: ctl.signal,
     }).finally(() => clearTimeout(timer));
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
@@ -154,6 +168,7 @@ export class CustomAdapter implements ProviderAdapter {
       messages: openAIMessages,
       model: upstreamModel,
       stream: false,
+      ...deepseekThinking(model, { ...rest, messages: openAIMessages }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     } as any);
     return openAIToAnthropicResponse(response, upstreamModel);
