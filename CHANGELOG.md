@@ -40,6 +40,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **gpt-6 token limit.** `max_tokens` is now sent as `max_completion_tokens` to every `gpt-5`-and-later OpenAI model (`gpt-6-luna`, `gpt-6.1-sol`, ...) instead of failing with HTTP 400; the check is generation-agnostic. `gpt-4*` models are unchanged (ROUT-670).
 - **gpt-5.6 / gpt-6 with tools.** Requests with function tools to `gpt-5.6-*` and `gpt-6-*` no longer fail with HTTP 400 on chat completions: when neither the client nor the router sets a reasoning effort, the OpenAI adapter sends `reasoning_effort: "none"` (an effort set by the client or the router is forwarded untouched; other models are unchanged) (ROUT-669).
 - **Tool schemas through openai-oauth.** The `pattern` keyword is removed from tool `parameters` before the request goes to the Responses API, which rejected valid patterns such as `^[^\\0]*$` (Claude Code's `Artifact` tool) with 400 "is not a regex". Only the validation hint is dropped; payload otherwise unchanged (ROUT-703).
 - **Routerly token no longer forwarded upstream on the passthrough fallback.** On the authenticated lanes (`/v1/chat/completions`, `/v1/responses`, `/v1/messages`) the raw-forward of a passthrough router sent the client's Routerly token to api.openai.com / api.anthropic.com. The header carrying it is now dropped; every other header, including a client's own upstream key, is unchanged. `/passthrough/<slug>/*` is untouched (ROUT-636).
