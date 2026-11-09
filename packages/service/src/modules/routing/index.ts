@@ -10,6 +10,7 @@ import { migrateProfiles } from './profiles/migrate.js'
 import { addRoutingDecision } from './routingMemoryStore.js'
 import { forwardPassthroughRaw } from '../api-reverse-proxy/router-passthrough.js'
 import { matchException } from './passthrough-exceptions.js'
+import { extractRouterToken } from '../auth/auth.js'
 
 // Message prefixes router.ts's scoreCandidates throws when a passthrough-kind
 // router's real models are all ineligible (no resolvable model, limits exceeded,
@@ -22,13 +23,26 @@ const NO_ELIGIBLE_CANDIDATE_PREFIXES = [
   'all_models_excluded_by_policies',
 ]
 
+// The Routerly token authenticates the client to Routerly only: it must never reach the
+// upstream. Drop the one header extractRouterToken read it from; the other header (a
+// client's own upstream key) is forwarded unchanged.
+function withoutRouterlyToken(headers: Record<string, unknown>): Record<string, unknown> {
+  const token = extractRouterToken(headers as Record<string, string | string[] | undefined>)
+  if (!token) return headers
+  const auth = headers['authorization']
+  const out = { ...headers }
+  if (typeof auth === 'string' && auth.startsWith('Bearer ') && auth.slice(7).trim() === token) delete out['authorization']
+  else delete out['x-api-key']
+  return out
+}
+
 async function forwardPassthroughFallback(ctx: ProxyContext): Promise<void> {
   const path = ctx.req.url.split('?')[0] ?? ctx.req.url
   await forwardPassthroughRaw(
     ctx.router,
     path,
     ctx.req.method,
-    ctx.req.headers,
+    withoutRouterlyToken(ctx.req.headers),
     Buffer.from(JSON.stringify(ctx.original)),
     ctx.reply,
     ctx.log,

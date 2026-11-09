@@ -73,7 +73,7 @@ describe('routing.prepare — passthrough branch (PR-E, AC9/AC10)', () => {
     expect(router).toBe(ctx.router)
     expect(path).toBe('/v1/chat/completions')
     expect(method).toBe('POST')
-    expect(headers).toBe(ctx.req.headers)
+    expect(headers).toEqual({})
     expect(Buffer.isBuffer(body)).toBe(true)
     expect(JSON.parse((body as Buffer).toString('utf8'))).toEqual(ctx.original)
     expect(reply).toBe(ctx.reply)
@@ -81,6 +81,21 @@ describe('routing.prepare — passthrough branch (PR-E, AC9/AC10)', () => {
 
     expect(ctx.result).toEqual({ kind: 'block' })
     expect(ctx.blockedBy).toBeUndefined()
+  })
+
+  it.each([
+    ['Bearer token', { authorization: 'Bearer rt-canary', 'x-trace': 'a' }, { 'x-trace': 'a' }],
+    ['x-api-key token', { 'x-api-key': 'rt-canary' }, {}],
+    ['Bearer Routerly token + client upstream x-api-key', { authorization: 'Bearer rt-canary', 'x-api-key': 'sk-upstream' }, { 'x-api-key': 'sk-upstream' }],
+  ])('never forwards the Routerly token upstream (%s)', async (_n, inH, expected) => {
+    const proc = await getPrepareProcessor()
+    const ctx = baseCtx({
+      req: { url: '/v1/chat/completions', method: 'POST', headers: inH } as any,
+      router: { id: 'pt1', kind: 'passthrough', policies: [], models: [{ modelId: PASSTHROUGH_MODEL_ID }] } as any,
+    })
+    await proc.run(ctx)
+    expect(forwardPassthroughRawMock.mock.calls[0]![3]).toEqual(expected)
+    expect(JSON.stringify(forwardPassthroughRawMock.mock.calls[0]![3])).not.toContain('rt-canary')
   })
 
   it('sentinel elsewhere in the list: routes normally when routeRequest succeeds', async () => {

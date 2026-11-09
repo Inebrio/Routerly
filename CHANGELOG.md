@@ -40,6 +40,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Routerly token no longer forwarded upstream on the passthrough fallback.** On the authenticated lanes (`/v1/chat/completions`, `/v1/responses`, `/v1/messages`) the raw-forward of a passthrough router sent the client's Routerly token to api.openai.com / api.anthropic.com. The header carrying it is now dropped; every other header, including a client's own upstream key, is unchanged. `/passthrough/<slug>/*` is untouched (ROUT-636).
 - **Token `limitsMode` was ignored.** `PUT /api/routers/:id/tokens/:tokenId` silently dropped `limitsMode` from `models[]`, so `extend` and `disable` could not be set. It is now accepted (400 for a value other than `replace|extend|disable`), saved and returned; `router token edit --limits-mode <model>:<mode>` and a mode selector in the dashboard token editor set it (ROUT-624).
 - **Upstream 429 reaches the client as 429.** When every candidate fails and the last upstream answer is a 429 (e.g. `anthropic-web` rate limit), the OpenAI and Anthropic lanes return 429 with a provider-shaped `rate_limit_error` body instead of a generic 503, so SDK clients can apply their own backoff. Fallback to other candidates is unchanged (ROUT-511).
 - **Vertex AI: the Google error message is no longer lost.** Google wraps Vertex errors in a JSON array, so the Test button showed `401 status code (no body)` and the router returned a generic error. Vertex now unwraps the array like Gemini does, so the real Google message reaches Test and the router response (ROUT-489).

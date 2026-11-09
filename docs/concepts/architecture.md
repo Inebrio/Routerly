@@ -88,19 +88,16 @@ two paths above a request takes by default:
   model turns out ineligible (none resolvable, all over a configured limit,
   or all excluded by a hard policy).
 
-On that fallback, Routerly forwards the client's own request headers to the
-upstream provider unchanged — it does not substitute or inject any provider
-credential. If the client sent only its Routerly bearer token, which is the
-normal case on this token-authenticated lane, the upstream provider will
-very likely reject it with its own `401`: the Routerly token buys routing
-and policy evaluation on this lane, never authentication to the upstream
-provider. A client that wants the fallback to succeed upstream must also
-send its own valid upstream credential — the same `Authorization`/`x-api-key`
-header the unauthenticated `/passthrough/<slug>/*` path already forwards —
-alongside the Routerly bearer token. Routerly does not fail the request
-itself on this fallback; it forwards it unaltered and returns whatever the
-upstream said, which is the wire-format transparency rule's guarantee, not a
-gap.
+On that fallback, Routerly forwards the client's request headers to the
+upstream provider, except the one that carries the Routerly token
+(`Authorization: Bearer <token>` or `x-api-key`): that credential
+authenticates the client to Routerly only and is never sent upstream. Routerly
+does not substitute or inject any provider credential, so a client that wants
+the fallback to succeed upstream must also send its own valid upstream
+credential in the *other* header (for example `x-api-key` alongside the
+Routerly `Authorization: Bearer`), as the unauthenticated
+`/passthrough/<slug>/*` path already forwards it. Without one, the upstream
+provider answers with its own `401`, which Routerly returns unaltered.
 
 ### Passthrough exceptions
 
