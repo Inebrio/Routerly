@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Fixed
+
+- **Provider catalog.** A failed catalog fetch (network down, 5xx, checksum mismatch) is no longer cached for 6 hours: it is retried after 1 minute, previous data keeps being served, and each fetch times out after 10 seconds (ROUT-644).
+
 ### Added
 
 - **Decision models (TypeSafe AI).** New `typesafe` provider: configure a connection and a model (`jev-latest`) from the API, `routerly connections add` / `routerly model add` and the dashboard, and test it. The model carries `capabilities.decision: true` (derived from the provider, additive field in `GET /api/models`, `/api/models/catalog` and provider descriptors, new `decision` descriptor protocol). Decision models are excluded from chat routing and chat model pickers and trigger a router warning; a decision-model failure never fails a client request. No wire-format change (ROUT-244).
