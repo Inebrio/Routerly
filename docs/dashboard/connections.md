@@ -103,6 +103,12 @@ instance bound to it. There is no per-model override of connection-level
 settings. See [Models: Preconfigured vs. Custom connection](models.md#preconfigured-vs-custom-connection).
 :::
 
+### Catalog Sync
+
+The **Catalog sync** switch makes the connection load its provider's models from the Routerly catalog and keep their availability up to date. It is on by default for new connections, except `ollama`, `custom` and `azure-openai`; connections that existed before stay off until you turn it on. Loaded models arrive disabled and marked **New** (see [Models](models.md)). **Sync now** re-checks the catalog on demand (needs `connections:manage`); the catalog is also checked every 6 hours and with `routerly catalog refresh`. When a model disappears from the catalog, the `config.model_unavailable` notification names the routers that use it; `config.model_restored` follows when it returns.
+
+Removing a connection also removes its unused catalog models; if a router still uses one, the removal is refused with `409`.
+
 ### Removing a Connection
 
 Click the **Remove** (trash) icon. You will be asked to confirm; the dialog

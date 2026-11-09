@@ -114,7 +114,7 @@ on that instance.
 
 | Tool | Permission | Does |
 |------|------------|------|
-| `list_models` | `model:read` | Lists the models configured on the gateway (id, provider, context window). No secrets. |
+| `list_models` | `model:read` | Lists the models configured on the gateway (id, provider, context window, `enabled`, `status`: `enabled`, `disabled`, `new` or `unavailable`). No secrets. |
 | `get_model` | `model:read` | Gets one configured model by id. No secrets. |
 | `route_preview` | `router:read` | Previews which model(s) a router would route a request to (ordered candidates + trace), no upstream call. With an enabled [call configuration](./call-configuration.md) the result also has `callConfig` (`tier`, `source`, `signals`, `desired`); the trace entry `router:call-config` lists what each candidate would apply or skip. The preview input has no tools, so tools never raise the tier there. |
 | `get_usage_summary` | `report:read` | Summarizes a router's usage over a trailing window (default 24h): call count, cost, tokens. |

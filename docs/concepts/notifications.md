@@ -195,6 +195,7 @@ The event name is the stable identifier: rules, cooldowns and filters all match 
 | `auth.login_failed` | security | Failed sign-in | warning | A dashboard login failed for an existing user (wrong password) |
 | `auth.token_invalid` | security | Invalid API token | warning | A router token that does not exist, or has expired, was used |
 | `config.model_added` / `config.model_deleted` | config | Model added / Model deleted | info | A model was created or deleted |
+| `config.model_unavailable` / `config.model_restored` | config | Model unavailable / Model restored | warning / info | A catalog sync found a model dropped or deprecated by the catalog (the message names the routers that list it) / the model is back in the catalog |
 | `config.router_created` / `config.router_deleted` | config | Router created / Router deleted | info | A router was created or deleted |
 | `system.startup` / `system.shutdown` | system | Service started / Service stopped | info | Service lifecycle |
 | `system.update_available` | system | A newer release is available | info | The update checker found a release newer than the one running on the configured channel; `details` carries `currentVersion`, `latestVersion`, `channel` and, when known, `releaseUrl`. Raised once per distinct release/channel/version combination, not on every scheduled check |

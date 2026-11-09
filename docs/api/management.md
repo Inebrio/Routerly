@@ -224,6 +224,22 @@ Changing a field value automatically sets `fieldOverrides[fieldName] = true`. To
 - Omit `connectionId`: if the model is currently on a shared connection and the body carries no `apiKey`/`cfClearance`, the shared binding is left untouched (a plain field edit does not silently detach the model from its shared connection). If the model is on its own dedicated connection, or the body includes new credentials, the dedicated `conn-for-<id>` connection is created/updated from them (empty `apiKey`/`cfClearance` keeps the currently stored credentials).
 - Renaming a model's `id` (via body `id`) also renames its dedicated connection from `conn-for-<old-id>` to `conn-for-<new-id>` when that connection is still single-model.
 
+### Enable or Disable Models
+
+```
+POST /api/models/state
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:write`)
+
+```json
+{ "ids": ["openai/gpt-4o", "openai/gpt-4o-mini"], "enabled": true }
+```
+
+Sets `enabled` on every listed model and clears its `isNew` mark. All-or-nothing: an unknown id returns `404` `{ error, unknown }` and nothing is written. Audited as `model:enable` / `model:disable`. A disabled model, and one with `unavailable` set, is skipped by routing but stays in the routers that list it.
+
+**Response `200`:** `{ models: [...] }` the updated models. **Errors**: `400` invalid body · `403`
+
 ### Delete Model
 
 ```
@@ -401,6 +417,22 @@ encrypted counterpart.
 **Response `200`:** the updated connection, `credentials` omitted.
 
 **Errors**: `400` invalid body · `404` connection not found · `403` insufficient permissions
+
+### Sync Connection with the Catalog
+
+```
+POST /api/connections/:id/sync
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+Loads and tracks the provider's catalog models for a connection with `catalogSync: true`. New models are created disabled with `isNew: true` and `source: "catalog"`; catalog models the catalog dropped or deprecated get `unavailable: "removed" | "deprecated"` (cleared when they return). `enabled` and values pinned in `fieldOverrides` are never changed. Audited as `catalog:sync`.
+
+**Response `200`:** `{ added: string[], unavailable: string[], restored: string[], skipped: [{ upstreamModelId, reason }], catalogAvailable: boolean }`
+
+**Errors**: `400` `catalog_sync_disabled` · `404` connection not found · `403`
+
+`POST` and `PATCH /api/connections` accept `catalogSync` (boolean; default on for new connections except `ollama`, `custom`, `azure-openai`). Creating or enabling it runs a first sync and returns its summary as `sync`.
 
 ### Delete Connection
 

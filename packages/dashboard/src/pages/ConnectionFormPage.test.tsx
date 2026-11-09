@@ -11,7 +11,7 @@ vi.mock('../api', () => ({
   testOpenAIOAuth: vi.fn(),
 }));
 
-let mockCanReadModels = true;
+const mockCanReadModels = true;
 vi.mock('../AuthContext', () => ({
   useAuth: () => ({ can: (p: string) => p !== 'model:read' || mockCanReadModels }),
 }));

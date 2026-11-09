@@ -148,6 +148,18 @@ Change the **Model ID** and **API Key** as needed, then save.
 
 Toggle the **Enabled** switch to `off` to temporarily remove a model from routing without deleting it. Disabled models are visible in the list but are excluded from all routing decisions.
 
+### Models Loaded from the Catalog
+
+A connection with **Catalog sync** on loads its provider's models from the Routerly catalog. New models arrive with the catalog prices and context window, **disabled** and marked **New**: nothing is routed to them until you enable it. The **Status** column shows one of:
+
+- **Enabled** / **Disabled** - routing on or off.
+- **New** - loaded from the catalog, not yet reviewed. Enabling or disabling the model clears the mark.
+- **Unavailable (removed / deprecated)** - the catalog dropped or deprecated the model. It is skipped by routing but stays in the routers that use it; hover the badge to see which routers. It returns to normal if the catalog lists it again.
+
+Select rows with the checkboxes (or use **Enable all new**) to enable or disable several models at once. Filter by status with the Status filter. Prices and the context window show whether the value comes from the catalog or was set by you; a value you set is never overwritten by a sync, and **Reset to catalog** returns it to the catalog value. Limits are never set automatically.
+
+Viewers without `model:write` see the statuses but not the controls.
+
 ### Removing a Model
 
 Click the **Delete** (trash) icon. You will be asked to confirm.

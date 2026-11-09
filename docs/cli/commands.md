@@ -192,6 +192,16 @@ routerly connections edit c1 --api-key sk-new
 routerly connections edit c1 --no-enabled
 ```
 
+### `routerly connections sync`
+
+```
+routerly connections sync <idOrLabel> [--json]
+```
+
+Re-sync one connection with the provider catalog (needs `connections:manage`). Prints the models added (disabled, marked new), flagged unavailable, restored and skipped. Fails with exit code 1 if catalog sync is off for the connection.
+
+`connections add` and `connections edit` accept `--catalog-sync` / `--no-catalog-sync`. `connections list` and `show` display the setting.
+
 ### `routerly connections show`
 
 ```
@@ -387,6 +397,22 @@ Same field options as `add`, except `--connection` (rebinding a model to a
 different preconfigured connection is not available from the CLI; use the
 dashboard model form, or the API's `PUT /api/models/:id` with a
 `connectionId` body field). Only specified fields are updated.
+
+### `routerly model enable` / `routerly model disable`
+
+```
+routerly model enable [ids...] [--connection <idOrLabel>] [--new] [--json]
+routerly model disable [ids...] [--connection <idOrLabel>] [--json]
+```
+
+Enable or disable models for routing (needs `model:write`). `--connection` targets every model of that connection; with `--new` only the models loaded from the catalog and not yet reviewed. Acting on a model clears its "new" mark. All-or-nothing: an unknown id changes nothing.
+
+```bash
+routerly model enable --connection openai --new
+routerly model disable openai/gpt-4o
+```
+
+`model list` and `model show` display a Status (`enabled`, `disabled`, `new`, `unavailable (removed|deprecated)`). `model edit --reset <fields>` returns catalog-tracked fields (`inputPerMillion`, `outputPerMillion`, `cachePerMillion`, `cacheWritePerMillion`, `pricingTiers`, `contextWindow`, `capabilities`; comma-separated) to the catalog value.
 
 ### `routerly model remove`
 
