@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Fixed
+
+- **Provider catalog.** A failed catalog fetch (network down, 5xx, checksum mismatch) is no longer cached for 6 hours: it is retried after 1 minute, previous data keeps being served, and each fetch times out after 10 seconds (ROUT-644).
+
 ### Added
 
 - **Decision models (TypeSafe AI).** New `typesafe` provider: configure a connection and a model (`jev-latest`) from the API, `routerly connections add` / `routerly model add` and the dashboard, and test it. The model carries `capabilities.decision: true` (derived from the provider, additive field in `GET /api/models`, `/api/models/catalog` and provider descriptors, new `decision` descriptor protocol). Decision models are excluded from chat routing and chat model pickers and trigger a router warning; a decision-model failure never fails a client request. No wire-format change (ROUT-244).
@@ -41,6 +45,8 @@ the change itself — never reconstructed after the fact. See
 ### Fixed
 
 - **Catalog sync runs on its own.** The service now applies the provider catalog to registered models at startup and every ~6 hours, without opening the dashboard or pressing Refresh; `fieldOverrides` are respected and a failed fetch changes nothing (the error shows in `catalog status`).
+- **DeepSeek thinking mode with tools.** A conversation with `tools` routed to DeepSeek no longer fails with 400 "reasoning_content … must be passed back" on the turn after a tool call: when the history lacks `reasoning_content` and the client set no `thinking`/`reasoning`, the request goes out with `thinking: {type: "disabled"}` (ROUT-704).
+- **`/v1/messages` falls back on network errors.** With `anthropic` or `anthropic-oauth` candidates, a failed connection to the provider (DNS, refused connection, TLS) now moves on to the next candidate like an HTTP error does; the 502 `api_error` is returned only when no candidate remains. No wire-format change (ROUT-668).
 - **gpt-5.6 / gpt-6 with tools.** Requests with function tools to `gpt-5.6-*` and `gpt-6-*` no longer fail with HTTP 400 on chat completions: when neither the client nor the router sets a reasoning effort, the OpenAI adapter sends `reasoning_effort: "none"` (an effort set by the client or the router is forwarded untouched; other models are unchanged) (ROUT-669).
 - **Tool schemas through openai-oauth.** The `pattern` keyword is removed from tool `parameters` before the request goes to the Responses API, which rejected valid patterns such as `^[^\\0]*$` (Claude Code's `Artifact` tool) with 400 "is not a regex". Only the validation hint is dropped; payload otherwise unchanged (ROUT-703).
 - **Routerly token no longer forwarded upstream on the passthrough fallback.** On the authenticated lanes (`/v1/chat/completions`, `/v1/responses`, `/v1/messages`) the raw-forward of a passthrough router sent the client's Routerly token to api.openai.com / api.anthropic.com. The header carrying it is now dropped; every other header, including a client's own upstream key, is unchanged. `/passthrough/<slug>/*` is untouched (ROUT-636).
