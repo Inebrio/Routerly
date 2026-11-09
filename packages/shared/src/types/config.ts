@@ -318,7 +318,13 @@ export interface RoutingPolicy {
   config?: any;
 }
 
-export type SelectorType = 'argmax' | 'weighted-random' | 'round-robin' | 'cheapest' | 'lowest-latency';
+/**
+ * Registered selectors. A selector receives only the scores computed by the policies and picks
+ * among the remaining candidates; it never reads cost, latency, history, counters or other data -
+ * whatever must influence the choice is expressed by a policy.
+ */
+export const SELECTOR_TYPES = ['argmax', 'weighted-random'] as const;
+export type SelectorType = typeof SELECTOR_TYPES[number];
 
 /** Registered ranking algorithms. ROUT-299 appends 'decision-model'. Order = display order. */
 export const RANKING_ALGORITHMS = ['default'] as const;
