@@ -192,13 +192,10 @@ export async function forwardAnthropicOAuth(
     if (routerId) {
       void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}), ...(routedBy ? { routedBy } : {}) }).catch(() => {});
     }
-    return reply.code(502).send({
-      type: 'error',
-      error: {
-        type: 'api_error',
-        message: err instanceof Error ? err.message : 'upstream request failed',
-      },
-    });
+    const message = err instanceof Error ? err.message : 'upstream request failed';
+    const errorBody = { type: 'error', error: { type: 'api_error', message } };
+    if (deferFailure) return { status: 502, body: errorBody, message } satisfies UpstreamFailure;
+    return reply.code(502).send(errorBody);
   }
 
   request.log.info(
@@ -307,7 +304,10 @@ export async function forwardAnthropicApiKey(
     if (routerId) {
       void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}), ...(routedBy ? { routedBy } : {}) }).catch(() => {});
     }
-    return reply.code(502).send({ type: 'error', error: { type: 'api_error', message: err instanceof Error ? err.message : 'upstream request failed' } });
+    const message = err instanceof Error ? err.message : 'upstream request failed';
+    const errorBody = { type: 'error', error: { type: 'api_error', message } };
+    if (deferFailure) return { status: 502, body: errorBody, message } satisfies UpstreamFailure;
+    return reply.code(502).send(errorBody);
   }
 
   request.log.info(
