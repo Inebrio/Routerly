@@ -43,6 +43,7 @@ the change itself — never reconstructed after the fact. See
 - **Version 0.6.0.** The next release is numbered 0.6.0: while the major is 0, `release.config.mjs` maps a BREAKING CHANGE to a minor bump instead of 1.0.0. The breaking change in this release is that `develop` is now its own channel instead of an alias for `next` (ROUT-539).
 
 ### Fixed
+- **Catalog sync removes dropped fields.** When the catalog no longer carries `cache`, `cacheWrite`, `pricingTiers`, `contextWindow` (reset to 0 = unknown) or `capabilities` for a model, the sync now removes them from the model unless the field is overridden, so cost and `catalogDefaults` no longer diverge (ROUT-645).
 
 - **Catalog sync runs on its own.** The service now applies the provider catalog to registered models at startup and every ~6 hours, without opening the dashboard or pressing Refresh; `fieldOverrides` are respected and a failed fetch changes nothing (the error shows in `catalog status`).
 - **DeepSeek thinking mode with tools.** A conversation with `tools` routed to DeepSeek no longer fails with 400 "reasoning_content … must be passed back" on the turn after a tool call: when the history lacks `reasoning_content` and the client set no `thinking`/`reasoning`, the request goes out with `thinking: {type: "disabled"}` (ROUT-704).

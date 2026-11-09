@@ -56,30 +56,28 @@ export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean
         modelChanged = true;
       }
     }
-    if (!isOverridden('cachePerMillion') && catalogDefaults.cachePerMillion !== undefined) {
-      if (model.cost.cachePerMillion !== catalogDefaults.cachePerMillion) {
-        model.cost.cachePerMillion = catalogDefaults.cachePerMillion;
+    // A field the catalog no longer carries is removed from the model (unless overridden).
+    for (const field of ['cachePerMillion', 'cacheWritePerMillion'] as const) {
+      if (isOverridden(field)) continue;
+      if (model.cost[field] !== catalogDefaults[field]) {
+        if (catalogDefaults[field] === undefined) delete model.cost[field];
+        else model.cost[field] = catalogDefaults[field];
         modelChanged = true;
       }
     }
-    if (!isOverridden('cacheWritePerMillion') && catalogDefaults.cacheWritePerMillion !== undefined) {
-      if (model.cost.cacheWritePerMillion !== catalogDefaults.cacheWritePerMillion) {
-        model.cost.cacheWritePerMillion = catalogDefaults.cacheWritePerMillion;
-        modelChanged = true;
-      }
-    }
-    if (!isOverridden('pricingTiers') && catalogDefaults.pricingTiers !== undefined) {
-      model.cost.pricingTiers = catalogDefaults.pricingTiers;
+    if (!isOverridden('pricingTiers') && JSON.stringify(model.cost.pricingTiers) !== JSON.stringify(catalogDefaults.pricingTiers)) {
+      if (catalogDefaults.pricingTiers === undefined) delete model.cost.pricingTiers;
+      else model.cost.pricingTiers = catalogDefaults.pricingTiers;
       modelChanged = true;
     }
-    if (!isOverridden('contextWindow') && catalogDefaults.contextWindow !== undefined) {
-      if (model.contextWindow !== catalogDefaults.contextWindow) {
-        model.contextWindow = catalogDefaults.contextWindow;
-        modelChanged = true;
-      }
+    // contextWindow is required on the model: 0 means unknown.
+    if (!isOverridden('contextWindow') && model.contextWindow !== (catalogDefaults.contextWindow ?? 0)) {
+      model.contextWindow = catalogDefaults.contextWindow ?? 0;
+      modelChanged = true;
     }
-    if (!isOverridden('capabilities') && catalogDefaults.capabilities !== undefined) {
-      model.capabilities = catalogDefaults.capabilities;
+    if (!isOverridden('capabilities') && JSON.stringify(model.capabilities) !== JSON.stringify(catalogDefaults.capabilities)) {
+      if (catalogDefaults.capabilities === undefined) delete model.capabilities;
+      else model.capabilities = catalogDefaults.capabilities;
       modelChanged = true;
     }
 
@@ -100,8 +98,9 @@ export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean
     const updatedInstances = instances.map(inst => {
       if (!changedIds.has(inst.id)) return inst;
       const m = byId.get(inst.id)!;
+      const { capabilities: _c, ...rest } = inst;
       return {
-        ...inst,
+        ...rest,
         cost: m.cost,
         contextWindow: m.contextWindow ?? inst.contextWindow,
         ...(m.capabilities !== undefined ? { capabilities: m.capabilities } : {}),
