@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "کنفیگر شدہ",
         "embedding": "ایمبیڈنگ",
-        "runsLocally": "مقام پر چلتا ہے"
+        "runsLocally": "مقام پر چلتا ہے",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "پچھلا",
@@ -1918,7 +1919,9 @@
         "title": "صلاحیتیں",
         "description": "اس ماڈل کی قسم اور صلاحیتوں کی تعیین کریں۔",
         "embeddingModel": "ایمبیڈنگ ماڈل",
-        "embeddingModelHint": "یہ ماڈل ویکٹر embeddings بناتا ہے (چیٹ مکمل نہیں)"
+        "embeddingModelHint": "یہ ماڈل ویکٹر embeddings بناتا ہے (چیٹ مکمل نہیں)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "قیمت اور سیاق و سباق",

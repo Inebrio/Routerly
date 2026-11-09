@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "Konfiguriert",
         "embedding": "Embedding",
-        "runsLocally": "Läuft lokal"
+        "runsLocally": "Läuft lokal",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Zurück",
@@ -1918,7 +1919,9 @@
         "title": "Fähigkeiten",
         "description": "Gib Typ und Fähigkeiten dieses Modells an.",
         "embeddingModel": "Embedding-Modell",
-        "embeddingModelHint": "Dieses Modell erzeugt Vektor-Embeddings (keine Chat-Completions)"
+        "embeddingModelHint": "Dieses Modell erzeugt Vektor-Embeddings (keine Chat-Completions)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Preise & Kontext",

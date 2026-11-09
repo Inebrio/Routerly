@@ -25,7 +25,7 @@ export type ProviderCatalog = Record<string, {
     contextWindow?: number;
     notes?: string;
     deprecated?: boolean;
-    capabilities?: { embedding?: boolean };
+    capabilities?: { embedding?: boolean; decision?: boolean };
     pricingTiers?: Array<{
       metric: string;
       above: number;
@@ -35,6 +35,20 @@ export type ProviderCatalog = Record<string, {
     }>;
   }>;
 }>;
+
+// ponytail: built-in because released services reject a provider they do not know, so the shared remote
+// catalog must not list it yet; move to Routerly-Providers once every supported release knows `typesafe`.
+// Remote entries override it. Price 0: TypeSafe does not publish one, the operator sets the contract price.
+const BUILTIN_CATALOG: ProviderCatalog = {
+  typesafe: {
+    endpoint: 'https://api.typesafe.ai/v1',
+    models: [{
+      id: 'jev-latest', input: 0, output: 0,
+      notes: 'Jev decision model. Price not published: set your contract price.',
+      capabilities: { decision: true },
+    }],
+  },
+};
 
 const DEFAULT_REPO: ProviderRepo = {
   url: 'https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/',
@@ -128,7 +142,7 @@ class CatalogFetcher {
     }
 
     // First repo in the list wins on conflict: apply from last to first so earlier rows override
-    const merged: ProviderCatalog = {};
+    const merged: ProviderCatalog = { ...BUILTIN_CATALOG };
     for (const repo of [...this.repos].reverse()) {
       const cat = this.repoCatalog.get(repo.url);
       if (cat && repo.enabled) Object.assign(merged, cat);

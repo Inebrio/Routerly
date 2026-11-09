@@ -189,6 +189,20 @@ describe('routeRequest', () => {
     )
   })
 
+  it('skips decision models as chat candidates and logs it', async () => {
+    mockModels([makeModel('m1'), makeModel('ts', 'typesafe')])
+    mockIsAllowed.mockResolvedValue(true)
+    const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const result = await routeRequest(request, makeRouter(['m1', 'ts']), log)
+    expect(result.models.map(m => m.model)).toEqual(['m1'])
+    expect(log.warn).toHaveBeenCalledWith(expect.objectContaining({ decisionModelIds: ['ts'] }), expect.any(String))
+  })
+
+  it('throws no_models_available when the router holds only a decision model', async () => {
+    mockModels([makeModel('ts', 'typesafe')])
+    await expect(routeRequest(request, makeRouter(['ts']))).rejects.toThrow('no_models_available')
+  })
+
   it('handles policy that throws (graceful degradation)', async () => {
     mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)

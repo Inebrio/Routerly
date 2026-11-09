@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "அமைப்பு",
         "embedding": "உள்பொதிப்பு",
-        "runsLocally": "স্थानીয় இயக்கு"
+        "runsLocally": "স্थानીয় இயக்கு",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "முந்தைய",
@@ -1918,7 +1919,9 @@
         "title": "திறன்",
         "description": "வகை மற்றும் திறன் இந்த மாதிரி விவரம்।",
         "embeddingModel": "உள்பொதிப்பு மாதிரி",
-        "embeddingModelHint": "இந்த மாதிரி வெக்டर உள்பொதிப்பு உபயோசல் (உச்சரணை பூர்த் இல்லை)"
+        "embeddingModelHint": "இந்த மாதிரி வெக்டर உள்பொதிப்பு உபயோசல் (உச்சரணை பூர்த் இல்லை)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "விலை & சூழல்",

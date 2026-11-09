@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "Настроено",
         "embedding": "внедрение",
-        "runsLocally": "Запускается локально"
+        "runsLocally": "Запускается локально",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Пред.",
@@ -1918,7 +1919,9 @@
         "title": "Возможности",
         "description": "Укажите тип и возможности этой модели.",
         "embeddingModel": "Модель внедрения",
-        "embeddingModelHint": "Эта модель генерирует векторные внедрения (не завершения чата)"
+        "embeddingModelHint": "Эта модель генерирует векторные внедрения (не завершения чата)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Цены и контекст",

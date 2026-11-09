@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "Configurado",
         "embedding": "incorporação",
-        "runsLocally": "Executa localmente"
+        "runsLocally": "Executa localmente",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Ant",
@@ -1918,7 +1919,9 @@
         "title": "Capacidades",
         "description": "Especifique o tipo e capacidades deste modelo.",
         "embeddingModel": "Modelo de incorporação",
-        "embeddingModelHint": "Este modelo gera incorporações de vector (não conclusões de chat)"
+        "embeddingModelHint": "Este modelo gera incorporações de vector (não conclusões de chat)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Preços & contexto",

@@ -296,7 +296,7 @@ dashboard to populate the provider dropdown when creating a connection.
 - `id` - provider identifier, used as `providerId` on a connection
 - `protocol` - wire protocol the connection speaks: `openai`, `anthropic`, `gemini`, or `custom`
 - `supportLevel` - how credentials are supplied: `native` (plain API key), `compatible` (OpenAI-compatible custom endpoint, plain API key), `oauth` (OAuth access/refresh token pair, encrypted at rest), `web` (browser session cookie, encrypted at rest)
-- `nativeCapabilities` - capability flags (`thinking`, `vision`, `functionCalling`, `json`, `embedding`) the provider natively supports, used as defaults for model instances
+- `nativeCapabilities` - capability flags (`thinking`, `vision`, `functionCalling`, `json`, `embedding`, `decision`) the provider natively supports, used as defaults for model instances
 
 **Errors**: `403` insufficient permissions
 
@@ -472,7 +472,7 @@ POST /api/instances
 - `cost` - `{ inputPerMillion, outputPerMillion, cachePerMillion?, cacheWritePerMillion?, pricingTiers? }` (required). When `cachePerMillion` is omitted, cache-read tokens are billed at `inputPerMillion` (and `cacheWritePerMillion` falls back the same way); the service logs a one-time warning per model on the first cache hit. Set `cachePerMillion` to price cache reads correctly.
 - `contextWindow` - token limit (required)
 - `limits` - array of usage limit objects, same shape as [router token limits](#create-token) (optional)
-- `capabilities` - `{ thinking?, vision?, functionCalling?, json?, embedding? }`, overrides the connection provider's `nativeCapabilities` (optional)
+- `capabilities` - `{ thinking?, vision?, functionCalling?, json?, embedding? }`, overrides (`decision` is derived from the provider and read-only) the connection provider's `nativeCapabilities` (optional)
 
 **Response `200`:** the created instance.
 

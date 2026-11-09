@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "Configuré",
         "embedding": "incorporation",
-        "runsLocally": "S'exécute localement"
+        "runsLocally": "S'exécute localement",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Précédent",
@@ -1918,7 +1919,9 @@
         "title": "Capacités",
         "description": "Spécifiez le type et les capacités de ce modèle.",
         "embeddingModel": "Modèle d'incorporation",
-        "embeddingModelHint": "Ce modèle génère des incorporations vectorielles (pas des complétions de chat)"
+        "embeddingModelHint": "Ce modèle génère des incorporations vectorielles (pas des complétions de chat)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Tarification & contexte",

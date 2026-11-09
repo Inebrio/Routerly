@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "Dikonfigurasi",
         "embedding": "embedding",
-        "runsLocally": "Berjalan lokal"
+        "runsLocally": "Berjalan lokal",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Sebelumnya",
@@ -1918,7 +1919,9 @@
         "title": "Kemampuan",
         "description": "Tentukan jenis dan kemampuan model ini.",
         "embeddingModel": "Model embedding",
-        "embeddingModelHint": "Model ini menghasilkan embedding vektor (bukan penyelesaian obrolan)"
+        "embeddingModelHint": "Model ini menghasilkan embedding vektor (bukan penyelesaian obrolan)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Harga & konteks",

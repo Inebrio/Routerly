@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "Määritetty",
         "embedding": "upotus",
-        "runsLocally": "Toimii paikallisesti"
+        "runsLocally": "Toimii paikallisesti",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Edell.",
@@ -1918,7 +1919,9 @@
         "title": "Ominaisuudet",
         "description": "Määritä tämän mallin tyyppi ja ominaisuudet.",
         "embeddingModel": "Upotusmalli",
-        "embeddingModelHint": "Tämä malli tuottaa vektoriupotuksia (ei keskustelutäydennyksiä)"
+        "embeddingModelHint": "Tämä malli tuottaa vektoriupotuksia (ei keskustelutäydennyksiä)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Hinnoittelu ja konteksti",

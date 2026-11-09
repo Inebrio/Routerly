@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
-import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type RoutingProfile } from '../../api';
+import { updateRouter, getModels, getProfiles, assignRouterProfiles, isChatModel, type Model, type RoutingProfile } from '../../api';
 import { PASSTHROUGH_MODEL_ID, DEFAULT_RANKING_ALGORITHM, type CallConfig, type RankingAlgorithmId } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
 import { useAuth } from '../../AuthContext';
@@ -46,7 +46,7 @@ export function RouterRoutingTab() {
 
   useEffect(() => {
     getModels()
-      .then(m => setAvailableModels(m))
+      .then(m => setAvailableModels(m.filter(isChatModel)))
       .finally(() => setLoading(false));
     getProfiles('routing')
       .then(list => setProfiles(list.filter((p): p is RoutingProfile => p.kind === 'routing')))

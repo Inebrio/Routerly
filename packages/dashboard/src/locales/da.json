@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "Konfigureret",
         "embedding": "embedding",
-        "runsLocally": "Kører lokalt"
+        "runsLocally": "Kører lokalt",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Forrige",
@@ -1918,7 +1919,9 @@
         "title": "Kapabiliteter",
         "description": "Angiv typen og kapabiliteterne for denne model.",
         "embeddingModel": "Embedding-model",
-        "embeddingModelHint": "Denne model genererer vektor-embeddings (ikke chat-completions)"
+        "embeddingModelHint": "Denne model genererer vektor-embeddings (ikke chat-completions)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Prissætning og kontekst",

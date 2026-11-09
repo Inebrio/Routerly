@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "구성됨",
         "embedding": "embedding",
-        "runsLocally": "로컬에서 실행"
+        "runsLocally": "로컬에서 실행",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "이전",
@@ -1918,7 +1919,9 @@
         "title": "기능",
         "description": "이 모델의 유형 및 기능을 지정합니다.",
         "embeddingModel": "임베딩 모델",
-        "embeddingModelHint": "이 모델은 벡터 임베딩을 생성합니다(채팅 완료 아님)"
+        "embeddingModelHint": "이 모델은 벡터 임베딩을 생성합니다(채팅 완료 아님)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "가격 & 문맥",

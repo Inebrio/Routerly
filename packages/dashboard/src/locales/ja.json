@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "構成済み",
         "embedding": "埋め込み",
-        "runsLocally": "ローカルで実行"
+        "runsLocally": "ローカルで実行",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "前へ",
@@ -1918,7 +1919,9 @@
         "title": "機能",
         "description": "このモデルのタイプと機能を指定します。",
         "embeddingModel": "埋め込みモデル",
-        "embeddingModelHint": "このモデルはベクトル埋め込みを生成します(チャット補完ではなく)"
+        "embeddingModelHint": "このモデルはベクトル埋め込みを生成します(チャット補完ではなく)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "価格とコンテキスト",

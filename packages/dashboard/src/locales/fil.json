@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "Nakakonfigure",
         "embedding": "embedding",
-        "runsLocally": "Tumatakbo nang lokal"
+        "runsLocally": "Tumatakbo nang lokal",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Nauna",
@@ -1918,7 +1919,9 @@
         "title": "Mga Kapasidad",
         "description": "Tukuyin ang uri at mga kapasidad ng model na ito.",
         "embeddingModel": "Embedding model",
-        "embeddingModelHint": "Ang model na ito ay gumagawa ng vector embeddings (hindi chat completions)"
+        "embeddingModelHint": "Ang model na ito ay gumagawa ng vector embeddings (hindi chat completions)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Presyo at context",

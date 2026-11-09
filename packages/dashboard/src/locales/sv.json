@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "Konfigurerad",
         "embedding": "inbäddning",
-        "runsLocally": "Körs lokalt"
+        "runsLocally": "Körs lokalt",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Föreg",
@@ -1918,7 +1919,9 @@
         "title": "Möjligheter",
         "description": "Specificera typ och möjligheter för denna modell.",
         "embeddingModel": "Inbäddningsmodell",
-        "embeddingModelHint": "Denna modell genererar vektorinbäddningar (inte chatkomple teringar)"
+        "embeddingModelHint": "Denna modell genererar vektorinbäddningar (inte chatkomple teringar)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Prissättning & kontext",

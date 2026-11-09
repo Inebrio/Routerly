@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "Nakonfigurované",
         "embedding": "vkladanie",
-        "runsLocally": "Beží lokálne"
+        "runsLocally": "Beží lokálne",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Predch",
@@ -1918,7 +1919,9 @@
         "title": "Schopnosti",
         "description": "Zadajte typ a schopnosti tohto modelu.",
         "embeddingModel": "Model vkladania",
-        "embeddingModelHint": "Tento model generuje vektorové vloženia (nie doplnenie chatu)"
+        "embeddingModelHint": "Tento model generuje vektorové vloženia (nie doplnenie chatu)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Ceny a kontext",

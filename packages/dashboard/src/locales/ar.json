@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "مُعدّ",
         "embedding": "تضمين",
-        "runsLocally": "يعمل محليًا"
+        "runsLocally": "يعمل محليًا",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "السابق",
@@ -1918,7 +1919,9 @@
         "title": "القدرات",
         "description": "حدّد نوع هذا النموذج وقدراته.",
         "embeddingModel": "نموذج تضمين",
-        "embeddingModelHint": "ينتج هذا النموذج تضمينات متجهية (وليس إكمالات محادثة)"
+        "embeddingModelHint": "ينتج هذا النموذج تضمينات متجهية (وليس إكمالات محادثة)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "التسعير والسياق",

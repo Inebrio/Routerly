@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "ఆకృతిపరచారు",
         "embedding": "ఎంబెడింగ్",
-        "runsLocally": "స్థానికంగా"
+        "runsLocally": "స్థానికంగా",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "మునుపటి",
@@ -1918,7 +1919,9 @@
         "title": "సామర్థ్యాలు",
         "description": "ఈ మోడల్ రకం మరియు సామర్థ్యాలు నిర్దిష్ట చేయండి.",
         "embeddingModel": "ఎంబెడింగ్ మోడల్",
-        "embeddingModelHint": "ఈ మోడల్ వెక్టర్ ఎంబెడింగ్ ఉత్పత్తి చేస్తుంది (చాట్ సంపూర్ణం కాదు)"
+        "embeddingModelHint": "ఈ మోడల్ వెక్టర్ ఎంబెడింగ్ ఉత్పత్తి చేస్తుంది (చాట్ సంపూర్ణం కాదు)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "ధర & సందర్భం",

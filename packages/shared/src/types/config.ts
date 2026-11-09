@@ -3,7 +3,7 @@
 import type { OptimizerCallStat, OptimizerConfig } from './optimizers.js';
 import type { RequestType } from './usage.js';
 
-export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oauth' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity' | 'azure-openai' | 'bedrock' | 'vertex';
+export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oauth' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity' | 'azure-openai' | 'bedrock' | 'vertex' | 'typesafe';
 
 export type ProviderId = string;
 
@@ -200,6 +200,8 @@ export interface ModelCapabilities {
   json?: boolean;
   /** Whether the model is an embedding model */
   embedding?: boolean;
+  /** Decision model: answers predefined questions, cannot serve chat. Derived from the provider, never stored. */
+  decision?: boolean;
 }
 
 export interface ModelConfig {

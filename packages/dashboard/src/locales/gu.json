@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "ગઠીત",
         "embedding": "એમ્બેડિંગ",
-        "runsLocally": "સ્થાનીયપણે ચલાય છે"
+        "runsLocally": "સ્થાનીયપણે ચલાય છે",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "પાછલું",
@@ -1918,7 +1919,9 @@
         "title": "ક્ષમતાઓ",
         "description": "આ મોડલના પ્રકાર અને ક્ષમતાઓ નિર્દિષ્ટ કરો.",
         "embeddingModel": "એમ્બેડિંગ મોડલ",
-        "embeddingModelHint": "આ મોડલ વેક્ટર એમ્બેડિંગ ઉત્પાદિત કરે છે (ચેટ પૂર્ણતાઓ નહીં)"
+        "embeddingModelHint": "આ મોડલ વેક્ટર એમ્બેડિંગ ઉત્પાદિત કરે છે (ચેટ પૂર્ણતાઓ નહીં)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "ભાવ અને સંદર્ભ",

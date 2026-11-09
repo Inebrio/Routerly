@@ -1842,7 +1842,8 @@
       "badges": {
         "configured": "Configurat",
         "embedding": "încorporare",
-        "runsLocally": "Rulează local"
+        "runsLocally": "Rulează local",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Anterior",
@@ -1918,7 +1919,9 @@
         "title": "Capacități",
         "description": "Specifică tipul și capacitățile acestui model.",
         "embeddingModel": "Model de încorporare",
-        "embeddingModelHint": "Acest model generează încorporări vectoriale (nu completări chat)"
+        "embeddingModelHint": "Acest model generează încorporări vectoriale (nu completări chat)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Prețuri & context",

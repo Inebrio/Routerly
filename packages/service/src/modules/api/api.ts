@@ -29,6 +29,7 @@ import { resetTraceExportCache } from '../observability/traces-export.js';
 import { encodeRemoteWrite, remoteWriteHeaders } from '../observability/remote-write.js';
 import { getProviderAdapter } from '../provider/registry.js';
 import { getEmbeddingProvider } from '../embeddings/dispatch.js';
+import { decide } from '../decision/dispatch.js';
 import { loadEffectiveModel } from '../reverse-proxy/execute.js';
 import { listEffectiveModels, listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
 import { resolveEffectiveModel, defaultUpstreamModelId } from '../provider/resolve.js';
@@ -77,9 +78,15 @@ function hashToken(t: string): string {
  */
 /** Advisory only: unregistered model ids may be valid (unmapped / externally managed), so they warn, never reject. */
 async function unknownModelWarnings(models: { modelId: string }[]): Promise<string[] | undefined> {
-  const known = new Set((await listEffectiveModelsIncludingDisabled()).map(m => m.id));
-  const unknown = [...new Set(models.map(m => m.modelId))].filter(id => id !== PASSTHROUGH_MODEL_ID && !known.has(id));
-  return unknown.length ? unknown.map(id => `Model "${id}" is not in the model registry`) : undefined;
+  const all = await listEffectiveModelsIncludingDisabled();
+  const known = new Set(all.map(m => m.id));
+  const decision = new Set(all.filter(m => m.capabilities?.decision === true).map(m => m.id));
+  const ids = [...new Set(models.map(m => m.modelId))].filter(id => id !== PASSTHROUGH_MODEL_ID);
+  const warnings = [
+    ...ids.filter(id => !known.has(id)).map(id => `Model "${id}" is not in the model registry`),
+    ...ids.filter(id => decision.has(id)).map(id => `Model "${id}" is a decision model and cannot serve chat requests`),
+  ];
+  return warnings.length ? warnings : undefined;
 }
 
 
@@ -1139,6 +1146,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         await embedder.embed(['ping'], model.upstreamModelId ?? model.id);
         return reply.send({ ok: true, latencyMs: Date.now() - t0 });
       }
+      if (model.capabilities?.decision === true) {
+        // A decision model has no chat endpoint: probe it with one yes/no question.
+        await decide(model, 'Hello', { probe: { type: 'noul', instructions: 'Is this text a greeting?' } });
+        return reply.send({ ok: true, latencyMs: Date.now() - t0 });
+      }
       const adapter = getProviderAdapter(model);
       await adapter.chatCompletion({ model: model.upstreamModelId ?? model.id, messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }, model);
       return reply.send({ ok: true, latencyMs: Date.now() - t0 });
@@ -1204,6 +1216,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
           },
           local: providerKey === 'ollama',
           embedding: m.capabilities?.embedding === true,
+          decision: m.capabilities?.decision === true,
           isConfigured: configuredIds.has(m.id),
         }))
     );
@@ -2306,7 +2319,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const baselineIds = activeModels
         // An embedding model cannot answer a completion call, so repricing the
         // routed traffic on one is meaningless: it never becomes a baseline.
-        .filter(m => inPlay.has(m.id) && m.capabilities?.embedding !== true)
+        .filter(m => inPlay.has(m.id) && m.capabilities?.embedding !== true && m.capabilities?.decision !== true)
         .filter(m => m.cost.inputPerMillion > 0 || m.cost.outputPerMillion > 0)
         .map(m => m.id);
       const computed = computeSavings(filtered, allModels, baselineIds);

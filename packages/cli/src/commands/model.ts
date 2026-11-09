@@ -273,6 +273,9 @@ Examples:
   # Ollama local model (no API key, no cost)
   routerly model add --id llama3 --provider ollama --input-price 0 --output-price 0
 
+  # Decision model (TypeSafe AI): not a chat model, cannot serve chat requests
+  routerly model add --id jev-latest --provider typesafe --api-key <key> --input-price 0 --output-price 0
+
   # Custom endpoint with monthly budget cap
   routerly model add --id my-model --provider custom \\
     --endpoint https://inference.example.com/v1 \\
@@ -289,7 +292,7 @@ Examples:
   routerly model add --id gpt-4o --provider openai --connection conn-abc123
 `)
     .requiredOption('--id <id>', 'Unique model ID (e.g. gpt-4o)')
-    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | openai-oauth | gemini | mistral | cohere | xai | deepseek | groq | together | perplexity | fireworks | cerebras | ollama | custom | azure-openai | bedrock | vertex')
+    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | openai-oauth | gemini | mistral | cohere | xai | deepseek | groq | together | perplexity | fireworks | cerebras | ollama | typesafe | custom | azure-openai | bedrock | vertex')
     .option('--connection <id|label>', 'Bind to an existing provider connection by id or label (see `routerly connections list`); omits inline credentials')
     .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)')
     .option('--api-key <key>', 'API key (stored plaintext; file permissions protect it)')
@@ -340,6 +343,7 @@ Examples:
         'anthropic-oauth': 'https://api.anthropic.com',
         gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/',
         ollama: 'http://localhost:11434/v1',
+        typesafe: 'https://api.typesafe.ai/v1',
         'azure-openai': '',
         bedrock: '',
         vertex: '',

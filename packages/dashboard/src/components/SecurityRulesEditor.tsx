@@ -13,6 +13,7 @@ import {
   type RegexGuardConfig,
   type SemanticGuardConfig,
   type TopicGuardConfig,
+  isChatModel,
 } from '../api';
 import { blocksResponseStreaming } from '@routerly/shared';
 import { SearchableSelect } from './SearchableSelect';
@@ -731,7 +732,7 @@ export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolici
 
   // ponytail: embedding-only models can't act as chat judges — exclude them
   const modelOptions = allModels
-    .filter(m => m.capabilities?.embedding !== true)
+    .filter(m => m.capabilities?.embedding !== true && isChatModel(m))
     .map(m => ({ value: m.id, label: m.name || m.id }));
   const embeddingModelOptions = allModels
     .filter(m => m.capabilities?.embedding === true)
