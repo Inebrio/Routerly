@@ -2850,6 +2850,13 @@
         "notFound": "Profil ikke fundet.",
         "loadFailed": "Kunne ikke indlæse profil",
         "saveFailed": "Kunne ikke gemme profil"
+      },
+      "selector": {
+        "label": "Selektor",
+        "argmax": "Højeste score (argmax)",
+        "weightedRandom": "Vægtet tilfældig",
+        "argmaxHint": "Vælger altid modellen med den højeste score.",
+        "weightedRandomHint": "Vælger tilfældigt vægtet efter score: modeller med højere score vælges oftere."
       }
     }
   },

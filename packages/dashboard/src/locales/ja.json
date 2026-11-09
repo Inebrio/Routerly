@@ -2850,6 +2850,13 @@
         "notFound": "プロファイルが見つかりません。",
         "loadFailed": "プロファイルの読み込みに失敗しました",
         "saveFailed": "プロファイル保存に失敗しました"
+      },
+      "selector": {
+        "label": "セレクター",
+        "argmax": "最高スコア (argmax)",
+        "weightedRandom": "重み付きランダム",
+        "argmaxHint": "常に最もスコアの高いモデルを選びます。",
+        "weightedRandomHint": "スコアで重み付けしてランダムに選びます。スコアの高いモデルほど選ばれやすくなります。"
       }
     }
   },

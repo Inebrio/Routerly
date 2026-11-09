@@ -2850,6 +2850,13 @@
         "notFound": "Profil sa nenašiel.",
         "loadFailed": "Nepodarilo sa načítať profil",
         "saveFailed": "Nepodarilo sa uložiť profil"
+      },
+      "selector": {
+        "label": "Selektor",
+        "argmax": "Najvyššie skóre (argmax)",
+        "weightedRandom": "Vážený náhodný výber",
+        "argmaxHint": "Vždy vyberie model s najvyšším skóre.",
+        "weightedRandomHint": "Vyberá náhodne podľa skóre: modely s vyšším skóre sa vyberajú častejšie."
       }
     }
   },

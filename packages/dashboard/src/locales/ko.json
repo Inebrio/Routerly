@@ -2850,6 +2850,13 @@
         "notFound": "프로필을 찾을 수 없습니다.",
         "loadFailed": "프로필 로드 실패",
         "saveFailed": "프로필 저장 실패"
+      },
+      "selector": {
+        "label": "셀렉터",
+        "argmax": "최고 점수 (argmax)",
+        "weightedRandom": "가중 무작위",
+        "argmaxHint": "항상 점수가 가장 높은 모델을 선택합니다.",
+        "weightedRandomHint": "점수로 가중치를 두어 무작위로 선택합니다. 점수가 높은 모델이 더 자주 선택됩니다."
       }
     }
   },

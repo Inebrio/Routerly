@@ -2854,6 +2854,13 @@
         "notFound": "Profile not found.",
         "loadFailed": "Failed to load profile",
         "saveFailed": "Failed to save profile"
+      },
+      "selector": {
+        "label": "Selector",
+        "argmax": "Highest score (argmax)",
+        "weightedRandom": "Weighted random",
+        "argmaxHint": "Always picks the model with the highest score.",
+        "weightedRandomHint": "Picks randomly, weighted by score: higher-scoring models are chosen more often."
       }
     }
   },

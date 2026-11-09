@@ -2850,6 +2850,13 @@
         "notFound": "Perfil no encontrado.",
         "loadFailed": "No se pudo cargar el perfil",
         "saveFailed": "No se pudo guardar el perfil"
+      },
+      "selector": {
+        "label": "Selector",
+        "argmax": "Mayor puntuación (argmax)",
+        "weightedRandom": "Aleatorio ponderado",
+        "argmaxHint": "Elige siempre el modelo con la puntuación más alta.",
+        "weightedRandomHint": "Elige al azar ponderado por puntuación: los modelos con mayor puntuación se eligen más a menudo."
       }
     }
   },

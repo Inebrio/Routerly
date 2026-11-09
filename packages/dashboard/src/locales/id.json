@@ -2850,6 +2850,13 @@
         "notFound": "Profil tidak ditemukan.",
         "loadFailed": "Gagal memuat profil",
         "saveFailed": "Gagal menyimpan profil"
+      },
+      "selector": {
+        "label": "Selektor",
+        "argmax": "Skor tertinggi (argmax)",
+        "weightedRandom": "Acak berbobot",
+        "argmaxHint": "Selalu memilih model dengan skor tertinggi.",
+        "weightedRandomHint": "Memilih secara acak berbobot skor: model dengan skor lebih tinggi lebih sering dipilih."
       }
     }
   },

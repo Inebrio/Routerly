@@ -158,7 +158,7 @@ function renderTab(router: Record<string, unknown> = mockRouter) {
 const sampleProfiles = [
   { id: 'auto', kind: 'routing', version: 1, label: 'Auto', policies: [{ type: 'cheapest', enabled: true }], selector: 'argmax', fallbackStrategy: 'next-best', builtin: true },
   { id: 'builtin-balanced', kind: 'routing', version: 1, label: 'Balanced', policies: [], selector: 'argmax', fallbackStrategy: 'next-best', builtin: true },
-  { id: 'user-custom', kind: 'routing', version: 2, label: 'My Profile', policies: [], selector: 'cheapest', fallbackStrategy: 'abort', builtin: false },
+  { id: 'user-custom', kind: 'routing', version: 2, label: 'My Profile', policies: [], selector: 'argmax', fallbackStrategy: 'abort', builtin: false },
 ];
 
 beforeEach(() => {

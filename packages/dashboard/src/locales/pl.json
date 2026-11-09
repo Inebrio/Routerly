@@ -2850,6 +2850,13 @@
         "notFound": "Profil nie znaleziony.",
         "loadFailed": "Nie udało się załadować profil",
         "saveFailed": "Nie udało się zapisać profil"
+      },
+      "selector": {
+        "label": "Selektor",
+        "argmax": "Najwyższy wynik (argmax)",
+        "weightedRandom": "Ważony losowy",
+        "argmaxHint": "Zawsze wybiera model o najwyższym wyniku.",
+        "weightedRandomHint": "Wybiera losowo, ważąc wynikiem: modele z wyższym wynikiem są wybierane częściej."
       }
     }
   },

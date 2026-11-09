@@ -2850,6 +2850,13 @@
         "notFound": "Profil tapılmadı.",
         "loadFailed": "Profili yükləmək alınmadı",
         "saveFailed": "Profili saxlamaq alınmadı"
+      },
+      "selector": {
+        "label": "Seçici",
+        "argmax": "Ən yüksək xal (argmax)",
+        "weightedRandom": "Çəkili təsadüfi",
+        "argmaxHint": "Həmişə ən yüksək xallı modeli seçir.",
+        "weightedRandomHint": "Xala görə çəkili təsadüfi seçir: yüksək xallı modellər daha tez-tez seçilir."
       }
     }
   },

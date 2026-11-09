@@ -2850,6 +2850,13 @@
         "notFound": "Không tìm thấy hồ sơ.",
         "loadFailed": "Không thể tải hồ sơ",
         "saveFailed": "Không thể lưu hồ sơ"
+      },
+      "selector": {
+        "label": "Bộ chọn",
+        "argmax": "Điểm cao nhất (argmax)",
+        "weightedRandom": "Ngẫu nhiên có trọng số",
+        "argmaxHint": "Luôn chọn mô hình có điểm cao nhất.",
+        "weightedRandomHint": "Chọn ngẫu nhiên theo trọng số điểm: mô hình có điểm cao hơn được chọn thường xuyên hơn."
       }
     }
   },

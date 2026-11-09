@@ -2850,6 +2850,13 @@
         "notFound": "未找到配置文件。",
         "loadFailed": "未能加载配置文件",
         "saveFailed": "未能保存配置文件"
+      },
+      "selector": {
+        "label": "选择器",
+        "argmax": "最高分 (argmax)",
+        "weightedRandom": "加权随机",
+        "argmaxHint": "始终选择得分最高的模型。",
+        "weightedRandomHint": "按得分加权随机选择：得分越高的模型被选中的概率越大。"
       }
     }
   },

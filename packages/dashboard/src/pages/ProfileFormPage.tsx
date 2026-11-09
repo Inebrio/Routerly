@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DEFAULT_RANKING_ALGORITHM, type RankingAlgorithmId } from '@routerly/shared';
+import { DEFAULT_RANKING_ALGORITHM, SELECTOR_TYPES, type RankingAlgorithmId } from '@routerly/shared';
 import type { TFunction } from 'i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Save, ShieldOff } from 'lucide-react';
@@ -19,6 +19,7 @@ import {
 import {
   SecurityRulesEditor, normalizeGuardActions, validateSecurityRules, type RuleWithId,
 } from '../components/SecurityRulesEditor';
+import { SearchableSelect } from '../components/SearchableSelect';
 import { KIND_LABELS } from './ProfilesPage';
 import { useAuth } from '../AuthContext';
 import { uuid } from '../utils/uuid';
@@ -207,6 +208,22 @@ export function ProfileFormPage() {
             {/* Each editor prints its own heading, so the form does not repeat it. */}
             {kind === 'routing' && (
               <RoutingPoliciesEditor policies={policies} setPolicies={setPolicies} availableModels={models} rankingAlgorithm={rankingAlgorithm} onRankingAlgorithmChange={setRankingAlgorithm} />
+            )}
+
+            {kind === 'routing' && (
+              <div className="form-group" style={{ marginTop: 24, maxWidth: 400 }}>
+                <label className="form-label">{t('profiles.form.selector.label')}</label>
+                <SearchableSelect
+                  ariaLabel={t('profiles.form.selector.label')}
+                  value={selector}
+                  disabled={readOnly}
+                  onChange={v => setSelector(v as SelectorType)}
+                  options={SELECTOR_TYPES.map(s => ({ value: s, label: t(`profiles.form.selector.${s === 'argmax' ? 'argmax' : 'weightedRandom'}`) }))}
+                />
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 6, marginBottom: 0 }}>
+                  {t(`profiles.form.selector.${selector === 'argmax' ? 'argmaxHint' : 'weightedRandomHint'}`)}
+                </p>
+              </div>
             )}
 
             {kind === 'routing' && (
