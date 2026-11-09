@@ -217,6 +217,8 @@ export interface ModelCapabilities {
   functionCalling?: boolean;
   json?: boolean;
   embedding?: boolean;
+  /** Decision model (derived from the provider): answers questions, cannot serve chat. */
+  decision?: boolean;
 }
 
 export interface Model {
@@ -252,6 +254,7 @@ export interface CatalogEntry {
   pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
   local?: boolean;
   embedding?: boolean;
+  decision?: boolean;
   isConfigured: boolean;
 }
 
@@ -268,7 +271,7 @@ export type ProviderCatalog = Record<string, {
     contextWindow?: number;
     notes?: string;
     deprecated?: boolean;
-    capabilities?: { embedding?: boolean };
+    capabilities?: { embedding?: boolean; decision?: boolean };
   }>;
 }>;
 
@@ -1066,7 +1069,7 @@ export const getAuditLog = (params?: { userId?: string; action?: string; result?
 export interface ProviderDescriptor {
   id: string;
   label: string;
-  protocol: 'openai' | 'anthropic' | 'gemini' | 'custom';
+  protocol: 'openai' | 'anthropic' | 'gemini' | 'custom' | 'decision';
   supportLevel: 'native' | 'compatible' | 'oauth' | 'web';
   nativeCapabilities: ModelCapabilities;
 }

@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "Skonfigurowany",
         "embedding": "osadzanie",
-        "runsLocally": "Uruchamia się lokalnie"
+        "runsLocally": "Uruchamia się lokalnie",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Poprz",
@@ -1939,7 +1940,9 @@
         "title": "Możliwości",
         "description": "Określ typ i możliwości tego modelu.",
         "embeddingModel": "Model osadzania",
-        "embeddingModelHint": "Ten model generuje wektory osadzające (a nie uzupełnienia czatu)"
+        "embeddingModelHint": "Ten model generuje wektory osadzające (a nie uzupełnienia czatu)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Ceny i kontekst",

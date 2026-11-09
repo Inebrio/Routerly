@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "Được cấu hình",
         "embedding": "nhúng",
-        "runsLocally": "Chạy cục bộ"
+        "runsLocally": "Chạy cục bộ",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Trước",
@@ -1939,7 +1940,9 @@
         "title": "Khả năng",
         "description": "Chỉ định loại và khả năng của mô hình này.",
         "embeddingModel": "Mô hình nhúng",
-        "embeddingModelHint": "Mô hình này tạo ra nhúng vectơ (không phải hoàn thành trò chuyện)"
+        "embeddingModelHint": "Mô hình này tạo ra nhúng vectơ (không phải hoàn thành trò chuyện)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Định giá & ngữ cảnh",

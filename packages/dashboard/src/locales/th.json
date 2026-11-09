@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "ตั้งค่าแล้ว",
         "embedding": "การฝังตัว",
-        "runsLocally": "ทำงานในพื้นที่"
+        "runsLocally": "ทำงานในพื้นที่",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "ก่อนหน้า",
@@ -1939,7 +1940,9 @@
         "title": "ความสามารถ",
         "description": "ระบุประเภทและความสามารถของรุ่มนี้",
         "embeddingModel": "รุ่นการฝังตัว",
-        "embeddingModelHint": "รุ่นนี้สร้างการฝังเวกเตอร์ (ไม่ใช่การเติมเต็มแชท)"
+        "embeddingModelHint": "รุ่นนี้สร้างการฝังเวกเตอร์ (ไม่ใช่การเติมเต็มแชท)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "ราคา & บริบท",

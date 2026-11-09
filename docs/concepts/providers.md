@@ -92,6 +92,7 @@ Models not found in any catalog (local Ollama instances, custom endpoints) do no
 | Cohere | `cohere` | API key | OpenAI-compatible endpoint |
 | xAI (Grok) | `xai` | API key | OpenAI-compatible endpoint |
 | Ollama | `ollama` | None | Local inference; set `baseUrl` to your Ollama host |
+| TypeSafe AI | `typesafe` | API key | Decision model (see [Decision providers](./decision-providers.md)); not a chat provider |
 | Custom | `custom` | Optional | Any OpenAI-compatible endpoint |
 
 ---

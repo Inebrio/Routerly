@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "Configured",
         "embedding": "embedding",
-        "runsLocally": "स्थानिकपणे चलते"
+        "runsLocally": "स्थानिकपणे चलते",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Prev",
@@ -1939,7 +1940,9 @@
         "title": "Capabilities",
         "description": "या मॉडेलचा प्रकार आणि क्षमता निर्दिष्ट करा।",
         "embeddingModel": "एम्बेडिंग मॉडेल",
-        "embeddingModelHint": "हा मॉडेल वेक्टर एम्बेडिंग तयार करते (चॅट समाप्तिनाही)"
+        "embeddingModelHint": "हा मॉडेल वेक्टर एम्बेडिंग तयार करते (चॅट समाप्तिनाही)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "किंमत आणि संदर्भ",

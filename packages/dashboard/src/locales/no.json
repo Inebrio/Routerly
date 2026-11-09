@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "Konfigurert",
         "embedding": "innbygging",
-        "runsLocally": "Kjører lokalt"
+        "runsLocally": "Kjører lokalt",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Forrige",
@@ -1939,7 +1940,9 @@
         "title": "Evner",
         "description": "Angi type og evner for denne modellen.",
         "embeddingModel": "Innbyggingsmodell",
-        "embeddingModelHint": "Denne modellen genererer vektorinnbygginger (ikke chat-fullfølgelser)"
+        "embeddingModelHint": "Denne modellen genererer vektorinnbygginger (ikke chat-fullfølgelser)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Prising og kontekst",

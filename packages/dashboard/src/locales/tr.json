@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "Yapılandırılmış",
         "embedding": "gömme",
-        "runsLocally": "Yerel olarak çalışır"
+        "runsLocally": "Yerel olarak çalışır",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Önceki",
@@ -1939,7 +1940,9 @@
         "title": "Yetenekler",
         "description": "Bu modelin türünü ve yeteneklerini belirtin.",
         "embeddingModel": "Gömme modeli",
-        "embeddingModelHint": "Bu model vektör gömmeleri oluşturur (sohbet tamamlamaları değil)"
+        "embeddingModelHint": "Bu model vektör gömmeleri oluşturur (sohbet tamamlamaları değil)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Fiyatlandırma ve Bağlam",

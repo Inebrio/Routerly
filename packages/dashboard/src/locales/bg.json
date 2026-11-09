@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "Конфигуриран",
         "embedding": "вграждане",
-        "runsLocally": "Изпълнява се локално"
+        "runsLocally": "Изпълнява се локално",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Предишна",
@@ -1939,7 +1940,9 @@
         "title": "Възможности",
         "description": "Задаване на типа и възможностите на този модел.",
         "embeddingModel": "Модел за вграждания",
-        "embeddingModelHint": "Този модел генерира векторни вграждания (не завършвания на чат)"
+        "embeddingModelHint": "Този модел генерира векторни вграждания (не завършвания на чат)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Цени и контекст",

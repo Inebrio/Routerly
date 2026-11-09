@@ -83,7 +83,8 @@ describe('getProviderAdapter', () => {
   })
 
   it('every provider offered by a descriptor has an adapter (ROUT-367)', () => {
-    for (const { id } of providerDescriptorRegistry.ordered()) {
+    // Decision providers serve no chat requests, so they have no chat adapter.
+    for (const { id } of providerDescriptorRegistry.ordered().filter(d => d.protocol !== 'decision')) {
       expect(() => getProviderAdapter(makeModel(id)), id).not.toThrow()
     }
   })

@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "پیکربندی‌شده",
         "embedding": "امبدینگ",
-        "runsLocally": "اجرای محلی"
+        "runsLocally": "اجرای محلی",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "قبلی",
@@ -1939,7 +1940,9 @@
         "title": "قابلیت‌ها",
         "description": "نوع و قابلیت‌های این مدل را تعیین کنید.",
         "embeddingModel": "مدل امبدینگ",
-        "embeddingModelHint": "این مدل بردارهای امبدینگ تولید می‌کند (نه تکمیل‌های گفتگو)"
+        "embeddingModelHint": "این مدل بردارهای امبدینگ تولید می‌کند (نه تکمیل‌های گفتگو)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "قیمت‌گذاری و زمینه",

@@ -1864,7 +1864,8 @@
       "badges": {
         "configured": "Configurato",
         "embedding": "Embedding",
-        "runsLocally": "Esegue localmente"
+        "runsLocally": "Esegue localmente",
+        "decision": "Decisionale"
       },
       "pagination": {
         "prev": "Precedente",
@@ -1940,7 +1941,9 @@
         "title": "Capacità",
         "description": "Specifica tipo e capacità di questo modello.",
         "embeddingModel": "Modello di embedding",
-        "embeddingModelHint": "Questo modello genera embedding vettoriali (nessun chat completion)"
+        "embeddingModelHint": "Questo modello genera embedding vettoriali (nessun chat completion)",
+        "decisionModel": "Modello decisionale",
+        "decisionModelHint": "Questo modello risponde a domande con opzioni predefinite (non genera testo). Non può servire richieste chat ed è escluso dagli elenchi dei modelli chat."
       },
       "pricing": {
         "title": "Prezzi e contesto",

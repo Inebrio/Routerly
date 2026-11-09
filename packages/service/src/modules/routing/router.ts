@@ -102,12 +102,18 @@ export async function scoreCandidates(
   // routing must only consider models on enabled connections
   const allModels: ModelConfig[] = await listEffectiveModels();
   const missingModelIds: string[] = [];
+  const decisionModelIds: string[] = [];
   let candidates: CandidateModel[] = router.models
     .filter(ref => ref.modelId !== PASSTHROUGH_MODEL_ID)
     .map(ref => {
       const model = allModels.find(m => m.id === ref.modelId);
       if (!model) {
         missingModelIds.push(ref.modelId);
+        return null;
+      }
+      // A decision model answers predefined questions and cannot serve chat.
+      if (model.capabilities?.decision === true) {
+        decisionModelIds.push(ref.modelId);
         return null;
       }
       return { model, ...(ref.prompt !== undefined ? { prompt: ref.prompt } : {}), ...(ref.thresholds !== undefined ? { thresholds: ref.thresholds } : {}) };
@@ -119,6 +125,10 @@ export async function scoreCandidates(
       { routerId: router.id, missingModelIds },
       'routing: router references models not found in registry',
     );
+  }
+
+  if (decisionModelIds.length > 0) {
+    log?.warn({ routerId: router.id, decisionModelIds }, 'routing: router references decision models, skipped');
   }
 
   if (candidates.length === 0) {

@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "कॉन्फ़िगर किया गया",
         "embedding": "एम्बेडिंग",
-        "runsLocally": "स्थानीय रूप से चलता है"
+        "runsLocally": "स्थानीय रूप से चलता है",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "पिछला",
@@ -1939,7 +1940,9 @@
         "title": "क्षमताएं",
         "description": "इस मॉडल की प्रकार और क्षमताएं निर्दिष्ट करें।",
         "embeddingModel": "एम्बेडिंग मॉडल",
-        "embeddingModelHint": "यह मॉडल वेक्टर एम्बेडिंग उत्पन्न करता है (चैट पूर्णता नहीं)"
+        "embeddingModelHint": "यह मॉडल वेक्टर एम्बेडिंग उत्पन्न करता है (चैट पूर्णता नहीं)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "मूल्य निर्धारण और संदर्भ",

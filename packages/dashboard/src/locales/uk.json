@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "Налаштовано",
         "embedding": "вбудовування",
-        "runsLocally": "Запускається локально"
+        "runsLocally": "Запускається локально",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Перед",
@@ -1939,7 +1940,9 @@
         "title": "Можливості",
         "description": "Вказати тип та можливості цієї моделі.",
         "embeddingModel": "Модель вбудовування",
-        "embeddingModelHint": "Ця модель генерує вектор вбудовування (не завершення чату)"
+        "embeddingModelHint": "Ця модель генерує вектор вбудовування (не завершення чату)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Ціна й контекст",

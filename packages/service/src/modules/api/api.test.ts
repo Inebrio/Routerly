@@ -43,6 +43,8 @@ const mockEmbed = vi.fn()
 vi.mock('../embeddings/dispatch.js', () => ({
   getEmbeddingProvider: vi.fn(() => ({ embed: mockEmbed })),
 }))
+const mockDecide = vi.fn()
+vi.mock('../decision/dispatch.js', () => ({ decide: (...a: unknown[]) => mockDecide(...a) }))
 vi.mock('../provider/registry.js', () => ({
   getProviderAdapter: vi.fn(() => ({ chatCompletion: mockChatCompletion })),
 }))
@@ -13842,6 +13844,30 @@ describe('POST /api/models/:id/test', () => {
     const bad = await app.inject({ method: 'POST', url: '/api/models/custom%2Fnomic-embed-text/test', headers: adminAuthHeaders() })
     await app.close()
     expect(bad.json()).toMatchObject({ ok: false, error: 'boom' })
+  })
+
+  it('probes the decision API, not chat, for a decision model (ROUT-244)', async () => {
+    setupAdminAuth()
+    const instance = { id: 'typesafe/jev-latest', connectionId: 'conn-ts', upstreamModelId: 'jev-latest', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0 }
+    const connection = { id: 'conn-ts', providerId: 'typesafe', endpoint: 'https://api.typesafe.ai/v1', credentials: { apiKey: 'k' } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
+      return []
+    })
+    mockChatCompletion.mockClear()
+    mockDecide.mockResolvedValue({ answers: {} })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/typesafe%2Fjev-latest/test', headers: adminAuthHeaders() })
+    expect(res.json().ok).toBe(true)
+    expect(mockDecide).toHaveBeenCalledTimes(1)
+    expect(mockChatCompletion).not.toHaveBeenCalled()
+    mockDecide.mockRejectedValue(new Error('TypeSafe API returned 401'))
+    const bad = await app.inject({ method: 'POST', url: '/api/models/typesafe%2Fjev-latest/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(bad.json()).toMatchObject({ ok: false, error: expect.stringContaining('401') })
   })
 
   it('returns ok:true when adapter succeeds', async () => {

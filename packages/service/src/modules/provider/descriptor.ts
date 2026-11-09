@@ -5,7 +5,7 @@ import { AlterableRegistry } from '../../core/hooks/registry.js';
 export interface ProviderDescriptor {
   id: ProviderId;
   label: string;
-  protocol: 'openai' | 'anthropic' | 'gemini' | 'custom';
+  protocol: 'openai' | 'anthropic' | 'gemini' | 'custom' | 'decision';
   supportLevel: 'native' | 'compatible' | 'oauth' | 'web';
   nativeCapabilities: ModelCapabilities;
 }
@@ -277,6 +277,17 @@ providerDescriptorRegistry.contribute({
       functionCalling: true,
       json: true,
     },
+  },
+});
+
+providerDescriptorRegistry.contribute({
+  id: 'typesafe',
+  value: {
+    id: 'typesafe',
+    label: 'TypeSafe AI',
+    protocol: 'decision',
+    supportLevel: 'native',
+    nativeCapabilities: { decision: true },
   },
 });
 

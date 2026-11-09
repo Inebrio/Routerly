@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "已配置",
         "embedding": "嵌入",
-        "runsLocally": "本地运行"
+        "runsLocally": "本地运行",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "前一个",
@@ -1939,7 +1940,9 @@
         "title": "能力",
         "description": "指定此模型的类型和能力。",
         "embeddingModel": "嵌入模型",
-        "embeddingModelHint": "此模型生成向量嵌入(不是聊天完成)"
+        "embeddingModelHint": "此模型生成向量嵌入(不是聊天完成)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "定价和上下文",

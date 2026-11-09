@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "কনফিগার করা",
         "embedding": "এম্বেডিং",
-        "runsLocally": "স্থানীয়ভাবে চলে"
+        "runsLocally": "স্থানীয়ভাবে চলে",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "আগে",
@@ -1939,7 +1940,9 @@
         "title": "ক্ষমতা",
         "description": "এই মডেলের প্রকার এবং ক্ষমতা নির্দিষ্ট করুন।",
         "embeddingModel": "এম্বেডিং মডেল",
-        "embeddingModelHint": "এই মডেল ভেক্টর এম্বেডিং তৈরি করে (চ্যাট সমাপ্তি নয়)"
+        "embeddingModelHint": "এই মডেল ভেক্টর এম্বেডিং তৈরি করে (চ্যাট সমাপ্তি নয়)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "মূল্য নির্ধারণ এবং প্রসঙ্গ",

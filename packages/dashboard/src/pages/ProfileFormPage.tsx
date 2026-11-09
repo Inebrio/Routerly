@@ -9,6 +9,7 @@ import {
   type CreateProfileBody, type FallbackStrategyType, type InstalledOptimizer, type Model,
   type PiiPolicy, type Profile, type ProfileKind, type SelectorType,
 } from '../api';
+import { isChatModel } from '../utils/models';
 import type { CallConfig } from '@routerly/shared';
 import { CallConfigEditor, callConfigError } from '../components/CallConfigEditor';
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../components/RoutingPoliciesEditor';
@@ -105,7 +106,7 @@ export function ProfileFormPage() {
     setLoading(true);
     Promise.all([getProfiles(), getModels().catch(() => []), getInstalledOptimizers().catch(() => [])])
       .then(([list, ms, opts]) => {
-        setModels(ms);
+        setModels(ms.filter(isChatModel));
         const source = list.find(p => p.id === (isCreate ? baseId : id));
         if (!isCreate && !source) {
           setError(t('profiles.form.errors.notFound'));

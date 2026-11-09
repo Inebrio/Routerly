@@ -104,7 +104,7 @@ Examples:
   addCredentialOptions(
     cmd.command('add')
       .description('Add a provider connection')
-      .requiredOption('--provider-id <id>', 'Provider ID (e.g. openai, anthropic, ollama, bedrock)')
+      .requiredOption('--provider-id <id>', 'Provider ID (e.g. openai, anthropic, ollama, bedrock, typesafe)')
       .option('--label <label>', 'Unique name for this connection (default: generated from the provider, e.g. openai-2)')
       .option('--provider-name <name>', 'Upstream provider behind a custom connection (e.g. deepseek); used as the model ID prefix')
       .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)'),

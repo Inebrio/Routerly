@@ -1863,7 +1863,8 @@
       "badges": {
         "configured": "Konfiqurasiya edilib",
         "embedding": "embedding",
-        "runsLocally": "Lokal işləyir"
+        "runsLocally": "Lokal işləyir",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Əvvəlki",
@@ -1939,7 +1940,9 @@
         "title": "Qabiliyyətlər",
         "description": "Bu modelin növünü və qabiliyyətlərini göstərin.",
         "embeddingModel": "Embedding modeli",
-        "embeddingModelHint": "Bu model vektor embeddingi yaradır (söhbət tamamlaması yox)"
+        "embeddingModelHint": "Bu model vektor embeddingi yaradır (söhbət tamamlaması yox)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Qiymət və kontekst",
