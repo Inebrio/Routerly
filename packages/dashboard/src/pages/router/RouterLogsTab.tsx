@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getUsage, type UsageStats, type UsageRecord } from '../../api';
 import { useAuth } from '../../AuthContext';
 import { DateRangePicker, RECENT_PRESETS, parseStoredRange, type DateRange } from '../../components/DateRangePicker';
@@ -299,10 +299,22 @@ export function RouterLogsTab() {
                       <tr
                         key={i}
                         style={{ cursor: 'pointer' }}
-                        onClick={() => navigate(`/dashboard/usage/${r.id}`, { state: { record: r } })}
+                        onClick={e => {
+                          const href = `/dashboard/usage/${r.id}`;
+                          if (e.ctrlKey || e.metaKey) window.open(href, '_blank');
+                          else navigate(href, { state: { record: r } });
+                        }}
+                        onAuxClick={e => { if (e.button === 1) window.open(`/dashboard/usage/${r.id}`, '_blank'); }}
                       >
                         <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                          {new Date(r.timestamp).toLocaleString()}
+                          <Link
+                            to={`/dashboard/usage/${r.id}`}
+                            state={{ record: r }}
+                            style={{ color: 'inherit', textDecoration: 'none' }}
+                            onClick={e => e.stopPropagation()}
+                          >
+                            {new Date(r.timestamp).toLocaleString()}
+                          </Link>
                         </td>
                         <td><span className="mono" style={{ fontSize: '0.78rem' }}>{r.modelId}</span></td>
                         <td>
