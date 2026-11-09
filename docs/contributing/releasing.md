@@ -426,6 +426,10 @@ Open the site and use the version switcher in the nav: the new version
 and `next` (the always-current, in-progress documentation) are both
 listed and each shows its own version banner.
 
+## UAT catalog lint at release close
+
+Before the complete UAT of a release, run `node docs/uat/lint.mjs --repo . --strict` on the release head. It must exit 0: every case names only commands, routes, status codes and texts that exist, and no `uat-lint-pending` marker is left (a pending case belongs to a feature that must be merged or its case removed before the release ships). A non-zero exit stops the release close; fix the catalog in one pass and re-run. `docs/uat` is not versioned, so the lint exits 2 where the catalog is absent.
+
 ## Real-test gate before overwriting a release
 
 A published version is never re-published or overwritten on the strength of an

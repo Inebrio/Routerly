@@ -18,6 +18,7 @@ export const CONFIG_PATHS = {
   instances: join(base, 'config', 'instances.json'),
   experiments: join(base, 'config', 'experiments.json'),
   usage: join(base, 'data', 'usage.ndjson'),
+  activity: join(base, 'data', 'activity.ndjson'),
   usageLegacyJson: join(base, 'data', 'usage.json'),
   notifications: join(base, 'data', 'notifications.json'),
   audit: join(base, 'data', 'audit.json'),

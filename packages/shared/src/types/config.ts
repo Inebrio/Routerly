@@ -639,6 +639,14 @@ export interface PlaygroundPreset {
  *  answering within two seconds is better replaced by the next candidate. */
 export const DEFAULT_ROUTER_TIMEOUT_MS = 2000;
 
+/** A passthrough router rule: requests whose body `model` matches go to one of the router's own models. */
+export interface PassthroughException {
+  /** Matched against the request body's `model`. Exact, case-sensitive; `*` = any sequence (incl. empty). */
+  match: string;
+  /** One of this router's real `models[].modelId` (never the sentinel). */
+  targetModelId: string;
+}
+
 export interface RouterConfig {
   id: string;
   name: string;
@@ -695,6 +703,8 @@ export interface RouterConfig {
   traceContent?: boolean;
   /** Call configuration used when no routing profile is bound (a bound profile wins entirely). */
   callConfig?: CallConfig;
+  /** Passthrough only. Ordered; first match wins. Evaluated only on the token-authenticated lanes. */
+  exceptions?: PassthroughException[];
 }
 
 /**
@@ -1346,6 +1356,8 @@ export interface UsageRecord {
    * (and model) that actually executed the call — never the Orchestrator.
    */
   orchestratorId?: string;
+  /** Set when the call was diverted by a passthrough exception rule. Absent otherwise. */
+  routedBy?: 'exception';
   /** Call configuration decision applied to this call. Absent when no decision existed. */
   callConfig?: AppliedCallConfig;
 }

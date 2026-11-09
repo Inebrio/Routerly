@@ -25,6 +25,7 @@
       "routers": "الموجّهات",
       "experiments": "التجارب",
       "usage": "الاستخدام",
+      "timeline": "Timeline",
       "playground": "ساحة التجربة",
       "settings": "الإعدادات",
       "connectApp": "ربط تطبيق",
@@ -1406,6 +1407,22 @@
         "addTarget": "إضافة نموذج مستهدف",
         "passthroughLabel": "تمرير مباشر (توجيه خام)",
         "passthroughNotRemovable": "لا يمكن إزالة إدخال التمرير المباشر"
+      },
+      "exceptions": {
+        "title": "الاستثناءات",
+        "description": "الطلب الذي يطابق نموذجه قاعدةً يُرسل إلى النموذج المحدد بدلاً من إعادة توجيهه دون تغيير. تفوز أول مطابقة. استخدم * كحرف بديل. يسري على الطلبات الموثّقة بالرمز المميز فقط.",
+        "empty": "لا استثناءات: يُعاد توجيه كل طلب دون تغيير.",
+        "noRealModels": "أضف نموذجاً إلى هذا الموجّه أولاً: يمكن أن تستهدف الاستثناءات نماذج الموجّه فقط.",
+        "add": "إضافة استثناء",
+        "match": "نمط اسم النموذج",
+        "matchPlaceholder": "gpt-4*",
+        "target": "النموذج الهدف",
+        "remove": "إزالة الاستثناء",
+        "errors": {
+          "matchRequired": "يحتاج كل استثناء إلى نمط.",
+          "duplicateMatch": "مطابقة مكررة \"{{match}}\".",
+          "targetMissing": "هدف الاستثناء \"{{match}}\" ليس نموذجاً في هذا الموجّه."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "تجاوز الحدود العامة وحدود مستوى الموجّه للطلبات التي تستخدم هذا الرمز.",
         "noTargetModels": "أضف نماذج مستهدفة في تبويب التوجيه أولًا.",
         "noOverride": "بدون تجاوز",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "بلا حدود",
         "noLimitsSet": "لا توجد حدود معيّنة — يرث من الأصل. أضف حدًا أدناه لتجاوزه.",
         "metric": "المقياس",
@@ -2386,7 +2407,8 @@
         "outputTokens": "رموز الإخراج",
         "costPer1k": "التكلفة / 1000",
         "cost": "التكلفة (دولار)",
-        "bestCostPerformance": "أفضل نسبة تكلفة إلى أداء"
+        "bestCostPerformance": "أفضل نسبة تكلفة إلى أداء",
+        "deleted": "deleted"
       },
       "showMoreModels": "عرض {{count}} نموذج إضافي",
       "showMoreModels_other": "عرض {{count}} نماذج إضافية",
@@ -2452,12 +2474,86 @@
         "piiRedacted": "تم إخفاء PII",
         "sessionId": "معرّف الجلسة",
         "endUser": "المستخدم النهائي",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "تم التوجيه بواسطة"
       },
       "errorMessage": "رسالة الخطأ",
       "eventCount": "{{count}} حدث",
       "eventCount_other": "{{count}} أحداث",
-      "noTrace": "لا يوجد تتبّع متاح. تُلتقط بيانات التتبّع للطلبات الجديدة فقط."
+      "noTrace": "لا يوجد تتبّع متاح. تُلتقط بيانات التتبّع للطلبات الجديدة فقط.",
+      "routedByException": "استثناء Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

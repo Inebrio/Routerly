@@ -25,6 +25,7 @@
       "routers": "Routere",
       "experiments": "Eksperimenter",
       "usage": "Forbrug",
+      "timeline": "Timeline",
       "playground": "Playground",
       "settings": "Indstillinger",
       "connectApp": "Tilslut app",
@@ -1406,6 +1407,22 @@
         "addTarget": "Tilføj målmodel",
         "passthroughLabel": "Gennemstrømning (rå videresendelse)",
         "passthroughNotRemovable": "Gennemstrømningsposten kan ikke fjernes"
+      },
+      "exceptions": {
+        "title": "Undtagelser",
+        "description": "En anmodning, hvis model matcher en regel, sendes til den valgte model i stedet for at blive videresendt uændret. Første match gælder. Brug * som jokertegn. Gælder kun token-godkendte anmodninger.",
+        "empty": "Ingen undtagelser: hver anmodning videresendes uændret.",
+        "noRealModels": "Tilføj først en model til denne router: undtagelser kan kun pege på routerens egne modeller.",
+        "add": "Tilføj undtagelse",
+        "match": "Mønster for modelnavn",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Målmodel",
+        "remove": "Fjern undtagelse",
+        "errors": {
+          "matchRequired": "Hver undtagelse kræver et mønster.",
+          "duplicateMatch": "Dubleret match \"{{match}}\".",
+          "targetMissing": "Målet for undtagelsen \"{{match}}\" er ikke en model i denne router."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "Overstyr globale og router-niveau-grænser for forespørgsler, der bruger dette token.",
         "noTargetModels": "Tilføj målmodeller på fanen Routing først.",
         "noOverride": "ingen overstyring",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Ingen grænser",
         "noLimitsSet": "Ingen grænser angivet — nedarver fra parent. Tilføj en grænse nedenfor for at overstyre.",
         "metric": "Måleenhed",
@@ -2386,7 +2407,8 @@
         "outputTokens": "Output-tokens",
         "costPer1k": "Omkostning/1K",
         "cost": "Omkostning (USD)",
-        "bestCostPerformance": "Bedste omkostning-ydelse"
+        "bestCostPerformance": "Bedste omkostning-ydelse",
+        "deleted": "deleted"
       },
       "showMoreModels": "Vis {{count}} flere model",
       "showMoreModels_other": "Vis {{count}} flere modeller",
@@ -2452,12 +2474,86 @@
         "piiRedacted": "PII skjult",
         "sessionId": "Session-ID",
         "endUser": "Slutbruger",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Dirigeret af"
       },
       "errorMessage": "Fejlmeddelelse",
       "eventCount": "{{count}} hændelse",
       "eventCount_other": "{{count}} hændelser",
-      "noTrace": "Ingen trace tilgængelig. Trace-data registreres kun for nye opkald."
+      "noTrace": "Ingen trace tilgængelig. Trace-data registreres kun for nye opkald.",
+      "routedByException": "Passthrough-undtagelse"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

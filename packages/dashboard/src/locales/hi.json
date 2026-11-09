@@ -25,6 +25,7 @@
       "routers": "राउटर",
       "experiments": "प्रयोग",
       "usage": "उपयोग",
+      "timeline": "Timeline",
       "playground": "परीक्षण क्षेत्र",
       "settings": "सेटिंग्स",
       "connectApp": "ऐप को कनेक्ट करें",
@@ -1406,6 +1407,22 @@
         "addTarget": "लक्ष्य मॉडल जोड़ें",
         "passthroughLabel": "पास-थ्रू (कच्चा फ़ॉरवर्ड)",
         "passthroughNotRemovable": "पास-थ्रू प्रविष्टि हटाई नहीं जा सकती"
+      },
+      "exceptions": {
+        "title": "अपवाद",
+        "description": "जिस अनुरोध का मॉडल किसी नियम से मेल खाता है, वह बिना बदलाव आगे भेजे जाने के बजाय चुने गए मॉडल को भेजा जाता है। पहला मिलान मान्य होता है। वाइल्डकार्ड के लिए * का उपयोग करें। केवल टोकन से प्रमाणित अनुरोधों पर लागू।",
+        "empty": "कोई अपवाद नहीं: हर अनुरोध बिना बदलाव आगे भेजा जाता है।",
+        "noRealModels": "पहले इस राउटर में एक मॉडल जोड़ें: अपवाद केवल राउटर के अपने मॉडल को लक्षित कर सकते हैं।",
+        "add": "अपवाद जोड़ें",
+        "match": "मॉडल नाम पैटर्न",
+        "matchPlaceholder": "gpt-4*",
+        "target": "लक्ष्य मॉडल",
+        "remove": "अपवाद हटाएँ",
+        "errors": {
+          "matchRequired": "हर अपवाद के लिए एक पैटर्न ज़रूरी है।",
+          "duplicateMatch": "दोहराया गया मिलान \"{{match}}\"।",
+          "targetMissing": "अपवाद \"{{match}}\" का लक्ष्य इस राउटर का मॉडल नहीं है।"
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "इस टोकन का उपयोग करने वाले अनुरोध के लिए वैश्विक और राउटर-स्तरीय सीमा को ओवरराइड करें।",
         "noTargetModels": "पहले राउटिंग टैब में लक्ष्य मॉडल जोड़ें।",
         "noOverride": "कोई ओवरराइड नहीं",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "कोई सीमा नहीं",
         "noLimitsSet": "कोई सीमा सेट नहीं — माता-पिता से विरासत में मिल रहा है। ओवरराइड करने के लिए नीचे एक सीमा जोड़ें।",
         "metric": "मीट्रिक",
@@ -2386,7 +2407,8 @@
         "outputTokens": "आउटपुट टोकन",
         "costPer1k": "लागत / 1K",
         "cost": "लागत (USD)",
-        "bestCostPerformance": "सर्वश्रेष्ठ लागत-प्रदर्शन"
+        "bestCostPerformance": "सर्वश्रेष्ठ लागत-प्रदर्शन",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} और मॉडल दिखाएं",
       "showMoreModels_other": "{{count}} और मॉडल दिखाएं",
@@ -2452,12 +2474,86 @@
         "piiRedacted": "PII संपादित",
         "sessionId": "सेशन आईडी",
         "endUser": "अंतिम उपयोगकर्ता",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "रूट किया गया"
       },
       "errorMessage": "त्रुटि संदेश",
       "eventCount": "{{count}} इवेंट",
       "eventCount_other": "{{count}} इवेंट",
-      "noTrace": "कोई ट्रेस उपलब्ध नहीं। ट्रेस डेटा नए कॉल के लिए कैप्चर किया जाता है।"
+      "noTrace": "कोई ट्रेस उपलब्ध नहीं। ट्रेस डेटा नए कॉल के लिए कैप्चर किया जाता है।",
+      "routedByException": "Passthrough अपवाद"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

@@ -24,6 +24,9 @@ import { mcpModule } from './index.js'
 import { buildMcpServer } from './server.js'
 
 vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn() }))
+vi.mock('../usage/activity.js', () => ({ appendActivity: vi.fn(async () => {}) }))
+import { appendActivity } from '../usage/activity.js'
+const mockAppend = vi.mocked(appendActivity)
 const mockLogAudit = vi.mocked(logAudit)
 const mockReadConfig = vi.mocked(readConfig)
 const mockWriteConfig = vi.mocked(writeConfig)
@@ -88,6 +91,8 @@ beforeEach(() => {
   mockReadConfig.mockReset()
   mockWriteConfig.mockReset()
   mockLogAudit.mockReset()
+  mockAppend.mockReset()
+  mockAppend.mockResolvedValue(undefined)
   mockWriteConfig.mockResolvedValue(undefined as never)
   vi.mocked(updateConfig).mockImplementation((async (key: never, mutate: (c: unknown) => unknown) => {
     const cur = await mockReadConfig(key)
@@ -196,5 +201,50 @@ describe('buildMcpServer write-tool audit', () => {
   it('does not audit read tools', async () => {
     await request(['router:read'], 'tools/call', { name: 'list_routers', arguments: {} })
     expect(mockLogAudit).not.toHaveBeenCalled()
+  })
+})
+
+describe('buildMcpServer activity log (ROUT-563)', () => {
+  it('records a successful tool call with user and tool name, never the arguments', async () => {
+    await request(['router:read'], 'tools/call', { name: 'list_routers', arguments: { routerId: 'proj-1', secretish: 'do-not-log' } })
+    expect(mockAppend).toHaveBeenCalledTimes(1)
+    const event = mockAppend.mock.calls[0]![0]
+    expect(event).toMatchObject({ kind: 'mcp', outcome: 'success', name: 'list_routers', userId: 'user-1', routerId: 'proj-1' })
+    expect(typeof event.durationMs).toBe('number')
+    expect(JSON.stringify(event)).not.toContain('do-not-log')
+  })
+
+  it('omits routerId when the argument is not a string', async () => {
+    await request(['router:read'], 'tools/call', { name: 'list_routers', arguments: { routerId: 42 } })
+    expect(mockAppend.mock.calls[0]![0]).not.toHaveProperty('routerId')
+  })
+
+  it('records a permission refusal as blocked', async () => {
+    await request(['router:read'], 'tools/call', { name: 'toggle_model', arguments: { modelId: 'x' } })
+    expect(mockAppend.mock.calls[0]![0]).toMatchObject({ kind: 'mcp', outcome: 'blocked', name: 'toggle_model', userId: 'user-1' })
+  })
+
+  it('records an unknown tool as error', async () => {
+    await request(['router:read'], 'tools/call', { name: 'no_such_tool', arguments: {} })
+    expect(mockAppend.mock.calls[0]![0]).toMatchObject({ outcome: 'error', name: 'no_such_tool' })
+  })
+
+  it('records a tool that returns isError as error', async () => {
+    mockReadConfig.mockResolvedValue([] as never)
+    const res = await request(['router:write'], 'tools/call', { name: 'toggle_model', arguments: { routerId: 'nope', modelId: 'x' } })
+    expect(res.result.isError).toBe(true)
+    expect(mockAppend.mock.calls[0]![0]).toMatchObject({ outcome: 'error', name: 'toggle_model', routerId: 'nope' })
+  })
+
+  it('does not record tools/list', async () => {
+    await request(['router:read'], 'tools/list')
+    expect(mockAppend).not.toHaveBeenCalled()
+  })
+
+  it('a failing activity log does not change the tool result', async () => {
+    mockAppend.mockRejectedValue(new Error('disk full'))
+    const res = await request(['router:read'], 'tools/call', { name: 'list_routers', arguments: {} })
+    expect(res.result.isError).toBeUndefined()
+    expect(res.result.content[0].text).toContain('Alpha')
   })
 })

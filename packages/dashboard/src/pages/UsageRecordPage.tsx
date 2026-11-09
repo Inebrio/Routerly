@@ -188,6 +188,9 @@ export function UsageRecordPage() {
                   }
                 />
               )}
+              {record.routedBy === 'exception' && (
+                <Field label={t('usage.record.fields.routedBy')} value={t('usage.record.routedByException')} />
+              )}
               {record.guardrailTriggered && (
                 <Field label={t('usage.record.fields.guardrailTriggered')} value={record.guardrailTriggered} mono />
               )}

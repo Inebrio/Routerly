@@ -25,6 +25,7 @@
       "routers": "Smerovacie moduly",
       "experiments": "Experimenty",
       "usage": "Používanie",
+      "timeline": "Timeline",
       "playground": "Hracie ihrisko",
       "settings": "Nastavenia",
       "connectApp": "Pripojiť aplikáciu",
@@ -1406,6 +1407,22 @@
         "addTarget": "Pridať cieľový model",
         "passthroughLabel": "Priechod (nespracované predanie)",
         "passthroughNotRemovable": "Položku priechodu nemožno odstrániť"
+      },
+      "exceptions": {
+        "title": "Výnimky",
+        "description": "Požiadavka, ktorej model zodpovedá pravidlu, sa odošle na zvolený model namiesto odovzdania bez zmeny. Vyhráva prvá zhoda. Použite * ako zástupný znak. Platí len pre požiadavky overené tokenom.",
+        "empty": "Žiadne výnimky: každá požiadavka sa odovzdá bez zmeny.",
+        "noRealModels": "Najprv pridajte do tohto routera model: výnimky môžu mieriť len na modely routera.",
+        "add": "Pridať výnimku",
+        "match": "Vzor názvu modelu",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Cieľový model",
+        "remove": "Odstrániť výnimku",
+        "errors": {
+          "matchRequired": "Každá výnimka potrebuje vzor.",
+          "duplicateMatch": "Duplicitná zhoda \"{{match}}\".",
+          "targetMissing": "Cieľ výnimky \"{{match}}\" nie je modelom tohto routera."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "Preťažovanie globálnych a limitov na úrovni smerovaciho modulu pre požiadavky pomocou tohto tokenu.",
         "noTargetModels": "Najskôr pridajte cieľové modely do karty Smerovanie.",
         "noOverride": "žiadne preťažovanie",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Žiadne limity",
         "noLimitsSet": "Žiadne limity nenastavené — dedením od rodiča. Pridajte limit nižšie na preťažovanie.",
         "metric": "Metrika",
@@ -2386,7 +2407,8 @@
         "outputTokens": "Výstupné tokeny",
         "costPer1k": "Náklady / 1K",
         "cost": "Náklady (USD)",
-        "bestCostPerformance": "Najlepšia cena výkonu"
+        "bestCostPerformance": "Najlepšia cena výkonu",
+        "deleted": "deleted"
       },
       "showMoreModels": "Zobraziť {{count}} viac modelov",
       "showMoreModels_other": "Zobraziť {{count}} viac modelov",
@@ -2452,12 +2474,86 @@
         "piiRedacted": "PII redakované",
         "sessionId": "ID relácie",
         "endUser": "Koncový používateľ",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Smerované cez"
       },
       "errorMessage": "Chybová správa",
       "eventCount": "{{count}} udalosť",
       "eventCount_other": "{{count}} udalostí",
-      "noTrace": "Žiadna stopa nie je dostupná. Údaje stopy sú zachytené len pre nové volania."
+      "noTrace": "Žiadna stopa nie je dostupná. Údaje stopy sú zachytené len pre nové volania.",
+      "routedByException": "Výnimka Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

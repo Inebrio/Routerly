@@ -258,6 +258,21 @@ describe('RouterTokenEditPage — save', () => {
     ));
   });
 
+  it('sends and reloads the per-model limitsMode', async () => {
+    const tok = { ...mockToken, models: [{ modelId: 'gpt-4', limitsMode: 'extend' as const, limits: [] }] };
+    renderPage({ ...mockRouter, models: [{ modelId: 'gpt-4' }], tokens: [tok] } as unknown as typeof mockRouter);
+    await waitFor(() => screen.getByRole('button', { name: 'Save Changes' }));
+    const modeSelect = document.querySelectorAll('select')[0] as HTMLSelectElement;
+    expect(modeSelect.value).toBe('extend');
+    await userEvent.selectOptions(modeSelect, 'disable');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+    await waitFor(() => expect(mockUpdateRouterToken).toHaveBeenCalledWith(
+      'proj-1', 'tok-1',
+      [{ modelId: 'gpt-4', limitsMode: 'disable', limits: [] }],
+      expect.any(Array), expect.any(Object), expect.any(Array),
+    ));
+  });
+
   it('initializes scopes from token and sends them on submit', async () => {
     const scopedToken = { ...mockToken, scopes: ['mcp', 'mcp:write'] };
     const scopedRouter = { ...mockRouter, tokens: [scopedToken] };

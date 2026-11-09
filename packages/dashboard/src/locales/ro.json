@@ -25,6 +25,7 @@
       "routers": "Rutere",
       "experiments": "Experimente",
       "usage": "Utilizare",
+      "timeline": "Timeline",
       "playground": "Teren de joacă",
       "settings": "Setări",
       "connectApp": "Conectează aplicație",
@@ -1406,6 +1407,22 @@
         "addTarget": "Adaugă model țintă",
         "passthroughLabel": "Transmitere directă (redirecționare brută)",
         "passthroughNotRemovable": "Intrarea de transmitere directă nu poate fi eliminată"
+      },
+      "exceptions": {
+        "title": "Excepții",
+        "description": "O cerere al cărei model se potrivește cu o regulă este trimisă modelului ales în loc să fie redirecționată neschimbată. Câștigă prima potrivire. Folosiți * ca metacaracter. Se aplică doar cererilor autentificate cu token.",
+        "empty": "Nicio excepție: fiecare cerere este redirecționată neschimbată.",
+        "noRealModels": "Adăugați mai întâi un model acestui router: excepțiile pot viza doar modelele routerului.",
+        "add": "Adaugă excepție",
+        "match": "Tipar pentru numele modelului",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Model țintă",
+        "remove": "Elimină excepția",
+        "errors": {
+          "matchRequired": "Fiecare excepție necesită un tipar.",
+          "duplicateMatch": "Potrivire duplicată \"{{match}}\".",
+          "targetMissing": "Ținta excepției \"{{match}}\" nu este un model al acestui router."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "Invalidează limitele globale și la nivel de router pentru cererile care utilizează acest token.",
         "noTargetModels": "Adaugă mai întâi modele țintă în fila Rutare.",
         "noOverride": "fără override",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Nicio limită",
         "noLimitsSet": "Nicio limită setată — moștenind din părinte. Adaugă o limită mai jos pentru a invalida.",
         "metric": "Metrică",
@@ -2386,7 +2407,8 @@
         "outputTokens": "Jetoane de ieșire",
         "costPer1k": "Cost / 1K",
         "cost": "Cost (USD)",
-        "bestCostPerformance": "Cea mai bună performanță cost"
+        "bestCostPerformance": "Cea mai bună performanță cost",
+        "deleted": "deleted"
       },
       "showMoreModels": "Arată {{count}} model mai mult",
       "showMoreModels_other": "Arată {{count}} modele mai mult",
@@ -2452,12 +2474,86 @@
         "piiRedacted": "PII redactat",
         "sessionId": "ID sesiune",
         "endUser": "Utilizator final",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Direcționat de"
       },
       "errorMessage": "Mesaj eroare",
       "eventCount": "{{count}} eveniment",
       "eventCount_other": "{{count}} evenimente",
-      "noTrace": "Nicio trasă disponibilă. Date de trasă sunt capturate doar pentru apeluri noi."
+      "noTrace": "Nicio trasă disponibilă. Date de trasă sunt capturate doar pentru apeluri noi.",
+      "routedByException": "Excepție Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

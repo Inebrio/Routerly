@@ -25,6 +25,7 @@
       "routers": "திசையாக்குபவர்கள்",
       "experiments": "சோதனைகள்",
       "usage": "பயன்பாடு",
+      "timeline": "Timeline",
       "playground": "விளையாட்டு மைதானம்",
       "settings": "அமைப்புகள்",
       "connectApp": "பயன்பாட்டை இணைக்கவும்",
@@ -1406,6 +1407,22 @@
         "addTarget": "இலக்கம் மாதிரி சேர்க்கவும்",
         "passthroughLabel": "பாஸ்-த்ரூ (மூல அனுப்புதல்)",
         "passthroughNotRemovable": "பாஸ்-த்ரூ உள்ளீட்டை அகற்ற முடியாது"
+      },
+      "exceptions": {
+        "title": "விதிவிலக்குகள்",
+        "description": "மாதிரி ஒரு விதியுடன் பொருந்தும் கோரிக்கை, மாற்றமின்றி அனுப்பப்படுவதற்குப் பதிலாக தேர்ந்தெடுத்த மாதிரிக்கு அனுப்பப்படும். முதல் பொருத்தம் செல்லுபடியாகும். வைல்டுகார்டாக * பயன்படுத்தவும். டோக்கன் மூலம் அங்கீகரிக்கப்பட்ட கோரிக்கைகளுக்கு மட்டும் பொருந்தும்.",
+        "empty": "விதிவிலக்குகள் இல்லை: ஒவ்வொரு கோரிக்கையும் மாற்றமின்றி அனுப்பப்படும்.",
+        "noRealModels": "முதலில் இந்த ரூட்டரில் ஒரு மாதிரியைச் சேர்க்கவும்: விதிவிலக்குகள் ரூட்டரின் சொந்த மாதிரிகளை மட்டுமே இலக்காகக் கொள்ளலாம்.",
+        "add": "விதிவிலக்கைச் சேர்",
+        "match": "மாதிரி பெயர் வடிவம்",
+        "matchPlaceholder": "gpt-4*",
+        "target": "இலக்கு மாதிரி",
+        "remove": "விதிவிலக்கை நீக்கு",
+        "errors": {
+          "matchRequired": "ஒவ்வொரு விதிவிலக்குக்கும் ஒரு வடிவம் தேவை.",
+          "duplicateMatch": "மீண்டும் வரும் பொருத்தம் \"{{match}}\".",
+          "targetMissing": "விதிவிலக்கு \"{{match}}\" இன் இலக்கு இந்த ரூட்டரின் மாதிரி அல்ல."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "मा०० वैश्विक मर्दा র௭ट्टार-स्तर वरम्बु् के लिए अनुरोध इस डिटोकेन् का उपयोग कर।",
         "noTargetModels": "पहले रूटिंग टैब में लक्ष्य मॉडल जोड़ें।",
         "noOverride": "कोई ओवरराइड नहीं",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "कोई सीमा नहीं",
         "noLimitsSet": "कोई सीमा सेट नहीं — प्रभावी माता-पिता से। नीचे एक सीमा जोड़ें ओवरराइड करने के लिए।",
         "metric": "अनुमति दीजिये",
@@ -2386,7 +2407,8 @@
         "outputTokens": "आउटपुट टोकन",
         "costPer1k": "लागत / 1K",
         "cost": "लागत (यूएसडी)",
-        "bestCostPerformance": "सर्वश्रेष्ठ लागत-प्रदर्शन"
+        "bestCostPerformance": "सर्वश्रेष्ठ लागत-प्रदर्शन",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} अधिक मॉडल दिखाएं",
       "showMoreModels_other": "{{count}} अधिक मॉडल दिखाएं",
@@ -2452,12 +2474,86 @@
         "piiRedacted": "PII संपादित किया गया",
         "sessionId": "அமர்வு ஐடி",
         "endUser": "இறுதிப் பயனர்",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "வழிநடத்தியது"
       },
       "errorMessage": "त्रुटि संदेश",
       "eventCount": "{{count}} घटना",
       "eventCount_other": "{{count}} घटनाएं",
-      "noTrace": "कोई ट्रेस उपलब्ध नहीं। ट्रेस डेटा केवल नई कॉल के लिए कैप्चर किया जाता है।"
+      "noTrace": "कोई ट्रेस उपलब्ध नहीं। ट्रेस डेटा केवल नई कॉल के लिए कैप्चर किया जाता है।",
+      "routedByException": "Passthrough விதிவிலக்கு"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

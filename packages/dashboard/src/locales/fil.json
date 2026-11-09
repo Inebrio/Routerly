@@ -25,6 +25,7 @@
       "routers": "Mga Router",
       "experiments": "Mga Eksperimento",
       "usage": "Paggamit",
+      "timeline": "Timeline",
       "playground": "Playground",
       "settings": "Mga Setting",
       "connectApp": "Ikonekta ang app",
@@ -1406,6 +1407,22 @@
         "addTarget": "Magdagdag ng Target Model",
         "passthroughLabel": "Pass-through (hilaw na pagpasa)",
         "passthroughNotRemovable": "Hindi maaaring alisin ang pass-through entry"
+      },
+      "exceptions": {
+        "title": "Mga exception",
+        "description": "Ang request na ang model ay tumutugma sa isang panuntunan ay ipapadala sa napiling model sa halip na ipasa nang walang pagbabago. Ang unang tugma ang masusunod. Gamitin ang * bilang wildcard. Para lang sa mga request na na-authenticate gamit ang token.",
+        "empty": "Walang exception: bawat request ay ipinapasa nang walang pagbabago.",
+        "noRealModels": "Magdagdag muna ng model sa router na ito: ang mga exception ay maaari lang tumarget sa mga model ng router.",
+        "add": "Magdagdag ng exception",
+        "match": "Pattern ng pangalan ng model",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Target na model",
+        "remove": "Alisin ang exception",
+        "errors": {
+          "matchRequired": "Kailangan ng pattern ang bawat exception.",
+          "duplicateMatch": "Duplicate na tugma \"{{match}}\".",
+          "targetMissing": "Ang target ng exception na \"{{match}}\" ay hindi model ng router na ito."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "I-override ang global at router-level na limitasyon para sa mga request na gumagamit ng token na ito.",
         "noTargetModels": "Magdagdag muna ng target model sa Routing tab.",
         "noOverride": "walang override",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Walang limitasyon",
         "noLimitsSet": "Walang itinakdang limitasyon — nagmana mula sa parent. Magdagdag ng limitasyon sa ibaba upang i-override.",
         "metric": "Metric",
@@ -2386,7 +2407,8 @@
         "outputTokens": "Output tokens",
         "costPer1k": "Gastos / 1K",
         "cost": "Gastos (USD)",
-        "bestCostPerformance": "Pinakamahusay na cost-performance"
+        "bestCostPerformance": "Pinakamahusay na cost-performance",
+        "deleted": "deleted"
       },
       "showMoreModels": "Ipakita ang {{count}} pang model",
       "showMoreModels_other": "Ipakita ang {{count}} pang mga model",
@@ -2452,12 +2474,86 @@
         "piiRedacted": "Binurang PII",
         "sessionId": "Session ID",
         "endUser": "End user",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Na-route ng"
       },
       "errorMessage": "Mensahe ng Error",
       "eventCount": "{{count}} kaganapan",
       "eventCount_other": "{{count}} kaganapan",
-      "noTrace": "Walang available na trace. Ang trace data ay naitatala lamang para sa mga bagong tawag."
+      "noTrace": "Walang available na trace. Ang trace data ay naitatala lamang para sa mga bagong tawag.",
+      "routedByException": "Passthrough exception"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

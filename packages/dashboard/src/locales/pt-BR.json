@@ -25,6 +25,7 @@
       "routers": "Roteadores",
       "experiments": "Experimentos",
       "usage": "Uso",
+      "timeline": "Timeline",
       "playground": "Playground",
       "settings": "Configurações",
       "connectApp": "Conectar app",
@@ -1406,6 +1407,22 @@
         "addTarget": "Adicionar Modelo de Destino",
         "passthroughLabel": "Passagem direta (encaminhamento bruto)",
         "passthroughNotRemovable": "A entrada de passagem direta não pode ser removida"
+      },
+      "exceptions": {
+        "title": "Exceções",
+        "description": "Uma requisição cujo modelo corresponde a uma regra é enviada ao modelo escolhido em vez de ser encaminhada sem alterações. Vale a primeira correspondência. Use * como curinga. Aplica-se apenas a requisições autenticadas por token.",
+        "empty": "Sem exceções: toda requisição é encaminhada sem alterações.",
+        "noRealModels": "Adicione primeiro um modelo a este router: as exceções só podem apontar para os modelos do router.",
+        "add": "Adicionar exceção",
+        "match": "Padrão do nome do modelo",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Modelo de destino",
+        "remove": "Remover exceção",
+        "errors": {
+          "matchRequired": "Cada exceção precisa de um padrão.",
+          "duplicateMatch": "Correspondência duplicada \"{{match}}\".",
+          "targetMissing": "O destino da exceção \"{{match}}\" não é um modelo deste router."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "Substituir limites globais e de nível de roteador para solicitações usando este token.",
         "noTargetModels": "Adicione modelos de destino na aba Roteamento primeiro.",
         "noOverride": "sem substituição",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Sem limites",
         "noLimitsSet": "Nenhum limite definido - herdando do pai. Adicione um limite abaixo para substituir.",
         "metric": "Métrica",
@@ -2386,7 +2407,8 @@
         "outputTokens": "Tokens de saída",
         "costPer1k": "Custo / 1K",
         "cost": "Custo (USD)",
-        "bestCostPerformance": "Melhor custo-performance"
+        "bestCostPerformance": "Melhor custo-performance",
+        "deleted": "deleted"
       },
       "showMoreModels": "Mostrar {{count}} mais modelo",
       "showMoreModels_other": "Mostrar {{count}} mais modelos",
@@ -2452,12 +2474,86 @@
         "piiRedacted": "PII Redigido",
         "sessionId": "ID da sessão",
         "endUser": "Usuário final",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Roteado por"
       },
       "errorMessage": "Mensagem de Erro",
       "eventCount": "{{count}} evento",
       "eventCount_other": "{{count}} eventos",
-      "noTrace": "Nenhum rastreamento disponível. Os dados de rastreamento são capturados apenas para novas chamadas."
+      "noTrace": "Nenhum rastreamento disponível. Os dados de rastreamento são capturados apenas para novas chamadas.",
+      "routedByException": "Exceção Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

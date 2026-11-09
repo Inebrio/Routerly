@@ -1,0 +1,25 @@
+title = "Routerly gitleaks config"
+
+[extend]
+useDefault = true
+
+# Docs, tests, locales and versioned docs carry placeholder credentials
+# (curl examples, test fixtures). Only the two generic heuristics are relaxed
+# there; every vendor-specific rule (sk-ant-, ghp_, AKIA..., private keys...) stays active.
+[[allowlists]]
+description = "Placeholder credentials in docs, tests and locales"
+targetRules = ["generic-api-key", "curl-auth-header", "aws-access-token"]
+paths = [
+  '''^docs/''',
+  '''^website/versioned_docs/''',
+  '''\.test\.tsx?$''',
+  '''/locales/''',
+]
+
+[[allowlists]]
+description = "Public OAuth client identifiers and type constants, not secrets"
+targetRules = ["generic-api-key"]
+paths = [
+  '''packages/service/src/modules/provider/anthropic-oauth\.ts$''',
+  '''packages/shared/src/types/optimizers\.ts$''',
+]

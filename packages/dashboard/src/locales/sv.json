@@ -25,6 +25,7 @@
       "routers": "Routrar",
       "experiments": "Experiment",
       "usage": "Användning",
+      "timeline": "Timeline",
       "playground": "Lekplats",
       "settings": "Inställningar",
       "connectApp": "Anslut app",
@@ -1406,6 +1407,22 @@
         "addTarget": "Lägg till målmodell",
         "passthroughLabel": "Genomströmning (rå vidarebefordran)",
         "passthroughNotRemovable": "Genomströmningsposten kan inte tas bort"
+      },
+      "exceptions": {
+        "title": "Undantag",
+        "description": "En begäran vars modell matchar en regel skickas till den valda modellen i stället för att vidarebefordras oförändrad. Första träffen gäller. Använd * som jokertecken. Gäller endast token-autentiserade begäranden.",
+        "empty": "Inga undantag: varje begäran vidarebefordras oförändrad.",
+        "noRealModels": "Lägg först till en modell i routern: undantag kan bara peka på routerns egna modeller.",
+        "add": "Lägg till undantag",
+        "match": "Mönster för modellnamn",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Målmodell",
+        "remove": "Ta bort undantag",
+        "errors": {
+          "matchRequired": "Varje undantag kräver ett mönster.",
+          "duplicateMatch": "Dubblett av \"{{match}}\".",
+          "targetMissing": "Målet för undantaget \"{{match}}\" är inte en modell i den här routern."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1537,10 @@
         "perModelLimitsHint": "Åsidosätt globala och routernivågränser för förfrågningar som använder denna token.",
         "noTargetModels": "Lägg till målmodeller i routningsfliken först.",
         "noOverride": "ingen åsidosättning",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Inga begränsningar",
         "noLimitsSet": "Inga begränsningar inställda — ärver från förälder. Lägg till en begränsning nedan för att åsidosätta.",
         "metric": "Mätvärde",
@@ -2386,7 +2407,8 @@
         "outputTokens": "Utmatningstoken",
         "costPer1k": "Kostnad / 1K",
         "cost": "Kostnad (USD)",
-        "bestCostPerformance": "Bästa kostnadsprestanda"
+        "bestCostPerformance": "Bästa kostnadsprestanda",
+        "deleted": "deleted"
       },
       "showMoreModels": "Visa {{count}} fler modell",
       "showMoreModels_other": "Visa {{count}} fler modeller",
@@ -2452,12 +2474,86 @@
         "piiRedacted": "PII redigerad",
         "sessionId": "Sessions-ID",
         "endUser": "Slutanvändare",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Dirigerad av"
       },
       "errorMessage": "Felmeddelande",
       "eventCount": "{{count}} händelse",
       "eventCount_other": "{{count}} händelser",
-      "noTrace": "Inget spår tillgängligt. Spårdata är endast kapterad för nya samtal."
+      "noTrace": "Inget spår tillgängligt. Spårdata är endast kapterad för nya samtal.",
+      "routedByException": "Passthrough-undantag"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {
