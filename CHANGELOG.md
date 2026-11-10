@@ -45,6 +45,8 @@ the change itself — never reconstructed after the fact. See
 ### Fixed
 - **Catalog sync removes dropped fields.** When the catalog no longer carries `cache`, `cacheWrite`, `pricingTiers`, `contextWindow` (reset to 0 = unknown) or `capabilities` for a model, the sync now removes them from the model unless the field is overridden, so cost and `catalogDefaults` no longer diverge (ROUT-645).
 
+- **Policies read the Anthropic body correctly.** On `/v1/messages` the `context` policy now counts `system`, `tools`, `tool_use` input and `tool_result` content (it used to see only text blocks), `capability` detects `image` blocks (vision:false models are excluded), and `semantic-intent` classifies the last user text block of an array content instead of ignoring it.
+
 - **Anthropic adapter: thinking works on current Claude models.** With `capabilities.thinking`, the adapter sent `thinking: {type: "enabled", budget_tokens}`, which Claude 4.7+ and 5.x reject with HTTP 400. It now sends `{type: "adaptive"}` for every model except Claude 3.x and 4.0-4.5, which keep the budgeted form (ROUT-671).
 - **gpt-6 token limit.** `max_tokens` is now sent as `max_completion_tokens` to every `gpt-5`-and-later OpenAI model (`gpt-6-luna`, `gpt-6.1-sol`, ...) instead of failing with HTTP 400; the check is generation-agnostic. `gpt-4*` models are unchanged (ROUT-670).
 - **Catalog sync runs on its own.** The service now applies the provider catalog to registered models at startup and every ~6 hours, without opening the dashboard or pressing Refresh; `fieldOverrides` are respected and a failed fetch changes nothing (the error shows in `catalog status`).
