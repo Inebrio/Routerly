@@ -33,10 +33,10 @@ export class OpenAIAdapter implements ProviderAdapter {
     return model.id;
   }
 
-  // Only models that reject max_tokens (o-series, gpt-5) get max_completion_tokens;
+  // Only models that reject max_tokens (o-series, gpt-5 and later) get max_completion_tokens;
   // every other model receives the client's body untouched (wire transparency).
   private requiresCompletionTokens(modelId: string): boolean {
-    return /^(o\d|gpt-5)/.test(modelId);
+    return /^(o\d|gpt-([5-9]|\d{2,}))/.test(modelId);
   }
 
   private normalizeTokenLimit(req: ChatCompletionRequest, upstreamModel: string): Omit<ChatCompletionRequest, 'max_tokens'> | ChatCompletionRequest {
