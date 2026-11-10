@@ -487,7 +487,7 @@ timings). Prompts and answers are recorded only with `--trace-content`, and the
 setting applies to every surface that reads a trace: the dashboard, the
 Playground, and any integration exporting traces. A flag that is not passed
 leaves the stored value alone. `routerly router show` prints the current state
-as `Traces: metadata only` or `Traces: metadata + content`.
+as `Traces: metadata only` or `Traces: metadata + content`. Its Routing section lists the bound routing and optimizer profiles (label, id, version) and the policies in force, marked `(from profile)` when they come from the profile.
 
 ```bash
 routerly router edit my-api --trace-content
@@ -518,9 +518,9 @@ routerly router remove <router>
 routerly router routing show <router> [--json]
 ```
 
-Display the routing configuration (auto-routing flag, routing model, fallback models, ranking algorithm, and policy stack). The ranking algorithm is the effective one: when the router is bound to a routing profile, the profile's value is shown with `(profile <label>)`, otherwise `(router)`.
+Display the routing configuration (auto-routing flag, routing model, fallback models, ranking algorithm, and policy stack). The ranking algorithm is the effective one: when the router is bound to a routing profile, the profile's value is shown with `(profile <label>)`, otherwise `(router)`. A router bound to a routing profile prints a `Routing profile:` line (label, id, version) and the profile's policies, which are the ones actually applied; the routing model and fallback models always come from the router. Without `profiles:read` the profile id is shown with `(details not readable)`.
 
-`--json` prints `{ routerId, routingProfileId, rankingAlgorithm, rankingSource, policies }` instead, where `rankingSource` is `router` or `profile`.
+`--json` prints `{ routerId, routingProfileId, routingProfile?, rankingAlgorithm, rankingSource, policies }` instead (`routingProfile` is `{ id, label, version }`, present when the profile is readable), where `rankingSource` is `router` or `profile`.
 
 #### `routerly router routing update <router>`
 

@@ -45,6 +45,8 @@ the change itself — never reconstructed after the fact. See
 ### Fixed
 - **Catalog sync removes dropped fields.** When the catalog no longer carries `cache`, `cacheWrite`, `pricingTiers`, `contextWindow` (reset to 0 = unknown) or `capabilities` for a model, the sync now removes them from the model unless the field is overridden, so cost and `catalogDefaults` no longer diverge (ROUT-645).
 
+- **`router show` and `router routing show` display the bound profile.** A router using a routing profile showed "none enabled" / "No routing policies configured" although the profile's policies were in force. The CLI now prints the routing and optimizer profile (label, id, version) and the effective policies; `routing show --json` gains `routingProfile`. The dashboard Routing tab lists the profile's policies read-only and the Routers list shows them in the Policies column. Without `profiles:read` the id is shown instead of an error (ROUT-685).
+
 - **Policies read the Anthropic body correctly.** On `/v1/messages` the `context` policy now counts `system`, `tools`, `tool_use` input and `tool_result` content (it used to see only text blocks), `capability` detects `image` blocks (vision:false models are excluded), and `semantic-intent` classifies the last user text block of an array content instead of ignoring it.
 
 - **Anthropic adapter: thinking works on current Claude models.** With `capabilities.thinking`, the adapter sent `thinking: {type: "enabled", budget_tokens}`, which Claude 4.7+ and 5.x reject with HTTP 400. It now sends `{type: "adaptive"}` for every model except Claude 3.x and 4.0-4.5, which keep the budgeted form (ROUT-671).
