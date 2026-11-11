@@ -19,6 +19,7 @@ import { migrateRouterStorage, migrateUsageToNdjson, reenableModules } from './m
 import { enforceStartupGuard } from './modules/config/permission-guard.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { warnExpiringApiTokens } from './modules/api/api-tokens.js';
+import { startCatalogSync } from './modules/catalog/sync.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
 import { protocolError, protocolForUrl } from './lib/protocol-errors.js';
 import { bootstrap } from './bootstrap/index.js';
@@ -235,6 +236,7 @@ export async function startServer() {
     // releasing.md's "unstamped tag" note), so it always lags the tag a release just
     // cut — comparing it would flag the instance actively building that release as
     // "outdated". ROUTERLY_FORCE_UPDATE_CHECK opts back in for testing the checker itself.
+    startCatalogSync(pkgVersion);
     const updateCheckWanted = process.env['NODE_ENV'] === 'production' || process.env['ROUTERLY_FORCE_UPDATE_CHECK'] === 'true';
     updateChecker.configure(pkgVersion, settings.channel ?? 'latest');
     if (updateCheckWanted && process.env['ROUTERLY_DISABLE_UPDATE_CHECK'] !== 'true') {

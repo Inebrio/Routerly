@@ -10,6 +10,9 @@ import type {
 import type { ProviderAdapter } from './types.js';
 import { forwardableResponseHeaders, developerAsSystem, type CallOptions } from './passthrough.js';
 
+/** Models that still take `thinking.type: 'enabled'` + budget_tokens: Claude 3.x and 4.0-4.5. */
+const LEGACY_THINKING_MODEL = /claude-(3|(opus|sonnet|haiku)-4(?!-[6-9]))/;
+
 export class AnthropicAdapter implements ProviderAdapter {
   protected getClient(model: ModelConfig): Anthropic {
     const apiKey = model.apiKey ?? '';
@@ -195,9 +198,13 @@ export class AnthropicAdapter implements ProviderAdapter {
     if (cs?.effort) params.output_config = { effort: cs.effort };
     if (model.capabilities?.thinking !== true) return;
     const max = params.max_tokens as number;
+    // Claude 4.6+ and 5.x reject budget_tokens (or deprecate it): adaptive is the supported form.
+    const adaptive = !LEGACY_THINKING_MODEL.test(this.getUpstreamModelId(model));
     if (cs?.maxOutputTokens === undefined) {
-      params.thinking = { type: 'enabled', budget_tokens: 10000 };
+      params.thinking = adaptive ? { type: 'adaptive' } : { type: 'enabled', budget_tokens: 10000 };
       if (max < 16000) params.max_tokens = 16000;
+    } else if (adaptive) {
+      params.thinking = { type: 'adaptive' };
     } else if (max > 1024) {
       params.thinking = { type: 'enabled', budget_tokens: Math.min(10000, max - 1) };
     }

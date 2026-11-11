@@ -1354,13 +1354,48 @@ describe('ranking algorithm (ROUT-298)', () => {
     expect(mockApi).toHaveBeenCalledTimes(1);
   });
 
+  it('router show lists routing and optimizer profile and the profile policies (ROUT-685)', async () => {
+    const router = { ...boundRouter, optimizerProfileId: 'opt-1' };
+    const optProfile = { id: 'opt-1', kind: 'optimizer' as const, version: 3, label: 'Lean', optimizers: { steps: [] }, builtin: false };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce([]).mockResolvedValueOnce([routingProfile]).mockResolvedValueOnce([optProfile]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
+    const out = lines.join('\n');
+    expect(out).toContain('Fast (prof-1, v1)');
+    expect(out).toContain('Lean (opt-1, v3)');
+    expect(out).toContain('health');
+    expect(out).toContain('(from profile)');
+    expect(out).not.toContain('(none enabled)');
+  });
+
+  it('router show degrades to the profile id when profiles are not readable (ROUT-685)', async () => {
+    mockApi.mockResolvedValueOnce([boundRouter]).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('forbidden'));
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
+    expect(lines.join('\n')).toContain('prof-1');
+    expect(lines.join('\n')).toContain('details not readable');
+  });
+
+  it('routing show prints the bound profile and its policies (ROUT-685)', async () => {
+    mockApi.mockResolvedValueOnce([boundRouter]).mockResolvedValueOnce([routingProfile]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api']);
+    const out = lines.join('\n');
+    expect(out).toContain('Fast (prof-1, v1)');
+    expect(out).toContain('health');
+    expect(out).not.toContain('No routing policies');
+  });
+
   it('routing show --json reports the profile-sourced algorithm and policies', async () => {
     mockApi.mockResolvedValueOnce([boundRouter]).mockResolvedValueOnce([routingProfile]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api', '--json']);
     expect(mockApi).toHaveBeenCalledWith('GET', '/api/profiles?kind=routing');
-    expect(JSON.parse(lines.join('\n'))).toEqual({
+    expect(JSON.parse(lines.join('\n'))).toMatchObject({
       routerId: 'proj-1',
       routingProfileId: 'prof-1',
       rankingAlgorithm: 'default',
