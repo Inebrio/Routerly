@@ -39,6 +39,7 @@ interface CheckpointState {
 
 interface LlmLinguaModelState {
   runtimeInstalled: boolean;
+  runtimeError?: string;
   checkpoints: CheckpointState[];
 }
 
@@ -177,7 +178,7 @@ router uses is set with \`routerly optimizers config <router> --checkpoint <key>
           console.log(JSON.stringify(state, null, 2));
           return;
         }
-        console.log(`${chalk.gray('runtime:')} ${state.runtimeInstalled ? 'installed' : 'not installed'}`);
+        console.log(`${chalk.gray('runtime:')} ${state.runtimeInstalled ? 'installed' : `unavailable (${state.runtimeError ?? 'not installed'})`}`);
         const table = new Table({ head: ['Key', 'Name', 'Size', 'State', 'Notes'].map(h => chalk.cyan(h)) });
         for (const c of state.checkpoints) {
           table.push([

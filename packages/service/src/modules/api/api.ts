@@ -1801,6 +1801,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!requirePerm(req, 'optimizers:read', reply)) return;
     return reply.send({
       runtimeInstalled: llmlingua2Model.isRuntimeInstalled(),
+      runtimeError: llmlingua2Model.runtimeProblem() ?? undefined,
       checkpoints: llmlingua2Model.checkpointStates(),
     });
   });
@@ -1811,8 +1812,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // than fetched, since fetching is what costs the disk.
   fastify.post<{ Body: { key?: string } }>('/api/optimizers/llmlingua2/model', async (req, reply) => {
     if (!requirePerm(req, 'optimizers:manage', reply)) return;
-    if (!llmlingua2Model.isRuntimeInstalled()) {
-      return reply.status(409).send({ error: '@huggingface/transformers is not installed on the service host' });
+    const runtimeError = llmlingua2Model.runtimeProblem();
+    if (runtimeError) {
+      return reply.status(409).send({ error: runtimeError });
     }
     const started = llmlingua2Model.startDownload(req.body?.key);
     if (!started.ok) return reply.status(400).send({ error: started.error });

@@ -1319,6 +1319,8 @@ export interface LlmLinguaCheckpointState extends LlmLinguaCheckpoint {
 /** State of the optional LLMLingua-2 checkpoints on the service host. */
 export interface LlmLinguaModelState {
   runtimeInstalled: boolean;
+  /** Why the runtime is unusable on the service host (not installed, or native library fails to load). */
+  runtimeError?: string;
   checkpoints: LlmLinguaCheckpointState[];
 }
 
