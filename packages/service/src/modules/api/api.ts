@@ -31,6 +31,8 @@ import { getProviderAdapter } from '../provider/registry.js';
 import { getEmbeddingProvider } from '../embeddings/dispatch.js';
 import { decide } from '../decision/dispatch.js';
 import { loadEffectiveModel } from '../reverse-proxy/execute.js';
+import { runConformance } from '../conformance/runner.js';
+import { invokerFor } from '../conformance/invoker.js';
 import { listEffectiveModels, listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
 import { resolveEffectiveModel, defaultUpstreamModelId } from '../provider/resolve.js';
 import { sendTestNotification } from '../notifications/sender.js';
@@ -142,7 +144,7 @@ function inferFieldOverrides(
 const MODEL_SAFE_FIELDS = [
   'id', 'name', 'provider', 'connectionId', 'endpoint', 'upstreamModelId',
   'cost', 'contextWindow', 'limits', 'globalThresholds', 'capabilities', 'timeout',
-  'fieldOverrides', 'catalogDefaults',
+  'fieldOverrides', 'catalogDefaults', 'conformance',
   // Non-secret connection config fields (identifiers/region/resource names, not credentials)
   'awsAccessKeyId', 'awsRegion', 'azureResourceName', 'azureDeploymentId', 'azureApiVersion',
   'vertexProjectId', 'vertexLocation',
@@ -1217,6 +1219,20 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       req.log.warn({ modelId: req.params.id, err: err instanceof Error ? err.message : String(err) }, 'model test failed');
       return reply.send({ ok: false, latencyMs: Date.now() - t0, error: err instanceof Error ? err.message : String(err) });
     }
+  });
+
+  // Runs the provider conformance corpus against one model and stores the result on its instance (ROUT-713).
+  fastify.post<{ Params: { id: string } }>('/api/models/:id/conformance', async (req, reply) => {
+    if (!requirePerm(req, 'model:write', reply)) return;
+    const model = await loadEffectiveModel(req.params.id);
+    if (!model) return reply.status(404).send({ error: 'Not found' });
+    if (model.capabilities?.embedding === true || model.capabilities?.decision === true) {
+      return reply.status(400).send({ error: 'Conformance runs only on chat models' });
+    }
+    const result = await runConformance(invokerFor(model, req.log), model.capabilities);
+    await updateConfig('instances', (instances) =>
+      instances.map(i => (i.id === req.params.id ? { ...i, conformance: result } : i)));
+    return reply.send(result);
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/models/:id', async (req, reply) => {

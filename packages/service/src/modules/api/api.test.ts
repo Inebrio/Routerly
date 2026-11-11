@@ -15010,3 +15010,51 @@ describe('PUT /api/routers/:id notifications override (ROUT-335)', () => {
     expect((await put({ channels: ['wh1'] })).statusCode).toBe(403)
   })
 })
+
+// ─── POST /api/models/:id/conformance (ROUT-713) ──────────────────────────────
+
+describe('POST /api/models/:id/conformance', () => {
+  const instance = { id: 'inst-conf-1', connectionId: 'conn-conf-1', upstreamModelId: 'gpt-4o', cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000, capabilities: { functionCalling: false, json: false } }
+  const connection = { id: 'conn-conf-1', providerId: 'openai', endpoint: 'https://api.openai.com/v1', credentials: { apiKey: 'sk-x' } }
+
+  it('runs the corpus, stores the result on the instance and exposes it in GET /api/models', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
+      return []
+    })
+    mockChatCompletion.mockResolvedValue({ choices: [{ index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }] })
+    mockWriteConfig.mockClear()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/inst-conf-1/conformance', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body.cases.find((c: { id: string }) => c.id === 'basic-chat').status).toBe('pass')
+    expect(body.cases.find((c: { id: string }) => c.id === 'tool-call').status).toBe('skip')
+    const stored = mockWriteConfig.mock.calls.find(c => c[0] === 'instances')![1] as Array<{ id: string; conformance: { status: string } }>
+    expect(stored[0]!.conformance.status).toBe(body.status)
+  })
+
+  it('404 for an unknown model', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [adminUser] : []))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/nope/conformance', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('403 without model:write', async () => {
+    const viewerUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }
+    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [viewerUser] : []))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/inst-conf-1/conformance', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})

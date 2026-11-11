@@ -79,6 +79,25 @@ export function suggestRouterSlug(name: string, taken: readonly string[]): strin
   }
 }
 
+export interface ConformanceCaseResult {
+  id: string;
+  status: 'pass' | 'fail' | 'skip';
+  /** Why a case failed or was skipped. */
+  detail?: string;
+  durationMs: number;
+}
+
+/** Outcome of the provider conformance suite for one model (ROUT-713). */
+export interface ConformanceResult {
+  /** ISO timestamp of the run. */
+  verifiedAt: string;
+  /** `conformant`: every case that ran passed; `limited`: at least one failed. A model never run is `unverified` (no result). */
+  status: 'conformant' | 'limited';
+  /** Capabilities proven by passing cases; a capability is `false` only when its case ran and failed. */
+  verified: ModelCapabilities & { streaming?: boolean };
+  cases: ConformanceCaseResult[];
+}
+
 export interface ModelInstance {
   id: string;
   connectionId: string;
@@ -89,6 +108,8 @@ export interface ModelInstance {
   timeout?: number;
   limits?: Limit[];
   capabilities?: ModelCapabilities;
+  /** Last conformance suite run; written by the service only. */
+  conformance?: ConformanceResult;
   /** Fields manually overridden by user; these won't auto-sync from catalog */
   fieldOverrides?: Partial<Record<CatalogField, boolean>>;
   /** Last known catalog values for catalog-trackable fields; used to show defaults in UI */
@@ -244,6 +265,8 @@ export interface ModelConfig {
   globalThresholds?: BudgetThresholds | undefined;
   /** Optional capability flags for special features */
   capabilities?: ModelCapabilities;
+  /** Last conformance suite run (see ModelInstance.conformance). */
+  conformance?: ConformanceResult;
   /** Request timeout in milliseconds (default: 60000) */
   timeout?: number;
   /** Fields manually overridden by user; these won't auto-sync from catalog */
