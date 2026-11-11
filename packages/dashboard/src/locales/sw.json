@@ -2910,6 +2910,13 @@
         "notFound": "Wasifu haijulikani.",
         "loadFailed": "Kushindwa kupakia wasifu",
         "saveFailed": "Kushindwa kutengeneza wasifu"
+      },
+      "selector": {
+        "label": "Kichaguzi",
+        "argmax": "Alama ya juu zaidi (argmax)",
+        "weightedRandom": "Nasibu yenye uzito",
+        "argmaxHint": "Daima huchagua modeli yenye alama ya juu zaidi.",
+        "weightedRandomHint": "Huchagua kwa nasibu kulingana na alama: modeli zenye alama za juu huchaguliwa mara nyingi zaidi."
       }
     }
   },

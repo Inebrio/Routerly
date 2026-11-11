@@ -2910,6 +2910,13 @@
         "notFound": "Profil bulunamadı.",
         "loadFailed": "Profili yüklemek başarısız oldu",
         "saveFailed": "Profili kaydetmek başarısız oldu"
+      },
+      "selector": {
+        "label": "Seçici",
+        "argmax": "En yüksek puan (argmax)",
+        "weightedRandom": "Ağırlıklı rastgele",
+        "argmaxHint": "Her zaman en yüksek puanlı modeli seçer.",
+        "weightedRandomHint": "Puana göre ağırlıklı rastgele seçer: yüksek puanlı modeller daha sık seçilir."
       }
     }
   },

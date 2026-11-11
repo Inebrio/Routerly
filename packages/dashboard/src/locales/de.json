@@ -2910,6 +2910,13 @@
         "notFound": "Profil nicht gefunden.",
         "loadFailed": "Profil konnte nicht geladen werden",
         "saveFailed": "Profil konnte nicht gespeichert werden"
+      },
+      "selector": {
+        "label": "Selektor",
+        "argmax": "Höchste Bewertung (argmax)",
+        "weightedRandom": "Gewichtet zufällig",
+        "argmaxHint": "Wählt immer das Modell mit der höchsten Bewertung.",
+        "weightedRandomHint": "Wählt zufällig, gewichtet nach Bewertung: Modelle mit höherer Bewertung werden häufiger gewählt."
       }
     }
   },

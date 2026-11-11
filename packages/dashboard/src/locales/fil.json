@@ -2910,6 +2910,13 @@
         "notFound": "Hindi natagpuan ang profile.",
         "loadFailed": "Nabigong i-load ang profile",
         "saveFailed": "Nabigong i-save ang profile"
+      },
+      "selector": {
+        "label": "Selector",
+        "argmax": "Pinakamataas na score (argmax)",
+        "weightedRandom": "Weighted random",
+        "argmaxHint": "Laging pinipili ang modelong may pinakamataas na score.",
+        "weightedRandomHint": "Random na pagpili na may timbang ayon sa score: mas madalas mapili ang mga modelong mas mataas ang score."
       }
     }
   },

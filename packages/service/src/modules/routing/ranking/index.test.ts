@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { DEFAULT_RANKING_ALGORITHM, RANKING_ALGORITHMS, type ModelConfig } from '@routerly/shared'
+import { DEFAULT_RANKING_ALGORITHM, RANKING_ALGORITHMS, type ModelConfig, type SelectorType } from '@routerly/shared'
 import { RANKING_MAP, resolveRankingAlgorithm } from './index.js'
 import type { RankingInput } from './index.js'
 
@@ -70,11 +70,24 @@ describe('RANKING_MAP', () => {
 
   it('default: hands the profile selector the scored list', () => {
     const out = RANKING_MAP.default({
-      scoringCandidates: [candidate('a', 5), candidate('b', 1)],
-      successfulResults: [{ type: 'x', weight: 1, routing: [{ model: 'a', point: 1 }, { model: 'b', point: 0 }] }],
-      selector: 'cheapest',
-      selectorCtx: { routerId: 'r' },
+      scoringCandidates: [candidate('a'), candidate('b')],
+      successfulResults: [{ type: 'x', weight: 1, routing: [{ model: 'a', point: 0.25 }, { model: 'b', point: 0.75 }] }],
+      selector: 'weighted-random',
+      // total 1.0; rng 0.1 -> r=0.1 <= 0.25 -> a is picked although b scores higher
+      selectorCtx: { routerId: 'r', rng: () => 0.1 },
     })
-    expect(out.models.map(m => m.model)).toEqual(['b', 'a'])
+    expect(out.models.map(m => m.model)).toEqual(['a', 'b'])
+  })
+
+  it('default: a stale removed selector (profile not yet migrated) falls back to argmax without throwing', () => {
+    for (const stale of ['cheapest', 'lowest-latency', 'round-robin']) {
+      const out = RANKING_MAP.default({
+        scoringCandidates: [candidate('a'), candidate('b')],
+        successfulResults: [{ type: 'x', weight: 1, routing: [{ model: 'a', point: 0.1 }, { model: 'b', point: 0.9 }] }],
+        selector: stale as SelectorType,
+        selectorCtx: { routerId: 'r' },
+      })
+      expect(out.models.map(m => m.model)).toEqual(['b', 'a'])
+    }
   })
 })

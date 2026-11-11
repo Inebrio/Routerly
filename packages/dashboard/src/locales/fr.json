@@ -2910,6 +2910,13 @@
         "notFound": "Profil non trouvé.",
         "loadFailed": "Impossible de charger le profil",
         "saveFailed": "Impossible d'enregistrer le profil"
+      },
+      "selector": {
+        "label": "Sélecteur",
+        "argmax": "Meilleur score (argmax)",
+        "weightedRandom": "Aléatoire pondéré",
+        "argmaxHint": "Choisit toujours le modèle avec le meilleur score.",
+        "weightedRandomHint": "Choisit au hasard, pondéré par le score : les modèles les mieux notés sont choisis plus souvent."
       }
     }
   },

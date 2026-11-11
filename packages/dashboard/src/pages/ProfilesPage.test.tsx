@@ -72,13 +72,14 @@ afterEach(() => vi.clearAllMocks());
 
 describe('profileSummary', () => {
   it('summarizes each kind', () => {
-    expect(profileSummary(routingProfile as never)).toBe('1 policy enabled');
+    expect(profileSummary(routingProfile as never)).toBe('1 policy enabled · argmax');
+    expect(profileSummary({ ...routingProfile, selector: 'weighted-random' } as never)).toBe('1 policy enabled · weighted-random');
     expect(profileSummary(optimizerProfile as never)).toBe('1 step enabled');
     expect(profileSummary(securityProfile as never)).toBe('1 guardrail, 1 PII policy');
   });
 
   it('pluralizes empty configurations', () => {
-    expect(profileSummary({ ...routingProfile, policies: [] } as never)).toBe('0 policies enabled');
+    expect(profileSummary({ ...routingProfile, policies: [] } as never)).toBe('0 policies enabled · argmax');
     expect(profileSummary({ ...optimizerProfile, optimizers: { steps: [] } } as never)).toBe('0 steps enabled');
     expect(profileSummary({ ...securityProfile, guardrails: {}, pii: {} } as never)).toBe('0 guardrails, 0 PII policies');
   });
@@ -93,7 +94,7 @@ describe('ProfilesPage', () => {
   it('opens on the routing tab and shows only routing profiles', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
-    expect(screen.getByText('1 policy enabled')).toBeInTheDocument();
+    expect(screen.getByText('1 policy enabled · argmax')).toBeInTheDocument();
     expect(screen.queryByText('Safe')).not.toBeInTheDocument();
     expect(screen.queryByText('My Security')).not.toBeInTheDocument();
   });

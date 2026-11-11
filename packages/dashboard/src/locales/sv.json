@@ -2910,6 +2910,13 @@
         "notFound": "Profil hittades inte.",
         "loadFailed": "Misslyckades att ladda profil",
         "saveFailed": "Misslyckades att spara profil"
+      },
+      "selector": {
+        "label": "Väljare",
+        "argmax": "Högsta poäng (argmax)",
+        "weightedRandom": "Viktat slumpmässigt",
+        "argmaxHint": "Väljer alltid modellen med högst poäng.",
+        "weightedRandomHint": "Väljer slumpmässigt viktat efter poäng: modeller med högre poäng väljs oftare."
       }
     }
   },

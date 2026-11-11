@@ -2910,6 +2910,13 @@
         "notFound": "Profil nu găsit.",
         "loadFailed": "Nu s-a putut încărca profil",
         "saveFailed": "Nu s-a putut salva profil"
+      },
+      "selector": {
+        "label": "Selector",
+        "argmax": "Cel mai mare scor (argmax)",
+        "weightedRandom": "Aleator ponderat",
+        "argmaxHint": "Alege întotdeauna modelul cu cel mai mare scor.",
+        "weightedRandomHint": "Alege aleatoriu, ponderat după scor: modelele cu scor mai mare sunt alese mai des."
       }
     }
   },

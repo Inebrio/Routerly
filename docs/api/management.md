@@ -557,8 +557,9 @@ assigned independently.
 
 See [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
 for the selector and fallback strategy reference. Both fields are optional on
-write and default to `argmax` and `next-best`; the API is the only surface that
-sets them, since the dashboard and the CLI do not expose either.
+write and default to `argmax` and `next-best`. The `selector` is `argmax` or
+`weighted-random`; the dashboard and the CLI set it, the API is the only surface
+that sets `fallbackStrategy`.
 
 ### List Profiles
 
@@ -625,7 +626,7 @@ POST /api/profiles
   "kind": "routing",
   "label": "My Routing Profile",
   "policies": [{ "type": "cheapest", "enabled": true }],
-  "selector": "cheapest",
+  "selector": "argmax",
   "fallbackStrategy": "abort",
   "rankingAlgorithm": "default"
 }
@@ -640,6 +641,27 @@ POST /api/profiles
 - everything else is optional and defaults to an empty configuration, so
   `{ "kind": "security", "label": "Empty" }` is a valid body that can be filled
   in later with [Update Profile](#update-profile)
+
+- `selector`: `routing` only, `argmax` (default) or `weighted-random`. The
+  values `cheapest`, `lowest-latency` and `round-robin` were removed and answer
+  `400`, naming the replacement; any other value answers `400` listing the valid
+  ones:
+
+```bash
+curl -s -X POST http://localhost:3000/api/profiles \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"kind":"routing","label":"t","selector":"cheapest"}'
+```
+
+```json
+{ "error": { "formErrors": [], "fieldErrors": { "selector": [
+  "selector \"cheapest\" was removed: use \"argmax\" with the \"cheapest\" policy"
+] } } }
+```
+
+`lowest-latency` names the `performance` policy and `round-robin` the
+`fairness` policy. Profiles stored with a removed value are migrated at startup
+(see [Selectors](../concepts/routing.md#selectors)).
 
 **Response `201`:** the created profile (`builtin: false`, `version: 1`).
 
@@ -682,7 +704,7 @@ kind, at least one required. `kind` itself cannot be changed.
 {
   "label": "Renamed Profile",
   "policies": [{ "type": "cheapest", "enabled": true }],
-  "selector": "cheapest",
+  "selector": "argmax",
   "fallbackStrategy": "abort",
   "rankingAlgorithm": "default"
 }
