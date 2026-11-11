@@ -549,10 +549,10 @@ describe('CustomAdapter DeepSeek thinking with tool history (ROUT-673)', () => {
     { role: 'assistant', content: null, tool_calls: [{ id: 'c1', type: 'function', function: { name: 'f', arguments: '{}' } }] },
     { role: 'tool', tool_call_id: 'c1', content: 'r' },
   ]
-  async function sent(req: Record<string, unknown>, provider: string) {
+  async function sent(req: Record<string, unknown>, provider: string, endpoint?: string) {
     const f = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ choices: [], usage: {} }) })
     vi.stubGlobal('fetch', f)
-    await adapter.chatCompletion({ model: 'auto', ...req } as any, makeModel({ provider } as any))
+    await adapter.chatCompletion({ model: 'auto', ...req } as any, makeModel({ provider, ...(endpoint ? { endpoint } : {}) } as any))
     vi.unstubAllGlobals()
     return JSON.parse(f.mock.calls[0]![1].body as string)
   }
@@ -560,9 +560,13 @@ describe('CustomAdapter DeepSeek thinking with tool history (ROUT-673)', () => {
   it('disables thinking when tools + assistant turn without reasoning_content', async () => {
     expect((await sent({ messages: history, tools }, 'deepseek')).thinking).toEqual({ type: 'disabled' })
   })
+  it('detects DeepSeek by endpoint on a custom provider', async () => {
+    expect((await sent({ messages: history, tools }, 'custom', 'https://api.deepseek.com/v1')).thinking).toEqual({ type: 'disabled' })
+    expect(await sent({ messages: history, tools }, 'custom', 'https://example.com/v1')).not.toHaveProperty('thinking')
+  })
   it('leaves payload alone otherwise', async () => {
     expect(await sent({ messages: history }, 'deepseek')).not.toHaveProperty('thinking')
-    expect(await sent({ messages: history, tools }, 'custom')).not.toHaveProperty('thinking')
+    expect(await sent({ messages: history, tools }, 'custom', 'https://example.com/v1')).not.toHaveProperty('thinking')
     expect(await sent({ messages: history, tools, thinking: { type: 'enabled' } }, 'deepseek')).toMatchObject({ thinking: { type: 'enabled' } })
     const withRc = history.map((m) => (m.role === 'assistant' ? { ...m, reasoning_content: 'r' } : m))
     expect(await sent({ messages: withRc, tools }, 'deepseek')).not.toHaveProperty('thinking')

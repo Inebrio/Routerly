@@ -31,8 +31,13 @@ async function upstreamError(response: Response, provider: string): Promise<Erro
  * lacks `reasoning_content` (history from another model). Disable thinking, only in that case, unless
  * the client chose a thinking mode itself. https://api-docs.deepseek.com/guides/thinking_mode
  */
+function isDeepseek(model: ModelConfig): boolean {
+  if (model.provider === 'deepseek') return true;
+  try { return new URL(model.endpoint ?? '').hostname.endsWith('deepseek.com'); } catch { return false; }
+}
+
 function deepseekThinking(model: ModelConfig, body: { tools?: unknown[]; messages?: unknown[]; thinking?: unknown }): { thinking?: { type: 'disabled' } } {
-  if (model.provider !== 'deepseek' || body.thinking !== undefined || !body.tools?.length) return {};
+  if (!isDeepseek(model) || body.thinking !== undefined || !body.tools?.length) return {};
   const missing = (body.messages ?? []).some((m) => {
     const x = m as { role?: string; reasoning_content?: unknown };
     return x.role === 'assistant' && !x.reasoning_content;
