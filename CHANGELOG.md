@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **llmlingua-2 availability.** The optimizer no longer reports `@huggingface/transformers is not installed` when the package is present but `onnxruntime-node` cannot load (musl/Alpine, the official Docker image): the real cause (e.g. `ERR_DLOPEN_FAILED`) is kept in the trace, and the management API (`runtimeError`), CLI and dashboard show llmlingua-2 as unavailable on that host instead of offering a download (ROUT-715).
 - **Provider catalog.** A failed catalog fetch (network down, 5xx, checksum mismatch) is no longer cached for 6 hours: it is retried after 1 minute, previous data keeps being served, and each fetch times out after 10 seconds (ROUT-644).
 
 ### Added
