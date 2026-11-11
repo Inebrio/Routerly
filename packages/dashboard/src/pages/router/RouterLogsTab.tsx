@@ -304,7 +304,7 @@ export function RouterLogsTab() {
                           if (e.ctrlKey || e.metaKey) window.open(href, '_blank');
                           else navigate(href, { state: { record: r } });
                         }}
-                        onAuxClick={e => { if (e.button === 1) window.open(`/dashboard/usage/${r.id}`, '_blank'); }}
+                        onAuxClick={e => { if (e.button === 1 && !(e.target as HTMLElement).closest('a')) window.open(`/dashboard/usage/${r.id}`, '_blank'); }}
                       >
                         <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                           <Link
