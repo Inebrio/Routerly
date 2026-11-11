@@ -54,6 +54,7 @@ export type {
   IntentClassification,
   UserConfig,
   McpToken,
+  ApiToken,
   RoleConfig,
   ModuleRecord,
   Permission,
@@ -202,7 +203,7 @@ export type {
   CallSettingId, CallTier, CallLevel, CallClientPolicy, CallSettings, CallConfig,
   CallSkipReason, CallSettingSkip, AppliedCallConfig,
 } from './types/config.js';
-export type { NotificationEvent, RankingAlgorithmId } from './types/config.js';
+export type { NotificationEvent, RankingAlgorithmId, ConformanceResult, ConformanceCaseResult } from './types/config.js';
 export type { PermissionCheckStatus } from './types/config.js';
 
 // Update channel vocabulary: 'latest' | 'current' | 'next' | 'stable' | 'develop'

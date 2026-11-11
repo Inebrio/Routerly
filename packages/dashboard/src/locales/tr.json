@@ -447,6 +447,7 @@
       "profile": "Profil",
       "notifications": "Bildirimler",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Tercihler"
     },
     "notifications": {
@@ -630,6 +631,54 @@
         "errors": {
           "createFailed": "Jeton oluşturmak başarısız oldu",
           "copyFailed": "Kopyalamak başarısız oldu, jetonu manuel olarak seçin ve kopyalayın."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1218,7 +1267,7 @@
         "security": "Güvenlik",
         "token": "Jeton",
         "users": "Kullanıcılar",
-        "logs": "Günlükler"
+        "logs": "Kullanım"
       },
       "backToRouters": "Yönlendiricilere Geri Dön",
       "backToRoutersTitle": "Yönlendiricilere geri dön",
@@ -2013,13 +2062,15 @@
         "input": "Giriş $/1M",
         "output": "Çıkış $/1M",
         "cache": "Önbellek $/1M",
-        "context": "Bağlam Boyutu"
+        "context": "Bağlam Boyutu",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Test",
         "clone": "Klonla",
         "edit": "Düzenle",
-        "remove": "Kaldır"
+        "remove": "Kaldır",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Önceki",
@@ -2075,6 +2126,15 @@
           "cooldown": "dinlenme {{time}}",
           "lockout": "kilit {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

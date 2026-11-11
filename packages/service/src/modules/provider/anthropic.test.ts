@@ -1291,6 +1291,28 @@ describe('AnthropicAdapter callSettings (ROUT-306)', () => {
     expect(p.max_tokens).toBe(16000)
   })
 
+  it.each(['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5', 'claude-opus-4-7', 'claude-sonnet-4-6'])(
+    '%s gets adaptive thinking, never budget_tokens',
+    async (id) => {
+      const m = makeModel({ id, capabilities: { thinking: true } })
+      const p = await call({ max_tokens: 2000 }, m)
+      expect(p.thinking).toEqual({ type: 'adaptive' })
+      expect(p.max_tokens).toBe(16000)
+      mockCreate.mockClear()
+      const q = await call({ max_tokens: 4000 }, m, { maxOutputTokens: 4000 })
+      expect(q.thinking).toEqual({ type: 'adaptive' })
+      expect(q.max_tokens).toBe(4000)
+    },
+  )
+
+  it.each(['claude-3-7-sonnet-20250219', 'claude-haiku-4-5', 'claude-sonnet-4-5-20250929', 'claude-sonnet-4-20250514', 'claude-opus-4-1'])(
+    '%s keeps enabled thinking with budget_tokens',
+    async (id) => {
+      const p = await call({ max_tokens: 2000 }, makeModel({ id, capabilities: { thinking: true } }))
+      expect(p.thinking).toEqual({ type: 'enabled', budget_tokens: 10000 })
+    },
+  )
+
   it('thinking model with a router cap: no 16000 floor, budget clamped below max_tokens', async () => {
     const p = await call({ max_tokens: 4000 }, think, { maxOutputTokens: 4000 })
     expect(p.max_tokens).toBe(4000)

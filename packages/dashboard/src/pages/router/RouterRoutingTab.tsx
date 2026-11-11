@@ -382,6 +382,16 @@ export function RouterRoutingTab() {
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 6 }}>
                 {t('common.rankingAlgorithm.title')}: {t(`common.rankingAlgorithm.options.${profiles.find(p => p.id === assignedProfileId)?.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM}.label`)} ({t('common.rankingAlgorithm.fromProfile')})
               </p>
+              <ul data-testid="profile-policies" style={{ margin: '10px 0 0', paddingLeft: 18, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                {effectivePolicies.map((p, i) => (
+                  <li key={`${p.type}-${i}`}>
+                    <code>{p.type}</code>{p.enabled ? '' : t('routers.security.profileSelect.disabledSuffix')}
+                    {p.config && Object.keys(p.config).length > 0 && (
+                      <span style={{ color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: '0.75rem' }}> {JSON.stringify(p.config)}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </>
           )}
         </div>

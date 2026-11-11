@@ -234,6 +234,32 @@ DELETE /api/models/:id
 
 If the model owned its dedicated `conn-for-<id>` connection and no other model instance references it, the connection is deleted along with the model.
 
+### Run Model Conformance
+
+```
+POST /api/models/:id/conformance
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:write`)
+
+Runs the provider conformance corpus against the model through the production adapter path (requests are not counted in usage) and stores the result on the model. `GET /api/models` and `GET /api/models/:id` return it as `conformance`; a model that was never checked has no such field.
+
+**Response `200`:**
+```json
+{
+  "verifiedAt": "2026-11-11T10:00:00.000Z",
+  "status": "limited",
+  "verified": { "functionCalling": true, "json": false, "streaming": true },
+  "cases": [
+    { "id": "json-mode", "status": "fail", "detail": "400 ...", "durationMs": 412 }
+  ]
+}
+```
+
+`status` is `conformant` when no case failed, otherwise `limited`. `verified.<capability>` is `true` when all its cases passed and `false` when any failed; capabilities the model does not declare are omitted and their cases are `skip`.
+
+**Errors**: `404` model not found · `400` embedding or decision models · `403` insufficient permissions
+
 ### Get Model API Key
 
 ```

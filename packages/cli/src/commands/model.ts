@@ -2,8 +2,14 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ModelConfig, TokenCost, Limit, PricingTier, CatalogField, ModelInstance } from '@routerly/shared';
+import type { ModelConfig, ConformanceResult, TokenCost, Limit, PricingTier, CatalogField, ModelInstance } from '@routerly/shared';
 import { fmtUsd } from '../lib/fmt.js';
+
+function conformanceLabel(c: ConformanceResult | undefined): string {
+  if (!c) return chalk.gray('unverified');
+  const date = c.verifiedAt.slice(0, 10);
+  return c.status === 'conformant' ? chalk.green(`conformant ${date}`) : chalk.yellow(`limited ${date}`);
+}
 
 // ─── Interactive wizard helpers ───────────────────────────────────────────────
 
@@ -167,7 +173,7 @@ Examples:
         } catch { /* no connections:read permission or endpoint unavailable — column stays blank */ }
 
         const table = new Table({
-          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M', 'Catalog', 'Connection ID'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M', 'Catalog', 'Conformance', 'Connection ID'].map(h => chalk.cyan(h)),
         });
         for (const m of models) {
           const overridden = m.fieldOverrides ? Object.values(m.fieldOverrides).some(Boolean) : false;
@@ -177,7 +183,7 @@ Examples:
               ? chalk.green('catalog')
               : '';
           const connectionId = connectionByModelId.get(m.id) ?? chalk.gray('-');
-          table.push([m.id, m.provider, m.endpoint, fmtUsd(m.cost?.inputPerMillion), fmtUsd(m.cost?.outputPerMillion), catalogLabel, connectionId]);
+          table.push([m.id, m.provider, m.endpoint, fmtUsd(m.cost?.inputPerMillion), fmtUsd(m.cost?.outputPerMillion), catalogLabel, conformanceLabel(m.conformance), connectionId]);
         }
         console.log(table.toString());
       } catch (err) {
@@ -231,6 +237,12 @@ Examples:
         if (caps) console.log(line('Capabilities', caps));
       }
 
+      console.log(line('Conformance', conformanceLabel(m.conformance)));
+      if (m.conformance) {
+        const failed = m.conformance.cases.filter(c => c.status === 'fail');
+        for (const f of failed) console.log(`    ${chalk.red('fail')} ${f.id}${f.detail ? chalk.gray(` — ${f.detail}`) : ''}`);
+      }
+
       console.log(chalk.bold('\nPricing:'));
       console.log(line('Input $/1M', fmtUsd(m.cost?.inputPerMillion)));
       console.log(line('Output $/1M', fmtUsd(m.cost?.outputPerMillion)));
@@ -256,6 +268,38 @@ Examples:
         console.log(chalk.green('  Prices: auto-synced from catalog'));
       } else {
         console.log(chalk.gray('  (no catalog tracking)'));
+      }
+    });
+
+  cmd.command('conformance <id>')
+    .description('Run the provider conformance suite against a model and store the result')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Sends a fixed corpus of real requests (chat, tools, streaming, ...) to the model. Calls are billed by the provider.
+Exit code 1 when the model is limited (a case failed).
+
+Examples:
+  routerly model conformance gpt-4o
+  routerly model conformance gpt-4o --json
+`)
+    .action(async (id: string, opts: { json?: boolean }) => {
+      try {
+        const r = await api<ConformanceResult>('POST', `/api/models/${encodeURIComponent(id)}/conformance`);
+        if (opts.json) {
+          console.log(JSON.stringify(r, null, 2));
+        } else {
+          const table = new Table({ head: ['Case', 'Result', 'ms', 'Detail'].map(h => chalk.cyan(h)) });
+          for (const c of r.cases) {
+            const res = c.status === 'pass' ? chalk.green('pass') : c.status === 'fail' ? chalk.red('fail') : chalk.gray('skip');
+            table.push([c.id, res, String(c.durationMs), c.detail ?? '']);
+          }
+          console.log(table.toString());
+          console.log(`${id}: ${conformanceLabel(r)}`);
+        }
+        if (r.status === 'limited') process.exitCode = 1;
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
       }
     });
 

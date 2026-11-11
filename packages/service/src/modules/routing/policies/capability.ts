@@ -7,7 +7,7 @@ import type { PolicyFn } from './types.js';
  * richiesta dalla richiesta corrente, 1.0 a quelli compatibili.
  *
  * Feature rilevate automaticamente dalla richiesta:
- *  - vision         → uno o più messaggi contengono ContentPart di tipo image_url
+ *  - vision         → uno o più messaggi contengono ContentPart di tipo image_url (chat) o image (Anthropic)
  *  - functionCalling → la richiesta include `tools` o `functions`
  *  - json           → response_format.type === 'json_object'
  *
@@ -19,7 +19,7 @@ export const capabilityPolicy: PolicyFn = async ({ request, candidates }) => {
   // ── Rileva feature richieste ─────────────────────────────────────────────
   const needsVision = (request.messages ?? []).some((m: { content: unknown }) => {
     if (!Array.isArray(m.content)) return false;
-    return (m.content as Array<{ type: string }>).some(p => p.type === 'image_url');
+    return (m.content as Array<{ type: string }>).some(p => p.type === 'image_url' || p.type === 'image');
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload

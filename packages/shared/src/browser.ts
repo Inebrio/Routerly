@@ -113,6 +113,7 @@ export type {
   IntentClassification,
   UserConfig,
   McpToken,
+  ApiToken,
   RoleConfig,
   Permission,
   Settings,

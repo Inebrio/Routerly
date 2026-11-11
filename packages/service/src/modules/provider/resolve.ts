@@ -61,6 +61,10 @@ export function resolveEffectiveModel(
     result.capabilities = instance.capabilities;
   }
 
+  if (instance.conformance !== undefined) {
+    result.conformance = instance.conformance;
+  }
+
   // Decision models are flagged by their provider, so a client cannot forget (or fake) the flag.
   if (getProviderDescriptor(connection.providerId)?.nativeCapabilities.decision === true) {
     result.capabilities = { ...result.capabilities, decision: true };
