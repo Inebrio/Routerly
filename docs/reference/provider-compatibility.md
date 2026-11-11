@@ -363,3 +363,20 @@ All consulted 2026-11-11. Redirects were followed to the host shown.
 | AZ4 | https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/function-calling |
 | BR1 | https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html |
 | BR2 | https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html |
+
+## First conformance run (2026-11-11)
+
+Result of `routerly model conformance` (corpus in `packages/service/src/modules/conformance/corpus.ts`) on a build of this branch, against the real providers. Only providers with credentials available to the project were run; every other provider stays `unverified` until a connection is configured and the suite is run on it.
+
+| Provider | Model | Status | Failed cases |
+|---|---|---|---|
+| deepseek | deepseek-chat | conformant | none |
+| deepseek | deepseek-reasoner | conformant | none |
+| openai | gpt-5-nano | conformant | none |
+| anthropic | claude-haiku-4-5 | limited | `json-mode`: `response_format: json_object` is ignored, JSON comes back in a markdown fence (ROUT-728) |
+| anthropic-oauth | claude-haiku-4-5 | limited | `json-mode`: same as above (ROUT-728) |
+| ollama | nemotron-3.5-bolt:e4b | conformant | none |
+
+Not run (no credentials or no reachable account): gemini, azure-openai, bedrock, vertex, groq, together, perplexity, xai, mistral, cohere, fireworks, cerebras, openai-oauth. Vision and thinking cases run only on models that declare the capability (gpt-5-nano: vision and thinking; deepseek-reasoner: thinking; Anthropic models: vision).
+
+First-run lesson: reasoning models spend a small `max_tokens` budget on reasoning and return empty content. The corpus uses 1024 so a failure means the provider, not the budget.

@@ -59,7 +59,7 @@ export const CORPUS: ConformanceCase[] = [
   {
     id: 'basic-chat', capability: 'base',
     async run(i) {
-      const r = await i.chat({ messages: [user('Reply with the single word: ok')], max_tokens: 64 });
+      const r = await i.chat({ messages: [user('Reply with the single word: ok')], max_tokens: 1024 });
       expect(text(r).length > 0, 'empty assistant content');
     },
   },
@@ -68,7 +68,7 @@ export const CORPUS: ConformanceCase[] = [
     async run(i) {
       const r = await i.chat({
         messages: [{ role: 'system', content: 'Be brief.' }, { role: 'system', content: 'Answer in English.' }, user('Say hi')],
-        max_tokens: 64,
+        max_tokens: 1024,
       });
       expect(text(r).length > 0, 'empty assistant content with two system messages');
     },
@@ -77,7 +77,7 @@ export const CORPUS: ConformanceCase[] = [
     id: 'streaming', capability: 'streaming',
     async run(i) {
       let content = ''; let finish: unknown;
-      for await (const c of i.stream({ messages: [user('Count: 1 2 3')], max_tokens: 64 })) {
+      for await (const c of i.stream({ messages: [user('Count: 1 2 3')], max_tokens: 1024 })) {
         for (const ch of c.choices ?? []) {
           if (typeof ch.delta?.content === 'string') content += ch.delta.content;
           if (ch.finish_reason) finish = ch.finish_reason;
@@ -93,7 +93,7 @@ export const CORPUS: ConformanceCase[] = [
     async run(i) {
       const r = await i.chat({
         messages: [user('Look up the record with code ABC using the tool.')],
-        tools: [lookupTool], tool_choice: 'auto', max_tokens: 256,
+        tools: [lookupTool], tool_choice: 'auto', max_tokens: 1024,
       });
       const calls = r.choices?.[0]?.message?.tool_calls;
       expect(calls && calls.length > 0, 'no tool call returned');
@@ -106,7 +106,7 @@ export const CORPUS: ConformanceCase[] = [
     async run(i) {
       const first = await i.chat({
         messages: [user('Look up the record with code ABC using the tool.')],
-        tools: [lookupTool], tool_choice: 'auto', max_tokens: 256,
+        tools: [lookupTool], tool_choice: 'auto', max_tokens: 1024,
       });
       const msg = first.choices?.[0]?.message;
       const call = msg?.tool_calls?.[0];
@@ -118,7 +118,7 @@ export const CORPUS: ConformanceCase[] = [
           msg as ChatCompletionRequest['messages'][number],
           { role: 'tool', tool_call_id: call.id, content: '{"name":"Alpha"}' },
         ],
-        tools: [lookupTool], max_tokens: 256,
+        tools: [lookupTool], max_tokens: 1024,
       });
       expect(r.choices?.length > 0, 'continuation returned no choices');
     },
@@ -134,7 +134,7 @@ export const CORPUS: ConformanceCase[] = [
           { role: 'assistant', content: null, tool_calls: [{ id: 'call_1', type: 'function', function: { name: 'lookup', arguments: '{"code":"ABC"}' } }] },
           { role: 'tool', tool_call_id: 'call_1', content: '{"name":"Alpha"}' },
         ],
-        tools: [lookupTool], max_tokens: 256,
+        tools: [lookupTool], max_tokens: 1024,
       });
       expect(r.choices?.length > 0, 'continuation returned no choices');
     },
@@ -145,7 +145,7 @@ export const CORPUS: ConformanceCase[] = [
     async run(i) {
       const r = await i.chat({
         messages: [user('Return a JSON object with key "a" set to 1.')],
-        response_format: { type: 'json_object' }, max_tokens: 128,
+        response_format: { type: 'json_object' }, max_tokens: 1024,
       });
       JSON.parse(text(r));
     },
@@ -156,7 +156,7 @@ export const CORPUS: ConformanceCase[] = [
     async run(i) {
       const r = await i.chat({
         messages: [user([{ type: 'text', text: 'Describe this image in one word.' }, { type: 'image_url', image_url: { url: PNG } }])],
-        max_tokens: 64,
+        max_tokens: 1024,
       });
       expect(text(r).length > 0, 'empty content for an image input');
     },
