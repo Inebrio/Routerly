@@ -162,6 +162,16 @@ describe('resolveOptimizerProfile', () => {
   })
 })
 
+describe('optimizer-none preset', () => {
+  it('replaces stored custom steps with zero steps', async () => {
+    const { applyProfiles } = await import('./store.js')
+    const applied = await applyProfiles(
+      router({ optimizerProfileId: 'optimizer-none', optimizers: { steps: [{ id: 'rtk', enabled: true }] } }),
+    )
+    expect(applied.optimizers).toEqual({ steps: [] })
+  })
+})
+
 describe('resolveSecurityProfile', () => {
   it('returns undefined when the router has no guardrails and no pii config', async () => {
     const { resolveSecurityProfile } = await import('./store.js')

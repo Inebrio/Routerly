@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- **Optimizer: no profile.** Routers > Optimizer > Profile now offers a built-in «None» profile (`optimizer-none`) that runs no optimizer step and ignores any stored Custom steps; previously Profile mode always needed one of the optimizer presets (ROUT-696).
+
 ### Fixed
 
 - **Provider catalog.** A failed catalog fetch (network down, 5xx, checksum mismatch) is no longer cached for 6 hours: it is retried after 1 minute, previous data keeps being served, and each fetch times out after 10 seconds (ROUT-644).

@@ -521,7 +521,8 @@ Every profile also has `id`, `kind`, `label`, `version`, `builtin` and, when it
 was produced by [Clone Profile](#clone-profile), `baseId`.
 
 Routerly ships read-only built-ins for two kinds (`auto`, `cheap`, `fast`,
-`coding`; `optimizer-safe`, `optimizer-balanced`, `optimizer-aggressive`).
+`coding`; `optimizer-safe`, `optimizer-balanced`, `optimizer-aggressive`, and
+`optimizer-none`, which runs no optimizer step).
 Security ships none: guardrails and PII policies rewrite the request, so a
 router never inherits them from a preset it did not choose, and every security
 profile is user-created. A router either keeps its own inline

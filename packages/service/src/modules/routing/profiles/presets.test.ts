@@ -3,7 +3,7 @@ import type { RoutingProfile } from '@routerly/shared'
 import { BUILTIN_PROFILES, LEGACY_BUILTIN_PROFILES, DEFAULT_PROFILE_ID, getBuiltin, listBuiltins } from './presets.js'
 
 const ROUTING_IDS = ['auto', 'cheap', 'fast', 'coding']
-const OPTIMIZER_IDS = ['optimizer-safe', 'optimizer-balanced', 'optimizer-aggressive']
+const OPTIMIZER_IDS = ['optimizer-safe', 'optimizer-balanced', 'optimizer-aggressive', 'optimizer-none']
 const EXPECTED_IDS = [...ROUTING_IDS, ...OPTIMIZER_IDS]
 
 const routing = (id: string): RoutingProfile => getBuiltin(id) as RoutingProfile
@@ -129,6 +129,12 @@ describe('BUILTIN_PROFILES', () => {
     const aggressive = steps('optimizer-aggressive')
     expect(balanced.slice(0, safe.length)).toEqual(safe)
     expect(aggressive.slice(0, balanced.length)).toEqual(balanced)
+  })
+
+  it('ships an explicit no-optimizer preset with zero steps', () => {
+    const none = getBuiltin('optimizer-none') as { optimizers: { steps: unknown[] } }
+    expect(none.optimizers.steps).toEqual([])
+    expect(DEFAULT_PROFILE_ID.optimizer).toBe('optimizer-safe')
   })
 
   // Guardrails and PII rewrite the request, so no router may inherit them from
