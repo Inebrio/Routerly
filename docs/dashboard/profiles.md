@@ -117,11 +117,11 @@ not editable and no save button is shown. Clone one to customize it.
 
 - **Call configuration**: the same editor as the router [Routing tab](./routers.md#call-configuration), shown for routing profiles. Routers assigned to the profile use this configuration instead of their own. An invalid value blocks saving. Built-in profiles have none.
 
-The selector and the fallback strategy are not editable from the dashboard:
-the engine defaults (`argmax` and `next-best`) apply to every profile created
-here. A profile that already carries other values keeps them when it is
-edited or cloned, and the [API](../api/management.md#profiles) still accepts
-both fields.
+- **Fallback strategy**: select below the policies, with a description of the chosen value. `Next best model` (default) tries the next candidate, `Retry after cooldown` waits 2 seconds and retries the same model (at most twice per request) before moving on, `Abort` returns the provider error at the first failure. `Abort` shows a warning because no other model is tried. See [Fallback Strategies](../concepts/routing.md#fallback-strategies).
+
+The selector is not editable from the dashboard: a profile created here uses
+`argmax`. A profile that already carries another selector keeps it when it is
+edited or cloned, and the [API](../api/management.md#profiles) still accepts it.
 
 ### Optimizer configuration
 

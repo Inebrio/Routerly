@@ -12,6 +12,7 @@ import {
 import { isChatModel } from '../utils/models';
 import type { CallConfig } from '@routerly/shared';
 import { CallConfigEditor, callConfigError } from '../components/CallConfigEditor';
+import { SearchableSelect } from '../components/SearchableSelect';
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../components/RoutingPoliciesEditor';
 import {
   OptimizerStepsEditor, buildOptimizerSteps, mergeOptimizerRows, type OptimizerRow,
@@ -22,6 +23,8 @@ import {
 import { KIND_LABELS } from './ProfilesPage';
 import { useAuth } from '../AuthContext';
 import { uuid } from '../utils/uuid';
+
+const FALLBACK_STRATEGIES: FallbackStrategyType[] = ['next-best', 'retry-after-cooldown', 'abort'];
 
 function labelPlaceholders(t: TFunction): Record<ProfileKind, string> {
   return {
@@ -207,6 +210,31 @@ export function ProfileFormPage() {
             {/* Each editor prints its own heading, so the form does not repeat it. */}
             {kind === 'routing' && (
               <RoutingPoliciesEditor policies={policies} setPolicies={setPolicies} availableModels={models} rankingAlgorithm={rankingAlgorithm} onRankingAlgorithmChange={setRankingAlgorithm} />
+            )}
+
+            {kind === 'routing' && (
+              <div className="form-group" style={{ marginTop: 24 }}>
+                <label className="form-label">{t('profiles.form.fallbackStrategy.title')}</label>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
+                  {t('profiles.form.fallbackStrategy.hint')}
+                </p>
+                <SearchableSelect
+                  style={{ maxWidth: 420 }}
+                  ariaLabel={t('profiles.form.fallbackStrategy.title')}
+                  placeholder={t('profiles.form.fallbackStrategy.title')}
+                  value={fallbackStrategy}
+                  onChange={v => setFallbackStrategy(v as FallbackStrategyType)}
+                  options={FALLBACK_STRATEGIES.map(id => ({ value: id, label: t(`profiles.form.fallbackStrategy.options.${id}.label`) }))}
+                />
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
+                  {t(`profiles.form.fallbackStrategy.options.${fallbackStrategy}.description`)}
+                </p>
+                {fallbackStrategy === 'abort' && (
+                  <p role="alert" style={{ fontSize: '0.8rem', color: 'var(--warning, #d97706)', marginTop: 8 }}>
+                    {t('profiles.form.fallbackStrategy.abortWarning')}
+                  </p>
+                )}
+              </div>
             )}
 
             {kind === 'routing' && (

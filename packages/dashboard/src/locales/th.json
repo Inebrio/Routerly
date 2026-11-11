@@ -2850,6 +2850,25 @@
         "notFound": "ไม่พบโปรไฟล์",
         "loadFailed": "ไม่สามารถโหลดโปรไฟล์",
         "saveFailed": "ไม่สามารถบันทึกโปรไฟล์"
+      },
+      "fallbackStrategy": {
+        "title": "Fallback strategy",
+        "hint": "What happens when the chosen model fails before answering.",
+        "abortWarning": "Abort fails the request on the first provider error, without trying any other model. Use it only when answering from a different model is not acceptable.",
+        "options": {
+          "next-best": {
+            "label": "Next best model",
+            "description": "Try the next model in the ranking. Default."
+          },
+          "retry-after-cooldown": {
+            "label": "Retry after cooldown",
+            "description": "Wait 2 seconds and retry the same model, at most twice per request, then move to the next model. Models the health policy has put on cooldown are not retried."
+          },
+          "abort": {
+            "label": "Abort",
+            "description": "Stop at the first failure and return the provider error."
+          }
+        }
       }
     }
   },

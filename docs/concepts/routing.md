@@ -290,19 +290,22 @@ and the [API](../api/management.md#profiles) accepts any of them.
 
 ### Fallback Strategies
 
+A routing profile's fallback strategy decides what the proxy does when the
+chosen model fails before answering (network error, timeout, 5xx, 429):
+
 | Strategy | Behaviour |
 |----------|-----------|
-| `next-best` | On failure, try the next-highest-ranked remaining candidate. |
-| `retry-after-cooldown` | On failure, retry the same model after a cooldown period instead of moving to the next candidate. |
-| `abort` | On failure, stop immediately with no retry. |
+| `next-best` | Default. Try the next-highest-ranked remaining candidate. |
+| `retry-after-cooldown` | Wait 2 seconds and retry the same model, at most 2 retries per request in total, then move on to the next candidate. A model the health policy has put on cooldown (for example after a 429) is not retried: the proxy moves on at once. |
+| `abort` | Stop at the first failure and return the provider error. No other model is tried. |
 
-:::caution Not yet wired into live retries
-The fallback strategy is a field stored on the profile and settable through
-the API, but it does not yet change what actually happens when a request
-fails at runtime: the reverse-proxy retry loop does not read it yet. Treat it
-as configuration staged for a future release, not a currently active
-behaviour. That is why neither the dashboard nor the CLI exposes it.
-:::
+Notes:
+
+- A deterministic client error (400, 401, 403, 404, 422) is never retried, whatever the strategy: the request itself is wrong.
+- Streaming requests fail over only before the first chunk is sent; once bytes reached the client nothing is retried.
+- Each decision is recorded in the usage trace as a `router:fallback` entry (strategy, action, model, reason). It never contains request content or credentials, and no header or payload on the wire changes.
+- `abort` trades availability for predictability: use it only when answering from a different model is not acceptable.
+- The built-in **Fast** profile uses `retry-after-cooldown` and the others use `next-best`; these now behave as declared. The strategy is editable from the dashboard and the CLI (`--fallback-strategy`) on user profiles.
 
 ---
 

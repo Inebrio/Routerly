@@ -1459,7 +1459,7 @@ Show full details of one profile. There is no single-item GET endpoint for profi
 
 Prints the common fields (`id`, `kind`, `label`, `builtin`, `version`, and `baseId` if the profile was cloned), followed by a kind-specific block: policies and the call configuration for `routing`, the pipeline in execution order for `optimizer`, guardrail rules and PII policies for `security`.
 
-The selector and the fallback strategy of a routing profile are engine internals and are not printed; `--json` returns the stored profile as the API serves it, both fields included.
+For routing profiles the block starts with `ranking algorithm:` and `fallback strategy:`; the selector is not printed, `--json` returns the stored profile as the API serves it. `profiles list` appends the fallback strategy to the routing summary.
 
 ```bash
 routerly profiles show auto
@@ -1474,7 +1474,7 @@ Requires `profiles:read` permission.
 ### `routerly profiles create`
 
 ```
-routerly profiles create --kind <kind> --label <label> [--ranking-algorithm <id>] [--json]
+routerly profiles create --kind <kind> --label <label> [--ranking-algorithm <id>] [--fallback-strategy <strategy>] [--json]
 ```
 
 Create an empty profile of the given kind. The CLI has no editor for profile bodies: fill the new profile in from the dashboard, or use `clone` to start from a preset.
@@ -1484,12 +1484,14 @@ Create an empty profile of the given kind. The CLI has no editor for profile bod
 | `--kind <kind>` | `routing`, `optimizer` or `security` - required |
 | `--label <label>` | Label for the new profile - required |
 | `--ranking-algorithm <id>` | Ranking algorithm, `routing` profiles only (`default`); with another kind the command exits 1 |
+| `--fallback-strategy <strategy>` | `next-best` (default), `retry-after-cooldown` or `abort`, `routing` profiles only; with another kind the command exits 1. `abort` prints a warning on stderr: the request fails at the first provider error. See [Fallback Strategies](../concepts/routing.md#fallback-strategies) |
 | `--call-config <json\|@file>` | Routing kind only: a [call configuration](../concepts/call-configuration.md) as inline JSON or `@path` |
 | `--json` | Output the created profile as raw JSON |
 
 ```bash
 routerly profiles create --kind routing --label "My Routing"
 routerly profiles create --kind routing --label "My Routing" --ranking-algorithm default
+routerly profiles create --kind routing --label "Strict" --fallback-strategy abort
 routerly profiles create --kind routing --label "Capped" --call-config '{"enabled":true,"tiers":{"low":{"maxOutputTokens":512}}}'
 routerly profiles create --kind security --label "My Guardrails" --json
 ```
@@ -1504,21 +1506,23 @@ Requires `profiles:manage` permission.
 ### `routerly profiles update`
 
 ```
-routerly profiles update <id> [--label <label>] [--ranking-algorithm <id>] [--call-config <json|@file> | --clear-call-config] [--json]
+routerly profiles update <id> [--label <label>] [--ranking-algorithm <id>] [--fallback-strategy <strategy>] [--call-config <json|@file> | --clear-call-config] [--json]
 ```
 
-Update a user profile. At least one of `--label`, `--ranking-algorithm`, `--call-config` or `--clear-call-config` is required, otherwise the command exits 1 with `Error: provide --label, --ranking-algorithm, --call-config and/or --clear-call-config.` Built-in profiles cannot be changed. `--call-config` and `--clear-call-config` are mutually exclusive; the service validates the call configuration JSON and answers `400` when it is invalid.
+Update a user profile. At least one of `--label`, `--ranking-algorithm`, `--fallback-strategy`, `--call-config` or `--clear-call-config` is required, otherwise the command exits 1 with `Error: provide --label, --ranking-algorithm, --fallback-strategy, --call-config and/or --clear-call-config.` Built-in profiles cannot be changed. `--call-config` and `--clear-call-config` are mutually exclusive; the service validates the call configuration JSON and answers `400` when it is invalid.
 
 | Option | Description |
 |--------|-------------|
 | `--label <label>` | New label |
 | `--ranking-algorithm <id>` | Ranking algorithm, `routing` profiles only (`default`) |
+| `--fallback-strategy <strategy>` | `next-best`, `retry-after-cooldown` or `abort`, `routing` profiles only; `abort` prints a warning on stderr |
 | `--call-config <json\|@file>` | Replace the [call configuration](../concepts/call-configuration.md), `routing` profiles only |
 | `--clear-call-config` | Remove the call configuration |
 | `--json` | Output the updated profile as raw JSON |
 
 ```bash
 routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --ranking-algorithm default
+routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --fallback-strategy retry-after-cooldown
 routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --call-config @call-config.json
 routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --clear-call-config
 ```

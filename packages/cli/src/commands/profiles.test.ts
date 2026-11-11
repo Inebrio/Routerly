@@ -120,7 +120,7 @@ describe('profiles list', () => {
     expect(out).toContain('routing');
     expect(out).toContain('optimizer');
     expect(out).toContain('security');
-    expect(out).toContain('1 active policies');
+    expect(out).toContain('1 active policies, fallback next-best');
     expect(out).toContain('2/3 steps enabled');
     expect(out).toContain('1 guardrail rules, 1 PII policies');
     expect(out).toContain('yes');
@@ -196,7 +196,7 @@ describe('profiles show', () => {
     expect(out).toContain('health (enabled)');
     expect(out).toContain('cheapest (disabled)');
     expect(out).not.toContain('argmax');
-    expect(out).not.toContain('next-best');
+    expect(out).toContain('fallback strategy: next-best');
   });
 
   it('shows the ranking algorithm of a routing profile, defaulting when unset', async () => {
@@ -333,6 +333,21 @@ describe('profiles create', () => {
     expect(mockApi).not.toHaveBeenCalled();
   });
 
+  it('sends --fallback-strategy for a routing profile and warns on abort', async () => {
+    mockApi.mockResolvedValueOnce({ ...userProfile, fallbackStrategy: 'abort' });
+    await makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'routing', '--label', 'R', '--fallback-strategy', 'abort']);
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/profiles', { kind: 'routing', label: 'R', fallbackStrategy: 'abort' });
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('abort'));
+  });
+
+  it('rejects --fallback-strategy on a non-routing kind and unknown values', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'security', '--label', 'S', '--fallback-strategy', 'abort'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    await expect(makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'routing', '--label', 'R', '--fallback-strategy', 'nope'])).rejects.toThrow();
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
   it('rejects an unknown --ranking-algorithm without calling the API', async () => {
     await expect(makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'routing', '--label', 'R', '--ranking-algorithm', 'jev'])).rejects.toThrow();
     expect(mockApi).not.toHaveBeenCalled();
@@ -360,6 +375,13 @@ describe('profiles update', () => {
     expect(lines.join('\n')).toContain('Updated routing profile "My Custom" (version 2)');
   });
 
+  it('PATCHes the fallback strategy without a warning for non-abort values', async () => {
+    mockApi.mockResolvedValueOnce({ ...userProfile, version: 2, fallbackStrategy: 'retry-after-cooldown' });
+    await makeCmd().parseAsync(['node', 'profiles', 'update', 'user-1', '--fallback-strategy', 'retry-after-cooldown']);
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/profiles/user-1', { fallbackStrategy: 'retry-after-cooldown' });
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
   it('sends label and algorithm together and prints parseable JSON with --json', async () => {
     const updated = { ...userProfile, version: 2, label: 'Renamed', rankingAlgorithm: 'default' };
     mockApi.mockResolvedValueOnce(updated);
@@ -374,7 +396,7 @@ describe('profiles update', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'profiles', 'update', 'user-1'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('provide --label, --ranking-algorithm, --call-config and/or --clear-call-config'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('provide --label, --ranking-algorithm, --fallback-strategy, --call-config and/or --clear-call-config'));
     expect(mockApi).not.toHaveBeenCalled();
   });
 

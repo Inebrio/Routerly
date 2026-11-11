@@ -146,12 +146,13 @@ describe('ProfileFormPage — create', () => {
     expect(screen.queryByLabelText('Kind')).not.toBeInTheDocument();
   });
 
-  it('creates a routing profile on the engine defaults, with no selector knobs on screen', async () => {
+  it('creates a routing profile with the default fallback strategy and shows the abort warning on demand', async () => {
     const user = userEvent.setup();
     renderPage('/dashboard/profiles/new');
     await waitFor(() => expect(screen.getByTestId('routing-editor')).toBeInTheDocument());
     expect(screen.queryByLabelText('Selector')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Fallback strategy')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Fallback strategy')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Label'), 'My Routing');
     await user.click(screen.getByRole('button', { name: /create profile/i }));
     await waitFor(() => expect(mockCreateProfile).toHaveBeenCalledWith({
@@ -223,6 +224,7 @@ describe('ProfileFormPage — edit', () => {
     renderPage('/dashboard/profiles/mine');
     await waitFor(() => expect(screen.getByLabelText('Label')).toHaveValue('Mine'));
     expect(screen.getByText('Edit Mine')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/without trying any other model/);
     await user.clear(screen.getByLabelText('Label'));
     await user.type(screen.getByLabelText('Label'), 'Renamed');
     await user.click(screen.getByRole('button', { name: /save profile/i }));
