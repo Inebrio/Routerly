@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Quick start.** README and quick start pin the 0.6.1 install commands and Docker tag instead of the outdated 0.5.3 (ROUT-733).
 - **Provider catalog.** A failed catalog fetch (network down, 5xx, checksum mismatch) is no longer cached for 6 hours: it is retried after 1 minute, previous data keeps being served, and each fetch times out after 10 seconds (ROUT-644).
 
 ### Added
