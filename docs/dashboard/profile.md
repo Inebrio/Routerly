@@ -99,6 +99,25 @@ Use the **Archive** button in the detail drawer or the bulk action bar **Archive
 
 ---
 
+## API Tokens Tab {#api-tokens-tab}
+
+The API tokens tab, at `/dashboard/profile/api-tokens`, manages long-lived
+tokens for automations and the CLI. A token acts as you, limited to the
+permissions you pick, and always expires. Every user has this tab.
+
+Each card shows the name, the visible prefix (`sk-rt-api-…`), the permissions
+in scope, **Created**, **Last used** and **Expires**. A token expiring within
+7 days shows an **Expires soon** badge; an expired one shows **Expired**.
+
+To create one, click **+ New Token** (`/dashboard/profile/api-tokens/new`),
+enter a **Name** (shown in the audit log for every request), an **Expires on**
+date (default 90 days, at most 365) and at least one permission. Only the
+permissions you hold are offered. The raw value appears once, with a **Copy**
+button and the `routerly auth login --token` command; Routerly stores only its
+SHA-256 hash. The trash icon revokes a token after a confirmation, immediately.
+
+---
+
 ## MCP Tab {#mcp-tab}
 
 The MCP tab is where you manage your own [MCP](../concepts/mcp.md) tokens and

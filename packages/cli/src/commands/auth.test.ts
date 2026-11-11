@@ -91,6 +91,27 @@ describe('auth login', () => {
     mockSaveAccount.mockResolvedValue(undefined);
   });
 
+  it('--token: validates via /api/me and saves the account with the token expiry', async () => {
+    const exp = '2027-03-01T00:00:00.000Z';
+    mockApiWith.mockResolvedValueOnce({ id: 'u1', email: 'ci@example.com', roleId: 'admin', tokenExpiresAt: exp });
+
+    await makeCmd().parseAsync(['node', 'auth', 'login', '--url', 'http://svc:3000', '--token', 'sk-rt-api-raw']);
+
+    expect(mockApiWith).toHaveBeenCalledWith(expect.objectContaining({ token: 'sk-rt-api-raw' }), 'GET', '/api/me');
+    expect(mockSaveAccount).toHaveBeenCalledWith(expect.objectContaining({
+      alias: 'ci-token', serverUrl: 'http://svc:3000', token: 'sk-rt-api-raw', expiresAt: new Date(exp).getTime(),
+    }));
+  });
+
+  it('--token: invalid token exits 1 and saves nothing', async () => {
+    mockApiWith.mockRejectedValueOnce(new ApiError(401, 'Invalid or expired API token'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
+    await expect(makeCmd().parseAsync(['node', 'auth', 'login', '--token', 'sk-rt-api-bad'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(mockSaveAccount).not.toHaveBeenCalled();
+    exitSpy.mockRestore();
+  });
+
   it('first-ever login: saves as "default" alias', async () => {
     mockListAccounts.mockResolvedValue([]);
     mockApiWith.mockResolvedValueOnce({

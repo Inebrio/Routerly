@@ -47,6 +47,7 @@ import { connectionsRoutes, buildConnectionCredentials } from './connections.js'
 import { profilesRoutes } from './profiles.js';
 import { experimentsRoutes } from './experiments.js';
 import { mcpApiRoutes } from './mcp.js';
+import { apiTokenRoutes, authenticateApiToken, recordApiTokenUse, API_TOKEN_PREFIX } from './api-tokens.js';
 import { getOptimizerRegistry } from '../optimizers/registry.js';
 import { callConfigSchema } from '../routing/call-config.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema, optimizerStepSchema } from './schemas.js';
@@ -325,6 +326,8 @@ async function verifyPassword(
 declare module 'fastify' {
   interface FastifyRequest {
     dashUser: { id: string; email: string; roleId: string; permissions: Permission[] } | null;
+    /** Set only when the request authenticated with a management-API token. */
+    apiTokenExpiresAt?: string;
   }
 }
 
@@ -499,6 +502,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   await fastify.register(profilesRoutes);
   await fastify.register(experimentsRoutes);
   await fastify.register(mcpApiRoutes);
+  await fastify.register(apiTokenRoutes);
 
   // Mount routes contributed via the API_ROUTES registry (e.g. resilience/routes.ts).
   // tryResolve, not resolve: the registry is only present once apiModule has registered
@@ -749,6 +753,21 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(401).send({ error: 'Unauthorized' });
     }
     const jwtToken = authHeader.slice(7);
+
+    if (jwtToken.startsWith(API_TOKEN_PREFIX)) {
+      // Automation token: scope ∩ owner's role. It may not mint tokens, change credentials or touch 2FA.
+      const auth = await authenticateApiToken(jwtToken);
+      if (!auth.ok) return reply.status(401).send({ error: 'Unauthorized' });
+      const path = req.url.split('?')[0]!;
+      if (path.startsWith('/api/auth/') || (path.startsWith('/api/me') && !(req.method === 'GET' && path === '/api/me'))) {
+        return reply.status(403).send({ error: 'Forbidden', message: 'API tokens cannot manage tokens, credentials or 2FA' });
+      }
+      req.dashUser = { id: auth.user.id, email: auth.user.email, roleId: auth.user.roleId, permissions: auth.permissions };
+      req.apiTokenExpiresAt = auth.token.expiresAt;
+      void recordApiTokenUse(req, auth.user, auth.token);
+      return;
+    }
+
     const payload = verifyToken(jwtToken);
     if (!payload) return reply.status(401).send({ error: 'Unauthorized' });
 
@@ -2056,7 +2075,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const users = await readConfig('users');
     const user = users.find(u => u.id === userId);
     if (!user) return reply.status(404).send({ error: 'User not found' });
-    return reply.send({ id: user.id, email: user.email, roleId: user.roleId, permissions: req.dashUser!.permissions, ...(user.language ? { language: user.language } : {}) });
+    return reply.send({ id: user.id, email: user.email, roleId: user.roleId, permissions: req.dashUser!.permissions, ...(req.apiTokenExpiresAt ? { tokenExpiresAt: req.apiTokenExpiresAt } : {}), ...(user.language ? { language: user.language } : {}) });
   });
 
   // Dashboard-owned language list — server only checks length, never the ~40-language catalog.
@@ -2106,7 +2125,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ══════════════════════════════════════════════════════════════════════════════
 
   // Strip credential-derived fields; totpEnabled stays (UsersPage needs it).
-  const publicUser = ({ passwordHash: _p, refreshTokenHash: _r, totpSecret: _s, backupCodes: _b, mcpTokens: _m, ...rest }: UserConfig) => rest;
+  const publicUser = ({ passwordHash: _p, refreshTokenHash: _r, totpSecret: _s, backupCodes: _b, mcpTokens: _m, apiTokens: _a, ...rest }: UserConfig) => rest;
 
   fastify.get('/api/users', async (req, reply) => {
     if (!requirePerm(req, 'user:read', reply)) return;

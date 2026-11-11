@@ -728,6 +728,27 @@ export interface McpToken {
   expiresAt?: string;
 }
 
+/**
+ * Personal management-API token (`sk-rt-api-…`) for automations. Only the
+ * SHA-256 hash is stored; the raw value is shown once. Unlike MCP tokens the
+ * expiry is mandatory and the token carries a permission scope, intersected at
+ * use time with the owner's current role permissions.
+ */
+export interface ApiToken {
+  id: string;
+  /** User-chosen label, unique per user. */
+  name: string;
+  tokenHash: string;
+  /** First 14 characters of the raw token, for display. */
+  tokenSnippet: string;
+  createdAt: string; // ISO 8601
+  lastUsedAt?: string;
+  /** ISO 8601 expiry; mandatory. */
+  expiresAt: string;
+  /** Permissions the token may exercise (subset of its creator's at creation). */
+  permissions: Permission[];
+}
+
 export interface UserConfig {
   id: string;
   email: string;
@@ -737,6 +758,8 @@ export interface UserConfig {
   routerIds: string[];
   /** MCP tokens minted by this user. Each grants exactly this user's permissions. */
   mcpTokens?: McpToken[];
+  /** Management-API tokens minted by this user, scoped to a subset of this user's permissions. */
+  apiTokens?: ApiToken[];
   /** SHA-256 hash of the CLI refresh token. Absent means no refresh token issued. */
   refreshTokenHash?: string;
   /** base32-encoded TOTP secret, present when 2FA is enrolled */
