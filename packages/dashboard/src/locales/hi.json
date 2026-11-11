@@ -2062,13 +2062,15 @@
         "input": "इनपुट $/1M",
         "output": "आउटपुट $/1M",
         "cache": "कैश $/1M",
-        "context": "संदर्भ आकार"
+        "context": "संदर्भ आकार",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "परीक्षण",
         "clone": "क्लोन",
         "edit": "संपादित करें",
-        "remove": "हटाएं"
+        "remove": "हटाएं",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← पिछला",
@@ -2124,6 +2126,15 @@
           "cooldown": "कूलडाउन {{time}}",
           "lockout": "लॉकआउट {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

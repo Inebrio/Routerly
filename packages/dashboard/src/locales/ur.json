@@ -2062,13 +2062,15 @@
         "input": "ان پٹ $/1M",
         "output": "آؤٹ پٹ $/1M",
         "cache": "کیش $/1M",
-        "context": "سیاق و سباق کا سائز"
+        "context": "سیاق و سباق کا سائز",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "ٹیسٹ کریں",
         "clone": "کلون",
         "edit": "ترمیم کریں",
-        "remove": "ہٹائیں"
+        "remove": "ہٹائیں",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← پچھلا",
@@ -2124,6 +2126,15 @@
           "cooldown": "سردی {{time}}",
           "lockout": "قرنطین {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

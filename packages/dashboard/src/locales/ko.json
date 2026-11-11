@@ -2062,13 +2062,15 @@
         "input": "입력 $/1M",
         "output": "출력 $/1M",
         "cache": "캐시 $/1M",
-        "context": "문맥 크기"
+        "context": "문맥 크기",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "테스트",
         "clone": "복제",
         "edit": "편집",
-        "remove": "제거"
+        "remove": "제거",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← 이전",
@@ -2124,6 +2126,15 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

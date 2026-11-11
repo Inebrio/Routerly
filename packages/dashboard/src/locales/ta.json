@@ -2062,13 +2062,15 @@
         "input": "உள்ளீடு $/1M",
         "output": "வெளியீடு $/1M",
         "cache": "கேச் $/1M",
-        "context": "சூழல் அளவு"
+        "context": "சூழல் அளவு",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "சோதனை",
         "clone": "நகல",
         "edit": "தொகு",
-        "remove": "அகற்று"
+        "remove": "அகற்று",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← முந்தைய",
@@ -2124,6 +2126,15 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

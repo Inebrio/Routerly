@@ -2062,13 +2062,15 @@
         "input": "Syöte $/1M",
         "output": "Tuloste $/1M",
         "cache": "Välimuisti $/1M",
-        "context": "Kontekstin koko"
+        "context": "Kontekstin koko",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Testaa",
         "clone": "Kloonaa",
         "edit": "Muokkaa",
-        "remove": "Poista"
+        "remove": "Poista",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Edellinen",
@@ -2124,6 +2126,15 @@
           "cooldown": "jäähdytys {{time}}",
           "lockout": "lukko {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

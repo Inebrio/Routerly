@@ -2062,13 +2062,15 @@
         "input": "Вход $/1M",
         "output": "Изход $/1M",
         "cache": "Кеш $/1M",
-        "context": "Размер на контекста"
+        "context": "Размер на контекста",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Тест",
         "clone": "Клониране",
         "edit": "Редактиране",
-        "remove": "Премахване"
+        "remove": "Премахване",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Предишна",
@@ -2124,6 +2126,15 @@
           "cooldown": "изчакване {{time}}",
           "lockout": "блокиране {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

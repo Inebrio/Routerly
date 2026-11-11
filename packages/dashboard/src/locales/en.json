@@ -2066,13 +2066,15 @@
         "input": "Input $/1M",
         "output": "Output $/1M",
         "cache": "Cache $/1M",
-        "context": "Context Size"
+        "context": "Context Size",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Test",
         "clone": "Clone",
         "edit": "Edit",
-        "remove": "Remove"
+        "remove": "Remove",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Previous",
@@ -2128,6 +2130,15 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

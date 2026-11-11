@@ -2062,13 +2062,15 @@
         "input": "Input $/1M",
         "output": "Output $/1M",
         "cache": "Cache $/1M",
-        "context": "Context Size"
+        "context": "Context Size",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Test",
         "clone": "I-clone",
         "edit": "I-edit",
-        "remove": "Alisin"
+        "remove": "Alisin",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Nauna",
@@ -2124,6 +2126,15 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

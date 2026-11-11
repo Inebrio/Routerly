@@ -2062,13 +2062,15 @@
         "input": "Vstup $/1M",
         "output": "Výstup $/1M",
         "cache": "Cache $/1M",
-        "context": "Veľkosť kontextu"
+        "context": "Veľkosť kontextu",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Test",
         "clone": "Klonovať",
         "edit": "Upraviť",
-        "remove": "Odstrániť"
+        "remove": "Odstrániť",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Predchádzajúce",
@@ -2124,6 +2126,15 @@
           "cooldown": "čakajúci čas {{time}}",
           "lockout": "blokáda {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

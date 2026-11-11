@@ -2062,13 +2062,15 @@
         "input": "Đầu vào $/1M",
         "output": "Đầu ra $/1M",
         "cache": "Bộ nhớ cache $/1M",
-        "context": "Kích thước ngữ cảnh"
+        "context": "Kích thước ngữ cảnh",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Thử",
         "clone": "Sao chép",
         "edit": "Chỉnh sửa",
-        "remove": "Xóa"
+        "remove": "Xóa",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Trước",
@@ -2124,6 +2126,15 @@
           "cooldown": "thời gian hạ nhiệt {{time}}",
           "lockout": "khóa {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

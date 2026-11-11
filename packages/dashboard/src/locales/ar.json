@@ -2062,13 +2062,15 @@
         "input": "الإدخال $/مليون",
         "output": "الإخراج $/مليون",
         "cache": "الذاكرة المؤقتة $/مليون",
-        "context": "حجم السياق"
+        "context": "حجم السياق",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "اختبار",
         "clone": "استنساخ",
         "edit": "تعديل",
-        "remove": "إزالة"
+        "remove": "إزالة",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "→ السابق",
@@ -2124,6 +2126,15 @@
           "cooldown": "تهدئة {{time}}",
           "lockout": "إغلاق {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

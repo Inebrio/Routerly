@@ -1,4 +1,4 @@
-import type { PassthroughException, PermissionCheckStatus, RankingAlgorithmId, TimelineGroup, TimelineEventKind } from '@routerly/shared';
+import type { ConformanceResult, PassthroughException, PermissionCheckStatus, RankingAlgorithmId, TimelineGroup, TimelineEventKind } from '@routerly/shared';
 export type { PermissionCheckStatus } from '@routerly/shared';
 
 const BASE = '/api';
@@ -232,6 +232,7 @@ export interface Model {
   limits?: Limit[];
   /** @deprecated use limits */ globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
   capabilities?: ModelCapabilities;
+  conformance?: ConformanceResult;
   fieldOverrides?: Partial<Record<string, boolean>>;
   catalogDefaults?: {
     inputPerMillion?: number;
@@ -318,6 +319,8 @@ export const updateModel = (id: string, data: {
   fieldOverrides?: Partial<Record<string, boolean>>;
 }) => request<Model>(`/models/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
+export const runModelConformance = (id: string): Promise<ConformanceResult> =>
+  request<ConformanceResult>(`/models/${encodeURIComponent(id)}/conformance`, { method: 'POST' });
 export const testModel = (id: string): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
   request<{ ok: boolean; latencyMs: number; error?: string }>(`/models/${encodeURIComponent(id)}/test`, { method: 'POST' })
     // never reject: callers show a spinner until this resolves

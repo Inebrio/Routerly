@@ -2065,13 +2065,15 @@
         "input": "Ingresso $/1M",
         "output": "Uscita $/1M",
         "cache": "Cache $/1M",
-        "context": "Dimensione contesto"
+        "context": "Dimensione contesto",
+        "conformance": "Conformità"
       },
       "actions": {
         "test": "Test",
         "clone": "Clona",
         "edit": "Modifica",
-        "remove": "Rimuovi"
+        "remove": "Rimuovi",
+        "verify": "Esegui verifica di conformità"
       },
       "pagination": {
         "previous": "← Precedente",
@@ -2127,6 +2129,15 @@
           "cooldown": "Attesa {{time}}",
           "lockout": "Blocco {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Non verificato",
+        "conformant": "Conforme {{date}}",
+        "limited": "Limitato {{date}}",
+        "running": "Verifica…",
+        "failedCases": "Falliti: {{cases}}",
+        "notRun": "Non ancora verificato: esegui la verifica di conformità per provare le capacità del modello.",
+        "error": "Verifica di conformità fallita: {{error}}"
       }
     }
   },

@@ -2062,13 +2062,15 @@
         "input": "输入 $/1M",
         "output": "输出 $/1M",
         "cache": "缓存 $/1M",
-        "context": "上下文大小"
+        "context": "上下文大小",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "测试",
         "clone": "克隆",
         "edit": "编辑",
-        "remove": "删除"
+        "remove": "删除",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← 前一个",
@@ -2124,6 +2126,15 @@
           "cooldown": "冷却 {{time}}",
           "lockout": "锁定 {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

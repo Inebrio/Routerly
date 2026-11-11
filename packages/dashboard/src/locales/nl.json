@@ -2062,13 +2062,15 @@
         "input": "Invoer $/1M",
         "output": "Uitvoer $/1M",
         "cache": "Cache $/1M",
-        "context": "Contextgrootte"
+        "context": "Contextgrootte",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Test",
         "clone": "Klonen",
         "edit": "Bewerken",
-        "remove": "Verwijderen"
+        "remove": "Verwijderen",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Vorige",
@@ -2124,6 +2126,15 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "vergrendeling {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },
