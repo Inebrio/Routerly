@@ -2062,13 +2062,15 @@
         "input": "Giriş $/1M",
         "output": "Çıkış $/1M",
         "cache": "Önbellek $/1M",
-        "context": "Bağlam Boyutu"
+        "context": "Bağlam Boyutu",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Test",
         "clone": "Klonla",
         "edit": "Düzenle",
-        "remove": "Kaldır"
+        "remove": "Kaldır",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Önceki",
@@ -2124,6 +2126,15 @@
           "cooldown": "dinlenme {{time}}",
           "lockout": "kilit {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

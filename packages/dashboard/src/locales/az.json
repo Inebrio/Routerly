@@ -2062,13 +2062,15 @@
         "input": "Giriş $/1M",
         "output": "Çıxış $/1M",
         "cache": "Keş $/1M",
-        "context": "Kontekst Ölçüsü"
+        "context": "Kontekst Ölçüsü",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Sına",
         "clone": "Klonla",
         "edit": "Redaktə et",
-        "remove": "Sil"
+        "remove": "Sil",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Əvvəlki",
@@ -2124,6 +2126,15 @@
           "cooldown": "sərinləmə {{time}}",
           "lockout": "kilidlənmə {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

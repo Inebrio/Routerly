@@ -2062,13 +2062,15 @@
         "input": "Vstup $/1M",
         "output": "Výstup $/1M",
         "cache": "Mezipaměť $/1M",
-        "context": "Velikost kontextu"
+        "context": "Velikost kontextu",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Test",
         "clone": "Klonovat",
         "edit": "Upravit",
-        "remove": "Odstranit"
+        "remove": "Odstranit",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Předchozí",
@@ -2124,6 +2126,15 @@
           "cooldown": "prodleva {{time}}",
           "lockout": "uzamčení {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

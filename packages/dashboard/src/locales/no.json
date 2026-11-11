@@ -2062,13 +2062,15 @@
         "input": "Input $/1M",
         "output": "Output $/1M",
         "cache": "Hurtiglagring $/1M",
-        "context": "Kontekststørrelse"
+        "context": "Kontekststørrelse",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Test",
         "clone": "Klon",
         "edit": "Rediger",
-        "remove": "Fjern"
+        "remove": "Fjern",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Forrige",
@@ -2124,6 +2126,15 @@
           "cooldown": "avkjøling {{time}}",
           "lockout": "låsing {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

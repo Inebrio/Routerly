@@ -2062,13 +2062,15 @@
         "input": "ઇનપુટ $/1M",
         "output": "આઉટપુટ $/1M",
         "cache": "કેશ $/1M",
-        "context": "સંદર્ભ કદ"
+        "context": "સંદર્ભ કદ",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "પરીક્ષણ",
         "clone": "ક્લોન",
         "edit": "સંપાદિત કરો",
-        "remove": "દૂર કરો"
+        "remove": "દૂર કરો",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← પાછલું",
@@ -2124,6 +2126,15 @@
           "cooldown": "શીતળન {{time}}",
           "lockout": "લૉકઆઉટ {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

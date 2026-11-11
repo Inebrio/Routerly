@@ -2062,13 +2062,15 @@
         "input": "קלט $/1M",
         "output": "פלט $/1M",
         "cache": "מטמון $/1M",
-        "context": "גודל הקשר"
+        "context": "גודל הקשר",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "בדיקה",
         "clone": "שכפל",
         "edit": "ערוך",
-        "remove": "הסר"
+        "remove": "הסר",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← הקודם",
@@ -2124,6 +2126,15 @@
           "cooldown": "צינון {{time}}",
           "lockout": "נעילה {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

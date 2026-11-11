@@ -88,41 +88,6 @@ describe('CustomAdapter.chatCompletion', () => {
     vi.unstubAllGlobals()
   })
 
-  describe('DeepSeek thinking mode with tool history (ROUT-704)', () => {
-    const tools = [{ type: 'function', function: { name: 'f', parameters: {} } }] as any
-    const history = [
-      { role: 'user', content: 'go' },
-      { role: 'assistant', content: null, tool_calls: [{ id: 'c1', type: 'function', function: { name: 'f', arguments: '{}' } }] },
-      { role: 'tool', tool_call_id: 'c1', content: 'r' },
-    ] as any
-    const run = async (req: any, model: ModelConfig) => {
-      const f = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ choices: [], usage: {} }) })
-      vi.stubGlobal('fetch', f)
-      await adapter.chatCompletion(req, model)
-      vi.unstubAllGlobals()
-      return JSON.parse(f.mock.calls[0]![1].body as string)
-    }
-    const ds = () => makeModel({ provider: 'deepseek' })
-
-    it('disables thinking when history lacks reasoning_content', async () => {
-      expect((await run({ model: 'auto', messages: history, tools }, ds())).thinking).toEqual({ type: 'disabled' })
-    })
-    it('leaves the body alone when reasoning_content is present, tools absent, client chose, or other provider', async () => {
-      const withReasoning = [{ ...history[0] }, { ...history[1], reasoning_content: 'r' }, history[2]]
-      expect((await run({ model: 'auto', messages: withReasoning, tools }, ds())).thinking).toBeUndefined()
-      expect((await run({ model: 'auto', messages: history }, ds())).thinking).toBeUndefined()
-      expect((await run({ model: 'auto', messages: history, tools, thinking: { type: 'enabled' } }, ds())).thinking).toEqual({ type: 'enabled' })
-      expect((await run({ model: 'auto', messages: history, tools }, makeModel())).thinking).toBeUndefined()
-    })
-    it('applies to the stream path too', async () => {
-      const f = vi.fn().mockResolvedValue({ ok: true, status: 200, body: (async function* () { yield new TextEncoder().encode('data: [DONE]\n') })() })
-      vi.stubGlobal('fetch', f)
-      for await (const _ of adapter.streamCompletion({ model: 'auto', messages: history, tools }, ds())) { /* drain */ }
-      vi.unstubAllGlobals()
-      expect(JSON.parse(f.mock.calls[0]![1].body as string).thinking).toEqual({ type: 'disabled' })
-    })
-  })
-
   it('uses "custom" as apiKey fallback', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,

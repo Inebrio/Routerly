@@ -2062,13 +2062,15 @@
         "input": "Bemenet $/1M",
         "output": "Kimenet $/1M",
         "cache": "Gyorsítótár $/1M",
-        "context": "Kontextus Méret"
+        "context": "Kontextus Méret",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Teszt",
         "clone": "Klón",
         "edit": "Szerkesztés",
-        "remove": "Eltávolítás"
+        "remove": "Eltávolítás",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Előző",
@@ -2124,6 +2126,15 @@
           "cooldown": "lehűlési idő {{time}}",
           "lockout": "zárolás {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

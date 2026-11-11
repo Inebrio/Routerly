@@ -2062,13 +2062,15 @@
         "input": "入力 $/1M",
         "output": "出力 $/1M",
         "cache": "キャッシュ $/1M",
-        "context": "コンテキストサイズ"
+        "context": "コンテキストサイズ",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "テスト",
         "clone": "クローン",
         "edit": "編集",
-        "remove": "削除"
+        "remove": "削除",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← 前へ",
@@ -2124,6 +2126,15 @@
           "cooldown": "クールダウン{{time}}",
           "lockout": "ロックアウト{{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

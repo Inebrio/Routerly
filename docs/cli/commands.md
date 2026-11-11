@@ -348,6 +348,7 @@ routerly model list [--json]
 - **Provider** - provider name
 - **Endpoint** - base URL (custom endpoint or provider default)
 - **Catalog** - tracking status: `(catalog)` (auto-synced), `(partial override)` (some fields locked), or empty (no catalog entry)
+- **Conformance** - `unverified`, or `conformant` / `limited` with the date of the last `model conformance` run
 - **Connection ID** - ID of the `routerly connections` entry backing this model, or `-` if the model has no matching connection (not yet migrated, or the caller lacks `connections:read`)
 
 ---
@@ -372,6 +373,23 @@ Display all details of a model, including pricing, context window, capabilities,
 ```bash
 routerly model show gpt-5-mini
 routerly model show gpt-5-mini --json
+```
+
+---
+
+### `routerly model conformance`
+
+```
+routerly model conformance <id> [--json]
+```
+
+Run the provider conformance suite against a model and store the result. The suite sends a fixed corpus of requests through the same adapter path as production traffic (basic chat, multiple system messages, streaming, tool calling and tool-result continuation, JSON mode, vision, thinking). A case runs only if the model declares the capability. Requires `model:write`.
+
+Prints one row per case (`pass`, `fail`, `skip`) and the overall status: `conformant` or `limited`. Exit code `1` when the status is `limited`. The result and its date appear in `routerly model list` and `routerly model show`; a model that was never checked shows `unverified`. A `limited` model stays enabled.
+
+```bash
+routerly model conformance gpt-5-mini
+routerly model conformance gpt-5-mini --json
 ```
 
 ---

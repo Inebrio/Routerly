@@ -2062,13 +2062,15 @@
         "input": "Wejście $/1M",
         "output": "Wyjście $/1M",
         "cache": "Pamięć $/1M",
-        "context": "Rozmiar kontekstu"
+        "context": "Rozmiar kontekstu",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Test",
         "clone": "Klonuj",
         "edit": "Edytuj",
-        "remove": "Usuń"
+        "remove": "Usuń",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Poprzednia",
@@ -2124,6 +2126,15 @@
           "cooldown": "okres ochłodzenia {{time}}",
           "lockout": "blokada {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },

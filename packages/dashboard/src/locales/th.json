@@ -2062,13 +2062,15 @@
         "input": "อินพุต $/1M",
         "output": "เอาต์พุต $/1M",
         "cache": "แคช $/1M",
-        "context": "ขนาดบริบท"
+        "context": "ขนาดบริบท",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "ทดสอบ",
         "clone": "โคลน",
         "edit": "แก้ไข",
-        "remove": "ลบ"
+        "remove": "ลบ",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← ก่อนหน้า",
@@ -2124,6 +2126,15 @@
           "cooldown": "ระยะพักร้อน {{time}}",
           "lockout": "การล็อก {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },
