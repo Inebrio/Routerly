@@ -546,11 +546,12 @@ unit. Its `kind` decides which fields it carries:
 Every profile also has `id`, `kind`, `label`, `version`, `builtin` and, when it
 was produced by [Clone Profile](#clone-profile), `baseId`.
 
-Routerly ships read-only built-ins for two kinds (`auto`, `cheap`, `fast`,
-`coding`; `optimizer-safe`, `optimizer-balanced`, `optimizer-aggressive`).
-Security ships none: guardrails and PII policies rewrite the request, so a
-router never inherits them from a preset it did not choose, and every security
-profile is user-created. A router either keeps its own inline
+Routerly ships read-only built-ins for all three kinds (`auto`, `cheap`, `fast`,
+`coding`; `optimizer-safe`, `optimizer-balanced`, `optimizer-aggressive`;
+`security-none`). The only security preset is `security-none`: it applies no
+guardrail and no PII policy, and it ignores any Custom rules stored on the
+router. Guardrails and PII policies rewrite the request, so every other
+security profile is user-created. A router either keeps its own inline
 configuration for a kind or is assigned a profile of that kind via
 [Assign Router Profiles](#assign-router-profiles); the three kinds are
 assigned independently.

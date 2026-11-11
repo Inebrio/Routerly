@@ -4,6 +4,7 @@ import type {
   ProfileKind,
   RoutingPolicy,
   RoutingProfile,
+  SecurityProfile,
 } from '@routerly/shared';
 
 /**
@@ -119,14 +120,29 @@ const OPTIMIZER_PRESETS = Object.freeze([
 ]) as readonly OptimizerProfile[];
 
 /**
- * No security presets ship any more. Guardrails and PII policies rewrite the
+ * The only security preset is "None": it applies no guardrail and no PII policy,
+ * so it never rewrites a request. Guardrails and PII policies do rewrite the
  * request, and what a request may be rewritten into is never a default someone
- * inherits without asking for it: a security profile is now always written by
- * the user, from scratch or by cloning one of their own.
+ * inherits without asking for it: every other security profile is written by
+ * the user. "None" exists so Profile mode can mean "nothing" without falling
+ * back to the router's stored Custom rules.
  */
+const SECURITY_PRESETS = Object.freeze([
+  Object.freeze({
+    id: 'security-none',
+    kind: 'security',
+    version: 1,
+    label: 'None',
+    guardrails: { rules: [] },
+    pii: { policies: [] },
+    builtin: true,
+  }),
+]) as readonly SecurityProfile[];
+
 export const BUILTIN_PROFILES: readonly Profile[] = Object.freeze([
   ...ROUTING_PRESETS,
   ...OPTIMIZER_PRESETS,
+  ...SECURITY_PRESETS,
 ]);
 
 /**
