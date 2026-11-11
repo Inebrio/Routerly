@@ -2,12 +2,29 @@ import type { ProviderId } from '@routerly/shared';
 import type { ModelCapabilities } from '@routerly/shared';
 import { AlterableRegistry } from '../../core/hooks/registry.js';
 
+/**
+ * What a provider needs changed in an otherwise verbatim request (ROUT-713). Every field is a
+ * documented provider limitation (see docs/reference/provider-compatibility.md); absent = forward as is.
+ */
+export interface CompatProfile {
+  /** JSON Schema keywords the provider rejects in tool `parameters`; removed before sending. */
+  schemaDropKeywords?: string[];
+  /**
+   * The provider rejects tool turns whose assistant history lacks `field` (reasoning that must be
+   * passed back). When the client chose no reasoning mode (`clientFields` all unset), `disableWith` is merged in.
+   */
+  reasoningPassback?: { field: string; clientFields: string[]; disableWith: Record<string, unknown> };
+  /** Top-level request params the provider rejects. */
+  dropParams?: string[];
+}
+
 export interface ProviderDescriptor {
   id: ProviderId;
   label: string;
   protocol: 'openai' | 'anthropic' | 'gemini' | 'custom' | 'decision';
   supportLevel: 'native' | 'compatible' | 'oauth' | 'web';
   nativeCapabilities: ModelCapabilities;
+  compat?: CompatProfile;
 }
 
 const providerDescriptorRegistry = new AlterableRegistry<ProviderDescriptor>();
@@ -54,6 +71,8 @@ providerDescriptorRegistry.contribute({
       functionCalling: true,
       json: true,
     },
+    // https://api-docs.deepseek.com/guides/thinking_mode
+    compat: { reasoningPassback: { field: 'reasoning_content', clientFields: ['thinking', 'reasoning', 'reasoning_effort'], disableWith: { thinking: { type: 'disabled' } } } },
   },
 });
 
@@ -172,6 +191,8 @@ providerDescriptorRegistry.contribute({
       functionCalling: true,
       json: true,
     },
+    // The Responses API validates `pattern` with its own regex engine and rejects valid ECMA patterns (ROUT-703).
+    compat: { schemaDropKeywords: ['pattern'] },
   },
 });
 

@@ -2,7 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, FolderOpen, Pencil } from 'lucide-react';
-import { getRouters, deleteRouter, type Router, type RouterKind } from '../api';
+import { getRouters, deleteRouter, getProfiles, type Router, type RouterKind, type Profile } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useAuth } from '../AuthContext';
 
@@ -14,6 +14,7 @@ export function RoutersPage() {
   const { can } = useAuth();
   const canWrite = can('router:write');
   const [routers, setRouters] = useState<Router[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
@@ -32,6 +33,13 @@ export function RoutersPage() {
   });
 
   useEffect(() => { load(); }, []);
+  // Routers bound to a routing profile have no policies of their own; without profiles:read the column falls back to those.
+  useEffect(() => { getProfiles('routing').then(setProfiles).catch(() => setProfiles([])); }, []);
+
+  function effectivePolicies(r: Router) {
+    const bound = r.routingProfileId ? profiles.find(x => x.id === r.routingProfileId) : undefined;
+    return (bound?.kind === 'routing' ? bound.policies : r.policies ?? []).filter(pol => pol.enabled);
+  }
 
   async function load() {
     setLoading(true);
@@ -108,9 +116,9 @@ export function RoutersPage() {
                       </span>
                     </td>
                     <td>
-                      {p.policies && p.policies.filter(pol => pol.enabled).length > 0 ? (
+                      {effectivePolicies(p).length > 0 ? (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                          {p.policies.filter(pol => pol.enabled).map(pol => (
+                          {effectivePolicies(p).map(pol => (
                             <span key={pol.type} style={{ fontSize: '0.72rem', fontWeight: 500, padding: '2px 7px', borderRadius: 4, background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
                               {pol.type}
                             </span>

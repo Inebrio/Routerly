@@ -242,10 +242,46 @@ routerly auth login [options]
 | `--email <email>` | Your dashboard email address |
 | `--password <password>` | Your password (prompted interactively if omitted) |
 | `--alias <name>` | Friendly name for this account |
+| `--token <token>` | Log in with a management API token (`sk-rt-api-…`) instead of email and password. The account expires with the token and has no refresh token |
 
 If the email is already saved, you are asked whether to overwrite the existing entry or create a new one. The first account is automatically named `default`.
 
 On success, a permanent **refresh token** is saved alongside the session token so future sessions are renewed automatically.
+
+### `routerly auth api-token`
+
+Long-lived, scoped tokens for automations. They are yours only; no permission beyond being logged in is needed to manage them. Same tokens as the dashboard's [Profile: API tokens tab](../dashboard/profile.md#api-tokens-tab).
+
+```
+routerly auth api-token list [--json]
+routerly auth api-token create <name> --permissions <list> [--days <n>] [--json]
+routerly auth api-token revoke <token-id>
+```
+
+| Option (`create`) | Description |
+|--------|-------------|
+| `--permissions <list>` | Required. Comma-separated permissions, a subset of yours (e.g. `model:read,router:read`) |
+| `--days <n>` | Validity in days, 1-365 (default 90) |
+| `--json` | Output the created token as raw JSON |
+
+```bash
+routerly auth api-token create ci --permissions model:read,router:read --days 30
+```
+```
+✓ API token "ci" created.
+
+Token (save it now, it is shown only once):
+sk-rt-api-8f3c1d...
+  ID:      2f1c0b8a-...
+  Expires: 09/12/2026, 11:00:00
+```
+
+The raw value is returned once; Routerly stores only its SHA-256 hash. Use it on another machine with `routerly auth login --url <url> --token sk-rt-api-…`, or send it as a Bearer token to the management API. The token cannot create tokens or change credentials.
+
+**Error cases:**
+- `--days` outside 1-365: `Error: --days must be an integer between 1 and 365.` (checked before the API call)
+- A permission you do not hold: `Error: …` from the service (403)
+- `revoke` with an unknown id: `API token "<id>" not found.`
 
 ### `routerly auth refresh [alias]`
 
@@ -312,6 +348,7 @@ routerly model list [--json]
 - **Provider** - provider name
 - **Endpoint** - base URL (custom endpoint or provider default)
 - **Catalog** - tracking status: `(catalog)` (auto-synced), `(partial override)` (some fields locked), or empty (no catalog entry)
+- **Conformance** - `unverified`, or `conformant` / `limited` with the date of the last `model conformance` run
 - **Connection ID** - ID of the `routerly connections` entry backing this model, or `-` if the model has no matching connection (not yet migrated, or the caller lacks `connections:read`)
 
 ---
@@ -336,6 +373,23 @@ Display all details of a model, including pricing, context window, capabilities,
 ```bash
 routerly model show gpt-5-mini
 routerly model show gpt-5-mini --json
+```
+
+---
+
+### `routerly model conformance`
+
+```
+routerly model conformance <id> [--json]
+```
+
+Run the provider conformance suite against a model and store the result. The suite sends a fixed corpus of requests through the same adapter path as production traffic (basic chat, multiple system messages, streaming, tool calling and tool-result continuation, JSON mode, vision, thinking). A case runs only if the model declares the capability. Requires `model:write`.
+
+Prints one row per case (`pass`, `fail`, `skip`) and the overall status: `conformant` or `limited`. Exit code `1` when the status is `limited`. The result and its date appear in `routerly model list` and `routerly model show`; a model that was never checked shows `unverified`. A `limited` model stays enabled.
+
+```bash
+routerly model conformance gpt-5-mini
+routerly model conformance gpt-5-mini --json
 ```
 
 ---
@@ -487,7 +541,7 @@ timings). Prompts and answers are recorded only with `--trace-content`, and the
 setting applies to every surface that reads a trace: the dashboard, the
 Playground, and any integration exporting traces. A flag that is not passed
 leaves the stored value alone. `routerly router show` prints the current state
-as `Traces: metadata only` or `Traces: metadata + content`.
+as `Traces: metadata only` or `Traces: metadata + content`. Its Routing section lists the bound routing and optimizer profiles (label, id, version) and the policies in force, marked `(from profile)` when they come from the profile.
 
 ```bash
 routerly router edit my-api --trace-content
@@ -518,9 +572,9 @@ routerly router remove <router>
 routerly router routing show <router> [--json]
 ```
 
-Display the routing configuration (auto-routing flag, routing model, fallback models, ranking algorithm, and policy stack). The ranking algorithm is the effective one: when the router is bound to a routing profile, the profile's value is shown with `(profile <label>)`, otherwise `(router)`.
+Display the routing configuration (auto-routing flag, routing model, fallback models, ranking algorithm, and policy stack). The ranking algorithm is the effective one: when the router is bound to a routing profile, the profile's value is shown with `(profile <label>)`, otherwise `(router)`. A router bound to a routing profile prints a `Routing profile:` line (label, id, version) and the profile's policies, which are the ones actually applied; the routing model and fallback models always come from the router. Without `profiles:read` the profile id is shown with `(details not readable)`.
 
-`--json` prints `{ routerId, routingProfileId, rankingAlgorithm, rankingSource, policies }` instead, where `rankingSource` is `router` or `profile`.
+`--json` prints `{ routerId, routingProfileId, routingProfile?, rankingAlgorithm, rankingSource, policies }` instead (`routingProfile` is `{ id, label, version }`, present when the profile is readable), where `rankingSource` is `router` or `profile`.
 
 #### `routerly router routing update <router>`
 
@@ -1411,7 +1465,7 @@ Manage profiles: reusable configuration bundles a router can adopt in place of i
 
 | Kind | What it bundles |
 |------|-----------------|
-| `routing` | the ordered policy list |
+| `routing` | the ordered policy list and the selector |
 | `optimizer` | the ordered optimizer pipeline |
 | `security` | guardrail rules and PII policies |
 
@@ -1436,7 +1490,7 @@ List all profiles (built-in presets and user profiles), optionally filtered by k
 - **Label** - display label
 - **Builtin** - `yes` / `no`
 - **Version** - profile version, bumped on each update
-- **Summary** - one-line, kind-specific description of the configuration
+- **Summary** - one-line, kind-specific description of the configuration. For a routing profile it reads `N active policies, selector X`, e.g. `4 active policies, selector argmax`
 
 ```bash
 routerly profiles list
@@ -1459,7 +1513,17 @@ Show full details of one profile. There is no single-item GET endpoint for profi
 
 Prints the common fields (`id`, `kind`, `label`, `builtin`, `version`, and `baseId` if the profile was cloned), followed by a kind-specific block: policies and the call configuration for `routing`, the pipeline in execution order for `optimizer`, guardrail rules and PII policies for `security`.
 
-The selector and the fallback strategy of a routing profile are engine internals and are not printed; `--json` returns the stored profile as the API serves it, both fields included.
+A routing profile also prints its `selector` (`argmax` or `weighted-random`). The fallback strategy is an engine internal and is not printed; `--json` returns the stored profile as the API serves it, both fields included.
+
+```
+id:               d969e975-e7e2-42e3-96ba-d71f806a91b6
+kind:             routing
+label:            Spread
+builtin:          no
+version:          1
+selector:         weighted-random
+ranking algorithm: default
+```
 
 ```bash
 routerly profiles show auto
@@ -1474,7 +1538,7 @@ Requires `profiles:read` permission.
 ### `routerly profiles create`
 
 ```
-routerly profiles create --kind <kind> --label <label> [--ranking-algorithm <id>] [--json]
+routerly profiles create --kind <kind> --label <label> [--ranking-algorithm <id>] [--selector <type>] [--json]
 ```
 
 Create an empty profile of the given kind. The CLI has no editor for profile bodies: fill the new profile in from the dashboard, or use `clone` to start from a preset.
@@ -1484,11 +1548,13 @@ Create an empty profile of the given kind. The CLI has no editor for profile bod
 | `--kind <kind>` | `routing`, `optimizer` or `security` - required |
 | `--label <label>` | Label for the new profile - required |
 | `--ranking-algorithm <id>` | Ranking algorithm, `routing` profiles only (`default`); with another kind the command exits 1 |
+| `--selector <type>` | `routing` profiles only: `argmax` (default) or `weighted-random`, see [Selectors](../concepts/routing.md#selectors). With another kind the command exits 1 |
 | `--call-config <json\|@file>` | Routing kind only: a [call configuration](../concepts/call-configuration.md) as inline JSON or `@path` |
 | `--json` | Output the created profile as raw JSON |
 
 ```bash
 routerly profiles create --kind routing --label "My Routing"
+routerly profiles create --kind routing --label "Spread" --selector weighted-random
 routerly profiles create --kind routing --label "My Routing" --ranking-algorithm default
 routerly profiles create --kind routing --label "Capped" --call-config '{"enabled":true,"tiers":{"low":{"maxOutputTokens":512}}}'
 routerly profiles create --kind security --label "My Guardrails" --json
@@ -1499,26 +1565,32 @@ routerly profiles create --kind security --label "My Guardrails" --json
 ✓ Created routing profile "My Routing" -> 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
 ```
 
+**Error cases:**
+- A selector other than the two valid ones, including the removed `cheapest`, `lowest-latency` and `round-robin`: `error: option '--selector <type>' argument 'cheapest' is invalid. Allowed choices are argmax, weighted-random.` (exit 1, no request is sent)
+- `--selector` with a kind other than `routing`: `Error: --selector only applies to routing profiles.`
+
 Requires `profiles:manage` permission.
 
 ### `routerly profiles update`
 
 ```
-routerly profiles update <id> [--label <label>] [--ranking-algorithm <id>] [--call-config <json|@file> | --clear-call-config] [--json]
+routerly profiles update <id> [--label <label>] [--ranking-algorithm <id>] [--selector <type>] [--call-config <json|@file> | --clear-call-config] [--json]
 ```
 
-Update a user profile. At least one of `--label`, `--ranking-algorithm`, `--call-config` or `--clear-call-config` is required, otherwise the command exits 1 with `Error: provide --label, --ranking-algorithm, --call-config and/or --clear-call-config.` Built-in profiles cannot be changed. `--call-config` and `--clear-call-config` are mutually exclusive; the service validates the call configuration JSON and answers `400` when it is invalid.
+Update a user profile. At least one of `--label`, `--ranking-algorithm`, `--selector`, `--call-config` or `--clear-call-config` is required, otherwise the command exits 1 with `Error: provide --label, --ranking-algorithm, --selector, --call-config and/or --clear-call-config.` Built-in profiles cannot be changed. `--call-config` and `--clear-call-config` are mutually exclusive; the service validates the call configuration JSON and answers `400` when it is invalid.
 
 | Option | Description |
 |--------|-------------|
 | `--label <label>` | New label |
 | `--ranking-algorithm <id>` | Ranking algorithm, `routing` profiles only (`default`) |
+| `--selector <type>` | Selector, `routing` profiles only: `argmax` or `weighted-random`. Any other value exits 1 as for `create` |
 | `--call-config <json\|@file>` | Replace the [call configuration](../concepts/call-configuration.md), `routing` profiles only |
 | `--clear-call-config` | Remove the call configuration |
 | `--json` | Output the updated profile as raw JSON |
 
 ```bash
 routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --ranking-algorithm default
+routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --selector weighted-random
 routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --call-config @call-config.json
 routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --clear-call-config
 ```

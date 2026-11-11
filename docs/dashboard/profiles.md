@@ -10,7 +10,7 @@ can adopt. A profile comes in one of three kinds:
 
 | Kind | What it bundles |
 |------|-----------------|
-| **Routing** | the ordered policy list |
+| **Routing** | the ordered policy list and the selector |
 | **Optimizer** | the ordered list of optimizer steps and which of them are enabled |
 | **Security** | content guardrail rules and PII redaction policies |
 
@@ -117,11 +117,21 @@ not editable and no save button is shown. Clone one to customize it.
 
 - **Call configuration**: the same editor as the router [Routing tab](./routers.md#call-configuration), shown for routing profiles. Routers assigned to the profile use this configuration instead of their own. An invalid value blocks saving. Built-in profiles have none.
 
-The selector and the fallback strategy are not editable from the dashboard:
-the engine defaults (`argmax` and `next-best`) apply to every profile created
-here. A profile that already carries other values keeps them when it is
-edited or cloned, and the [API](../api/management.md#profiles) still accepts
-both fields.
+- **Selector**: dropdown below the policies, with a one-line hint for the chosen
+  value. `Highest score (argmax)` always picks the model with the highest score
+  and is the default; `Weighted random` picks randomly, weighted by score, so
+  higher-scoring models are chosen more often. The selector only sees the
+  scores the policies computed: to make cost, latency or usage count, enable
+  the matching policy (`cheapest`, `performance`, `fairness`). The dropdown is
+  disabled on built-in profiles. See
+  [Selectors](../concepts/routing.md#selectors).
+
+The fallback strategy is not editable from the dashboard: the engine default
+(`next-best`) applies to every profile created here. A profile that already
+carries another value keeps it when it is edited or cloned, and the
+[API](../api/management.md#profiles) still accepts it. The profile list shows
+the selector in each routing profile's summary, for example
+`4 policies enabled · argmax`.
 
 ### Optimizer configuration
 

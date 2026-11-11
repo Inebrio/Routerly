@@ -1,7 +1,12 @@
 import type { RoutingCandidate } from '@routerly/shared';
 import type { SelectorType } from '@routerly/shared';
-import { nextCursor } from '../routingMemoryStore.js';
 import type { ScoredCandidate, SelectorFn } from './types.js';
+
+/*
+ * Selectors. A selector receives only the scores computed by the policies and picks among the
+ * remaining candidates; it never reads cost, latency, history, counters or other data - whatever
+ * must influence the choice is expressed by a policy. Registered selectors: argmax, weighted-random.
+ */
 
 const TIED_TOLERANCE = 0.0001;
 
@@ -68,48 +73,9 @@ export const weightedRandomSelector: SelectorFn = (candidates, ctx) => {
   return { models: toWeighted([picked, ...rest]), trace: [] };
 };
 
-/** round-robin: deterministic order by model id, pick index nextCursor(routerId, n). */
-export const roundRobinSelector: SelectorFn = (candidates, ctx) => {
-  if (candidates.length === 0) return { models: [], trace: [] };
-  const sorted = [...candidates].sort((a, b) => a.model.localeCompare(b.model));
-  const idx = nextCursor(ctx.routerId, sorted.length);
-  const picked = sorted[idx]!;
-  const rest = sorted.filter((_, i) => i !== idx);
-  return { models: toWeighted([picked, ...rest]), trace: [] };
-};
-
-/** cheapest: lowest cost wins; ties break by higher score; undefined cost sorts last. */
-export const cheapestSelector: SelectorFn = (candidates) => {
-  const sorted = [...candidates].sort((a, b) => {
-    if (a.cost === undefined && b.cost === undefined) return b.score - a.score;
-    if (a.cost === undefined) return 1;
-    if (b.cost === undefined) return -1;
-    if (a.cost !== b.cost) return a.cost - b.cost;
-    return b.score - a.score;
-  });
-  return { models: toWeighted(sorted), trace: [] };
-};
-
-/** lowest-latency: lowest latencyOf(model) wins; unknown latency sorts last; drops isAvailable === false when the seam is present. */
-export const lowestLatencySelector: SelectorFn = (candidates, ctx) => {
-  const pool = ctx.isAvailable ? candidates.filter(c => ctx.isAvailable!(c.model) !== false) : candidates;
-  const sorted = [...pool].sort((a, b) => {
-    const la = ctx.latencyOf?.(a.model);
-    const lb = ctx.latencyOf?.(b.model);
-    if (la === undefined && lb === undefined) return 0;
-    if (la === undefined) return 1;
-    if (lb === undefined) return -1;
-    return la - lb;
-  });
-  return { models: toWeighted(sorted), trace: [] };
-};
-
 export const SELECTOR_MAP: Record<SelectorType, SelectorFn> = {
   argmax: argmaxSelector,
   'weighted-random': weightedRandomSelector,
-  'round-robin': roundRobinSelector,
-  cheapest: cheapestSelector,
-  'lowest-latency': lowestLatencySelector,
 };
 
 export type { ScoredCandidate, SelectorContext, SelectorFn } from './types.js';

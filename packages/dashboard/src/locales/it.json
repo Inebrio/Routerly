@@ -448,6 +448,7 @@
       "profile": "Profilo",
       "notifications": "Notifiche",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Preferenze"
     },
     "notifications": {
@@ -631,6 +632,54 @@
         "errors": {
           "createFailed": "Impossibile creare il token",
           "copyFailed": "Copia non riuscita, seleziona e copia manualmente il token."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1219,7 +1268,7 @@
         "security": "Sicurezza",
         "token": "Token",
         "users": "Utenti",
-        "logs": "Log"
+        "logs": "Utilizzo"
       },
       "backToRouters": "Torna ai router",
       "backToRoutersTitle": "Torna ai router",
@@ -2016,13 +2065,15 @@
         "input": "Ingresso $/1M",
         "output": "Uscita $/1M",
         "cache": "Cache $/1M",
-        "context": "Dimensione contesto"
+        "context": "Dimensione contesto",
+        "conformance": "Conformità"
       },
       "actions": {
         "test": "Test",
         "clone": "Clona",
         "edit": "Modifica",
-        "remove": "Rimuovi"
+        "remove": "Rimuovi",
+        "verify": "Esegui verifica di conformità"
       },
       "pagination": {
         "previous": "← Precedente",
@@ -2078,6 +2129,15 @@
           "cooldown": "Attesa {{time}}",
           "lockout": "Blocco {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Non verificato",
+        "conformant": "Conforme {{date}}",
+        "limited": "Limitato {{date}}",
+        "running": "Verifica…",
+        "failedCases": "Falliti: {{cases}}",
+        "notRun": "Non ancora verificato: esegui la verifica di conformità per provare le capacità del modello.",
+        "error": "Verifica di conformità fallita: {{error}}"
       }
     }
   },
@@ -2853,6 +2913,13 @@
         "notFound": "Profilo non trovato.",
         "loadFailed": "Impossibile caricare il profilo",
         "saveFailed": "Impossibile salvare il profilo"
+      },
+      "selector": {
+        "label": "Selettore",
+        "argmax": "Punteggio più alto (argmax)",
+        "weightedRandom": "Casuale ponderato",
+        "argmaxHint": "Sceglie sempre il modello con il punteggio più alto.",
+        "weightedRandomHint": "Sceglie a caso ponderando per punteggio: i modelli con punteggio più alto vengono scelti più spesso."
       }
     }
   },

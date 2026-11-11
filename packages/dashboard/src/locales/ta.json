@@ -447,6 +447,7 @@
       "profile": "சுயவிவரம்",
       "notifications": "அறிவிப்புகள்",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "விருப்பங்கள்"
     },
     "notifications": {
@@ -630,6 +631,54 @@
         "errors": {
           "createFailed": "டோகன் உருவாக்க தவறிவிட்டது",
           "copyFailed": "நகலெடு தவறிவிட்டது, தேர்ந்தெடு மற்றும் நகலெடு டோகன் மாதிரியாக."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1218,7 +1267,7 @@
         "security": "பாதுகாப்பு",
         "token": "டோகன்",
         "users": "பயனர்கள்",
-        "logs": "சொல்ல"
+        "logs": "பயன்பாடு"
       },
       "backToRouters": "திசையாக்குபவர்கள் திரும்ப",
       "backToRoutersTitle": "திசையாக்குபவர்கள் திரும்ப",
@@ -2013,13 +2062,15 @@
         "input": "உள்ளீடு $/1M",
         "output": "வெளியீடு $/1M",
         "cache": "கேச் $/1M",
-        "context": "சூழல் அளவு"
+        "context": "சூழல் அளவு",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "சோதனை",
         "clone": "நகல",
         "edit": "தொகு",
-        "remove": "அகற்று"
+        "remove": "அகற்று",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← முந்தைய",
@@ -2075,6 +2126,15 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },
@@ -2850,6 +2910,13 @@
         "notFound": "प्रोफ़ाइल नहीं मिली।",
         "loadFailed": "प्रोफ़ाइल को लोड करने में विफल",
         "saveFailed": "प्रोफ़ाइल सहेजने में विफल"
+      },
+      "selector": {
+        "label": "தேர்வி",
+        "argmax": "அதிக மதிப்பெண் (argmax)",
+        "weightedRandom": "எடையிட்ட சீரற்றது",
+        "argmaxHint": "எப்போதும் அதிக மதிப்பெண் உள்ள மாடலைத் தேர்ந்தெடுக்கும்.",
+        "weightedRandomHint": "மதிப்பெண்ணுக்கு ஏற்ப எடையிட்டு சீரற்ற முறையில் தேர்ந்தெடுக்கும்: அதிக மதிப்பெண் மாடல்கள் அடிக்கடி தேர்ந்தெடுக்கப்படும்."
       }
     }
   },

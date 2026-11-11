@@ -13,6 +13,7 @@ vi.mock('../AuthContext', () => ({
 vi.mock('../api', () => ({
   getRouters: vi.fn(),
   deleteRouter: vi.fn(),
+  getProfiles: vi.fn(),
 }));
 
 vi.mock('../components/ConfirmDialog', () => ({
@@ -32,9 +33,10 @@ vi.mock('react-router-dom', async (importActual) => {
 });
 
 import { RoutersPage } from './RoutersPage';
-import { getRouters, deleteRouter } from '../api';
+import { getRouters, deleteRouter, getProfiles } from '../api';
 
 const mockGetRouters  = vi.mocked(getRouters as () => Promise<unknown>);
+const mockGetProfiles = vi.mocked(getProfiles as () => Promise<unknown>);
 const mockDeleteRouter = vi.mocked(deleteRouter as (...a: unknown[]) => Promise<unknown>);
 
 function makeRouter(overrides: Record<string, unknown> = {}) {
@@ -60,6 +62,7 @@ beforeEach(() => {
   mockCan = true;
   mockGetRouters.mockResolvedValue([]);
   mockDeleteRouter.mockResolvedValue(undefined);
+  mockGetProfiles.mockResolvedValue([]);
 });
 
 afterEach(() => { vi.clearAllMocks(); navigateFn.mockReset(); });
@@ -141,6 +144,13 @@ describe('RoutersPage — loaded state', () => {
     renderPage();
     await waitFor(() => expect(screen.queryByText('budget')).not.toBeNull());
     expect(screen.queryByText('ratelimit')).toBeNull();
+  });
+
+  it('shows the policies of the bound routing profile (ROUT-685)', async () => {
+    mockGetRouters.mockResolvedValue([makeRouter({ routingProfileId: 'prof', policies: [] })]);
+    mockGetProfiles.mockResolvedValue([{ id: 'prof', kind: 'routing', policies: [{ type: 'cheapest', enabled: true }] }]);
+    renderPage();
+    expect(await screen.findByText('cheapest')).toBeInTheDocument();
   });
 
   it('shows dash when no enabled policies', async () => {

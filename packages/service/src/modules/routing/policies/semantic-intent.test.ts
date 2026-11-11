@@ -280,6 +280,24 @@ describe('semanticIntentPolicy', () => {
     expect(result.routing.every(r => r.point === 1.0)).toBe(true);
   });
 
+  it('classifies the last user text block of an array content (tool_result in front)', async () => {
+    mockProvider.embed.mockResolvedValue({ embeddings: [[0, 0, 0]], inputTokens: 0 });
+    await semanticIntentPolicy({
+      request: {
+        model: 'auto',
+        messages: [
+          { role: 'user', content: [{ type: 'text', text: 'first question' }] },
+          { role: 'assistant', content: [{ type: 'tool_use', id: 'a', name: 't', input: {} }] },
+          { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'a', content: 'out' }, { type: 'text', text: 'real tail question' }] },
+        ] as any,
+      } as any,
+      candidates: [makeCandidate('coder-model')],
+      config: baseConfig,
+    });
+    const inputs = mockProvider.embed.mock.calls.map(c => JSON.stringify(c[0]));
+    expect(inputs.some(i => i.includes('real tail question') && !i.includes('first question'))).toBe(true);
+  });
+
   it('falls back to concatenating non-user string messages when no user string message exists', async () => {
     // No user message with string content → ?? right side fires → filter/map/join on assistant message
     const requestVec = [0, 0, 0]; // zero → unknown status

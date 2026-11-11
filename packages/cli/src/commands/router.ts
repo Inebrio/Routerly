@@ -160,13 +160,33 @@ function parseLimitSpec(spec: string, idLabel: string = 'model'): { id: string; 
  */
 async function resolveRanking(router: RouterConfig) {
   const profileId = router.routingProfileId ?? router.profileId;
-  const profile = profileId
-    ? (await api<Profile[]>('GET', '/api/profiles?kind=routing')).find(p => p.id === profileId && p.kind === 'routing')
-    : undefined;
+  const profile = await findBoundProfile('routing', profileId);
   if (profile?.kind === 'routing') {
-    return { profileId: profileId ?? null, profileLabel: profile.label, algorithm: profile.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM, source: 'profile' as const, policies: profile.policies };
+    return { profileId: profileId ?? null, profileLabel: profile.label, profile, algorithm: profile.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM, source: 'profile' as const, policies: profile.policies };
   }
-  return { profileId: profileId ?? null, profileLabel: undefined, algorithm: router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM, source: 'router' as const, policies: router.policies ?? [] };
+  return { profileId: profileId ?? null, profileLabel: undefined, profile: undefined, algorithm: router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM, source: 'router' as const, policies: router.policies ?? [] };
+}
+
+/** The bound profile of a kind, or undefined when unbound or unreadable (e.g. no `profiles:read`). */
+async function findBoundProfile(kind: Profile['kind'], id: string | undefined): Promise<Profile | undefined> {
+  if (!id) return undefined;
+  try {
+    return (await api<Profile[]>('GET', `/api/profiles?kind=${kind}`)).find(p => p.id === id && p.kind === kind);
+  } catch {
+    return undefined;
+  }
+}
+
+function profileSummary(id: string, profile: Profile | undefined): string {
+  return profile ? `${profile.label} (${id}, v${profile.version})` : `${id} ${chalk.yellow('(details not readable)')}`;
+}
+
+function printPolicyTable(policies: RoutingPolicy[]): void {
+  const table = new Table({ head: ['#', 'Policy', 'Enabled', 'Config'].map(h => chalk.cyan(h)) });
+  policies.forEach((p, i) => {
+    table.push([i + 1, p.type, p.enabled ? chalk.green('✓') : chalk.gray('—'), p.config ? JSON.stringify(p.config) : chalk.gray('—')]);
+  });
+  console.log(table.toString());
 }
 
 // ─── Routing subcommand group ─────────────────────────────────────────────────
@@ -191,6 +211,7 @@ Examples:
           console.log(JSON.stringify({
             routerId: router.id,
             routingProfileId: ranking.profileId,
+            ...(ranking.profile ? { routingProfile: { id: ranking.profile.id, label: ranking.profile.label, version: ranking.profile.version } } : {}),
             rankingAlgorithm: ranking.algorithm,
             rankingSource: ranking.source,
             policies: ranking.policies,
@@ -204,23 +225,15 @@ Examples:
         console.log(chalk.gray(`  Fallback models: `) + (fallbacks.length ? fallbacks.join(', ') : chalk.gray('(none)')));
         console.log(chalk.gray(`  Ranking algorithm: `) + ranking.algorithm + chalk.gray(ranking.source === 'profile' ? ` (profile ${ranking.profileLabel})` : ' (router)'));
 
-        const policies = router.policies ?? [];
+        const policies = ranking.policies;
+        if (ranking.profileId) {
+          console.log(chalk.gray(`  Routing profile: `) + profileSummary(ranking.profileId, ranking.profile));
+        }
         if (policies.length === 0) {
           console.log(chalk.gray('\n  No routing policies configured.'));
         } else {
           console.log('');
-          const table = new Table({
-            head: ['#', 'Policy', 'Enabled', 'Config'].map(h => chalk.cyan(h)),
-          });
-          policies.forEach((p, i) => {
-            table.push([
-              i + 1,
-              p.type,
-              p.enabled ? chalk.green('✓') : chalk.gray('—'),
-              p.config ? JSON.stringify(p.config) : chalk.gray('—'),
-            ]);
-          });
-          console.log(table.toString());
+          printPolicyTable(policies);
         }
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -1460,10 +1473,14 @@ Examples:
         console.log(chalk.gray(`    Routing model:   `) + (router.routingModelId ?? chalk.gray('(not set)')));
         const fallbacks = router.fallbackRoutingModelIds ?? [];
         console.log(chalk.gray(`    Fallback models: `) + (fallbacks.length ? fallbacks.join(', ') : chalk.gray('(none)')));
-        const policies = router.policies ?? [];
-        const enabledPolicies = policies.filter(p => p.enabled).map(p => p.type);
-        console.log(chalk.gray(`    Policies:        `) + (enabledPolicies.length ? enabledPolicies.join(', ') : chalk.gray('(none enabled)')));
-        console.log(chalk.gray(`    Ranking:         `) + (router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM));
+        const ranking = await resolveRanking(router);
+        const enabledPolicies = ranking.policies.filter(p => p.enabled).map(p => p.type);
+        if (ranking.profileId) console.log(chalk.gray(`    Routing profile: `) + profileSummary(ranking.profileId, ranking.profile));
+        if (router.optimizerProfileId) {
+          console.log(chalk.gray(`    Optimizer profile: `) + profileSummary(router.optimizerProfileId, await findBoundProfile('optimizer', router.optimizerProfileId)));
+        }
+        console.log(chalk.gray(`    Policies:        `) + (enabledPolicies.length ? enabledPolicies.join(', ') : chalk.gray('(none enabled)')) + (ranking.source === 'profile' ? chalk.gray(' (from profile)') : ''));
+        console.log(chalk.gray(`    Ranking:         `) + ranking.algorithm);
 
         // Models
         console.log(chalk.bold('\n  Target Models'));

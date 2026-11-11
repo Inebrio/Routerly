@@ -234,6 +234,32 @@ DELETE /api/models/:id
 
 If the model owned its dedicated `conn-for-<id>` connection and no other model instance references it, the connection is deleted along with the model.
 
+### Run Model Conformance
+
+```
+POST /api/models/:id/conformance
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:write`)
+
+Runs the provider conformance corpus against the model through the production adapter path (requests are not counted in usage) and stores the result on the model. `GET /api/models` and `GET /api/models/:id` return it as `conformance`; a model that was never checked has no such field.
+
+**Response `200`:**
+```json
+{
+  "verifiedAt": "2026-11-11T10:00:00.000Z",
+  "status": "limited",
+  "verified": { "functionCalling": true, "json": false, "streaming": true },
+  "cases": [
+    { "id": "json-mode", "status": "fail", "detail": "400 ...", "durationMs": 412 }
+  ]
+}
+```
+
+`status` is `conformant` when no case failed, otherwise `limited`. `verified.<capability>` is `true` when all its cases passed and `false` when any failed; capabilities the model does not declare are omitted and their cases are `skip`.
+
+**Errors**: `404` model not found · `400` embedding or decision models · `403` insufficient permissions
+
 ### Get Model API Key
 
 ```
@@ -531,8 +557,9 @@ assigned independently.
 
 See [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
 for the selector and fallback strategy reference. Both fields are optional on
-write and default to `argmax` and `next-best`; the API is the only surface that
-sets them, since the dashboard and the CLI do not expose either.
+write and default to `argmax` and `next-best`. The `selector` is `argmax` or
+`weighted-random`; the dashboard and the CLI set it, the API is the only surface
+that sets `fallbackStrategy`.
 
 ### List Profiles
 
@@ -599,7 +626,7 @@ POST /api/profiles
   "kind": "routing",
   "label": "My Routing Profile",
   "policies": [{ "type": "cheapest", "enabled": true }],
-  "selector": "cheapest",
+  "selector": "argmax",
   "fallbackStrategy": "abort",
   "rankingAlgorithm": "default"
 }
@@ -614,6 +641,27 @@ POST /api/profiles
 - everything else is optional and defaults to an empty configuration, so
   `{ "kind": "security", "label": "Empty" }` is a valid body that can be filled
   in later with [Update Profile](#update-profile)
+
+- `selector`: `routing` only, `argmax` (default) or `weighted-random`. The
+  values `cheapest`, `lowest-latency` and `round-robin` were removed and answer
+  `400`, naming the replacement; any other value answers `400` listing the valid
+  ones:
+
+```bash
+curl -s -X POST http://localhost:3000/api/profiles \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"kind":"routing","label":"t","selector":"cheapest"}'
+```
+
+```json
+{ "error": { "formErrors": [], "fieldErrors": { "selector": [
+  "selector \"cheapest\" was removed: use \"argmax\" with the \"cheapest\" policy"
+] } } }
+```
+
+`lowest-latency` names the `performance` policy and `round-robin` the
+`fairness` policy. Profiles stored with a removed value are migrated at startup
+(see [Selectors](../concepts/routing.md#selectors)).
 
 **Response `201`:** the created profile (`builtin: false`, `version: 1`).
 
@@ -656,7 +704,7 @@ kind, at least one required. `kind` itself cannot be changed.
 {
   "label": "Renamed Profile",
   "policies": [{ "type": "cheapest", "enabled": true }],
-  "selector": "cheapest",
+  "selector": "argmax",
   "fallbackStrategy": "abort",
   "rankingAlgorithm": "default"
 }

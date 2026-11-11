@@ -12,6 +12,7 @@ import {
   getDefaultServiceUrl,
 } from '../store.js';
 import { apiWith, api, ApiError } from '../api.js';
+import { makeApiTokenCommand } from './api-token.js';
 
 interface LoginResponse {
   token: string;
@@ -28,6 +29,8 @@ interface MeResponse {
   email: string;
   roleId: string;
   language?: string;
+  /** Present when the request authenticated with a management API token. */
+  tokenExpiresAt?: string;
 }
 
 export function makeAuthCommand(): Command {
@@ -54,10 +57,26 @@ Examples:
     .option('--email <email>', 'Account email')
     .option('--password <password>', 'Account password')
     .option('--alias <alias>', 'Friendly name for this account (default: email address)')
-    .action(async (opts: { url?: string; email?: string; password?: string; alias?: string }) => {
+    .option('--token <token>', 'Log in with a management API token (routerly auth api-token create) instead of email and password')
+    .action(async (opts: { url?: string; email?: string; password?: string; alias?: string; token?: string }) => {
       let { email, password } = opts;
       const defaultUrl = opts.url ?? (await getDefaultServiceUrl()) ?? 'http://localhost:3000';
       const serverUrl = defaultUrl.replace(/\/$/, '');
+
+      if (opts.token) {
+        try {
+          const me = await apiWith<MeResponse>({ alias: '', serverUrl, email: '', token: opts.token, expiresAt: Date.now() + 60_000 }, 'GET', '/api/me');
+          const alias = opts.alias ?? `${me.email.split('@')[0]!.toLowerCase().replace(/[^a-z0-9._-]/g, '-')}-token`;
+          const expiresAt = me.tokenExpiresAt ? new Date(me.tokenExpiresAt).getTime() : Date.now() + 365 * 86_400_000;
+          await saveAccount({ alias, serverUrl, email: me.email, token: opts.token, expiresAt, role: me.roleId });
+          console.log(chalk.green(`✓ Logged in as ${chalk.bold(me.email)} with an API token (expires ${new Date(expiresAt).toLocaleString('it-IT')})`));
+          console.log(chalk.gray(`  Account saved as "${alias}" → ${serverUrl}`));
+        } catch (err) {
+          console.error(chalk.red(`Login failed: ${err instanceof ApiError ? err.message : `cannot reach server at ${serverUrl}: ${(err as Error).message}`}`));
+          process.exit(1);
+        }
+        return;
+      }
 
       // Prompt for missing credentials
       if (!email || !password) {
@@ -382,6 +401,8 @@ Examples:
         process.exit(1);
       }
     });
+
+  cmd.addCommand(makeApiTokenCommand());
 
   return cmd;
 }

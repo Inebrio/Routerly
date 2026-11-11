@@ -55,6 +55,17 @@ describe('capabilityPolicy', () => {
     expect(result.excludes).toContain('no-vision')
   })
 
+  it('excludes vision:false models for Anthropic image blocks', async () => {
+    const result = await capabilityPolicy(makeInput({
+      request: {
+        model: 'auto',
+        messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'x' } }] }],
+      } as any,
+      candidates: [{ model: makeModel('no-vision', { vision: false }) }, { model: makeModel('undeclared') }],
+    }))
+    expect(result.excludes).toEqual(['no-vision'])
+  })
+
   it('does not flag vision when messages have no image content parts', async () => {
     const result = await capabilityPolicy(makeInput({
       request: {

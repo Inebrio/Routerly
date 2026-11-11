@@ -101,4 +101,91 @@ describe('migrateProfiles', () => {
     expect(await migrateProfiles()).toBe(0)
     expect(writeConfig).not.toHaveBeenCalled()
   })
+
+  describe('removed selectors', () => {
+    const overlay = (selector: string, policies: { type: string; enabled: boolean }[]) => ({
+      id: 'o1', kind: 'routing', version: 2, label: 'Mine', builtin: false, baseId: 'cheap',
+      policies, selector, fallbackStrategy: 'abort',
+    })
+
+    it.each([
+      ['cheapest', 'cheapest'],
+      ['lowest-latency', 'performance'],
+      ['round-robin', 'fairness'],
+    ])('%s -> argmax and appends the missing %s policy', async (selector, policy) => {
+      const { migrateProfiles } = await import('./migrate.js')
+      store.profiles = [overlay(selector, [{ type: 'health', enabled: true }])]
+
+      expect(await migrateProfiles()).toBe(1)
+      expect(store.profiles[0]).toEqual({
+        ...overlay('argmax', [{ type: 'health', enabled: true }, { type: policy, enabled: true }]),
+      })
+    })
+
+    it.each([
+      ['cheapest', 'cheapest'],
+      ['lowest-latency', 'performance'],
+      ['round-robin', 'fairness'],
+    ])('%s -> argmax and enables the %s policy when present but disabled', async (selector, policy) => {
+      const { migrateProfiles } = await import('./migrate.js')
+      store.profiles = [overlay(selector, [{ type: policy, enabled: false }, { type: 'health', enabled: false }])]
+
+      expect(await migrateProfiles()).toBe(1)
+      expect((store.profiles[0] as any).selector).toBe('argmax')
+      expect((store.profiles[0] as any).policies).toEqual([{ type: policy, enabled: true }, { type: 'health', enabled: false }])
+    })
+
+    it('keeps an already enabled equivalent policy untouched, no duplicate', async () => {
+      const { migrateProfiles } = await import('./migrate.js')
+      store.profiles = [overlay('cheapest', [{ type: 'cheapest', enabled: true }])]
+
+      await migrateProfiles()
+      expect((store.profiles[0] as any).policies).toEqual([{ type: 'cheapest', enabled: true }])
+    })
+
+    it('a profile without a policies list gets just the equivalent policy', async () => {
+      const { migrateProfiles } = await import('./migrate.js')
+      const { policies: _p, ...noPolicies } = overlay('round-robin', [])
+      store.profiles = [noPolicies]
+
+      expect(await migrateProfiles()).toBe(1)
+      expect((store.profiles[0] as any).policies).toEqual([{ type: 'fairness', enabled: true }])
+    })
+
+    it('leaves argmax / weighted-random overlays and optimizer profiles alone', async () => {
+      const { migrateProfiles } = await import('./migrate.js')
+      const { writeConfig } = await import('../../config/loader.js')
+      store.profiles = [
+        overlay('argmax', []),
+        overlay('weighted-random', []),
+        { id: 'p', kind: 'optimizer', version: 1, label: 'O', builtin: false, optimizers: { steps: [] } },
+      ]
+
+      expect(await migrateProfiles()).toBe(0)
+      expect(writeConfig).not.toHaveBeenCalled()
+    })
+
+    it('counts a kind-less overlay with a removed selector once, and changes only selector and policies', async () => {
+      const { migrateProfiles } = await import('./migrate.js')
+      const { kind: _k, ...kindless } = overlay('cheapest', [])
+      store.profiles = [kindless, overlay('lowest-latency', []), overlay('argmax', [])]
+
+      expect(await migrateProfiles()).toBe(2)
+      expect(store.profiles[0]).toMatchObject({ kind: 'routing', selector: 'argmax', baseId: 'cheap', label: 'Mine', fallbackStrategy: 'abort', version: 2 })
+    })
+
+    it('is idempotent: a second run changes nothing', async () => {
+      const { migrateProfiles } = await import('./migrate.js')
+      const { writeConfig } = await import('../../config/loader.js')
+      store.profiles = [overlay('cheapest', []), overlay('lowest-latency', []), overlay('round-robin', [])]
+
+      expect(await migrateProfiles()).toBe(3)
+      const after = structuredClone(store.profiles)
+      vi.mocked(writeConfig).mockClear()
+
+      expect(await migrateProfiles()).toBe(0)
+      expect(writeConfig).not.toHaveBeenCalled()
+      expect(store.profiles).toEqual(after)
+    })
+  })
 })

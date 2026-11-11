@@ -1,6 +1,6 @@
 import { DEFAULT_RANKING_ALGORITHM, RANKING_ALGORITHMS, type RankingAlgorithmId, type RoutingCandidate, type SelectorType } from '@routerly/shared';
 import type { CandidateModel } from '../policies/types.js';
-import { SELECTOR_MAP } from '../selectors/index.js';
+import { SELECTOR_MAP, argmaxSelector } from '../selectors/index.js';
 import type { ScoredCandidate, SelectorContext } from '../selectors/index.js';
 
 export interface RankingInput {
@@ -72,12 +72,12 @@ const defaultRanking: RankingFn = ({ scoringCandidates, successfulResults, selec
     return {
       model: c.model.id,
       score: +score.toFixed(4),
-      cost: (c.model.cost.inputPerMillion + c.model.cost.outputPerMillion) / 2,
       ...(c.prompt ? { prompt: c.prompt } : {}),
     };
   });
 
-  const models = SELECTOR_MAP[selector](scored, { ...selectorCtx, allAbstained: allPoliciesAbstained }).models;
+  // A stale selector (profile not yet migrated, restored config) falls back to argmax instead of failing the request.
+  const models = (SELECTOR_MAP[selector] ?? argmaxSelector)(scored, { ...selectorCtx, allAbstained: allPoliciesAbstained }).models;
   return { models, scored, abstained: abstainedPolicies, allAbstained: allPoliciesAbstained };
 };
 

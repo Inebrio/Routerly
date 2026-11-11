@@ -77,7 +77,7 @@ describe('RouterLayout — loaded state', () => {
       expect(screen.getByText('Security')).toBeTruthy();
       expect(screen.getByText('Token')).toBeTruthy();
       expect(screen.getByText('Users')).toBeTruthy();
-      expect(screen.getByText('Logs')).toBeTruthy();
+      expect(screen.getByText('Usage')).toBeTruthy();
       const labels = Array.from(document.querySelectorAll('a, [title="Save the router first to unlock this tab"]'))
         .map(el => el.textContent?.trim());
       expect(labels[0]).toBe('Dashboard');

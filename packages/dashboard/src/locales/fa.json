@@ -447,6 +447,7 @@
       "profile": "نمایه",
       "notifications": "اعلان‌ها",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "ترجیحات"
     },
     "notifications": {
@@ -630,6 +631,54 @@
         "errors": {
           "createFailed": "ایجاد توکن ناموفق بود",
           "copyFailed": "کپی ناموفق بود، لطفاً توکن را به‌صورت دستی انتخاب و کپی کنید."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1218,7 +1267,7 @@
         "security": "امنیت",
         "token": "توکن",
         "users": "کاربران",
-        "logs": "گزارش‌ها"
+        "logs": "مصرف"
       },
       "backToRouters": "بازگشت به روترها",
       "backToRoutersTitle": "بازگشت به روترها",
@@ -2013,13 +2062,15 @@
         "input": "ورودی $/۱ میلیون",
         "output": "خروجی $/۱ میلیون",
         "cache": "کش $/۱ میلیون",
-        "context": "اندازه زمینه"
+        "context": "اندازه زمینه",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "آزمایش",
         "clone": "کلون",
         "edit": "ویرایش",
-        "remove": "حذف"
+        "remove": "حذف",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← قبلی",
@@ -2075,6 +2126,15 @@
           "cooldown": "دوره خاموشی {{time}}",
           "lockout": "قفل {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },
@@ -2850,6 +2910,13 @@
         "notFound": "پروفایل یافت نشد.",
         "loadFailed": "بارگذاری پروفایل ناموفق بود",
         "saveFailed": "ذخیره پروفایل ناموفق بود"
+      },
+      "selector": {
+        "label": "انتخاب‌گر",
+        "argmax": "بالاترین امتیاز (argmax)",
+        "weightedRandom": "تصادفی وزن‌دار",
+        "argmaxHint": "همیشه مدل با بالاترین امتیاز را انتخاب می‌کند.",
+        "weightedRandomHint": "به‌صورت تصادفی و وزن‌دار بر اساس امتیاز انتخاب می‌کند: مدل‌های با امتیاز بالاتر بیشتر انتخاب می‌شوند."
       }
     }
   },

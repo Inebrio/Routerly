@@ -258,14 +258,14 @@ Each can be cloned into an editable, user-owned copy.
 | Profile | Policies | Selector | Fallback | Optimizes for |
 |---------|----------|----------|----------|----------------|
 | **Auto** | health, performance, cheapest, capability | argmax | next-best | A general-purpose mix of speed, cost, and reliability |
-| **Cheap** | cheapest, budget-remaining, health | cheapest | next-best | Lowest cost per request |
-| **Fast** | performance, health | lowest-latency | retry-after-cooldown | Lowest response time |
+| **Cheap** | cheapest, budget-remaining, health | argmax | next-best | Lowest cost per request |
+| **Fast** | performance, health | argmax | retry-after-cooldown | Lowest response time |
 | **Coding** | capability, model-preference, performance, health | argmax | next-best | Capable, developer-preferred models for code tasks |
 
 Two earlier presets, `balanced` and `offline`, are no longer offered. Routers
 still pointing at `balanced` are migrated to the byte-identical `auto`;
-Routers on `offline` keep resolving it unchanged, but it cannot be picked or
-cloned any more.
+Routers on `offline` keep resolving it, but it cannot be picked or cloned any
+more; it now uses `argmax` with the policies health, cheapest and fairness.
 
 ### Call configuration
 
@@ -273,20 +273,44 @@ A router or routing profile can also carry a [call configuration](./call-configu
 
 ### Selectors
 
-The selector picks one model from the candidates the policy layer scored (and
-did not filter out):
+A selector receives only the scores the policies computed and picks one model
+among the candidates that remain. It never reads cost, latency, history or
+counters. Whatever must influence the choice is expressed by a
+[policy](#available-policies), not by the selector.
 
 | Selector | Behaviour |
 |----------|-----------|
-| `argmax` | Picks the highest-scored candidate. Ties within a small tolerance are broken by weighted-random among the tied group. |
+| `argmax` | Picks the highest-scored candidate. Ties within a small tolerance are broken by weighted-random among the tied group. This is the default. |
 | `weighted-random` | Picks one candidate at random, with probability proportional to its score. |
-| `round-robin` | Cycles through candidates in a deterministic order, one per request, evenly distributing load regardless of score. |
-| `cheapest` | Picks the lowest-cost candidate; ties break by higher score. |
-| `lowest-latency` | Picks the candidate with the lowest recent observed latency; candidates with no latency data sort last. |
 
-The selector is not editable from the dashboard or the CLI: a profile created
-there uses `argmax`. The built-in profiles keep the selectors listed above,
-and the [API](../api/management.md#profiles) accepts any of them.
+You set the selector on a routing profile: in the
+[profile form](../dashboard/profiles.md#routing-configuration), with
+`routerly profiles create|update --selector`
+([CLI](../cli/commands.md#routerly-profiles-create)), or with the `selector`
+field of the [API](../api/management.md#profiles).
+
+#### Removed selectors
+
+`cheapest`, `lowest-latency` and `round-robin` no longer exist. Each one
+applied a criterion that a policy already expresses, so a profile that used one
+is now `argmax` plus the matching policy:
+
+| Removed selector | Replacement |
+|------------------|-------------|
+| `cheapest` | `argmax` with the `cheapest` policy |
+| `lowest-latency` | `argmax` with the `performance` policy |
+| `round-robin` | `argmax` with the `fairness` policy |
+
+At startup Routerly migrates your profiles: the selector becomes `argmax` and the
+equivalent policy is appended, or enabled if it was already in the profile but
+disabled, so the profile keeps its criterion. The API rejects the removed values
+with a `400`.
+
+`fairness` is not a rotation. It scores each model by the share of successful
+calls it served in the last 60 minutes, so it spreads traffic by real usage and
+does not cycle through the candidates in a fixed order. If other enabled
+policies such as `cheapest` still favour one model, `argmax` keeps favouring it
+at equal usage.
 
 ### Fallback Strategies
 

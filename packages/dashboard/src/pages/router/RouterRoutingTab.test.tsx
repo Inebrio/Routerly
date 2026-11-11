@@ -158,7 +158,7 @@ function renderTab(router: Record<string, unknown> = mockRouter) {
 const sampleProfiles = [
   { id: 'auto', kind: 'routing', version: 1, label: 'Auto', policies: [{ type: 'cheapest', enabled: true }], selector: 'argmax', fallbackStrategy: 'next-best', builtin: true },
   { id: 'builtin-balanced', kind: 'routing', version: 1, label: 'Balanced', policies: [], selector: 'argmax', fallbackStrategy: 'next-best', builtin: true },
-  { id: 'user-custom', kind: 'routing', version: 2, label: 'My Profile', policies: [], selector: 'cheapest', fallbackStrategy: 'abort', builtin: false },
+  { id: 'user-custom', kind: 'routing', version: 2, label: 'My Profile', policies: [], selector: 'argmax', fallbackStrategy: 'abort', builtin: false },
 ];
 
 beforeEach(() => {
@@ -2449,6 +2449,12 @@ describe('RouterRoutingTab — ranking algorithm', () => {
     mockCanWrite = false;
     renderTab();
     expect(await screen.findByDisplayValue('Default')).toBeDisabled();
+  });
+
+  it('lists the profile policies read-only in profile mode (ROUT-685)', async () => {
+    renderTab({ ...mockRouter, routingProfileId: 'auto', policies: [] });
+    const list = await screen.findByTestId('profile-policies');
+    expect(list).toHaveTextContent('cheapest');
   });
 
   it('shows a read-only line in profile mode', async () => {

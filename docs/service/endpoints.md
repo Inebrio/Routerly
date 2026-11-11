@@ -198,6 +198,19 @@ Full endpoint catalogue: [API — Management](../api/management).
 | `GET` | `/api/me/mcp-tokens` | List the caller's personal MCP tokens |
 | `POST` | `/api/me/mcp-tokens` | Create a personal MCP token (raw value returned once) |
 | `DELETE` | `/api/me/mcp-tokens/:id` | Revoke a personal MCP token |
+| `GET` | `/api/me/api-tokens` | List the caller's management API tokens (no hash) |
+| `POST` | `/api/me/api-tokens` | Create a management API token (raw value returned once) |
+| `DELETE` | `/api/me/api-tokens/:id` | Revoke a management API token |
+
+#### Management API tokens
+
+Long-lived tokens for automations. Send one as `Authorization: Bearer sk-rt-api-…` to any management route; it replaces the JWT.
+
+- `POST /api/me/api-tokens` takes `{ "name", "expiresAt", "permissions": [...] }`. `expiresAt` is mandatory (ISO instant, in the future, at most 365 days away) and `permissions` must be a non-empty subset of the creator's own permissions. Returns `201` with the token once; `400` on a bad expiry or body, `403` when a permission is not held, `409` on a duplicate name.
+- Effective permissions are the token's scope intersected with the owner's current role: demoting the user narrows the token at once.
+- A token cannot reach `/api/auth/*` or any `/api/me*` route except `GET /api/me`, so it cannot mint tokens, change credentials or touch 2FA. `GET /api/me` also returns `tokenExpiresAt`.
+- Only the SHA-256 hash is stored. An expired, revoked or unknown token gets `401`.
+- Every request made with a token writes an audit entry with action `api_token:use` and the token name. The service logs a warning at startup and daily for tokens expiring within 7 days.
 
 ---
 

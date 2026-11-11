@@ -1277,3 +1277,42 @@ describe('routerly model discover', () => {
     expect(out.join('\n')).toMatch(/1 model shown/);
   });
 });
+
+describe('model conformance', () => {
+  const result = (status: 'conformant' | 'limited') => ({
+    verifiedAt: '2026-11-11T10:00:00.000Z', status, verified: {},
+    cases: [{ id: 'basic-chat', status: 'pass', durationMs: 5 }, { id: 'tool-call', status: status === 'limited' ? 'fail' : 'pass', detail: '400 bad schema', durationMs: 7 }],
+  });
+
+  it('POSTs the run and prints the table', async () => {
+    mockApi.mockResolvedValueOnce(result('conformant'));
+    const { out } = await run('conformance', 'gpt-4o');
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/models/gpt-4o/conformance');
+    expect(out.join('\n')).toContain('basic-chat');
+  });
+
+  it('--json prints parseable JSON and exits 1 when limited', async () => {
+    mockApi.mockResolvedValueOnce(result('limited'));
+    const { out } = await run('conformance', 'gpt-4o', '--json');
+    expect(JSON.parse(out.join('\n')).status).toBe('limited');
+    expect(process.exitCode).toBe(1);
+    process.exitCode = undefined;
+  });
+
+  it('reports API errors on stderr', async () => {
+    mockApi.mockRejectedValueOnce(new ApiError(403, 'Forbidden'));
+    const { err } = await run('conformance', 'gpt-4o');
+    expect(err.join('\n')).toContain('Forbidden');
+  });
+
+  it('list shows unverified for a model without a result and the date for one with', async () => {
+    mockApi.mockResolvedValueOnce([
+      { id: 'a', provider: 'openai', endpoint: '', cost: {} },
+      { id: 'b', provider: 'openai', endpoint: '', cost: {}, conformance: result('limited') },
+    ]).mockResolvedValueOnce([]);
+    const { out } = await run('list');
+    const text = out.join('\n');
+    expect(text).toContain('unverified');
+    expect(text).toContain('limited 2026-11-11');
+  });
+});

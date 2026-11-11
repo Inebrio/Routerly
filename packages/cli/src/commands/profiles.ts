@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import { readCallConfigArg, printCallConfig } from '../lib/call-config.js';
-import { DEFAULT_RANKING_ALGORITHM, RANKING_ALGORITHMS } from '@routerly/shared';
+import { DEFAULT_RANKING_ALGORITHM, RANKING_ALGORITHMS, SELECTOR_TYPES } from '@routerly/shared';
 import type { Profile, ProfileKind, RouterConfig } from '@routerly/shared';
 
 // ponytail: no interactive editor for profile bodies in CLI v1; edit via dashboard or clone+PATCH. Add when a headless-edit need is proven.
@@ -33,6 +33,10 @@ function rankingOption(description: string): Option {
   return new Option('--ranking-algorithm <id>', description).choices(RANKING_ALGORITHMS);
 }
 
+function selectorOption(description: string): Option {
+  return new Option('--selector <type>', description).choices(SELECTOR_TYPES);
+}
+
 function parseKind(value: string): ProfileKind {
   if (!KINDS.includes(value as ProfileKind)) {
     fail(`Unknown kind "${value}". Expected one of: ${KINDS.join(', ')}.`);
@@ -58,7 +62,7 @@ async function fetchProfiles(kind?: ProfileKind): Promise<Profile[]> {
 function summarize(profile: Profile): string {
   switch (profile.kind) {
     case 'routing':
-      return `${profile.policies.filter(p => p.enabled).length} active policies`;
+      return `${profile.policies.filter(p => p.enabled).length} active policies, selector ${profile.selector}`;
     case 'optimizer':
       return `${profile.optimizers.steps.filter(s => s.enabled).length}/${profile.optimizers.steps.length} steps enabled`;
     case 'security':
@@ -69,7 +73,7 @@ function summarize(profile: Profile): string {
 /** Kind-specific detail block for `profiles show`. */
 function printDetails(profile: Profile): void {
   if (profile.kind === 'routing') {
-    // Selector and fallback strategy are engine internals, not operator knobs (T112).
+    console.log(chalk.gray('selector:         ') + profile.selector);
     console.log(chalk.gray('ranking algorithm: ') + (profile.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM));
     console.log(chalk.bold('\nPolicies:'));
     if (profile.policies.length === 0) console.log(chalk.gray('  (none)'));
@@ -181,27 +185,31 @@ Examples:
     .requiredOption('--label <label>', 'Label for the new profile')
     .option('--call-config <json|@file>', 'Call configuration (effort / max output tokens / verbosity by complexity), routing kind only: inline JSON or @path')
     .addOption(rankingOption('Ranking algorithm (routing profiles only)'))
+    .addOption(selectorOption('Selector (routing profiles only): argmax picks the top score, weighted-random picks proportionally to the score'))
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly profiles create --kind routing --label "My Routing"
+  routerly profiles create --kind routing --label "Spread" --selector weighted-random
   routerly profiles create --kind routing --label "My Routing" --ranking-algorithm default
   routerly profiles create --kind routing --label "Capped" --call-config @call-config.json
   routerly profiles create --kind routing --label "Capped" --call-config '{"enabled":true,"tiers":{"low":{"maxOutputTokens":512}}}'
   routerly profiles create --kind security --label "My Guardrails" --json
 `)
-    .action(async (opts: { kind: string; label: string; rankingAlgorithm?: string; callConfig?: string; json?: boolean }) => {
+    .action(async (opts: { kind: string; label: string; rankingAlgorithm?: string; selector?: string; callConfig?: string; json?: boolean }) => {
       try {
         const kind = parseKind(opts.kind);
         if (opts.rankingAlgorithm !== undefined && kind !== 'routing') {
           fail('--ranking-algorithm is only valid with --kind routing.');
         }
+        if (opts.selector !== undefined && kind !== 'routing') fail('Error: --selector only applies to routing profiles.');
         if (opts.callConfig !== undefined && kind !== 'routing') fail('Error: --call-config only applies to routing profiles.');
         const callConfig = opts.callConfig !== undefined ? readCallConfigArg(opts.callConfig) : undefined;
         const profile = await api<Profile>('POST', '/api/profiles', {
           kind,
           label: opts.label,
           ...(opts.rankingAlgorithm !== undefined ? { rankingAlgorithm: opts.rankingAlgorithm } : {}),
+          ...(opts.selector !== undefined ? { selector: opts.selector } : {}),
           ...(callConfig !== undefined ? { callConfig } : {}),
         });
         if (opts.json) {
@@ -219,26 +227,29 @@ Examples:
     .description('Update a user profile (built-ins cannot be changed)')
     .option('--label <label>', 'New label')
     .addOption(rankingOption('Ranking algorithm (routing profiles only)'))
+    .addOption(selectorOption('Selector (routing profiles only): argmax or weighted-random'))
     .option('--call-config <json|@file>', 'Replace the call configuration (routing profiles only): inline JSON or @path')
     .option('--clear-call-config', 'Remove the call configuration')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --ranking-algorithm default
+  routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --selector weighted-random
   routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --label "Renamed" --json
   routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --call-config @call-config.json
   routerly profiles update 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 --clear-call-config
 `)
-    .action(async (id: string, opts: { label?: string; rankingAlgorithm?: string; callConfig?: string; clearCallConfig?: boolean; json?: boolean }) => {
+    .action(async (id: string, opts: { label?: string; rankingAlgorithm?: string; selector?: string; callConfig?: string; clearCallConfig?: boolean; json?: boolean }) => {
       try {
         if (opts.callConfig !== undefined && opts.clearCallConfig) fail('Error: --call-config and --clear-call-config are mutually exclusive.');
-        if (opts.label === undefined && opts.rankingAlgorithm === undefined && opts.callConfig === undefined && !opts.clearCallConfig) {
-          fail('Error: provide --label, --ranking-algorithm, --call-config and/or --clear-call-config.');
+        if (opts.label === undefined && opts.rankingAlgorithm === undefined && opts.selector === undefined && opts.callConfig === undefined && !opts.clearCallConfig) {
+          fail('Error: provide --label, --ranking-algorithm, --selector, --call-config and/or --clear-call-config.');
         }
         const callConfig = opts.clearCallConfig ? null : opts.callConfig !== undefined ? readCallConfigArg(opts.callConfig) : undefined;
         const profile = await api<Profile>('PATCH', `/api/profiles/${encodeURIComponent(id)}`, {
           ...(opts.label !== undefined ? { label: opts.label } : {}),
           ...(opts.rankingAlgorithm !== undefined ? { rankingAlgorithm: opts.rankingAlgorithm } : {}),
+          ...(opts.selector !== undefined ? { selector: opts.selector } : {}),
           ...(callConfig !== undefined ? { callConfig } : {}),
         });
         if (opts.json) {
