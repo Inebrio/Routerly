@@ -100,7 +100,7 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
         // passthrough router per validate-passthrough.ts) — score real models normally,
         // falling back to raw-forward only when none turn out eligible (AC9).
         try {
-          const { models, callDecision } = await routeRequest(
+          const { models, callDecision, fallbackStrategy } = await routeRequest(
             ctx.request,
             ctx.router,
             ctx.log,
@@ -111,6 +111,7 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
             resilienceStore,
           )
           ctx.candidates = models
+          if (fallbackStrategy) ctx.fallbackStrategy = fallbackStrategy
           setCallDecision(ctx, callDecision)
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err)
@@ -125,7 +126,7 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
       // The trace routeRequest returns is for callers without an event bus (the MCP
       // read tool): here every entry already went out through ctx.emit.
       try {
-        const { models, callDecision } = await routeRequest(
+        const { models, callDecision, fallbackStrategy } = await routeRequest(
           ctx.request,
           ctx.router,
           ctx.log,
@@ -136,6 +137,7 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
           resilienceStore,
         )
         ctx.candidates = models
+        if (fallbackStrategy) ctx.fallbackStrategy = fallbackStrategy
         setCallDecision(ctx, callDecision)
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)

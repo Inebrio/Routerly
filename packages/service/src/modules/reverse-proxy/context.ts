@@ -9,7 +9,7 @@ import type {
   UsageInfo,
 } from '@routerly/shared'
 import type { EffectivePii } from '../pii/piiScrubber.js'
-import type { TraceEntry } from '@routerly/shared'
+import type { FallbackStrategyType, TraceEntry } from '@routerly/shared'
 import type { UpstreamResponse } from '../resilience/classifier.js'
 import type { CallDecision } from '../routing/call-config.js'
 
@@ -78,6 +78,8 @@ export interface ProxyContext {
 
   // routing / attempt loop
   candidates?: RoutingCandidate[]
+  /** Fallback strategy of the routing profile that scored `candidates`; absent = next-best. */
+  fallbackStrategy?: FallbackStrategyType
   attempt?: { model: ModelConfig; candidate: RoutingCandidate }
   /** Call-configuration decision (tier) for this request; absent when no enabled config applies. */
   callDecision?: CallDecision

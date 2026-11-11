@@ -1,4 +1,4 @@
-import { DEFAULT_RANKING_ALGORITHM, PASSTHROUGH_MODEL_ID, type ChatCompletionRequest, type ModelConfig, type RouterConfig, type RouterToken, type ResilienceStore, type RankingAlgorithmId, type RoutingCandidate, type RoutingProfile } from '@routerly/shared';
+import { DEFAULT_RANKING_ALGORITHM, PASSTHROUGH_MODEL_ID, type ChatCompletionRequest, type FallbackStrategyType, type ModelConfig, type RouterConfig, type RouterToken, type ResilienceStore, type RankingAlgorithmId, type RoutingCandidate, type RoutingProfile } from '@routerly/shared';
 import { listEffectiveModels } from '../provider/list-effective.js';
 import { isAllowed, getViolatedLimits } from '../budget/budget.js';
 import type { LimitSnapshot } from '../budget/budget.js';
@@ -29,6 +29,8 @@ function te(panel: TracePanel, message: string, details: Record<string, unknown>
 export interface RouteResult {
   models: RoutingCandidate[];
   trace: TraceEntry[];
+  /** Fallback strategy of the resolved routing profile. */
+  fallbackStrategy?: FallbackStrategyType;
   /** Present only when the resolved call configuration is enabled. */
   callDecision?: CallDecision;
 }
@@ -402,6 +404,7 @@ export async function routeRequest(
   const callDecision = picked ? decideCallTier(request, picked.config, picked.source) : undefined;
   // Adds the call decision and its trace entry to a finished route (bypass and scored alike).
   const withCallConfig = async (result: RouteResult): Promise<RouteResult> => {
+    result = { ...result, fallbackStrategy: profile.fallbackStrategy };
     if (!callDecision) return result;
     const all = await listEffectiveModels();
     const entry = te('router-response', 'router:call-config', callConfigTraceDetails(

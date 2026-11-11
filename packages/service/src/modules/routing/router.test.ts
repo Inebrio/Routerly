@@ -1035,6 +1035,14 @@ describe('routeRequest', () => {
       expect(result.trace.find(e => e.message === 'router:profile')).toBeDefined()
     })
 
+    it('returns the profile fallbackStrategy so the retry loop can honour it', async () => {
+      mockModels([makeModel('m1')])
+      mockIsAllowed.mockResolvedValue(true)
+      mockCheapestPolicy.mockResolvedValue({ routing: [{ model: 'm1', point: 0.8 }] })
+      const result = await routeRequest(request, makeRouter(['m1'], [{ type: 'cheapest', enabled: true }]))
+      expect(result.fallbackStrategy).toBe('next-best')
+    })
+
     describe('ranking algorithm (ROUT-298)', () => {
       const twoModels = () => {
         mockModels([makeModel('m1'), makeModel('m2')])

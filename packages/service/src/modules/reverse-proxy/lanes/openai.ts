@@ -4,7 +4,7 @@ import type { ChatCompletionRequest, ChatCompletionResponse, StreamChunk } from 
 import type { Processor } from '../../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
-import { runCandidateLoop } from '../candidate-loop.js'
+import { runCandidateLoop, laneFallbackOptions, takeAttemptFailure } from '../candidate-loop.js'
 import { forwardToRouter } from '../../routing/orchestrate.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
@@ -268,12 +268,8 @@ export const openaiAttempt: Processor<ProxyContext> = {
         clientError = { status: ar.status, body: upstreamErrorBody('openai', ar.status, ar.body) }
         rememberUpstreamError(router.id, ar.status, ar.body)
       }
-      if (ctx.attemptError !== undefined) {
-        ctx.attemptError = undefined
-        delete ctx.attemptResponse
-      }
       if (model.id === primaryModelId) primaryFailed = true
-      return false
+      return takeAttemptFailure(ctx)
     }, () => {
       // All candidates exhausted.
       void emitEvent('routing.no_candidates', 'critical', { routerId: router.id, requestedModel: ctx.request.model ?? null, traceId: ctx.traceId }, { routerId: router.id, log })
@@ -285,7 +281,7 @@ export const openaiAttempt: Processor<ProxyContext> = {
       } else {
         ctx.result = { kind: 'block', status: 503, body: { error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } } }
       }
-    })
+    }, laneFallbackOptions(ctx))
   },
 }
 

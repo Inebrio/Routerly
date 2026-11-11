@@ -4,7 +4,7 @@ import type { MessagesRequest, ChatCompletionRequest, StreamChunk } from '@route
 import type { Processor } from '../../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
-import { runCandidateLoop } from '../candidate-loop.js'
+import { runCandidateLoop, laneFallbackOptions, takeAttemptFailure } from '../candidate-loop.js'
 import { forwardToRouter } from '../../routing/orchestrate.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
 import { llmChat, llmStream, loadEffectiveModel, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
@@ -274,17 +274,13 @@ export const anthropicAttempt: Processor<ProxyContext> = {
       // The fault (if any) was already recorded once by handleProviderResult inside
       // llmChat/llmStream — the single authoritative recorder. The loop only advances to the next
       // candidate here; clearing the stash keeps it from leaking into the next iteration.
-      if (ctx.attemptError !== undefined) {
-        ctx.attemptError = undefined
-        delete ctx.attemptResponse
-      }
-      return false
+      return takeAttemptFailure(ctx)
     }, () => {
       // Exhausted, no events on the Anthropic lane (decision #8).
       ctx.result = clientError
         ? { kind: 'block', status: clientError.status, body: clientError.body }
         : { kind: 'block', status: 503, body: { type: 'error', error: { type: 'overloaded_error', message: 'All candidate models are budget-exhausted or unavailable.' } } }
-    })
+    }, laneFallbackOptions(ctx))
   },
 }
 
