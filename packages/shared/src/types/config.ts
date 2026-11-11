@@ -7,6 +7,17 @@ export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oaut
 
 export type ProviderId = string;
 
+/** Why an OAuth connection can no longer authenticate and needs a new login or token. */
+export type ConnectionAuthReason = 'expired' | 'revoked';
+
+/** Set by the service when an OAuth connection needs re-authorization; cleared by a credentials update or a successful refresh. */
+export interface ConnectionAuthState {
+  status: 'reauth_required';
+  reason: ConnectionAuthReason;
+  message: string;
+  since: string;
+}
+
 export interface ProviderConnection {
   id: string;
   providerId: ProviderId;
@@ -20,6 +31,7 @@ export interface ProviderConnection {
   credentials: Record<string, unknown>;
   endpoint?: string;
   enabled: boolean;
+  authState?: ConnectionAuthState;
 }
 
 /**

@@ -1811,7 +1811,8 @@
       },
       "status": {
         "enabled": "Attivata",
-        "disabled": "Disattivata"
+        "disabled": "Disattivata",
+        "reauth": "Serve riautorizzazione"
       },
       "actions": {
         "models": "Modelli",

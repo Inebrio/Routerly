@@ -17,6 +17,8 @@ import { decayWeightedErrorScore } from './scoring.js';
  *  - halfLifeMinutes  {number}  Emivita del decadimento esponenziale     (default: 5)
  *  - pseudoCounts     {number}  Pseudo-conteggi Bayesiani (smoothing)    (default: 2)
  *  - circuitBreaker   {number}  Soglia error rate pesato → point = 0     (default: 0.9)
+ *  - probeIntervalMinutes {number} Half-open: con breaker scattato e ultimo record più vecchio
+ *                       di questo intervallo il modello riceve una richiesta di prova (default: 2)
  *
  * Modelli senza record recenti ottengono punto 1.0 (nessun segnale di degrado, esplorazione attiva).
  */
@@ -25,6 +27,7 @@ export const healthPolicy: PolicyFn = async ({ candidates, config }) => {
   const halfLifeMinutes: number = config?.halfLifeMinutes ?? 5;
   const pseudoCounts: number    = config?.pseudoCounts    ?? 2;
   const circuitBreaker: number  = config?.circuitBreaker  ?? 0.9;
+  const probeIntervalMs: number = (config?.probeIntervalMinutes ?? 2) * 60 * 1000;
 
   const records = await readUsageRecords();
   const now                    = Date.now();
@@ -43,9 +46,15 @@ export const healthPolicy: PolicyFn = async ({ candidates, config }) => {
       modelRecords, now, halfLifeMs, pseudoCounts, circuitBreaker,
     );
 
+    // Half-open: an excluded model gets no traffic, so it could never prove it recovered. After
+    // probeIntervalMs without a record let one request through; a failure re-closes the breaker.
+    // ponytail: concurrent requests may all probe together; serialize per model if that matters.
+    const lastRecordMs = modelRecords.reduce((max, r) => Math.max(max, new Date(r.timestamp).getTime()), 0);
+    const probing = point === 0.0 && now - lastRecordMs >= probeIntervalMs;
+
     return {
       model:             c.model.id,
-      point,
+      point:             probing ? 1.0 : point,
       recentCalls:       modelRecords.length,
       weightedErrorRate,
       errorScore,

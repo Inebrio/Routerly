@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Habilitado",
-        "disabled": "Desabilitado"
+        "disabled": "Desabilitado",
+        "reauth": "Reautorização necessária"
       },
       "actions": {
         "models": "Modelos",

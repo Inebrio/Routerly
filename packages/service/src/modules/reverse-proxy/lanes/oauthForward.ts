@@ -4,6 +4,7 @@ import type { AppliedCallConfig, CallSettings, ModelConfig } from '@routerly/sha
 import { protocolError } from '../../../lib/protocol-errors.js';
 import { buildUpstreamUrl } from '../../api-reverse-proxy/passthrough.js';
 import { trackUsage } from '../../usage/tracker.js';
+import { noteOAuthUpstreamFailure } from '../../provider/oauth-refresh.js';
 import { createUsageTap, type TappedUsage } from './usageTap.js';
 import { createAnthropicScrubTransform } from './anthropicScrub.js';
 import type { EffectivePii } from '../../pii/piiScrubber.js';
@@ -227,7 +228,9 @@ export async function forwardAnthropicOAuth(
 
   if (!upstream.ok) {
     const failure = await drainFailure(upstream);
-    record(ZERO_USAGE, failure.message);
+    // Trace-only label of the cause (expired / revoked / unauthorized); the client gets the upstream answer untouched.
+    const cause = noteOAuthUpstreamFailure((model as { connectionId?: string }).connectionId, failure.status, failure.text);
+    record(ZERO_USAGE, cause ? `${cause}: ${failure.message}` : failure.message);
     if (deferFailure) return failure;
     upstream.headers.forEach((value, key) => {
       if (!HOP_BY_HOP_RESPONSE.has(key.toLowerCase())) reply.header(key, value);

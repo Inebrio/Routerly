@@ -346,6 +346,8 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
       };
     }
     const updated = { ...connections[index]!, ...patchData } as ProviderConnection;
+    // New credentials supersede a pending re-authorization: give the connection a chance to work again.
+    if (parsed.data.credentials) delete updated.authState;
     connections[index] = updated;
     await writeConfig('connections', connections);
     audit(req, 'connection:update', 'success', { id: req.params.id });

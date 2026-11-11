@@ -103,6 +103,18 @@ describe('ConnectionsPage — list', () => {
     expect(screen.getByText('deepseek')).not.toBeNull();
   });
 
+  it('flags a connection that needs re-authorization, with the cause as tooltip (ROUT-718)', async () => {
+    mockGetConnections.mockResolvedValue([
+      makeConnection({ id: 'c2', label: 'Claude', providerId: 'anthropic-oauth', authState: { status: 'reauth_required', reason: 'revoked', message: 'refresh token revoked', since: '2026-11-11T00:00:00.000Z' } }),
+      makeConnection(),
+    ]);
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('Claude')).not.toBeNull());
+    const badges = screen.getAllByText(/re-authorization required/i);
+    expect(badges).toHaveLength(1);
+    expect(badges[0]!.getAttribute('title')).toBe('refresh token revoked');
+  });
+
   it('shows an error state when loading fails', async () => {
     mockGetConnections.mockRejectedValue(new Error('boom'));
     renderPage();

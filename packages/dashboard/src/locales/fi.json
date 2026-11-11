@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Käytössä",
-        "disabled": "Pois käytöstä"
+        "disabled": "Pois käytöstä",
+        "reauth": "Uusi valtuutus vaaditaan"
       },
       "actions": {
         "models": "Mallit",

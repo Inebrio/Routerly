@@ -26,7 +26,7 @@ Open **Providers** in the sidebar, or navigate to `/dashboard/connections`.
 | **Name** | Unique name of the connection, generated from the provider unless you typed one |
 | **Provider** | Provider badge (e.g. `openai`, `anthropic-oauth`); a `custom` connection also shows the upstream provider name next to the badge |
 | **Endpoint** | Base URL override, or a dash if using the provider default |
-| **Status** | `Enabled` or `Disabled` |
+| **Status** | `Enabled` or `Disabled`; an OAuth connection whose login can no longer be renewed (refresh token revoked or access token expired without a refresh token) also shows a **Re-authorization required** badge, with the cause as tooltip. Editing its credentials clears the badge |
 
 Each row also has a **Models** button (opening the Models page filtered to
 that connection, see [Models on a Connection](#models-on-a-connection)), and,

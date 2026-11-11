@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { FastifyRequest, FastifyReply } from 'fastify'
-import type { MessagesRequest, ChatCompletionRequest, StreamChunk } from '@routerly/shared'
+import type { MessagesRequest, ChatCompletionRequest, ModelConfig, StreamChunk } from '@routerly/shared'
 import type { Processor } from '../../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
@@ -13,6 +13,7 @@ import { resolveAttemptCallConfig } from '../../routing/call-config.js'
 import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
 import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
 import { traceEgress } from '../helpers.js'
+import { OAuthReauthError } from '../../provider/oauth-refresh.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey, type PassthroughScrub, type UpstreamFailure } from './oauthForward.js'
 import { mergePolicies } from '../../pii/piiScrubber.js'
 import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
@@ -130,7 +131,17 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     }
     if (model.provider === 'anthropic-oauth') {
       ctx.passthrough = true
-      const liveModel = (await loadEffectiveModel(model.id)) ?? model
+      let liveModel: ModelConfig
+      try {
+        liveModel = (await loadEffectiveModel(model.id)) ?? model
+      } catch (err) {
+        // Connection needs re-authorization: fail this candidate so the loop moves on to the next one.
+        if (!(err instanceof OAuthReauthError)) throw err
+        ctx.attemptError = err
+        ctx.attemptResponse = { status: 401, body: { type: 'error', error: { type: 'authentication_error', message: err.message } } }
+        ctx.passthrough = false
+        return
+      }
       if (deferredFailure(ctx, await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx), callSettings, ctx.routedBy))) { ctx.passthrough = false; return }
       ctx.result = { kind: 'passthrough' }
       return

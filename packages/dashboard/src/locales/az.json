@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Aktiv",
-        "disabled": "Deaktiv"
+        "disabled": "Deaktiv",
+        "reauth": "Yenidən icazə tələb olunur"
       },
       "actions": {
         "models": "Modellər",

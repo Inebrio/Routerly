@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Engedélyezve",
-        "disabled": "Letiltva"
+        "disabled": "Letiltva",
+        "reauth": "Újraengedélyezés szükséges"
       },
       "actions": {
         "models": "Modellek",

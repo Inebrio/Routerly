@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Povoleno",
-        "disabled": "Zakázáno"
+        "disabled": "Zakázáno",
+        "reauth": "Nutná nová autorizace"
       },
       "actions": {
         "models": "Modely",

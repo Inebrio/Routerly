@@ -136,3 +136,30 @@ describe('healthPolicy', () => {
     expect(result.routing[0]!.weightedErrorRate).toBe(1)
   })
 })
+
+describe('healthPolicy half-open probe (ROUT-718)', () => {
+  const cand = (id: string) => ({ model: makeModel(id) }) as PolicyInput['candidates'][number]
+
+  it('keeps a tripped model excluded while its last failure is recent', async () => {
+    mockReadConfig.mockResolvedValue([])
+    mockReadConfig.mockResolvedValue([1, 2, 3, 4, 5].map(() => makeRecord('m', 0.5, 'error')))
+    const r = await healthPolicy(makeInput([cand('m')]))
+    expect(r.excludes).toEqual(['m'])
+  })
+
+  it('lets one probe through when the last record is older than probeIntervalMinutes', async () => {
+    mockReadConfig.mockResolvedValue([1, 2, 3, 4, 5].map((i) => makeRecord('m', 3 + i * 0.1, 'error')))
+    const r = await healthPolicy(makeInput([cand('m')]))
+    expect(r.excludes).toBeUndefined()
+    expect(r.routing[0]!.point).toBe(1.0)
+  })
+
+  it('closes the breaker again when the probe fails', async () => {
+    mockReadConfig.mockResolvedValue([
+      ...[1, 2, 3, 4, 5].map((i) => makeRecord('m', 3 + i * 0.1, 'error')),
+      makeRecord('m', 0.1, 'error'),
+    ])
+    const r = await healthPolicy(makeInput([cand('m')]))
+    expect(r.excludes).toEqual(['m'])
+  })
+})

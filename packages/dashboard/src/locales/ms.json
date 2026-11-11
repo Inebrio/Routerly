@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Diaktifkan",
-        "disabled": "Dinonaktifkan"
+        "disabled": "Dinonaktifkan",
+        "reauth": "Pengesahan semula diperlukan"
       },
       "actions": {
         "models": "Model",

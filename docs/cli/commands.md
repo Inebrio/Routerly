@@ -135,6 +135,7 @@ List all configured provider connections.
 - **Label** - unique name of the connection
 - **Endpoint** - custom endpoint, or `-` if using the provider default
 - **Enabled** - `yes` / `no`
+- **Auth** - `-`, or `reauth required (<reason>) since <time>` when an OAuth connection needs a new login or token (`--json` carries the `authState` object)
 
 Credentials are never printed, in the table or in `--json` output.
 
@@ -199,7 +200,7 @@ routerly connections show <id> [--json]
 ```
 
 Show one connection. Credentials are never printed. `Provider name` appears only when the
-connection carries an upstream provider name.
+connection carries an upstream provider name; `Auth` and `Auth detail` show the re-authorization state of an OAuth connection.
 
 ```bash
 routerly connections show c1

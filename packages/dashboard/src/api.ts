@@ -556,7 +556,7 @@ export interface UsageRecord {
   callConfig?: AppliedCallConfig;
 }
 
-import type { UsageByModelEntry, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries } from '@routerly/shared';
+import type { ConnectionAuthState, UsageByModelEntry, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries } from '@routerly/shared';
 export type { UsageByModelEntry, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries };
 
 export interface UsageStats {
@@ -1090,6 +1090,8 @@ export interface Connection {
   credentials?: Record<string, string>;
   endpoint?: string;
   enabled: boolean;
+  /** Set by the service when the OAuth login needs to be redone (ROUT-718). */
+  authState?: ConnectionAuthState;
 }
 
 export const getConnections = () => request<Connection[]>('/connections');

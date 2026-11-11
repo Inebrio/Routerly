@@ -129,6 +129,15 @@ export function ConnectionsPage() {
                           <span style={{ fontSize: '0.8rem', color: conn.enabled ? 'var(--success)' : 'var(--text-muted)' }}>
                             {conn.enabled ? t('connections.list.status.enabled') : t('connections.list.status.disabled')}
                           </span>
+                          {conn.authState && (
+                            <span
+                              className="badge"
+                              title={conn.authState.message}
+                              style={{ marginLeft: 8, color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                            >
+                              {t('connections.list.status.reauth')}
+                            </span>
+                          )}
                         </td>
                         <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
                           <Link to={`/dashboard/models?connection=${encodeURIComponent(conn.id)}`} className="btn-icon" title={t('connections.list.actions.models')}>

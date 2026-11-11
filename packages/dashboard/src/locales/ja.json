@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "有効",
-        "disabled": "無効"
+        "disabled": "無効",
+        "reauth": "再認証が必要"
       },
       "actions": {
         "models": "モデル",

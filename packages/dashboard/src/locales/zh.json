@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "已启用",
-        "disabled": "已禁用"
+        "disabled": "已禁用",
+        "reauth": "需要重新授权"
       },
       "actions": {
         "models": "模型",

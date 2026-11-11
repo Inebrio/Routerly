@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Activat",
-        "disabled": "Dezactivat"
+        "disabled": "Dezactivat",
+        "reauth": "Este necesară reautorizarea"
       },
       "actions": {
         "models": "Modele",

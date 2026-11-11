@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "सक्षम",
-        "disabled": "अक्षम"
+        "disabled": "अक्षम",
+        "reauth": "पुनः प्राधिकरण आवश्यक"
       },
       "actions": {
         "models": "मॉडल",

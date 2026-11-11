@@ -1,7 +1,7 @@
 import type { ProviderConnection } from '@routerly/shared';
 import { OpenAIAdapter } from './openai.js';
-import { decryptCredential, encryptCredential } from '../../lib/crypto-cred.js';
-import { readConfig, writeConfig } from '../config/loader.js';
+import { decryptCredential } from '../../lib/crypto-cred.js';
+import { OAuthRefreshHttpError, REFRESH_BUFFER_MS, reauthError, refreshConnectionTokens } from './oauth-refresh.js';
 
 export class OpenAIOAuthAdapter extends OpenAIAdapter {}
 
@@ -11,7 +11,6 @@ export class OpenAIOAuthAdapter extends OpenAIAdapter {}
 
 const OPENAI_OAUTH_URL = 'https://auth.openai.com/oauth/token';
 const OPENAI_OAUTH_CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann';
-const REFRESH_BUFFER_MS = 300_000; // 5 minutes, mirrors REFRESH_BUFFER_SECONDS in openaiOAuthForward.ts
 
 interface OpenAIOAuthTokens {
   accessToken: string;
@@ -42,7 +41,7 @@ export async function refreshOpenAIOAuthToken(refreshToken: string): Promise<Ope
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   });
-  if (!res.ok) throw new Error(`openai oauth refresh failed: HTTP ${res.status}`);
+  if (!res.ok) throw new OAuthRefreshHttpError(res.status, `openai oauth refresh failed: HTTP ${res.status}`);
   const data = (await res.json()) as Record<string, unknown>;
   const accessToken = data['access_token'] as string;
   const newRefreshToken = (data['refresh_token'] as string | undefined) ?? refreshToken;
@@ -50,14 +49,15 @@ export async function refreshOpenAIOAuthToken(refreshToken: string): Promise<Ope
 }
 
 /**
- * Decrypts the stored access token for an openai-oauth connection, refusing to run unless
- * the 'provider-oauth' module is enabled, and refreshing it (and persisting the refreshed
- * credential) if it's within 5 minutes of expiry. Unknown expiry (`expiresAt <= 0`, e.g. an
+ * Decrypts the stored access token for an openai-oauth connection and, when it is within
+ * 5 minutes of expiry, renews it through the shared single-flight refresh (see oauth-refresh.ts).
+ * A connection flagged as needing re-authorization fails fast. Unknown expiry (`expiresAt <= 0`, e.g. an
  * undecodable JWT) is treated as "don't force a refresh", mirroring the `exp > 0` guard in
  * openaiOAuthForward.ts's resolveCodexToken.
  */
 export async function resolveOpenAIOAuthCredential(connection: ProviderConnection): Promise<string> {
   const creds = connection.credentials as { oauthEnc?: string; refreshEnc?: string; expiresAt?: number; apiKey?: string };
+  if (connection.authState) throw reauthError(connection.authState);
   if (!creds.oauthEnc || !creds.refreshEnc || typeof creds.expiresAt !== 'number') {
     // No refreshable oauth pair. Fall back to a static bearer stored in apiKey (legacy/migrated
     // connections whose token predates the oauthEnc/refreshEnc mechanism); the adapter uses it
@@ -65,28 +65,6 @@ export async function resolveOpenAIOAuthCredential(connection: ProviderConnectio
     if (typeof creds.apiKey === 'string' && creds.apiKey) return creds.apiKey;
     throw new Error('oauth connection missing encrypted credentials');
   }
-  const accessToken = decryptCredential(creds.oauthEnc);
-
-  if (creds.expiresAt <= 0 || Date.now() < creds.expiresAt - REFRESH_BUFFER_MS) {
-    return accessToken;
-  }
-
-  const refreshed = await refreshOpenAIOAuthToken(decryptCredential(creds.refreshEnc));
-
-  const connections = (await readConfig('connections')) ?? [];
-  const index = connections.findIndex((c) => c.id === connection.id);
-  if (index !== -1) {
-    connections[index] = {
-      ...connections[index]!,
-      credentials: {
-        ...connections[index]!.credentials,
-        oauthEnc: encryptCredential(refreshed.accessToken),
-        refreshEnc: encryptCredential(refreshed.refreshToken),
-        expiresAt: refreshed.expiresAt,
-      },
-    };
-    await writeConfig('connections', connections);
-  }
-
-  return refreshed.accessToken;
+  if (creds.expiresAt <= 0 || Date.now() < creds.expiresAt - REFRESH_BUFFER_MS) return decryptCredential(creds.oauthEnc);
+  return refreshConnectionTokens(connection, refreshOpenAIOAuthToken);
 }

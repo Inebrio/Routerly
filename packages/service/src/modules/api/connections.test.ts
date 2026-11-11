@@ -587,6 +587,61 @@ describe('PATCH /api/connections/:id', () => {
     expect(decryptCredential(persisted.credentials.refreshEnc)).toBe('original-refresh')
   })
 
+  describe('re-authorization state (ROUT-718)', () => {
+    const flagged = () => ({
+      id: 'c1', providerId: 'anthropic-oauth', label: 'Old', enabled: true,
+      credentials: { oauthEnc: encryptCredential('t'), refreshEnc: encryptCredential('r'), expiresAt: Date.now() + 3600_000 },
+      authState: { status: 'reauth_required', reason: 'revoked', since: '2026-11-11T00:00:00.000Z' },
+    })
+    const setup = () => {
+      mockReadConfig.mockImplementation(async (type: string) => {
+        if (type === 'users') return [testUser]
+        if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage', 'connections:read'] }]
+        if (type === 'connections') return [flagged()]
+        if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }]
+        return []
+      })
+      mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    }
+
+    it('clears authState when new credentials are PATCHed', async () => {
+      const app = await buildApp()
+      setup()
+      const res = await app.inject({
+        method: 'PATCH', url: '/api/connections/c1', headers: { authorization: 'Bearer valid-jwt-token' },
+        payload: { credentials: { oauthPlain: 'fresh', refreshPlain: 'fresh-r' } },
+      })
+      await app.close()
+      expect(res.statusCode).toBe(200)
+      expect(JSON.parse(res.body).authState).toBeUndefined()
+      const written = mockWriteConfig.mock.calls[0]?.[1] as any[]
+      expect(written[0].authState).toBeUndefined()
+    })
+
+    it('keeps authState on a PATCH that does not touch credentials', async () => {
+      const app = await buildApp()
+      setup()
+      const res = await app.inject({
+        method: 'PATCH', url: '/api/connections/c1', headers: { authorization: 'Bearer valid-jwt-token' },
+        payload: { label: 'Renamed' },
+      })
+      await app.close()
+      expect(res.statusCode).toBe(200)
+      expect(JSON.parse(res.body).authState).toMatchObject({ status: 'reauth_required', reason: 'revoked' })
+    })
+
+    it('exposes authState (and no credentials) on GET /api/connections', async () => {
+      const app = await buildApp()
+      setup()
+      const res = await app.inject({ method: 'GET', url: '/api/connections', headers: { authorization: 'Bearer valid-jwt-token' } })
+      await app.close()
+      expect(res.statusCode).toBe(200)
+      const [c] = JSON.parse(res.body)
+      expect(c.authState).toMatchObject({ status: 'reauth_required', reason: 'revoked' })
+      expect(c.credentials).toBeUndefined()
+    })
+  })
+
   it('leaves stored credentials fully unchanged when the PATCH body has no credentials key', async () => {
     const app = await buildApp()
     const storedCreds = {

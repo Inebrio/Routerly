@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "מופעל",
-        "disabled": "מכובה"
+        "disabled": "מכובה",
+        "reauth": "נדרשת הרשאה מחדש"
       },
       "actions": {
         "models": "מודלים",

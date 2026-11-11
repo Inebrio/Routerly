@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "সক্ষম",
-        "disabled": "অক্ষম"
+        "disabled": "অক্ষম",
+        "reauth": "পুনরায় অনুমোদন প্রয়োজন"
       },
       "actions": {
         "models": "মডেল",

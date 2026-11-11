@@ -318,6 +318,22 @@ describe('connections show', () => {
     expect(printed).not.toContain('sk-leaked-secret');
   });
 
+  it('shows the re-authorization state in list and show (ROUT-718)', async () => {
+    const flagged = {
+      id: 'c1', providerId: 'anthropic-oauth', label: 'Main', enabled: true,
+      authState: { status: 'reauth_required', reason: 'revoked', message: 'refresh token revoked', since: '2026-11-11T00:00:00.000Z' },
+    };
+    const lines: string[] = [];
+    vi.mocked(console.log).mockImplementation((...a) => lines.push(a.join(' ')));
+    mockApi.mockResolvedValueOnce([flagged]);
+    await makeConnectionsCommand().parseAsync(['node', 'routerly', 'list']);
+    mockApi.mockResolvedValueOnce([flagged]);
+    await makeConnectionsCommand().parseAsync(['node', 'routerly', 'show', 'c1']);
+    const out = lines.join('\n');
+    expect(out).toContain('reauth required (revoked)');
+    expect(out).toContain('refresh token revoked');
+  });
+
   it('prints a detail view without credentials (table)', async () => {
     mockApi.mockResolvedValueOnce([
       { id: 'c1', providerId: 'openai', label: 'Main', enabled: true, credentials: { apiKey: 'sk-leaked-secret' } },

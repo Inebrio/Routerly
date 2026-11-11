@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Ingeschakeld",
-        "disabled": "Uitgeschakeld"
+        "disabled": "Uitgeschakeld",
+        "reauth": "Herautorisatie vereist"
       },
       "actions": {
         "models": "Modellen",

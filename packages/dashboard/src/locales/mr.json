@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Enabled",
-        "disabled": "Disabled"
+        "disabled": "Disabled",
+        "reauth": "पुन्हा अधिकृत करणे आवश्यक"
       },
       "actions": {
         "models": "Models",

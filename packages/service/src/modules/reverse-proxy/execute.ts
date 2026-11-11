@@ -37,6 +37,7 @@ import { readConfig } from '../config/loader.js';
 import { resolveEffectiveModel } from '../provider/resolve.js';
 import { getProviderDescriptor } from '../provider/descriptor.js';
 import { resolveAnthropicOAuthCredential } from '../provider/anthropic-oauth.js';
+import { OAuthReauthError, noteOAuthUpstreamFailure } from '../provider/oauth-refresh.js';
 import { resolveOpenAIOAuthCredential } from '../provider/openai-oauth.js';
 import { resolveAnthropicWebCredential } from '../provider/anthropic-web.js';
 import { resolveOpenAIWebCredential } from '../provider/openai-web.js';
@@ -184,6 +185,19 @@ export function upstreamResponseFromError(err: unknown): UpstreamResponse | unde
   }
   const headers = e.headers && typeof e.headers === 'object' ? (e.headers as Record<string, string>) : undefined;
   return { status: e.status, ...(headers ? { headers } : {}), ...(e.error !== undefined ? { body: e.error } : {}) };
+}
+
+/**
+ * Error message for the trace/usage record. For an OAuth connection a 401 gets its cause prefixed
+ * (oauth_expired / oauth_revoked / oauth_unauthorized) and an expired/revoked one flags the connection
+ * as needing re-authorization. The client-facing error is untouched.
+ */
+function oauthTraceMessage(model: ModelConfig, err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (err instanceof OAuthReauthError || (model.provider !== 'anthropic-oauth' && model.provider !== 'openai-oauth')) return msg;
+  const status = upstreamResponseFromError(err)?.status;
+  const cause = status === undefined ? undefined : noteOAuthUpstreamFailure((model as { connectionId?: string }).connectionId, status, msg);
+  return cause ? `${cause}: ${msg}` : msg;
 }
 
 // ponytail: providerFailCounts/providerDegraded are now a thin event-dedup shim over the
@@ -486,7 +500,7 @@ export async function llmChat(
     return response;
   } catch (err: unknown) {
     const latencyMs = Date.now() - t0;
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = oauthTraceMessage(model, err);
 
     log?.warn({ err, modelId: model.id }, 'llm executor: chat call failed');
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
@@ -609,7 +623,7 @@ export async function llmStream(
   } catch (err: unknown) {
     void iter.return?.();
     const latencyMs = Date.now() - t0;
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = oauthTraceMessage(model, err);
     const isTtftTimeout = msg.startsWith('TTFT timeout');
     log?.warn({ err, modelId: model.id }, isTtftTimeout ? 'llm executor: TTFT timeout' : 'llm executor: stream failed before first chunk');
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
@@ -875,7 +889,7 @@ export async function llmMessages(
     return response;
   } catch (err: unknown) {
     const latencyMs = Date.now() - t0;
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = oauthTraceMessage(model, err);
     log?.warn({ err, modelId: model.id }, 'llm executor: messages call failed');
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
     await trackUsage({

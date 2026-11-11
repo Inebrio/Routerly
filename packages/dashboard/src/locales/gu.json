@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "સક્ષમ",
-        "disabled": "અક્ષમ"
+        "disabled": "અક્ષમ",
+        "reauth": "ફરીથી અધિકૃતિ જરૂરી"
       },
       "actions": {
         "models": "મોડલ્સ",

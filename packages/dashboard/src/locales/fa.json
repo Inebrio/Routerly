@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "فعال",
-        "disabled": "غیرفعال"
+        "disabled": "غیرفعال",
+        "reauth": "نیاز به مجوزدهی مجدد"
       },
       "actions": {
         "models": "مدل‌ها",

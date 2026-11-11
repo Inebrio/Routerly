@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Inatumiwa",
-        "disabled": "Imezuiliwa"
+        "disabled": "Imezuiliwa",
+        "reauth": "Inahitaji idhini upya"
       },
       "actions": {
         "models": "Modeli",

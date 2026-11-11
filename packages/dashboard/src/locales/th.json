@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "เปิดใช้งาน",
-        "disabled": "ปิดใช้งาน"
+        "disabled": "ปิดใช้งาน",
+        "reauth": "ต้องอนุญาตใหม่"
       },
       "actions": {
         "models": "รุ่น",

@@ -3,6 +3,8 @@ export type {
   Provider,
   ProviderId,
   ProviderConnection,
+  ConnectionAuthState,
+  ConnectionAuthReason,
   ModelInstance,
   PricingTier,
   TokenCost,

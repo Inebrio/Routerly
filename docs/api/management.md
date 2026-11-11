@@ -324,6 +324,8 @@ GET /api/connections
 ]
 ```
 
+An OAuth connection that can no longer be renewed carries `authState`: `{ "status": "reauth_required", "reason": "expired" | "revoked", "message": "...", "since": "<ISO time>" }`. The service sets it when the refresh token is rejected (or an upstream 401 reports an expired or revoked token) and clears it when new `credentials` are sent with `PATCH`.
+
 **Errors**: `403` insufficient permissions
 
 ### Create Connection

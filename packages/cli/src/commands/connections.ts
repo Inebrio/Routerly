@@ -4,6 +4,13 @@ import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import type { ProviderConnection } from '@routerly/shared';
 
+/** Table cell for the OAuth re-authorization state (ROUT-718). */
+function authCell(c: ProviderConnection): string {
+  return c.authState
+    ? chalk.red(`reauth required (${c.authState.reason}) since ${c.authState.since}`)
+    : chalk.gray('-');
+}
+
 // Canonical flat credential field set the server understands (all optional strings).
 // Keys are the camelCase Commander produces from the corresponding `--kebab` flags,
 // so building the credentials object is a straight copy of whichever flags were set.
@@ -82,7 +89,7 @@ Examples:
           return;
         }
         const table = new Table({
-          head: ['ID', 'Provider', 'Label', 'Endpoint', 'Enabled'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Provider', 'Label', 'Endpoint', 'Enabled', 'Auth'].map(h => chalk.cyan(h)),
         });
         for (const c of connections) {
           table.push([
@@ -91,6 +98,7 @@ Examples:
             c.label,
             c.endpoint ?? chalk.gray('-'),
             c.enabled ? chalk.green('yes') : chalk.gray('no'),
+            authCell(c),
           ]);
         }
         console.log(table.toString());
@@ -246,6 +254,8 @@ Examples:
           { [chalk.cyan('Label')]: safe.label },
           { [chalk.cyan('Endpoint')]: safe.endpoint ?? chalk.gray('-') },
           { [chalk.cyan('Enabled')]: safe.enabled ? chalk.green('yes') : chalk.gray('no') },
+          { [chalk.cyan('Auth')]: authCell(safe as ProviderConnection) },
+          ...(safe.authState ? [{ [chalk.cyan('Auth detail')]: safe.authState.message }] : []),
         );
         console.log(table.toString());
       } catch (err) {

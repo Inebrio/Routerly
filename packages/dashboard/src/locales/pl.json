@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Włączone",
-        "disabled": "Wyłączone"
+        "disabled": "Wyłączone",
+        "reauth": "Wymagana ponowna autoryzacja"
       },
       "actions": {
         "models": "Modele",

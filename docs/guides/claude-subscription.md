@@ -35,7 +35,13 @@ claude setup-token
 This prints a long-lived token starting with `sk-ant-oat...`. Copy it.
 
 :::info Token expiry
-This token is not auto-refreshed. When it expires, run `claude setup-token` again and update the model in Routerly.
+This token carries no refresh token, so Routerly cannot renew it. When it expires, run `claude setup-token` again and update the connection in Routerly.
+:::
+
+:::info Automatic renewal and re-authorization
+A connection that also stores a refresh token (the `refreshPlain` credential, see the [management API](../api/management.md#connections)) is renewed automatically about five minutes before the access token expires, with no manual step. Anthropic rotates the refresh token on every renewal, so Routerly must be the **only** holder of it: do not run `claude /login` with the same login elsewhere, or one side will invalidate the other. Concurrent requests share a single renewal.
+
+If Anthropic rejects the refresh token (revoked, or the login was used elsewhere), the connection is marked **Re-authorization required**: the dashboard shows a badge with the cause, `routerly connections list|show` prints the state, and the router keeps serving from its other candidates. Update the connection's credentials to clear the state. A model whose requests keep failing is also retried periodically by the `health` policy (half-open probe), so a recovered connection comes back by itself. Tokens and refresh tokens are encrypted at rest and never returned by the API, the CLI or the dashboard.
 :::
 
 ---

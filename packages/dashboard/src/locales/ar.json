@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "مفعّل",
-        "disabled": "معطّل"
+        "disabled": "معطّل",
+        "reauth": "مطلوب إعادة التفويض"
       },
       "actions": {
         "models": "النماذج",

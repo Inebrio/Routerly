@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Pinagana",
-        "disabled": "Naka-disable"
+        "disabled": "Naka-disable",
+        "reauth": "Kailangan ng muling pahintulot"
       },
       "actions": {
         "models": "Mga Model",

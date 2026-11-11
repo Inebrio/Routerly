@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Etkin",
-        "disabled": "Devre Dışı"
+        "disabled": "Devre Dışı",
+        "reauth": "Yeniden yetkilendirme gerekli"
       },
       "actions": {
         "models": "Modeller",

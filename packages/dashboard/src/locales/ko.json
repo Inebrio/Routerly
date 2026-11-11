@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "활성화됨",
-        "disabled": "비활성화됨"
+        "disabled": "비활성화됨",
+        "reauth": "재인증 필요"
       },
       "actions": {
         "models": "모델",

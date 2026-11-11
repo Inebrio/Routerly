@@ -1810,7 +1810,8 @@
       },
       "status": {
         "enabled": "Aktivert",
-        "disabled": "Deaktivert"
+        "disabled": "Deaktivert",
+        "reauth": "Ny autorisasjon kreves"
       },
       "actions": {
         "models": "Modeller",

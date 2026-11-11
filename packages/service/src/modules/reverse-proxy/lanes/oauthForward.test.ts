@@ -608,6 +608,34 @@ describe('forwardAnthropicApiKey upstream failure', () => {
   })
 })
 
+describe('forwardAnthropicOAuth 401 cause (ROUT-718)', () => {
+  const run = async (message: string) => {
+    const body = JSON.stringify({ type: 'error', error: { type: 'authentication_error', message } })
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => new Response(body, { status: 401, headers: { 'content-type': 'application/json' } })))
+    const app = Fastify({ logger: false })
+    app.decorateRequest('router', null as any)
+    app.addHook('preHandler', async (req: any) => { req.router = testRouter })
+    app.post('/v1/messages', async (req, reply) => forwardAnthropicOAuth(req, reply, { ...oauthModel, connectionId: 'c-none' } as ModelConfig))
+    await app.ready()
+    const res = await app.inject({ method: 'POST', url: '/v1/messages', headers: { 'content-type': 'application/json' }, payload: '{"model":"x","max_tokens":10}' })
+    await app.close()
+    vi.unstubAllGlobals()
+    return res
+  }
+
+  it('labels the trace with the cause and leaves the client response untouched', async () => {
+    const res = await run('OAuth token has expired. Please obtain a new token')
+    expect(res.statusCode).toBe(401)
+    expect(res.json().error.message).toBe('OAuth token has expired. Please obtain a new token')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ errorMessage: expect.stringMatching(/^oauth_expired: /) }))
+  })
+
+  it('labels a plain 401 as oauth_unauthorized', async () => {
+    await run('invalid credentials')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ errorMessage: expect.stringMatching(/^oauth_unauthorized: /) }))
+  })
+})
+
 describe('forwardAnthropicOAuth call settings (ROUT-306)', () => {
   const payload = { model: 'claude-sonnet-4-5', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }
 

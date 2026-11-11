@@ -1812,7 +1812,8 @@
       },
       "status": {
         "enabled": "Enabled",
-        "disabled": "Disabled"
+        "disabled": "Disabled",
+        "reauth": "Re-authorization required"
       },
       "actions": {
         "models": "Models",
