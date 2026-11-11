@@ -113,7 +113,7 @@ export function ConnectionsPage() {
               <span className="mono" style={{ flex: '1 1 160px', minWidth: 0, overflowWrap: 'anywhere' }}>{m.id}</span>
               {!connEnabled && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('connections.list.status.disabled')}</span>}
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                {t('connections.tree.price', { input: m.cost.inputPerMillion, output: m.cost.outputPerMillion })}
+                {t('connections.tree.price', { input: m.cost.inputPerMillion ?? '—', output: m.cost.outputPerMillion ?? '—' })}
                 {m.contextWindow ? ` · ${Math.round(m.contextWindow / 1000)}k` : ''}
               </span>
               {tr === 'loading' && <span style={{ fontSize: '0.7rem' }}>…</span>}
