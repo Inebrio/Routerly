@@ -319,5 +319,16 @@ describe('OpenAIAdapter tools on gpt-5.6 / gpt-6 (ROUT-669)', () => {
     await new OpenAIAdapter().chatCompletion(base0(), makeModel({ id: 'openai/gpt-5.6-terra' }));
     expect(sent()).not.toHaveProperty('reasoning_effort');
   });
+
+  it('sends max_completion_tokens for gpt-6 models and keeps max_tokens for gpt-4 models', async () => {
+    const adapter = new OpenAIAdapter();
+    for (const [id, converted] of [['gpt-6-luna', true], ['gpt-6.1-sol', true], ['gpt-4.1', false], ['gpt-4o', false]] as const) {
+      create.mockResolvedValue(makeResponse());
+      await adapter.chatCompletion({ model: id, messages: [{ role: 'user', content: 'Hi' }], max_tokens: 50 }, makeModel({ id: `openai/${id}` }));
+      const calledWith = create.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+      expect(calledWith).toHaveProperty(converted ? 'max_completion_tokens' : 'max_tokens', 50);
+      expect(calledWith).not.toHaveProperty(converted ? 'max_tokens' : 'max_completion_tokens');
+    }
+  });
 });
 function base0(): ChatCompletionRequest { return { model: 'auto', messages: [{ role: 'user', content: 'Hi' }] }; }

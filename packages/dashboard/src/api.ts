@@ -1128,6 +1128,20 @@ export const createMyMcpToken = (body: { name: string; expiresAt?: string }) =>
 export const deleteMyMcpToken = (id: string) =>
   request<void>(`/me/mcp-tokens/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
+// ── Management API tokens (long-lived, scoped, for automations) ──────────────
+
+import type { ApiToken } from '@routerly/shared';
+
+/** A stored API token as the API returns it: everything but the hash. */
+export type ApiTokenRow = Omit<ApiToken, 'tokenHash'>;
+
+export const getMyApiTokens = () => request<ApiTokenRow[]>('/me/api-tokens');
+/** The raw `token` is returned once, here, and never again. */
+export const createMyApiToken = (body: { name: string; expiresAt: string; permissions: string[] }) =>
+  request<ApiTokenRow & { token: string }>('/me/api-tokens', { method: 'POST', body: JSON.stringify(body) });
+export const deleteMyApiToken = (id: string) =>
+  request<void>(`/me/api-tokens/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
 export interface Instance {
   id: string;
   connectionId: string;

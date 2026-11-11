@@ -62,15 +62,18 @@ export const semanticIntentPolicy: PolicyFn = async ({
 
   // ── Extract user message text ──────────────────────────────────────────────
   const messages = request.messages ?? [];
-  // Use the last user message for classification; fall back to a concatenation.
-  const userText = [...messages]
-    .reverse()
-    .find(m => m.role === 'user' && typeof m.content === 'string')
-    ?.content as string | undefined
-    ?? messages
-      .filter(m => typeof m.content === 'string')
-      .map(m => m.content as string)
-      .join(' ');
+  // Text of a message: string content or text blocks (Anthropic bodies carry arrays).
+  const textOf = (c: unknown): string =>
+    typeof c === 'string'
+      ? c
+      : Array.isArray(c)
+        ? c.flatMap(p => (p?.type === 'text' && typeof p.text === 'string' ? [p.text] : [])).join(' ')
+        : '';
+  // Use the last user message with text; fall back to a concatenation of all message text.
+  const lastUserText = [...messages].reverse()
+    .map(m => (m.role === 'user' ? textOf(m.content) : ''))
+    .find(t => t.trim());
+  const userText = lastUserText ?? messages.map(m => textOf(m.content)).filter(Boolean).join(' ');
 
   if (!userText || userText.trim().length === 0) {
     // Nothing to classify — pass all candidates through.

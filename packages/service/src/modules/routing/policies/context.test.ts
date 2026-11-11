@@ -133,4 +133,17 @@ describe('contextPolicy', () => {
     expect(result.routing[0]!.estimatedTokens).toBe(0)
     expect(result.routing[0]!.point).toBe(1.0)
   })
+
+  it('counts Anthropic system, tools, tool_use and tool_result content', async () => {
+    const big = 'x'.repeat(60_000) // ~15k tokens each
+    const candidates = [{ model: makeModel('small', 12_000) }, { model: makeModel('large', 100_000) }]
+    const run = (req: Record<string, unknown>) =>
+      contextPolicy({ request: { model: 'auto', ...req }, candidates } as PolicyInput)
+    expect((await run({ messages: [{ role: 'user', content: 'hi' }], system: big })).excludes).toEqual(['small'])
+    expect((await run({ messages: [{ role: 'user', content: 'hi' }], system: [{ type: 'text', text: big }] })).excludes).toEqual(['small'])
+    expect((await run({ messages: [{ role: 'user', content: 'hi' }], tools: [{ name: 't', description: big }] })).excludes).toEqual(['small'])
+    expect((await run({ messages: [{ role: 'user', content: [{ type: 'tool_result', tool_use_id: 'a', content: big }] }] })).excludes).toEqual(['small'])
+    expect((await run({ messages: [{ role: 'user', content: [{ type: 'tool_result', tool_use_id: 'a', content: [{ type: 'text', text: big }] }] }] })).excludes).toEqual(['small'])
+    expect((await run({ messages: [{ role: 'assistant', content: [{ type: 'tool_use', id: 'a', name: 't', input: { v: big } }] }] })).excludes).toEqual(['small'])
+  })
 })

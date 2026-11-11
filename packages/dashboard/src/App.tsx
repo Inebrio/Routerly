@@ -45,6 +45,7 @@ import { NotificationChannelCreatePage } from './pages/NotificationChannelCreate
 import { RolesPage } from './pages/RolesPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { McpTokenNewPage } from './pages/McpTokenNewPage';
+import { ApiTokenNewPage } from './pages/ApiTokenNewPage';
 import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
@@ -689,6 +690,8 @@ const router = createBrowserRouter([
           { path: 'profile/notifications', element: <ProfilePage initialTab="notifications" /> },
           { path: 'profile/mcp', element: <ProfilePage initialTab="mcp" /> },
           { path: 'profile/mcp/new', element: <McpTokenNewPage /> },
+          { path: 'profile/api-tokens', element: <ProfilePage initialTab="api-tokens" /> },
+          { path: 'profile/api-tokens/new', element: <ApiTokenNewPage /> },
           { path: 'profile/preferences', element: <ProfilePage initialTab="preferences" /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },

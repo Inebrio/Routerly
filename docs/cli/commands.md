@@ -242,10 +242,46 @@ routerly auth login [options]
 | `--email <email>` | Your dashboard email address |
 | `--password <password>` | Your password (prompted interactively if omitted) |
 | `--alias <name>` | Friendly name for this account |
+| `--token <token>` | Log in with a management API token (`sk-rt-api-…`) instead of email and password. The account expires with the token and has no refresh token |
 
 If the email is already saved, you are asked whether to overwrite the existing entry or create a new one. The first account is automatically named `default`.
 
 On success, a permanent **refresh token** is saved alongside the session token so future sessions are renewed automatically.
+
+### `routerly auth api-token`
+
+Long-lived, scoped tokens for automations. They are yours only; no permission beyond being logged in is needed to manage them. Same tokens as the dashboard's [Profile: API tokens tab](../dashboard/profile.md#api-tokens-tab).
+
+```
+routerly auth api-token list [--json]
+routerly auth api-token create <name> --permissions <list> [--days <n>] [--json]
+routerly auth api-token revoke <token-id>
+```
+
+| Option (`create`) | Description |
+|--------|-------------|
+| `--permissions <list>` | Required. Comma-separated permissions, a subset of yours (e.g. `model:read,router:read`) |
+| `--days <n>` | Validity in days, 1-365 (default 90) |
+| `--json` | Output the created token as raw JSON |
+
+```bash
+routerly auth api-token create ci --permissions model:read,router:read --days 30
+```
+```
+✓ API token "ci" created.
+
+Token (save it now, it is shown only once):
+sk-rt-api-8f3c1d...
+  ID:      2f1c0b8a-...
+  Expires: 09/12/2026, 11:00:00
+```
+
+The raw value is returned once; Routerly stores only its SHA-256 hash. Use it on another machine with `routerly auth login --url <url> --token sk-rt-api-…`, or send it as a Bearer token to the management API. The token cannot create tokens or change credentials.
+
+**Error cases:**
+- `--days` outside 1-365: `Error: --days must be an integer between 1 and 365.` (checked before the API call)
+- A permission you do not hold: `Error: …` from the service (403)
+- `revoke` with an unknown id: `API token "<id>" not found.`
 
 ### `routerly auth refresh [alias]`
 
@@ -487,7 +523,7 @@ timings). Prompts and answers are recorded only with `--trace-content`, and the
 setting applies to every surface that reads a trace: the dashboard, the
 Playground, and any integration exporting traces. A flag that is not passed
 leaves the stored value alone. `routerly router show` prints the current state
-as `Traces: metadata only` or `Traces: metadata + content`.
+as `Traces: metadata only` or `Traces: metadata + content`. Its Routing section lists the bound routing and optimizer profiles (label, id, version) and the policies in force, marked `(from profile)` when they come from the profile.
 
 ```bash
 routerly router edit my-api --trace-content
@@ -518,9 +554,9 @@ routerly router remove <router>
 routerly router routing show <router> [--json]
 ```
 
-Display the routing configuration (auto-routing flag, routing model, fallback models, ranking algorithm, and policy stack). The ranking algorithm is the effective one: when the router is bound to a routing profile, the profile's value is shown with `(profile <label>)`, otherwise `(router)`.
+Display the routing configuration (auto-routing flag, routing model, fallback models, ranking algorithm, and policy stack). The ranking algorithm is the effective one: when the router is bound to a routing profile, the profile's value is shown with `(profile <label>)`, otherwise `(router)`. A router bound to a routing profile prints a `Routing profile:` line (label, id, version) and the profile's policies, which are the ones actually applied; the routing model and fallback models always come from the router. Without `profiles:read` the profile id is shown with `(details not readable)`.
 
-`--json` prints `{ routerId, routingProfileId, rankingAlgorithm, rankingSource, policies }` instead, where `rankingSource` is `router` or `profile`.
+`--json` prints `{ routerId, routingProfileId, routingProfile?, rankingAlgorithm, rankingSource, policies }` instead (`routingProfile` is `{ id, label, version }`, present when the profile is readable), where `rankingSource` is `router` or `profile`.
 
 #### `routerly router routing update <router>`
 
