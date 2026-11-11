@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { Plus, X, ChevronDown, ArrowLeft, FlaskConical } from 'lucide-react';
-import { getModels, createModel, updateModel, testOpenAIOAuth, testModel, getProviders, getConnections, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry, type ProviderCatalog, type Connection } from '../api';
+import { getModels, createModel, updateModel, testOpenAIOAuth, testModel, getProviders, getProviderDescriptors, getConnections, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry, type ProviderCatalog, type Connection } from '../api';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { ConnectionCredentialsFields } from '../components/ConnectionCredentialsFields';
 
@@ -198,6 +198,8 @@ export function ModelFormPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [connMode, setConnMode] = useState<'preconfigured' | 'custom'>('custom');
   const [connectionId, setConnectionId] = useState('');
+  const [decisionProviders, setDecisionProviders] = useState<string[]>([]);
+  const isDecisionModel = decisionProviders.includes(form.provider);
 
   useEffect(() => {
     async function init() {
@@ -209,6 +211,9 @@ export function ModelFormPage() {
           getConnections().catch(() => [] as Connection[]),
         ]);
         setCatalog(cat);
+        getProviderDescriptors()
+          .then(ds => setDecisionProviders(ds.filter(d => d.nativeCapabilities.decision === true).map(d => d.id)))
+          .catch(() => {});
         setModels(allModels);
         setConnections(conns);
 
@@ -824,6 +829,12 @@ export function ModelFormPage() {
           <div className="form-section">
             <h3 className="section-title">{t('models.form.capabilities.title')}</h3>
             <p className="section-desc">{t('models.form.capabilities.description')}</p>
+            {isDecisionModel ? (
+              <div className="form-group">
+                <strong>{t('models.form.capabilities.decisionModel')}</strong>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{t('models.form.capabilities.decisionModelHint')}</div>
+              </div>
+            ) : (
             <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <input
                 type="checkbox"
@@ -838,6 +849,7 @@ export function ModelFormPage() {
                 <FieldBadge field="capabilities" />
               </label>
             </div>
+            )}
           </div>
 
           {/* ── Section: Pricing ─────────────────────────────── */}

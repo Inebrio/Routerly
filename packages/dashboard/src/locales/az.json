@@ -25,6 +25,7 @@
       "routers": "Routerlər",
       "experiments": "Eksperimentlər",
       "usage": "İstifadə",
+      "timeline": "Timeline",
       "playground": "Sınaq meydançası",
       "settings": "Parametrlər",
       "connectApp": "Tətbiqi qoşun",
@@ -217,7 +218,8 @@
         "semantic-intent": "Embeddinglərdən istifadə edərək sorğunu semantik niyyətə görə təsnif edir, sonra namizəd hovuzunu həmin niyyətə uyğunlaşdırılmış modellərlə məhdudlaşdırır. Əminlikli uyğunluqlar hovuzu sərt filtrləyir; qeyri-müəyyən uyğunluqlar ən yaxşı iki hovuzu birləşdirir; naməlum sorğular bütün namizədləri keçirir.",
         "model-preference": "Müştəri xüsusi model tələb etdikdə (routerly/ada deyil), həmin modelə konfiqurasiya edilə bilən bonus bal verir. Heç bir üstünlük ifadə edilmədikdə, siyasət çəkinir. Siyahıdakı yer üstünlüyün digər siyasətlərə nisbətən nə qədər çəkiyə malik olduğunu idarə edir."
       },
-      "selectModel": "Model seçin"
+      "selectModel": "Model seçin",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "Tətbiq et",
@@ -446,6 +448,7 @@
       "profile": "Profil",
       "notifications": "Bildirişlər",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Seçimlər"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "Tokeni yaratmaq alınmadı",
           "copyFailed": "Kopyalama alınmadı, tokeni əl ilə seçib kopyalayın."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "Təhlükəsizlik",
         "token": "Token",
         "users": "İstifadəçilər",
-        "logs": "Jurnallar"
+        "logs": "İstifadə",
+        "test": "Test"
       },
       "backToRouters": "Routerlərə qayıt",
       "backToRoutersTitle": "Routerlərə qayıt",
@@ -1405,7 +1457,25 @@
         "empty": "Hədəf model konfiqurasiya edilməyib.",
         "addTarget": "Hədəf Model Əlavə Et",
         "passthroughLabel": "Ötürmə (xam yönləndirmə)",
-        "passthroughNotRemovable": "Ötürmə girişi silinə bilməz"
+        "passthroughNotRemovable": "Ötürmə girişi silinə bilməz",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "İstisnalar",
+        "description": "Modeli qaydaya uyğun gələn sorğu dəyişdirilmədən yönləndirilmək əvəzinə seçilmiş modelə göndərilir. İlk uyğunluq qüvvədədir. Joker simvol kimi * istifadə edin. Yalnız token ilə doğrulanmış sorğulara şamil olunur.",
+        "empty": "İstisna yoxdur: hər sorğu dəyişdirilmədən yönləndirilir.",
+        "noRealModels": "Əvvəlcə bu marşrutlaşdırıcıya model əlavə edin: istisnalar yalnız marşrutlaşdırıcının öz modellərini hədəfləyə bilər.",
+        "add": "İstisna əlavə et",
+        "match": "Model adı nümunəsi",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Hədəf model",
+        "remove": "İstisnanı sil",
+        "errors": {
+          "matchRequired": "Hər istisna üçün nümunə lazımdır.",
+          "duplicateMatch": "Təkrarlanan uyğunluq \"{{match}}\".",
+          "targetMissing": "\"{{match}}\" istisnasının hədəfi bu marşrutlaşdırıcının modeli deyil."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "Bu tokendən istifadə edən sorğular üçün qlobal və router səviyyəli limitləri ötürün.",
         "noTargetModels": "Əvvəlcə Yönləndirmə tabında hədəf modellər əlavə edin.",
         "noOverride": "ötürmə yoxdur",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Limit yoxdur",
         "noLimitsSet": "Limit təyin edilməyib — valideyndən miras alır. Ötürmək üçün aşağıda limit əlavə edin.",
         "metric": "Metrika",
@@ -1736,7 +1810,8 @@
         "label": "Etiket",
         "provider": "Provayder",
         "endpoint": "Endpoint",
-        "status": "Vəziyyət"
+        "status": "Vəziyyət",
+        "models": "Models"
       },
       "status": {
         "enabled": "Aktiv",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "Modellər",
         "edit": "Redaktə et",
-        "remove": "Sil"
+        "remove": "Sil",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "Bağlantını yükləmək alınmadı",
         "updateFailed": "Bağlantını yeniləmək alınmadı",
         "createFailed": "Bağlantını yaratmaq alınmadı"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "Konfiqurasiya edilib",
         "embedding": "embedding",
-        "runsLocally": "Lokal işləyir"
+        "runsLocally": "Lokal işləyir",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Əvvəlki",
@@ -1918,7 +2011,9 @@
         "title": "Qabiliyyətlər",
         "description": "Bu modelin növünü və qabiliyyətlərini göstərin.",
         "embeddingModel": "Embedding modeli",
-        "embeddingModelHint": "Bu model vektor embeddingi yaradır (söhbət tamamlaması yox)"
+        "embeddingModelHint": "Bu model vektor embeddingi yaradır (söhbət tamamlaması yox)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Qiymət və kontekst",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "Keş yazma $/1M",
         "optional": "(isteğe bağlı)",
         "contextWindow": "Kontekst Pəncərəsi",
-        "contextWindowHint": "(tokenlər, isteğe bağlı)"
+        "contextWindowHint": "(tokenlər, isteğe bağlı)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Əlavə — Qiymət pillələri",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "Bütün provayderlər",
         "allConnections": "Bütün bağlantılar",
-        "searchPlaceholder": "Modelləri filtrlə…"
+        "searchPlaceholder": "Modelləri filtrlə…",
+        "allStatuses": "All statuses"
       },
       "discover": "Kəşf et",
       "addModel": "Model Əlavə Et",
@@ -1989,13 +2087,16 @@
         "input": "Giriş $/1M",
         "output": "Çıxış $/1M",
         "cache": "Keş $/1M",
-        "context": "Kontekst Ölçüsü"
+        "context": "Kontekst Ölçüsü",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "Sına",
         "clone": "Klonla",
         "edit": "Redaktə et",
-        "remove": "Sil"
+        "remove": "Sil",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Əvvəlki",
@@ -2051,6 +2152,43 @@
           "cooldown": "sərinləmə {{time}}",
           "lockout": "kilidlənmə {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "Modellər",
       "registered": "qeydiyyatdan keçmiş",
       "routers": "Routerlər",
-      "active": "aktiv"
+      "active": "aktiv",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "Müştəri qoşun",
@@ -2383,7 +2522,8 @@
         "outputTokens": "Çıxış tokenləri",
         "costPer1k": "Dəyər / 1K",
         "cost": "Dəyər (USD)",
-        "bestCostPerformance": "Ən yaxşı dəyər-performans"
+        "bestCostPerformance": "Ən yaxşı dəyər-performans",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} model daha göstər",
       "showMoreModels_other": "{{count}} model daha göstər",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII Gizlədildi",
         "sessionId": "Sessiya ID",
         "endUser": "Son istifadəçi",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Yönləndirən"
       },
       "errorMessage": "Xəta Mesajı",
       "eventCount": "{{count}} hadisə",
       "eventCount_other": "{{count}} hadisə",
-      "noTrace": "İz mövcud deyil. İz məlumatı yalnız yeni çağırışlar üçün qeydə alınır."
+      "noTrace": "İz mövcud deyil. İz məlumatı yalnız yeni çağırışlar üçün qeydə alınır.",
+      "routedByException": "Passthrough istisnası"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

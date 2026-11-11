@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw, ShieldOff, Power, PowerOff } from 'lucide-react';
+import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw, ShieldOff, ShieldCheck, Power, PowerOff } from 'lucide-react';
 import { isModelRoutable } from '@routerly/shared';
-import { getModels, deleteModel, testModel, getProviderHealth, resetResilience, getConnections, getRouters, setModelsEnabled, routerReferencesModel, type Model, type ProviderHealth, type ResilienceState, type Connection, type Router } from '../api';
+import { getModels, deleteModel, testModel, runModelConformance, getProviderHealth, resetResilience, getConnections, getRouters, setModelsEnabled, routerReferencesModel, type Model, type ProviderHealth, type ResilienceState, type Connection, type Router } from '../api';
 import { useAuth } from '../AuthContext';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SearchableSelect } from '../components/SearchableSelect';
@@ -194,6 +194,8 @@ export function ModelsPage() {
   const [page, setPage] = useState(1);
   const [deleteError, setDeleteError] = useState('');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [conformanceRunning, setConformanceRunning] = useState<Record<string, boolean>>({});
+  const [conformanceError, setConformanceError] = useState<Record<string, string>>({});
   const [testResults, setTestResults] = useState<Record<string, 'loading' | { ok: boolean; latencyMs: number; error?: string }>>({});
   const healthActive = useRef(true);
 
@@ -330,6 +332,19 @@ export function ModelsPage() {
       message: t('models.page.health.confirmResetAll'),
       onConfirm: () => { setConfirmState(null); void handleResetAll(); },
     });
+  }
+
+  async function handleConformance(id: string) {
+    setConformanceRunning(r => ({ ...r, [id]: true }));
+    setConformanceError(e => ({ ...e, [id]: '' }));
+    try {
+      const result = await runModelConformance(id);
+      setModels(ms => ms.map(x => (x.id === id ? { ...x, conformance: result } : x)));
+    } catch (e) {
+      setConformanceError(er => ({ ...er, [id]: e instanceof Error ? e.message : String(e) }));
+    } finally {
+      setConformanceRunning(r => ({ ...r, [id]: false }));
+    }
   }
 
   async function handleTest(id: string) {
@@ -625,6 +640,7 @@ export function ModelsPage() {
                         <th style={thStyle}>{thInner(t('models.page.columns.output'), 'output')}</th>
                         <th style={thStyle}>{thInner(t('models.page.columns.cache'), 'cache')}</th>
                         <th style={thStyle}>{thInner(t('models.page.columns.context'), 'context')}</th>
+                        <th>{t('models.page.columns.conformance')}</th>
                         <th></th>
                       </tr>
                     </thead>
@@ -663,6 +679,23 @@ export function ModelsPage() {
                             <td>{price(m.cost.outputPerMillion)}</td>
                             <td>{price(m.cost.cachePerMillion)}</td>
                             <td>{m.contextWindow ? `${(m.contextWindow / 1000).toFixed(0)}k` : <span className="text-muted">—</span>}</td>
+                            <td onClick={e => e.stopPropagation()}>
+                              {(() => {
+                                const c = m.conformance;
+                                const err = conformanceError[m.id];
+                                if (conformanceRunning[m.id]) return <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('models.page.conformance.running')}</span>;
+                                if (err) return <span style={{ fontSize: '0.7rem', color: 'var(--danger)' }} title={err}>{t('models.page.conformance.error', { error: err.slice(0, 40) })}</span>;
+                                if (!c) return <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }} title={t('models.page.conformance.notRun')}>{t('models.page.conformance.unverified')}</span>;
+                                const failed = c.cases.filter(x => x.status === 'fail').map(x => x.id).join(', ');
+                                const date = new Date(c.verifiedAt).toLocaleDateString();
+                                return (
+                                  <span style={{ fontSize: '0.7rem', whiteSpace: 'nowrap', color: c.status === 'conformant' ? 'var(--success)' : 'var(--warning)' }}
+                                    title={failed ? t('models.page.conformance.failedCases', { cases: failed }) : undefined}>
+                                    {t(`models.page.conformance.${c.status}`, { date })}
+                                  </span>
+                                );
+                              })()}
+                            </td>
                             <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
                               {(() => {
                                 const tr = testResults[m.id];
@@ -685,6 +718,9 @@ export function ModelsPage() {
                                     title={m.enabled === false ? t('models.page.state.enableRow') : t('models.page.state.disableRow')}
                                   >
                                     {m.enabled === false ? <Power size={15} /> : <PowerOff size={15} />}
+                                  </button>
+                                  <button className="btn-icon" disabled={conformanceRunning[m.id]} onClick={() => handleConformance(m.id)} title={t('models.page.actions.verify')}>
+                                    <ShieldCheck size={15} />
                                   </button>
                                   <Link to={`/dashboard/models/new?clone=${encodeURIComponent(m.id)}`} className="btn-icon" title={t('models.page.actions.clone')}>
                                     <Copy size={15} />

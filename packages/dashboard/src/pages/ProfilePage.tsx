@@ -12,6 +12,7 @@ import { useAuth } from '../AuthContext';
 import { severityIcon, timeAgo } from '../components/NotificationBell';
 import { useFilterState } from '../hooks/useFilterState';
 import { ProfileMcpTab } from './ProfileMcpTab';
+import { ProfileApiTokensTab } from './ProfileApiTokensTab';
 import { ProfilePreferencesTab } from './ProfilePreferencesTab';
 import { DateRangePicker, parseStoredRange, type DateRange } from '../components/DateRangePicker';
 import { writeToClipboard } from '../utils/clipboard';
@@ -1023,6 +1024,7 @@ function useTabs(t: (k: string) => string) {
     { id: 'profile', label: t('profile.tabs.profile'), to: '/dashboard/profile' },
     { id: 'notifications', label: t('profile.tabs.notifications'), to: '/dashboard/profile/notifications' },
     { id: 'mcp', label: t('profile.tabs.mcp'), to: '/dashboard/profile/mcp' },
+    { id: 'api-tokens', label: t('profile.tabs.apiTokens'), to: '/dashboard/profile/api-tokens' },
     { id: 'preferences', label: t('profile.tabs.preferences'), to: '/dashboard/profile/preferences' },
   ] as const;
 }
@@ -1092,6 +1094,7 @@ export function ProfilePage({ initialTab = 'profile' }: { initialTab?: TabId }) 
       <div className="page-body" style={{ paddingTop: 32 }}>
         {activeTab === 'notifications' && <ProfileNotificationsTab />}
         {activeTab === 'mcp' && <ProfileMcpTab />}
+        {activeTab === 'api-tokens' && <ProfileApiTokensTab />}
         {activeTab === 'preferences' && <ProfilePreferencesTab />}
         {activeTab === 'profile' && <ProfileSecurityTab />}
       </div>

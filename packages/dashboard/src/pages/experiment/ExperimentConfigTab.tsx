@@ -7,6 +7,7 @@ import {
   type CreateExperimentBody, type ExperimentRotation, type ExperimentStickyKey,
   type ExperimentVariant, type Model, type Router,
 } from '../../api';
+import { isChatModel } from '../../utils/models';
 import {
   EXPERIMENT_ROTATIONS, ROTATION_CATALOG, STICKY_KEYS, STICKY_KEY_CATALOG,
   DEFAULT_MIN_SAMPLES_PER_VARIANT, variantShares,
@@ -67,7 +68,7 @@ export function ExperimentConfigTab() {
 
   useEffect(() => {
     Promise.all([getRouters(), getModels()])
-      .then(([ps, ms]) => { setRouters(ps); setModels(ms); })
+      .then(([ps, ms]) => { setRouters(ps); setModels(ms.filter(isChatModel)); })
       .catch(e => setErr(e instanceof Error ? e.message : t('experiments.config.errors.loadRoutersFailed')));
   }, []);
 

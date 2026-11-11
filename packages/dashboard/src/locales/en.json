@@ -25,6 +25,7 @@
       "routers": "Routers",
       "experiments": "Experiments",
       "usage": "Usage",
+      "timeline": "Timeline",
       "playground": "Playground",
       "settings": "Settings",
       "connectApp": "Connect app",
@@ -447,6 +448,7 @@
       "profile": "Profile",
       "notifications": "Notifications",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Preferences"
     },
     "notifications": {
@@ -630,6 +632,54 @@
         "errors": {
           "createFailed": "Failed to create the token",
           "copyFailed": "Copy failed, select and copy the token manually."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1218,7 +1268,7 @@
         "security": "Security",
         "token": "Token",
         "users": "Users",
-        "logs": "Logs",
+        "logs": "Usage",
         "test": "Test"
       },
       "backToRouters": "Back to Routers",
@@ -1410,6 +1460,22 @@
         "passthroughNotRemovable": "The pass-through entry cannot be removed",
         "disabled": "Disabled",
         "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "Exceptions",
+        "description": "A request whose model name matches a rule is sent to the chosen model instead of being forwarded unchanged. First match wins. Use * as a wildcard. Applies to token-authenticated requests only.",
+        "empty": "No exceptions: every request is forwarded unchanged.",
+        "noRealModels": "Add a model to this router first: exceptions can only target the router's own models.",
+        "add": "Add exception",
+        "match": "Model name pattern",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Target model",
+        "remove": "Remove exception",
+        "errors": {
+          "matchRequired": "Every exception needs a match pattern.",
+          "duplicateMatch": "Duplicate match \"{{match}}\".",
+          "targetMissing": "The target of exception \"{{match}}\" is not a model of this router."
+        }
       }
     },
     "optimizer": {
@@ -1524,6 +1590,10 @@
         "perModelLimitsHint": "Override global and router-level limits for requests using this token.",
         "noTargetModels": "Add target models in the Routing tab first.",
         "noOverride": "no override",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "No limits",
         "noLimitsSet": "No limits set — inheriting from parent. Add a limit below to override.",
         "metric": "Metric",
@@ -1864,7 +1934,8 @@
       "badges": {
         "configured": "Configured",
         "embedding": "embedding",
-        "runsLocally": "Runs locally"
+        "runsLocally": "Runs locally",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Prev",
@@ -1940,7 +2011,9 @@
         "title": "Capabilities",
         "description": "Specify the type and capabilities of this model.",
         "embeddingModel": "Embedding model",
-        "embeddingModelHint": "This model generates vector embeddings (not chat completions)"
+        "embeddingModelHint": "This model generates vector embeddings (not chat completions)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Pricing & context",
@@ -2015,13 +2088,15 @@
         "output": "Output $/1M",
         "cache": "Cache $/1M",
         "context": "Context Size",
-        "status": "Status"
+        "status": "Status",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "Test",
         "clone": "Clone",
         "edit": "Edit",
-        "remove": "Remove"
+        "remove": "Remove",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Previous",
@@ -2105,6 +2180,15 @@
         "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
         "dismiss": "Dismiss",
         "failed": "Failed to update models"
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },
@@ -2438,7 +2522,8 @@
         "outputTokens": "Output tokens",
         "costPer1k": "Cost / 1K",
         "cost": "Cost (USD)",
-        "bestCostPerformance": "Best cost-performance"
+        "bestCostPerformance": "Best cost-performance",
+        "deleted": "deleted"
       },
       "showMoreModels": "Show {{count}} more model",
       "showMoreModels_other": "Show {{count}} more models",
@@ -2504,12 +2589,86 @@
         "piiRedacted": "PII Redacted",
         "sessionId": "Session ID",
         "endUser": "End user",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Routed by"
       },
       "errorMessage": "Error Message",
       "eventCount": "{{count}} event",
       "eventCount_other": "{{count}} events",
-      "noTrace": "No trace available. Trace data is captured for new calls only."
+      "noTrace": "No trace available. Trace data is captured for new calls only.",
+      "routedByException": "Passthrough exception"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

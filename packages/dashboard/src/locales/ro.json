@@ -25,6 +25,7 @@
       "routers": "Rutere",
       "experiments": "Experimente",
       "usage": "Utilizare",
+      "timeline": "Timeline",
       "playground": "Teren de joacă",
       "settings": "Setări",
       "connectApp": "Conectează aplicație",
@@ -217,7 +218,8 @@
         "semantic-intent": "Clasifică cererea după intenție semantică folosind înglobări, apoi restricționează grupul de candidați la modelele mapate la acea intenție. Potriviri sigure filtrează greu grupul; potriviri ambigui fuzionează grupurile top-2; cererile necunoscute trec prin toți candidații.",
         "model-preference": "Când clientul solicită un model specific (nu routerly/ada), acordă o scor de bonus configurabil acelui model. Când nicio preferință nu este exprimată, politica se abține. Poziția din listă controlează cât de mult preferința cântărește împotriva altor politici."
       },
-      "selectModel": "Selectează model"
+      "selectModel": "Selectează model",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "Aplică la",
@@ -446,6 +448,7 @@
       "profile": "Profil",
       "notifications": "Notificări",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Preferințe"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "Nu s-a putut crea tokenul",
           "copyFailed": "Copierea a eșuat, selectează și copiază tokenul manual."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "Securitate",
         "token": "Token",
         "users": "Utilizatori",
-        "logs": "Jurnale"
+        "logs": "Utilizare",
+        "test": "Test"
       },
       "backToRouters": "Înapoi la rutere",
       "backToRoutersTitle": "Înapoi la rutere",
@@ -1405,7 +1457,25 @@
         "empty": "Niciun model țintă configurat.",
         "addTarget": "Adaugă model țintă",
         "passthroughLabel": "Transmitere directă (redirecționare brută)",
-        "passthroughNotRemovable": "Intrarea de transmitere directă nu poate fi eliminată"
+        "passthroughNotRemovable": "Intrarea de transmitere directă nu poate fi eliminată",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "Excepții",
+        "description": "O cerere al cărei model se potrivește cu o regulă este trimisă modelului ales în loc să fie redirecționată neschimbată. Câștigă prima potrivire. Folosiți * ca metacaracter. Se aplică doar cererilor autentificate cu token.",
+        "empty": "Nicio excepție: fiecare cerere este redirecționată neschimbată.",
+        "noRealModels": "Adăugați mai întâi un model acestui router: excepțiile pot viza doar modelele routerului.",
+        "add": "Adaugă excepție",
+        "match": "Tipar pentru numele modelului",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Model țintă",
+        "remove": "Elimină excepția",
+        "errors": {
+          "matchRequired": "Fiecare excepție necesită un tipar.",
+          "duplicateMatch": "Potrivire duplicată \"{{match}}\".",
+          "targetMissing": "Ținta excepției \"{{match}}\" nu este un model al acestui router."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "Invalidează limitele globale și la nivel de router pentru cererile care utilizează acest token.",
         "noTargetModels": "Adaugă mai întâi modele țintă în fila Rutare.",
         "noOverride": "fără override",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Nicio limită",
         "noLimitsSet": "Nicio limită setată — moștenind din părinte. Adaugă o limită mai jos pentru a invalida.",
         "metric": "Metrică",
@@ -1736,7 +1810,8 @@
         "label": "Etichetă",
         "provider": "Furnizor",
         "endpoint": "Punct terminal",
-        "status": "Stare"
+        "status": "Stare",
+        "models": "Models"
       },
       "status": {
         "enabled": "Activat",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "Modele",
         "edit": "Editează",
-        "remove": "Elimină"
+        "remove": "Elimină",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "Nu s-a putut încărca conexiune",
         "updateFailed": "Nu s-a putut actualiza conexiune",
         "createFailed": "Nu s-a putut crea conexiune"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "Configurat",
         "embedding": "încorporare",
-        "runsLocally": "Rulează local"
+        "runsLocally": "Rulează local",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Anterior",
@@ -1918,7 +2011,9 @@
         "title": "Capacități",
         "description": "Specifică tipul și capacitățile acestui model.",
         "embeddingModel": "Model de încorporare",
-        "embeddingModelHint": "Acest model generează încorporări vectoriale (nu completări chat)"
+        "embeddingModelHint": "Acest model generează încorporări vectoriale (nu completări chat)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Prețuri & context",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "Scriere cache $/1M",
         "optional": "(opt.)",
         "contextWindow": "Fereastră context",
-        "contextWindowHint": "(jetoane, opțional)"
+        "contextWindowHint": "(jetoane, opțional)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Avansat — niveluri de prețuri",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "Toți furnizorii",
         "allConnections": "Toate conexiunile",
-        "searchPlaceholder": "Filtrează modele…"
+        "searchPlaceholder": "Filtrează modele…",
+        "allStatuses": "All statuses"
       },
       "discover": "Descoperă",
       "addModel": "Adaugă model",
@@ -1989,13 +2087,16 @@
         "input": "Intrare $/1M",
         "output": "Ieșire $/1M",
         "cache": "Cache $/1M",
-        "context": "Dimensiune context"
+        "context": "Dimensiune context",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "Test",
         "clone": "Clonează",
         "edit": "Editează",
-        "remove": "Elimină"
+        "remove": "Elimină",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Anterior",
@@ -2051,6 +2152,43 @@
           "cooldown": "timp de espera {{time}}",
           "lockout": "blocare {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "Modele",
       "registered": "înregistrate",
       "routers": "Rutere",
-      "active": "active"
+      "active": "active",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "Conectează un client",
@@ -2383,7 +2522,8 @@
         "outputTokens": "Jetoane de ieșire",
         "costPer1k": "Cost / 1K",
         "cost": "Cost (USD)",
-        "bestCostPerformance": "Cea mai bună performanță cost"
+        "bestCostPerformance": "Cea mai bună performanță cost",
+        "deleted": "deleted"
       },
       "showMoreModels": "Arată {{count}} model mai mult",
       "showMoreModels_other": "Arată {{count}} modele mai mult",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII redactat",
         "sessionId": "ID sesiune",
         "endUser": "Utilizator final",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Direcționat de"
       },
       "errorMessage": "Mesaj eroare",
       "eventCount": "{{count}} eveniment",
       "eventCount_other": "{{count}} evenimente",
-      "noTrace": "Nicio trasă disponibilă. Date de trasă sunt capturate doar pentru apeluri noi."
+      "noTrace": "Nicio trasă disponibilă. Date de trasă sunt capturate doar pentru apeluri noi.",
+      "routedByException": "Excepție Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

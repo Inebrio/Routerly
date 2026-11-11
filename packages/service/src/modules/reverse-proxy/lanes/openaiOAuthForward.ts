@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import type { FastifyBaseLogger } from 'fastify';
 import type { ServerResponse } from 'node:http';
 import type {
-  AppliedCallConfig, CallSettings, ChatCompletionResponse, ChoiceDelta, ModelConfig, PiiConfig, StreamChoice, StreamChunk, TraceEntry,
+  AppliedCallConfig, CallSettings, ChatCompletionRequest, ChatCompletionResponse, ChoiceDelta, ModelConfig, PiiConfig, StreamChoice, StreamChunk, TraceEntry,
 } from '@routerly/shared';
 import { mergePolicies, StreamingScrubber } from '../../pii/piiScrubber.js';
 import { trackUsage } from '../../usage/tracker.js';
@@ -11,6 +11,7 @@ import { calculateCost } from '../../../lib/cost.js';
 import { readConfig } from '../../config/loader.js';
 import { decryptCredential } from '../../../lib/crypto-cred.js';
 import { resolveOpenAIOAuthCredential } from '../../provider/openai-oauth.js';
+import { normalizeForModel } from '../../provider/compat/normalize.js';
 
 const CHATGPT_BASE = 'https://chatgpt.com';
 const CODEX_PATH = '/backend-api/codex/responses';
@@ -279,7 +280,7 @@ export async function* streamOpenAIOAuthChunks(
   body: Record<string, unknown>,
   model: ModelConfig,
   log: FastifyBaseLogger,
-  opts: { traceId: string; routerId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined; emit?: ((entry: TraceEntry) => void) | undefined; callSettings?: AppliedCallConfig | undefined },
+  opts: { traceId: string; routerId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined; emit?: ((entry: TraceEntry) => void) | undefined; callSettings?: AppliedCallConfig | undefined; routedBy?: 'exception' | undefined },
 ): AsyncGenerator<StreamChunk> {
   const startMs = Date.now();
   const modelId = model.id.includes('/') ? model.id.split('/').slice(1).join('/') : model.id;
@@ -323,7 +324,7 @@ export async function* streamOpenAIOAuthChunks(
     const upstream = await fetch(endpoint, {
       method: 'POST',
       headers: buildOpenAIOAuthHeaders(accessToken, accountId, {}),
-      body: JSON.stringify(buildCodexPayload(body, modelId, opts.callSettings?.applied)),
+      body: JSON.stringify(buildCodexPayload(normalizeForModel(body as unknown as ChatCompletionRequest, model) as unknown as Record<string, unknown>, modelId, opts.callSettings?.applied)),
     });
 
     log.info(
@@ -457,6 +458,7 @@ export async function* streamOpenAIOAuthChunks(
         latencyMs: Date.now() - startMs, outcome, callType: 'completion', traceId: opts.traceId,
         ...(opts.tokenId ? { tokenId: opts.tokenId } : {}),
         ...(opts.callSettings ? { callConfig: opts.callSettings } : {}),
+        ...(opts.routedBy ? { routedBy: opts.routedBy } : {}),
       }).catch(() => {});
     }
   }

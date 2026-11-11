@@ -265,9 +265,13 @@ export function UsagePage() {
 
   // ponytail: model options sourced from getModels() (stable, unfiltered) so
   // the dropdown does not shrink when a model filter is active
+  const deletedModelIds = useMemo(() => stats?.deletedModelIds ?? [], [stats]);
   const modelOptions = useMemo(
-    () => allModels.map(m => ({ value: m.id, label: m.id })),
-    [allModels],
+    () => [
+      ...allModels.map(m => ({ value: m.id, label: m.id })),
+      ...deletedModelIds.filter(id => !allModels.some(m => m.id === id)).map(id => ({ value: id, label: `${id} (${t('usage.page.table.deleted')})` })),
+    ],
+    [allModels, deletedModelIds, t],
   );
 
   const routerOptions = useMemo(
@@ -698,7 +702,10 @@ export function UsagePage() {
                                   </span>
                                 : displayRank}
                             </td>
-                            <td><span className="mono">{modelId}</span></td>
+                            <td>
+                              <span className="mono">{modelId}</span>
+                              {deletedModelIds.includes(modelId) && <span className="badge badge-neutral" style={{ marginLeft: 6 }}>{t('usage.page.table.deleted')}</span>}
+                            </td>
                             <td style={{ color: 'var(--text-secondary)' }}>{providerLabel(provider)}</td>
                             <td style={{ textAlign: 'right' }}>{v.calls}</td>
                             <td style={{ textAlign: 'right', color: v.errors > 0 ? 'var(--danger)' : 'inherit' }}>{v.errors}</td>

@@ -25,6 +25,7 @@
       "routers": "Smerovacie moduly",
       "experiments": "Experimenty",
       "usage": "Používanie",
+      "timeline": "Timeline",
       "playground": "Hracie ihrisko",
       "settings": "Nastavenia",
       "connectApp": "Pripojiť aplikáciu",
@@ -217,7 +218,8 @@
         "semantic-intent": "Klasifikuje požiadavku podľa sémantického zámeru pomocou vkladania, potom obmedzuje pool kandidátov na modely mapované na ten zámer. Istý zhody tvrdý filter pool; neisté zhody spájajú najlepšie 2 poolya; neznáme požiadavky prechádzajú všetci kandidáti.",
         "model-preference": "Keď klient požaduje konkrétny model (nie routerly/ada), udeľuje nastavovateľný bonusový skóre tomuto modelu. Keď nie je vyjadrená žiadna preferencia, politika sa zdržiava. Pozícia v zozname určuje, koľko preferencia váži oproti iným politikám."
       },
-      "selectModel": "Vybrať model"
+      "selectModel": "Vybrať model",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "Použiť pre",
@@ -446,6 +448,7 @@
       "profile": "Profil",
       "notifications": "Notifikácie",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Preferencie"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "Nepodarilo sa vytvoriť token",
           "copyFailed": "Kopírovanie zlyhalo, skopírujte token manuálne."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "Bezpečnosť",
         "token": "Token",
         "users": "Používatelia",
-        "logs": "Záznam"
+        "logs": "Používanie",
+        "test": "Test"
       },
       "backToRouters": "Späť na Smerovacie moduly",
       "backToRoutersTitle": "Späť na smerovacie moduly",
@@ -1405,7 +1457,25 @@
         "empty": "Žiadne cieľové modely nie sú nakonfigurované.",
         "addTarget": "Pridať cieľový model",
         "passthroughLabel": "Priechod (nespracované predanie)",
-        "passthroughNotRemovable": "Položku priechodu nemožno odstrániť"
+        "passthroughNotRemovable": "Položku priechodu nemožno odstrániť",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "Výnimky",
+        "description": "Požiadavka, ktorej model zodpovedá pravidlu, sa odošle na zvolený model namiesto odovzdania bez zmeny. Vyhráva prvá zhoda. Použite * ako zástupný znak. Platí len pre požiadavky overené tokenom.",
+        "empty": "Žiadne výnimky: každá požiadavka sa odovzdá bez zmeny.",
+        "noRealModels": "Najprv pridajte do tohto routera model: výnimky môžu mieriť len na modely routera.",
+        "add": "Pridať výnimku",
+        "match": "Vzor názvu modelu",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Cieľový model",
+        "remove": "Odstrániť výnimku",
+        "errors": {
+          "matchRequired": "Každá výnimka potrebuje vzor.",
+          "duplicateMatch": "Duplicitná zhoda \"{{match}}\".",
+          "targetMissing": "Cieľ výnimky \"{{match}}\" nie je modelom tohto routera."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "Preťažovanie globálnych a limitov na úrovni smerovaciho modulu pre požiadavky pomocou tohto tokenu.",
         "noTargetModels": "Najskôr pridajte cieľové modely do karty Smerovanie.",
         "noOverride": "žiadne preťažovanie",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Žiadne limity",
         "noLimitsSet": "Žiadne limity nenastavené — dedením od rodiča. Pridajte limit nižšie na preťažovanie.",
         "metric": "Metrika",
@@ -1736,7 +1810,8 @@
         "label": "Štítok",
         "provider": "Poskytovateľ",
         "endpoint": "Koncový bod",
-        "status": "Stav"
+        "status": "Stav",
+        "models": "Models"
       },
       "status": {
         "enabled": "Povolené",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "Modely",
         "edit": "Upraviť",
-        "remove": "Odstrániť"
+        "remove": "Odstrániť",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "Nepodarilo sa načítať pripojenie",
         "updateFailed": "Nepodarilo sa aktualizovať pripojenie",
         "createFailed": "Nepodarilo sa vytvoriť pripojenie"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "Nakonfigurované",
         "embedding": "vkladanie",
-        "runsLocally": "Beží lokálne"
+        "runsLocally": "Beží lokálne",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Predch",
@@ -1918,7 +2011,9 @@
         "title": "Schopnosti",
         "description": "Zadajte typ a schopnosti tohto modelu.",
         "embeddingModel": "Model vkladania",
-        "embeddingModelHint": "Tento model generuje vektorové vloženia (nie doplnenie chatu)"
+        "embeddingModelHint": "Tento model generuje vektorové vloženia (nie doplnenie chatu)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Ceny a kontext",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "Zápis cache $/1M",
         "optional": "(opt.)",
         "contextWindow": "Kontextové okno",
-        "contextWindowHint": "(tokeny, voliteľne)"
+        "contextWindowHint": "(tokeny, voliteľne)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Pokročilé — Cenové stupne",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "Všetci poskytovatelia",
         "allConnections": "Všetky pripojenia",
-        "searchPlaceholder": "Filtrovať modely…"
+        "searchPlaceholder": "Filtrovať modely…",
+        "allStatuses": "All statuses"
       },
       "discover": "Objav",
       "addModel": "Pridať model",
@@ -1989,13 +2087,16 @@
         "input": "Vstup $/1M",
         "output": "Výstup $/1M",
         "cache": "Cache $/1M",
-        "context": "Veľkosť kontextu"
+        "context": "Veľkosť kontextu",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "Test",
         "clone": "Klonovať",
         "edit": "Upraviť",
-        "remove": "Odstrániť"
+        "remove": "Odstrániť",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Predchádzajúce",
@@ -2051,6 +2152,43 @@
           "cooldown": "čakajúci čas {{time}}",
           "lockout": "blokáda {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "Modely",
       "registered": "registrovaný",
       "routers": "Smerovacie moduly",
-      "active": "aktívny"
+      "active": "aktívny",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "Pripojiť klienta",
@@ -2383,7 +2522,8 @@
         "outputTokens": "Výstupné tokeny",
         "costPer1k": "Náklady / 1K",
         "cost": "Náklady (USD)",
-        "bestCostPerformance": "Najlepšia cena výkonu"
+        "bestCostPerformance": "Najlepšia cena výkonu",
+        "deleted": "deleted"
       },
       "showMoreModels": "Zobraziť {{count}} viac modelov",
       "showMoreModels_other": "Zobraziť {{count}} viac modelov",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII redakované",
         "sessionId": "ID relácie",
         "endUser": "Koncový používateľ",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Smerované cez"
       },
       "errorMessage": "Chybová správa",
       "eventCount": "{{count}} udalosť",
       "eventCount_other": "{{count}} udalostí",
-      "noTrace": "Žiadna stopa nie je dostupná. Údaje stopy sú zachytené len pre nové volania."
+      "noTrace": "Žiadna stopa nie je dostupná. Údaje stopy sú zachytené len pre nové volania.",
+      "routedByException": "Výnimka Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

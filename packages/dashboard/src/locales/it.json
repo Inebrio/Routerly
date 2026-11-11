@@ -25,6 +25,7 @@
       "routers": "Router",
       "experiments": "Esperimenti",
       "usage": "Utilizzo",
+      "timeline": "Timeline",
       "playground": "Playground",
       "settings": "Impostazioni",
       "connectApp": "Connetti app",
@@ -447,6 +448,7 @@
       "profile": "Profilo",
       "notifications": "Notifiche",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Preferenze"
     },
     "notifications": {
@@ -630,6 +632,54 @@
         "errors": {
           "createFailed": "Impossibile creare il token",
           "copyFailed": "Copia non riuscita, seleziona e copia manualmente il token."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1218,7 +1268,8 @@
         "security": "Sicurezza",
         "token": "Token",
         "users": "Utenti",
-        "logs": "Log"
+        "logs": "Utilizzo",
+        "test": "Test"
       },
       "backToRouters": "Torna ai router",
       "backToRoutersTitle": "Torna ai router",
@@ -1409,6 +1460,22 @@
         "passthroughNotRemovable": "La voce pass-through non può essere rimossa",
         "disabled": "Disabilitato",
         "unavailable": "Non disponibile"
+      },
+      "exceptions": {
+        "title": "Eccezioni",
+        "description": "Una richiesta il cui modello corrisponde a una regola viene inviata al modello scelto invece di essere inoltrata invariata. Vince la prima corrispondenza. Usa * come carattere jolly. Vale solo per le richieste autenticate con token.",
+        "empty": "Nessuna eccezione: ogni richiesta viene inoltrata invariata.",
+        "noRealModels": "Aggiungi prima un modello a questo router: le eccezioni possono puntare solo ai modelli del router.",
+        "add": "Aggiungi eccezione",
+        "match": "Pattern del nome modello",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Modello di destinazione",
+        "remove": "Rimuovi eccezione",
+        "errors": {
+          "matchRequired": "Ogni eccezione richiede un pattern.",
+          "duplicateMatch": "Corrispondenza duplicata \"{{match}}\".",
+          "targetMissing": "La destinazione dell'eccezione \"{{match}}\" non è un modello di questo router."
+        }
       }
     },
     "optimizer": {
@@ -1523,6 +1590,10 @@
         "perModelLimitsHint": "Sovrascrive i limiti globali e a livello di router per le richieste che usano questo token.",
         "noTargetModels": "Aggiungi prima modelli di destinazione nella scheda Routing.",
         "noOverride": "nessuna sovrascrizione",
+        "limitsMode": "Modalità limiti",
+        "limitsModeReplace": "Sostituisce (replace)",
+        "limitsModeExtend": "Estende (extend)",
+        "limitsModeDisable": "Disattiva (disable)",
         "noLimits": "Nessun limite",
         "noLimitsSet": "Nessun limite impostato — eredita dal parent. Aggiungi un limite sotto per sovrascrivere.",
         "metric": "Metrica",
@@ -1863,7 +1934,8 @@
       "badges": {
         "configured": "Configurato",
         "embedding": "Embedding",
-        "runsLocally": "Esegue localmente"
+        "runsLocally": "Esegue localmente",
+        "decision": "Decisionale"
       },
       "pagination": {
         "prev": "Precedente",
@@ -1939,7 +2011,9 @@
         "title": "Capacità",
         "description": "Specifica tipo e capacità di questo modello.",
         "embeddingModel": "Modello di embedding",
-        "embeddingModelHint": "Questo modello genera embedding vettoriali (nessun chat completion)"
+        "embeddingModelHint": "Questo modello genera embedding vettoriali (nessun chat completion)",
+        "decisionModel": "Modello decisionale",
+        "decisionModelHint": "Questo modello risponde a domande con opzioni predefinite (non genera testo). Non può servire richieste chat ed è escluso dagli elenchi dei modelli chat."
       },
       "pricing": {
         "title": "Prezzi e contesto",
@@ -2014,13 +2088,15 @@
         "output": "Uscita $/1M",
         "cache": "Cache $/1M",
         "context": "Dimensione contesto",
-        "status": "Stato"
+        "status": "Stato",
+        "conformance": "Conformità"
       },
       "actions": {
         "test": "Test",
         "clone": "Clona",
         "edit": "Modifica",
-        "remove": "Rimuovi"
+        "remove": "Rimuovi",
+        "verify": "Esegui verifica di conformità"
       },
       "pagination": {
         "previous": "← Precedente",
@@ -2104,6 +2180,15 @@
         "loaded_other": "{{count}} modelli caricati dal catalogo, disabilitati. Abilita quelli su cui vuoi instradare.",
         "dismiss": "Chiudi",
         "failed": "Aggiornamento dei modelli non riuscito"
+      },
+      "conformance": {
+        "unverified": "Non verificato",
+        "conformant": "Conforme {{date}}",
+        "limited": "Limitato {{date}}",
+        "running": "Verifica…",
+        "failedCases": "Falliti: {{cases}}",
+        "notRun": "Non ancora verificato: esegui la verifica di conformità per provare le capacità del modello.",
+        "error": "Verifica di conformità fallita: {{error}}"
       }
     }
   },
@@ -2437,7 +2522,8 @@
         "outputTokens": "Token in uscita",
         "costPer1k": "Costo / 1K",
         "cost": "Costo (USD)",
-        "bestCostPerformance": "Miglior rapporto qualità-prezzo"
+        "bestCostPerformance": "Miglior rapporto qualità-prezzo",
+        "deleted": "eliminato"
       },
       "showMoreModels": "Mostra {{count}} modello in più",
       "showMoreModels_other": "Mostra {{count}} modelli in più",
@@ -2503,12 +2589,86 @@
         "piiRedacted": "PII oscurata",
         "sessionId": "Session ID",
         "endUser": "Utente finale",
-        "tags": "Tag"
+        "tags": "Tag",
+        "routedBy": "Instradato da"
       },
       "errorMessage": "Messaggio di errore",
       "eventCount": "{{count}} evento",
       "eventCount_other": "{{count}} eventi",
-      "noTrace": "Nessuna traccia disponibile. I dati di traccia vengono catturati solo per le nuove chiamate."
+      "noTrace": "Nessuna traccia disponibile. I dati di traccia vengono catturati solo per le nuove chiamate.",
+      "routedByException": "Eccezione Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

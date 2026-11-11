@@ -33,6 +33,12 @@ export type {
   RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary, UsageSeries, UsageSeriesPoint,
 } from './types/usage.js';
 
+// Unified call timeline (ROUT-563) — plain data plus types
+export { TIMELINE_EVENT_KINDS } from './types/timeline.js';
+export type {
+  TimelineEventKind, ActivityKind, ActivityOutcome, ActivityRecord, TimelineEvent, TimelineGroup,
+} from './types/timeline.js';
+
 // Experiments (T70) — plain data plus pure functions
 export {
   EXPERIMENT_ROTATIONS,
@@ -94,6 +100,7 @@ export type {
   ModelConfig,
   RouterModelRef,
   RouterConfig,
+  PassthroughException,
   RouterToken,
   RouterMember,
   RouterRole,
@@ -107,6 +114,7 @@ export type {
   IntentClassification,
   UserConfig,
   McpToken,
+  ApiToken,
   RoleConfig,
   Permission,
   Settings,

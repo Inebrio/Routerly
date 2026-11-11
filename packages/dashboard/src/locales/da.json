@@ -25,6 +25,7 @@
       "routers": "Routere",
       "experiments": "Eksperimenter",
       "usage": "Forbrug",
+      "timeline": "Timeline",
       "playground": "Playground",
       "settings": "Indstillinger",
       "connectApp": "Tilslut app",
@@ -217,7 +218,8 @@
         "semantic-intent": "Klassificerer forespørgslen efter semantisk hensigt ved brug af embeddings og begrænser derefter kandidatpuljen til de modeller, der er tilknyttet den hensigt. Sikre match filtrerer puljen hårdt; tvetydige match sammenlægger de to bedste puljer; ukendte forespørgsler lader alle kandidater passere igennem.",
         "model-preference": "Når klienten anmoder om en specifik model (ikke routerly/ada), tildeles den model en konfigurerbar bonusscore. Når ingen præference udtrykkes, afstår politikken. Placeringen i listen styrer, hvor meget præferencen vægter mod andre politikker."
       },
-      "selectModel": "Vælg model"
+      "selectModel": "Vælg model",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "Anvend på",
@@ -446,6 +448,7 @@
       "profile": "Profil",
       "notifications": "Notifikationer",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Præferencer"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "Kunne ikke oprette tokenet",
           "copyFailed": "Kopiering mislykkedes, marker og kopiér tokenet manuelt."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "Sikkerhed",
         "token": "Token",
         "users": "Brugere",
-        "logs": "Logs"
+        "logs": "Forbrug",
+        "test": "Test"
       },
       "backToRouters": "Tilbage til routere",
       "backToRoutersTitle": "Tilbage til routere",
@@ -1405,7 +1457,25 @@
         "empty": "Ingen målmodeller konfigureret.",
         "addTarget": "Tilføj målmodel",
         "passthroughLabel": "Gennemstrømning (rå videresendelse)",
-        "passthroughNotRemovable": "Gennemstrømningsposten kan ikke fjernes"
+        "passthroughNotRemovable": "Gennemstrømningsposten kan ikke fjernes",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "Undtagelser",
+        "description": "En anmodning, hvis model matcher en regel, sendes til den valgte model i stedet for at blive videresendt uændret. Første match gælder. Brug * som jokertegn. Gælder kun token-godkendte anmodninger.",
+        "empty": "Ingen undtagelser: hver anmodning videresendes uændret.",
+        "noRealModels": "Tilføj først en model til denne router: undtagelser kan kun pege på routerens egne modeller.",
+        "add": "Tilføj undtagelse",
+        "match": "Mønster for modelnavn",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Målmodel",
+        "remove": "Fjern undtagelse",
+        "errors": {
+          "matchRequired": "Hver undtagelse kræver et mønster.",
+          "duplicateMatch": "Dubleret match \"{{match}}\".",
+          "targetMissing": "Målet for undtagelsen \"{{match}}\" er ikke en model i denne router."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "Overstyr globale og router-niveau-grænser for forespørgsler, der bruger dette token.",
         "noTargetModels": "Tilføj målmodeller på fanen Routing først.",
         "noOverride": "ingen overstyring",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Ingen grænser",
         "noLimitsSet": "Ingen grænser angivet — nedarver fra parent. Tilføj en grænse nedenfor for at overstyre.",
         "metric": "Måleenhed",
@@ -1736,7 +1810,8 @@
         "label": "Label",
         "provider": "Udbyder",
         "endpoint": "Endpoint",
-        "status": "Status"
+        "status": "Status",
+        "models": "Models"
       },
       "status": {
         "enabled": "Aktiveret",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "Modeller",
         "edit": "Rediger",
-        "remove": "Fjern"
+        "remove": "Fjern",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "Kunne ikke indlæse forbindelse",
         "updateFailed": "Kunne ikke opdatere forbindelse",
         "createFailed": "Kunne ikke oprette forbindelse"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "Konfigureret",
         "embedding": "embedding",
-        "runsLocally": "Kører lokalt"
+        "runsLocally": "Kører lokalt",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Forrige",
@@ -1918,7 +2011,9 @@
         "title": "Kapabiliteter",
         "description": "Angiv typen og kapabiliteterne for denne model.",
         "embeddingModel": "Embedding-model",
-        "embeddingModelHint": "Denne model genererer vektor-embeddings (ikke chat-completions)"
+        "embeddingModelHint": "Denne model genererer vektor-embeddings (ikke chat-completions)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Prissætning og kontekst",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "Cache-skrivning $/1M",
         "optional": "(valgfrit)",
         "contextWindow": "Kontekstvindue",
-        "contextWindowHint": "(tokens, valgfrit)"
+        "contextWindowHint": "(tokens, valgfrit)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Avanceret — Prissætningstrin",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "Alle udbydere",
         "allConnections": "Alle forbindelser",
-        "searchPlaceholder": "Filtrer modeller…"
+        "searchPlaceholder": "Filtrer modeller…",
+        "allStatuses": "All statuses"
       },
       "discover": "Udforsk",
       "addModel": "Tilføj model",
@@ -1989,13 +2087,16 @@
         "input": "Input $/1M",
         "output": "Output $/1M",
         "cache": "Cache $/1M",
-        "context": "Kontekststørrelse"
+        "context": "Kontekststørrelse",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "Test",
         "clone": "Klon",
         "edit": "Rediger",
-        "remove": "Fjern"
+        "remove": "Fjern",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Forrige",
@@ -2051,6 +2152,43 @@
           "cooldown": "afkøling {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "Modeller",
       "registered": "registreret",
       "routers": "Routere",
-      "active": "aktive"
+      "active": "aktive",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "Tilslut en klient",
@@ -2383,7 +2522,8 @@
         "outputTokens": "Output-tokens",
         "costPer1k": "Omkostning/1K",
         "cost": "Omkostning (USD)",
-        "bestCostPerformance": "Bedste omkostning-ydelse"
+        "bestCostPerformance": "Bedste omkostning-ydelse",
+        "deleted": "deleted"
       },
       "showMoreModels": "Vis {{count}} flere model",
       "showMoreModels_other": "Vis {{count}} flere modeller",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII skjult",
         "sessionId": "Session-ID",
         "endUser": "Slutbruger",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Dirigeret af"
       },
       "errorMessage": "Fejlmeddelelse",
       "eventCount": "{{count}} hændelse",
       "eventCount_other": "{{count}} hændelser",
-      "noTrace": "Ingen trace tilgængelig. Trace-data registreres kun for nye opkald."
+      "noTrace": "Ingen trace tilgængelig. Trace-data registreres kun for nye opkald.",
+      "routedByException": "Passthrough-undtagelse"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

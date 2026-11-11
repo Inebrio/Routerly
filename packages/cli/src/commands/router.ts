@@ -4,7 +4,7 @@ import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import { DEFAULT_RANKING_ALGORITHM, RANKING_ALGORITHMS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TIERS, CALL_SETTINGS, CALL_MAX_OUTPUT_TOKENS_MIN, CALL_MAX_OUTPUT_TOKENS_MAX } from '@routerly/shared';
 import { readCallConfigArg, printCallConfig } from '../lib/call-config.js';
-import type { CallConfig, CallLevel, CallSettings, CallTier, Profile, RouterConfig, RouterKind, RouterModelRef, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
+import type { PassthroughException, CallConfig, CallLevel, CallSettings, CallTier, Profile, RouterConfig, RouterKind, RouterModelRef, RoutingPolicy, RoutingPolicyType, TokenModelRef, LimitsMode, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
 
 /**
  * Wire shape of an Orchestrator's candidate as returned by GET /api/routers —
@@ -160,13 +160,33 @@ function parseLimitSpec(spec: string, idLabel: string = 'model'): { id: string; 
  */
 async function resolveRanking(router: RouterConfig) {
   const profileId = router.routingProfileId ?? router.profileId;
-  const profile = profileId
-    ? (await api<Profile[]>('GET', '/api/profiles?kind=routing')).find(p => p.id === profileId && p.kind === 'routing')
-    : undefined;
+  const profile = await findBoundProfile('routing', profileId);
   if (profile?.kind === 'routing') {
-    return { profileId: profileId ?? null, profileLabel: profile.label, algorithm: profile.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM, source: 'profile' as const, policies: profile.policies };
+    return { profileId: profileId ?? null, profileLabel: profile.label, profile, algorithm: profile.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM, source: 'profile' as const, policies: profile.policies };
   }
-  return { profileId: profileId ?? null, profileLabel: undefined, algorithm: router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM, source: 'router' as const, policies: router.policies ?? [] };
+  return { profileId: profileId ?? null, profileLabel: undefined, profile: undefined, algorithm: router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM, source: 'router' as const, policies: router.policies ?? [] };
+}
+
+/** The bound profile of a kind, or undefined when unbound or unreadable (e.g. no `profiles:read`). */
+async function findBoundProfile(kind: Profile['kind'], id: string | undefined): Promise<Profile | undefined> {
+  if (!id) return undefined;
+  try {
+    return (await api<Profile[]>('GET', `/api/profiles?kind=${kind}`)).find(p => p.id === id && p.kind === kind);
+  } catch {
+    return undefined;
+  }
+}
+
+function profileSummary(id: string, profile: Profile | undefined): string {
+  return profile ? `${profile.label} (${id}, v${profile.version})` : `${id} ${chalk.yellow('(details not readable)')}`;
+}
+
+function printPolicyTable(policies: RoutingPolicy[]): void {
+  const table = new Table({ head: ['#', 'Policy', 'Enabled', 'Config'].map(h => chalk.cyan(h)) });
+  policies.forEach((p, i) => {
+    table.push([i + 1, p.type, p.enabled ? chalk.green('✓') : chalk.gray('—'), p.config ? JSON.stringify(p.config) : chalk.gray('—')]);
+  });
+  console.log(table.toString());
 }
 
 // ─── Routing subcommand group ─────────────────────────────────────────────────
@@ -191,6 +211,7 @@ Examples:
           console.log(JSON.stringify({
             routerId: router.id,
             routingProfileId: ranking.profileId,
+            ...(ranking.profile ? { routingProfile: { id: ranking.profile.id, label: ranking.profile.label, version: ranking.profile.version } } : {}),
             rankingAlgorithm: ranking.algorithm,
             rankingSource: ranking.source,
             policies: ranking.policies,
@@ -204,23 +225,15 @@ Examples:
         console.log(chalk.gray(`  Fallback models: `) + (fallbacks.length ? fallbacks.join(', ') : chalk.gray('(none)')));
         console.log(chalk.gray(`  Ranking algorithm: `) + ranking.algorithm + chalk.gray(ranking.source === 'profile' ? ` (profile ${ranking.profileLabel})` : ' (router)'));
 
-        const policies = router.policies ?? [];
+        const policies = ranking.policies;
+        if (ranking.profileId) {
+          console.log(chalk.gray(`  Routing profile: `) + profileSummary(ranking.profileId, ranking.profile));
+        }
         if (policies.length === 0) {
           console.log(chalk.gray('\n  No routing policies configured.'));
         } else {
           console.log('');
-          const table = new Table({
-            head: ['#', 'Policy', 'Enabled', 'Config'].map(h => chalk.cyan(h)),
-          });
-          policies.forEach((p, i) => {
-            table.push([
-              i + 1,
-              p.type,
-              p.enabled ? chalk.green('✓') : chalk.gray('—'),
-              p.config ? JSON.stringify(p.config) : chalk.gray('—'),
-            ]);
-          });
-          console.log(table.toString());
+          printPolicyTable(policies);
         }
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -421,6 +434,114 @@ Examples:
     });
 
   cmd.addCommand(policyCmd);
+  return cmd;
+}
+
+// ─── passthrough exceptions ──────────────────────────────────────────────────
+
+/** Router PUT needs the identity fields; mirrors `callConfigBody`. */
+function exceptionsBody(router: RouterConfig, exceptions: PassthroughException[]): Record<string, unknown> {
+  return { name: router.name, models: router.models, exceptions };
+}
+
+function requirePassthrough(router: RouterConfig): void {
+  if (router.kind !== 'passthrough') cliFail(`Router "${router.name}" is not a passthrough router: exceptions are only supported on passthrough routers.`);
+}
+
+function makePassthroughCommand(): Command {
+  const cmd = new Command('passthrough').description('Passthrough router settings');
+  const exc = new Command('exception').description('Send requests for specific models to one of the passthrough router\'s own models (token-authenticated requests only)');
+
+  exc.command('list <router>')
+    .description('List the exception rules of a passthrough router (first match wins)')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly router passthrough exception list my-passthrough
+  routerly router passthrough exception list my-passthrough --json
+`)
+    .action(async (nameOrId: string, opts: { json?: boolean }) => {
+      try {
+        const router = await resolveRouter(nameOrId);
+        const exceptions = router.exceptions ?? [];
+        if (opts.json) {
+          console.log(JSON.stringify(exceptions, null, 2));
+          return;
+        }
+        if (!exceptions.length) {
+          console.log(chalk.dim("No exceptions: every request follows the router's model list."));
+          return;
+        }
+        const table = new Table({ head: ['#', 'Match', 'Target'].map(h => chalk.cyan(h)) });
+        exceptions.forEach((e, i) => table.push([i, e.match, e.targetModelId]));
+        console.log(table.toString());
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  exc.command('add <router>')
+    .description('Add an exception rule: requests whose model matches go to a model of this router')
+    .requiredOption('--match <pattern>', 'Requested model to match: exact, case-sensitive; * matches any sequence (e.g. gpt-4o, claude-*)')
+    .requiredOption('--target <model-id>', "One of the router's own models (see `router model list`)")
+    .option('--json', 'Output the saved exceptions as JSON')
+    .addHelpText('after', `
+Examples:
+  routerly router passthrough exception add my-passthrough --match gpt-4o --target openai/gpt-4o
+  routerly router passthrough exception add my-passthrough --match 'claude-*' --target anthropic/claude-sonnet-4-5 --json
+`)
+    .action(async (nameOrId: string, opts: { match: string; target: string; json?: boolean }) => {
+      try {
+        const router = await resolveRouter(nameOrId);
+        requirePassthrough(router);
+        const match = opts.match.trim();
+        if (!match) cliFail('--match cannot be empty.');
+        if (opts.target === PASSTHROUGH_MODEL_ID || !router.models.some(m => m.modelId === opts.target)) {
+          cliFail(`Target "${opts.target}" is not a model of router "${router.name}". Run \`routerly router model list ${router.name}\`.`);
+        }
+        const exceptions = [...(router.exceptions ?? []), { match, targetModelId: opts.target }];
+        const saved = await api<RouterConfig>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, exceptionsBody(router, exceptions));
+        if (opts.json) {
+          console.log(JSON.stringify(saved.exceptions ?? [], null, 2));
+          return;
+        }
+        console.log(chalk.green(`✓ Exception #${exceptions.length - 1} added to "${router.name}": ${match} → ${opts.target}`));
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  exc.command('remove <router> <index>')
+    .description('Remove an exception rule by its index (see `exception list`)')
+    .option('--json', 'Output the remaining exceptions as JSON')
+    .addHelpText('after', `
+Examples:
+  routerly router passthrough exception remove my-passthrough 0
+`)
+    .action(async (nameOrId: string, indexStr: string, opts: { json?: boolean }) => {
+      try {
+        const router = await resolveRouter(nameOrId);
+        const before = router.exceptions ?? [];
+        const index = Number(indexStr);
+        if (!Number.isInteger(index) || index < 0 || index >= before.length) {
+          cliFail(`Invalid index "${indexStr}". Use \`exception list\` to see valid indices${before.length ? ` (0 to ${before.length - 1})` : ' (there are no exceptions)'}.`);
+        }
+        const exceptions = before.filter((_, i) => i !== index);
+        const saved = await api<RouterConfig>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, exceptionsBody(router, exceptions));
+        if (opts.json) {
+          console.log(JSON.stringify(saved.exceptions ?? [], null, 2));
+          return;
+        }
+        console.log(chalk.green(`✓ Exception #${index} removed from "${router.name}".`));
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  cmd.addCommand(exc);
   return cmd;
 }
 
@@ -626,7 +747,7 @@ Examples:
             : chalk.gray('—');
           const created = new Date(t.createdAt).toLocaleString('it-IT');
           const limits = t.models?.length
-            ? t.models.map(m => `${m.modelId}(${m.limits?.length ?? 0})`).join(', ')
+            ? t.models.map(m => `${m.modelId}(${m.limits?.length ?? 0}${m.limitsMode ? `, ${m.limitsMode}` : ''})`).join(', ')
             : chalk.gray('—');
           table.push([t.id, t.tokenSnippet + '…', labels, tags, created, limits]);
         }
@@ -699,13 +820,17 @@ Examples:
 
   # Remove a limit
   routerly router token edit my-api <token-id> --remove-limit "openai/gpt-5.2:cost:period:hourly"
+
+  # Stack the token limits on the router limits (replace | extend | disable)
+  routerly router token edit my-api <token-id> --limits-mode "openai/gpt-5.2:extend"
 `)
     .option('--labels <tags>', 'Comma-separated labels (replaces existing labels)')
     .option('--scopes <list>', 'Comma-separated access scopes (replaces existing scopes)')
     .option('--tag <kv>', 'Key=value tag (repeatable; replaces all existing tags)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--add-limit <spec>', 'Add a per-model limit (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--remove-limit <spec>', 'Remove a limit: <model>:<metric>:<windowType> (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
-    .action(async (nameOrId: string, tokenId: string, opts: { labels?: string; scopes?: string; tag: string[]; addLimit: string[]; removeLimit: string[] }) => {
+    .option('--limits-mode <spec>', 'Set how a model\'s token limits combine with the router limits: <model>:replace|extend|disable (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
+    .action(async (nameOrId: string, tokenId: string, opts: { labels?: string; scopes?: string; tag: string[]; addLimit: string[]; removeLimit: string[]; limitsMode: string[] }) => {
       try {
         const router = await resolveRouter(nameOrId);
         const token = (router.tokens ?? []).find(t => t.id === tokenId);
@@ -737,8 +862,21 @@ Examples:
           }
         }
 
-        // Remove entries with no limits left (and no other config)
-        models = models.filter(m => m.limits && m.limits.length > 0);
+        for (const spec of opts.limitsMode) {
+          const sep = spec.lastIndexOf(':');
+          const modelId = spec.slice(0, sep);
+          const mode = spec.slice(sep + 1);
+          if (sep < 1 || !['replace', 'extend', 'disable'].includes(mode)) {
+            console.error(chalk.red(`Invalid --limits-mode "${spec}". Expected <model>:replace|extend|disable.`));
+            process.exit(1);
+          }
+          let entry = models.find(m => m.modelId === modelId);
+          if (!entry) { entry = { modelId }; models.push(entry); }
+          entry.limitsMode = mode as LimitsMode;
+        }
+
+        // Remove entries with no limits left and no mode set
+        models = models.filter(m => (m.limits && m.limits.length > 0) || m.limitsMode);
 
         const labels = opts.labels ? opts.labels.split(',').map(s => s.trim()).filter(Boolean) : token.labels;
         const scopes = opts.scopes ? opts.scopes.split(',').map(s => s.trim()).filter(Boolean) : token.scopes;
@@ -1335,10 +1473,14 @@ Examples:
         console.log(chalk.gray(`    Routing model:   `) + (router.routingModelId ?? chalk.gray('(not set)')));
         const fallbacks = router.fallbackRoutingModelIds ?? [];
         console.log(chalk.gray(`    Fallback models: `) + (fallbacks.length ? fallbacks.join(', ') : chalk.gray('(none)')));
-        const policies = router.policies ?? [];
-        const enabledPolicies = policies.filter(p => p.enabled).map(p => p.type);
-        console.log(chalk.gray(`    Policies:        `) + (enabledPolicies.length ? enabledPolicies.join(', ') : chalk.gray('(none enabled)')));
-        console.log(chalk.gray(`    Ranking:         `) + (router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM));
+        const ranking = await resolveRanking(router);
+        const enabledPolicies = ranking.policies.filter(p => p.enabled).map(p => p.type);
+        if (ranking.profileId) console.log(chalk.gray(`    Routing profile: `) + profileSummary(ranking.profileId, ranking.profile));
+        if (router.optimizerProfileId) {
+          console.log(chalk.gray(`    Optimizer profile: `) + profileSummary(router.optimizerProfileId, await findBoundProfile('optimizer', router.optimizerProfileId)));
+        }
+        console.log(chalk.gray(`    Policies:        `) + (enabledPolicies.length ? enabledPolicies.join(', ') : chalk.gray('(none enabled)')) + (ranking.source === 'profile' ? chalk.gray(' (from profile)') : ''));
+        console.log(chalk.gray(`    Ranking:         `) + ranking.algorithm);
 
         // Models
         console.log(chalk.bold('\n  Target Models'));
@@ -1609,6 +1751,7 @@ Examples:
   cmd.addCommand(makeRoutingCommand());
   cmd.addCommand(makeCallConfigCommand());
   cmd.addCommand(makeModelSubCommand());
+  cmd.addCommand(makePassthroughCommand());
   cmd.addCommand(makeTokenSubCommand());
   cmd.addCommand(makeMemberCommand());  
 

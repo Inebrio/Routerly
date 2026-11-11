@@ -105,4 +105,13 @@ describe('resolveEffectiveModel', () => {
       for (const k of ['enabled', 'source', 'isNew', 'unavailable']) expect(eff).not.toHaveProperty(k);
     });
   });
+
+  it('flags models of a decision provider as decision, with the default endpoint; chat providers are untouched', () => {
+    const mk = (providerId: string): ProviderConnection => ({ id: 'c', providerId, label: 'L', credentials: { apiKey: 'k' }, enabled: true });
+    const inst: ModelInstance = { id: 'x/m', connectionId: 'c', upstreamModelId: 'm', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0, capabilities: { json: true } };
+    const ts = resolveEffectiveModel(inst, mk('typesafe'));
+    expect(ts.capabilities).toEqual({ json: true, decision: true });
+    expect(ts.endpoint).toBe('https://api.typesafe.ai/v1');
+    expect(resolveEffectiveModel(inst, mk('openai')).capabilities).toEqual({ json: true });
+  });
 });

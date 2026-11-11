@@ -25,6 +25,7 @@
       "routers": "Njia",
       "experiments": "Majaribio",
       "usage": "Matumizi",
+      "timeline": "Timeline",
       "playground": "Uwanja wa michezo",
       "settings": "Mipangilio",
       "connectApp": "Unganisha programu",
@@ -217,7 +218,8 @@
         "semantic-intent": "Kigawa ombi kwa mujibu wa maana kwa kutumia kuingiza, kisha kuzuia anwani ya wagombea kwa modeli waliosema mujibu huo. Mamilano ya imani kuwa mgeuza ng'ombe-patu orodha; mamilano makali ya mkutano wa juu 2 omiato; maombi yasiyojulikana kupita wagombea wote kupitia.",
         "model-preference": "Wakati mteja anaomba modeli mahususi (sio routerly/ada), gawia alama ya ziada kwa modeli hiyo. Wakati hakuna upendeleo unayotaka, sera hayana. Msimamo katika orodha udhibiti kiasi cha upendeleo inayazani dhidi ya sera nyingine."
       },
-      "selectModel": "Chagua modeli"
+      "selectModel": "Chagua modeli",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "Tekeleza kwa",
@@ -446,6 +448,7 @@
       "profile": "Wasifu",
       "notifications": "Arifa",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Upendeleo"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "Kushindwa kutengeneza ishara",
           "copyFailed": "Kunakili kushindwa, chagua na kunakili ishara kwa mikono."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "Usalama",
         "token": "Ishara",
         "users": "Watumiaji",
-        "logs": "Kasia"
+        "logs": "Matumizi",
+        "test": "Test"
       },
       "backToRouters": "Kurudi kwenye Njia",
       "backToRoutersTitle": "Kurudi njia",
@@ -1405,7 +1457,25 @@
         "empty": "Hakuna modeli za lengwa zilizosanidiwa.",
         "addTarget": "Ongeza Modeli ya Lengwa",
         "passthroughLabel": "Pass-through (usambazaji ghafi)",
-        "passthroughNotRemovable": "Kipengee cha pass-through hakiwezi kuondolewa"
+        "passthroughNotRemovable": "Kipengee cha pass-through hakiwezi kuondolewa",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "Vighairi",
+        "description": "Ombi ambalo modeli yake inalingana na kanuni hutumwa kwa modeli iliyochaguliwa badala ya kupelekwa bila mabadiliko. Mlinganisho wa kwanza hushinda. Tumia * kama kibadala. Inatumika kwa maombi yaliyothibitishwa kwa tokeni pekee.",
+        "empty": "Hakuna vighairi: kila ombi hupelekwa bila mabadiliko.",
+        "noRealModels": "Ongeza modeli kwenye kipanga njia hiki kwanza: vighairi vinaweza kulenga modeli za kipanga njia pekee.",
+        "add": "Ongeza kighairi",
+        "match": "Muundo wa jina la modeli",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Modeli lengwa",
+        "remove": "Ondoa kighairi",
+        "errors": {
+          "matchRequired": "Kila kighairi kinahitaji muundo.",
+          "duplicateMatch": "Mlinganisho unaorudiwa \"{{match}}\".",
+          "targetMissing": "Lengo la kighairi \"{{match}}\" si modeli ya kipanga njia hiki."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "Kuboreshwa vikomo vya jumla na kiwango cha njia kwa maombi yaliyotumia ishara hii.",
         "noTargetModels": "Ongeza modeli za lengwa katika kichupo cha Njia kwanza.",
         "noOverride": "hakuna kuboreshwa",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Hakuna vikomo",
         "noLimitsSet": "Hakuna vikomo iliyowekwa — kurithi kutoka wazazi. Ongeza kiwango hapa chini kuboreshwa.",
         "metric": "Kiashiria",
@@ -1736,7 +1810,8 @@
         "label": "Lebo",
         "provider": "Mtoa Huduma",
         "endpoint": "Ncha",
-        "status": "Hali"
+        "status": "Hali",
+        "models": "Models"
       },
       "status": {
         "enabled": "Inatumiwa",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "Modeli",
         "edit": "Hariri",
-        "remove": "Ondoa"
+        "remove": "Ondoa",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "Kushindwa kupakia muunganisho",
         "updateFailed": "Kushindwa kuboreshwa muunganisho",
         "createFailed": "Kushindwa kutengeneza muunganisho"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "Imesanidiwa",
         "embedding": "kuingiza",
-        "runsLocally": "Inaendesha ndani"
+        "runsLocally": "Inaendesha ndani",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Iliyotangulia",
@@ -1918,7 +2011,9 @@
         "title": "Uwezo",
         "description": "Weka aina na uwezo wa modeli hii.",
         "embeddingModel": "Modeli ya kuingiza",
-        "embeddingModelHint": "Modeli hii inazoeza rakupishi za vekta (sio kamatafu za kezigombea)"
+        "embeddingModelHint": "Modeli hii inazoeza rakupishi za vekta (sio kamatafu za kezigombea)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Bei & muktadha",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "Kache kuandika $/1M",
         "optional": "(wa utakata)",
         "contextWindow": "Dirisha la Muktadha",
-        "contextWindowHint": "(tokens, wa utakata)"
+        "contextWindowHint": "(tokens, wa utakata)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Zamani — Tabaka la bei",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "Mtoa huduma wote",
         "allConnections": "Muunganisho wote",
-        "searchPlaceholder": "Vyombo vya modeli…"
+        "searchPlaceholder": "Vyombo vya modeli…",
+        "allStatuses": "All statuses"
       },
       "discover": "Gundua",
       "addModel": "Ongeza Modeli",
@@ -1989,13 +2087,16 @@
         "input": "Ingizo $/1M",
         "output": "Pato $/1M",
         "cache": "Kache $/1M",
-        "context": "Ukubwa wa Muktadha"
+        "context": "Ukubwa wa Muktadha",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "Jaribio",
         "clone": "Nakala",
         "edit": "Hariri",
-        "remove": "Ondoa"
+        "remove": "Ondoa",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Ililopita",
@@ -2051,6 +2152,43 @@
           "cooldown": "wakati wa burudani {{time}}",
           "lockout": "kuzuia {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "Modeli",
       "registered": "jikita",
       "routers": "Njia",
-      "active": "inatumiwa"
+      "active": "inatumiwa",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "Unganisha mteja",
@@ -2383,7 +2522,8 @@
         "outputTokens": "Tokens za pato",
         "costPer1k": "Gharama / 1K",
         "cost": "Gharama (USD)",
-        "bestCostPerformance": "Utendaji wa bei ya nzuri"
+        "bestCostPerformance": "Utendaji wa bei ya nzuri",
+        "deleted": "deleted"
       },
       "showMoreModels": "Onyesha {{count}} zaidi modeli",
       "showMoreModels_other": "Onyesha {{count}} zaidi modeli",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII Iliyochanjwa",
         "sessionId": "Kitambulisho cha kipindi",
         "endUser": "Mtumiaji wa mwisho",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Imeelekezwa na"
       },
       "errorMessage": "Ujumbe wa Hitilafu",
       "eventCount": "{{count}} tukio",
       "eventCount_other": "{{count}} matukio",
-      "noTrace": "Hakuna kuchukuza kinapatikana. Data ya kuchukuza inakamatia kwa simu jipya tu."
+      "noTrace": "Hakuna kuchukuza kinapatikana. Data ya kuchukuza inakamatia kwa simu jipya tu.",
+      "routedByException": "Kighairi cha Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

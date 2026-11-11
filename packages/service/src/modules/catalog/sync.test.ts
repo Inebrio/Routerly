@@ -158,12 +158,49 @@ describe('syncModelsFromCatalog', () => {
       expect(written().cost.cachePerMillion).toBe(1.25);
     });
 
-    it('does not touch cachePerMillion when absent from catalog', async () => {
+    it('removes cachePerMillion when the catalog drops it', async () => {
       const m = makeModel({ cost: { inputPerMillion: 5, outputPerMillion: 20, cachePerMillion: 99 } });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20 }]));
       mockModels([m]);
       await syncModelsFromCatalog('0.3.0');
-      expect(written().cost.cachePerMillion).toBe(99);
+      expect(written().cost).not.toHaveProperty('cachePerMillion');
+      expect(written().catalogDefaults).not.toHaveProperty('cachePerMillion');
+    });
+
+    it('removes cacheWritePerMillion, pricingTiers, contextWindow and capabilities when the catalog drops them', async () => {
+      const tiers = [{ metric: 'input' as const, above: 200000, inputPerMillion: 6, outputPerMillion: 22 }];
+      const m = makeModel({
+        cost: { inputPerMillion: 5, outputPerMillion: 20, cacheWritePerMillion: 7, pricingTiers: tiers },
+        contextWindow: 128000,
+        capabilities: { vision: true },
+      });
+      mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20 }]));
+      mockModels([m]);
+      await syncModelsFromCatalog('0.3.0');
+      const w = written();
+      expect(w.cost).not.toHaveProperty('cacheWritePerMillion');
+      expect(w.cost).not.toHaveProperty('pricingTiers');
+      expect(w.contextWindow).toBe(0);
+      expect(w).not.toHaveProperty('capabilities');
+      expect(w.cost).toEqual({ inputPerMillion: 5, outputPerMillion: 20 });
+      expect(w.catalogDefaults).toEqual({ inputPerMillion: 5, outputPerMillion: 20 });
+    });
+
+    it('keeps overridden fields when the catalog drops them', async () => {
+      const tiers = [{ metric: 'input' as const, above: 200000, inputPerMillion: 6, outputPerMillion: 22 }];
+      const m = makeModel({
+        cost: { inputPerMillion: 5, outputPerMillion: 20, cachePerMillion: 9, cacheWritePerMillion: 7, pricingTiers: tiers },
+        contextWindow: 128000,
+        capabilities: { vision: true },
+        fieldOverrides: { cachePerMillion: true, cacheWritePerMillion: true, pricingTiers: true, contextWindow: true, capabilities: true },
+      });
+      mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20 }]));
+      mockModels([m]);
+      await syncModelsFromCatalog('0.3.0');
+      const w = written();
+      expect(w.cost).toEqual({ inputPerMillion: 5, outputPerMillion: 20, cachePerMillion: 9, cacheWritePerMillion: 7, pricingTiers: tiers });
+      expect(w.contextWindow).toBe(128000);
+      expect(w.capabilities).toEqual({ vision: true });
     });
 
     it('does not mark changed when cachePerMillion already matches catalog', async () => {

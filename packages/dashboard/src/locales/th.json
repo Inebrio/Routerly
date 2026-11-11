@@ -25,6 +25,7 @@
       "routers": "เราเตอร์",
       "experiments": "การทดลอง",
       "usage": "การใช้งาน",
+      "timeline": "Timeline",
       "playground": "สนามเด็กเล่น",
       "settings": "การตั้งค่า",
       "connectApp": "เชื่อมต่ออ่านเป็น",
@@ -217,7 +218,8 @@
         "semantic-intent": "จำแนกคำขอตามความตั้งใจเชิงความหมายโดยใช้การฝังตัว จากนั้นจำกัดสระสมัครให้เฉพาะรุ่นที่แมปกับความตั้งใจนั้น การจับคู่ที่มั่นใจสูงตัวกรองแบบฮาร์ด การจับคู่ที่คลุมเครือจะรวมสระด้านบน คำขอที่ไม่รู้จักจะส่งผ่านผู้สมัครทั้งหมด",
         "model-preference": "เมื่อไคลเอนต์ขอรุ่นเฉพาะ (ไม่ใช่ routerly/ada) ให้คะแนนโบนัสที่กำหนดค่าได้ให้กับรุ่นนั้น เมื่อไม่แสดงความชอบ นโยบายจะละเว้น ตำแหน่งในรายการควบคุมว่าความชอบถ่วงน้ำหนักเทียบกับนโยบายอื่นๆ มากแค่ไหน"
       },
-      "selectModel": "เลือกรุ่น"
+      "selectModel": "เลือกรุ่น",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "นำไปใช้กับ",
@@ -446,6 +448,7 @@
       "profile": "โปรไฟล์",
       "notifications": "การแจ้งเตือน",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "ตั้งค่า"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "ไม่สามารถสร้างโทเค็น",
           "copyFailed": "การคัดลอกล้มเหลว เลือกและคัดลอกโทเค็นด้วยตนเอง"
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "ความปลอดภัย",
         "token": "โทเค็น",
         "users": "ผู้ใช้",
-        "logs": "บันทึก"
+        "logs": "การใช้งาน",
+        "test": "Test"
       },
       "backToRouters": "กลับไปเราเตอร์",
       "backToRoutersTitle": "กลับไปเราเตอร์",
@@ -1405,7 +1457,25 @@
         "empty": "ยังไม่มีรุ่นเป้าหมายที่ตั้งค่าไว้",
         "addTarget": "เพิ่มรุ่นเป้าหมาย",
         "passthroughLabel": "ส่งผ่านโดยตรง (การส่งต่อแบบดิบ)",
-        "passthroughNotRemovable": "ไม่สามารถลบรายการส่งผ่านโดยตรงได้"
+        "passthroughNotRemovable": "ไม่สามารถลบรายการส่งผ่านโดยตรงได้",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "ข้อยกเว้น",
+        "description": "คำขอที่โมเดลตรงกับกฎจะถูกส่งไปยังโมเดลที่เลือกแทนการส่งต่อโดยไม่เปลี่ยนแปลง ใช้การจับคู่แรกที่ตรง ใช้ * เป็นอักขระแทน ใช้กับคำขอที่ยืนยันตัวตนด้วยโทเค็นเท่านั้น",
+        "empty": "ไม่มีข้อยกเว้น: ทุกคำขอจะถูกส่งต่อโดยไม่เปลี่ยนแปลง",
+        "noRealModels": "เพิ่มโมเดลให้เราเตอร์นี้ก่อน: ข้อยกเว้นระบุได้เฉพาะโมเดลของเราเตอร์เอง",
+        "add": "เพิ่มข้อยกเว้น",
+        "match": "รูปแบบชื่อโมเดล",
+        "matchPlaceholder": "gpt-4*",
+        "target": "โมเดลปลายทาง",
+        "remove": "ลบข้อยกเว้น",
+        "errors": {
+          "matchRequired": "ทุกข้อยกเว้นต้องมีรูปแบบ",
+          "duplicateMatch": "การจับคู่ซ้ำ \"{{match}}\"",
+          "targetMissing": "ปลายทางของข้อยกเว้น \"{{match}}\" ไม่ใช่โมเดลของเราเตอร์นี้"
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "ขีดจำกัดโลบอลและระดับเราเตอร์โอเวอร์ไรด์สำหรับคำขอโดยใช้โทเค็นนี้",
         "noTargetModels": "เพิ่มรุ่นเป้าหมายในแท็บการกำหนดเส้นทางก่อน",
         "noOverride": "ไม่มีการขยาย",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "ไม่มีขีดจำกัด",
         "noLimitsSet": "ไม่มีการตั้งค่าขีดจำกัด - สืบทอดจากผู้ปกครอง เพิ่มขีดจำกัดด้านล่างเพื่อขยาย",
         "metric": "เมตริก",
@@ -1736,7 +1810,8 @@
         "label": "ป้ายกำกับ",
         "provider": "ผู้ให้บริการ",
         "endpoint": "จุดสิ้นสุด",
-        "status": "สถานะ"
+        "status": "สถานะ",
+        "models": "Models"
       },
       "status": {
         "enabled": "เปิดใช้งาน",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "รุ่น",
         "edit": "แก้ไข",
-        "remove": "ลบ"
+        "remove": "ลบ",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "ไม่สามารถโหลดการเชื่อมต่อ",
         "updateFailed": "ไม่สามารถอัปเดตการเชื่อมต่อ",
         "createFailed": "ไม่สามารถสร้างการเชื่อมต่อ"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "ตั้งค่าแล้ว",
         "embedding": "การฝังตัว",
-        "runsLocally": "ทำงานในพื้นที่"
+        "runsLocally": "ทำงานในพื้นที่",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "ก่อนหน้า",
@@ -1918,7 +2011,9 @@
         "title": "ความสามารถ",
         "description": "ระบุประเภทและความสามารถของรุ่มนี้",
         "embeddingModel": "รุ่นการฝังตัว",
-        "embeddingModelHint": "รุ่นนี้สร้างการฝังเวกเตอร์ (ไม่ใช่การเติมเต็มแชท)"
+        "embeddingModelHint": "รุ่นนี้สร้างการฝังเวกเตอร์ (ไม่ใช่การเติมเต็มแชท)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "ราคา & บริบท",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "เขียนแคช $/1M",
         "optional": "(opt.)",
         "contextWindow": "หน้าต่างบริบท",
-        "contextWindowHint": "(โทเค็น เลือกได้)"
+        "contextWindowHint": "(โทเค็น เลือกได้)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "ขั้นสูง - ราคาชั้น",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "ผู้ให้บริการทั้งหมด",
         "allConnections": "การเชื่อมต่อทั้งหมด",
-        "searchPlaceholder": "ตัวกรองรุ่น…"
+        "searchPlaceholder": "ตัวกรองรุ่น…",
+        "allStatuses": "All statuses"
       },
       "discover": "ค้นหา",
       "addModel": "เพิ่มรุ่น",
@@ -1989,13 +2087,16 @@
         "input": "อินพุต $/1M",
         "output": "เอาต์พุต $/1M",
         "cache": "แคช $/1M",
-        "context": "ขนาดบริบท"
+        "context": "ขนาดบริบท",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "ทดสอบ",
         "clone": "โคลน",
         "edit": "แก้ไข",
-        "remove": "ลบ"
+        "remove": "ลบ",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← ก่อนหน้า",
@@ -2051,6 +2152,43 @@
           "cooldown": "ระยะพักร้อน {{time}}",
           "lockout": "การล็อก {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "รุ่น",
       "registered": "ลงทะเบียน",
       "routers": "เราเตอร์",
-      "active": "ใช้งาน"
+      "active": "ใช้งาน",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "เชื่อมต่อไคลเอนต์",
@@ -2383,7 +2522,8 @@
         "outputTokens": "โทเค็นเอาต์พุต",
         "costPer1k": "ต้นทุน / 1K",
         "cost": "ต้นทุน (USD)",
-        "bestCostPerformance": "ต้นทุน-ประสิทธิภาพที่ดีที่สุด"
+        "bestCostPerformance": "ต้นทุน-ประสิทธิภาพที่ดีที่สุด",
+        "deleted": "deleted"
       },
       "showMoreModels": "แสดง {{count}} รุ่นเพิ่มเติม",
       "showMoreModels_other": "แสดง {{count}} รุ่นเพิ่มเติม",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII แก้ไข",
         "sessionId": "รหัสเซสชัน",
         "endUser": "ผู้ใช้ปลายทาง",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "กำหนดเส้นทางโดย"
       },
       "errorMessage": "ข้อความข้อผิดพลาด",
       "eventCount": "{{count}} เหตุการณ์",
       "eventCount_other": "{{count}} เหตุการณ์",
-      "noTrace": "ไม่มีการติดตามที่มี ข้อมูลการติดตามจะถูกจับสำหรับการโทรใหม่เท่านั้น"
+      "noTrace": "ไม่มีการติดตามที่มี ข้อมูลการติดตามจะถูกจับสำหรับการโทรใหม่เท่านั้น",
+      "routedByException": "ข้อยกเว้น Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

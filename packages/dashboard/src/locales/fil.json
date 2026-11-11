@@ -25,6 +25,7 @@
       "routers": "Mga Router",
       "experiments": "Mga Eksperimento",
       "usage": "Paggamit",
+      "timeline": "Timeline",
       "playground": "Playground",
       "settings": "Mga Setting",
       "connectApp": "Ikonekta ang app",
@@ -217,7 +218,8 @@
         "semantic-intent": "Iniuri ang request ayon sa semantikong intent gamit ang embeddings, pagkatapos ay ipinipigil ang pool ng kandidato sa mga model na naka-map sa intent na iyon. Ang tiwalang tugma ay hard-filter sa pool; ang malabong tugma ay pinagsasama ang top-2 pools; ang hindi kilalang request ay pinapasa lahat ng kandidato.",
         "model-preference": "Kapag humingi ang client ng partikular na model (hindi routerly/ada), nagbibigay ng naikonfigureng bonus score sa model na iyon. Kapag walang preference na naipahayag, hindi kumikilos ang patakaran. Ang posisyon sa listahan ay kontrolado kung gaano ito bumibigat laban sa iba pang patakaran."
       },
-      "selectModel": "Piliin ang model"
+      "selectModel": "Piliin ang model",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "Ilapat sa",
@@ -446,6 +448,7 @@
       "profile": "Profile",
       "notifications": "Mga Notipikasyon",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Mga Kagustuhan"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "Nabigong gumawa ng token",
           "copyFailed": "Nabigo ang kopya, piliin at kopyahin ang token nang manwal."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "Seguridad",
         "token": "Token",
         "users": "Mga User",
-        "logs": "Mga Log"
+        "logs": "Paggamit",
+        "test": "Test"
       },
       "backToRouters": "Bumalik sa Mga Router",
       "backToRoutersTitle": "Bumalik sa mga router",
@@ -1405,7 +1457,25 @@
         "empty": "Walang nakakonfigureng target model.",
         "addTarget": "Magdagdag ng Target Model",
         "passthroughLabel": "Pass-through (hilaw na pagpasa)",
-        "passthroughNotRemovable": "Hindi maaaring alisin ang pass-through entry"
+        "passthroughNotRemovable": "Hindi maaaring alisin ang pass-through entry",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "Mga exception",
+        "description": "Ang request na ang model ay tumutugma sa isang panuntunan ay ipapadala sa napiling model sa halip na ipasa nang walang pagbabago. Ang unang tugma ang masusunod. Gamitin ang * bilang wildcard. Para lang sa mga request na na-authenticate gamit ang token.",
+        "empty": "Walang exception: bawat request ay ipinapasa nang walang pagbabago.",
+        "noRealModels": "Magdagdag muna ng model sa router na ito: ang mga exception ay maaari lang tumarget sa mga model ng router.",
+        "add": "Magdagdag ng exception",
+        "match": "Pattern ng pangalan ng model",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Target na model",
+        "remove": "Alisin ang exception",
+        "errors": {
+          "matchRequired": "Kailangan ng pattern ang bawat exception.",
+          "duplicateMatch": "Duplicate na tugma \"{{match}}\".",
+          "targetMissing": "Ang target ng exception na \"{{match}}\" ay hindi model ng router na ito."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "I-override ang global at router-level na limitasyon para sa mga request na gumagamit ng token na ito.",
         "noTargetModels": "Magdagdag muna ng target model sa Routing tab.",
         "noOverride": "walang override",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Walang limitasyon",
         "noLimitsSet": "Walang itinakdang limitasyon — nagmana mula sa parent. Magdagdag ng limitasyon sa ibaba upang i-override.",
         "metric": "Metric",
@@ -1736,7 +1810,8 @@
         "label": "Label",
         "provider": "Provider",
         "endpoint": "Endpoint",
-        "status": "Status"
+        "status": "Status",
+        "models": "Models"
       },
       "status": {
         "enabled": "Pinagana",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "Mga Model",
         "edit": "I-edit",
-        "remove": "Alisin"
+        "remove": "Alisin",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "Nabigong i-load ang koneksyon",
         "updateFailed": "Nabigong i-update ang koneksyon",
         "createFailed": "Nabigong gumawa ng koneksyon"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "Nakakonfigure",
         "embedding": "embedding",
-        "runsLocally": "Tumatakbo nang lokal"
+        "runsLocally": "Tumatakbo nang lokal",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Nauna",
@@ -1918,7 +2011,9 @@
         "title": "Mga Kapasidad",
         "description": "Tukuyin ang uri at mga kapasidad ng model na ito.",
         "embeddingModel": "Embedding model",
-        "embeddingModelHint": "Ang model na ito ay gumagawa ng vector embeddings (hindi chat completions)"
+        "embeddingModelHint": "Ang model na ito ay gumagawa ng vector embeddings (hindi chat completions)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Presyo at context",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "Cache write $/1M",
         "optional": "(opsyonal)",
         "contextWindow": "Context Window",
-        "contextWindowHint": "(tokens, opsyonal)"
+        "contextWindowHint": "(tokens, opsyonal)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Advanced — Mga tier ng presyo",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "Lahat ng provider",
         "allConnections": "Lahat ng koneksyon",
-        "searchPlaceholder": "I-filter ang mga model…"
+        "searchPlaceholder": "I-filter ang mga model…",
+        "allStatuses": "All statuses"
       },
       "discover": "Tuklasin",
       "addModel": "Magdagdag ng Model",
@@ -1989,13 +2087,16 @@
         "input": "Input $/1M",
         "output": "Output $/1M",
         "cache": "Cache $/1M",
-        "context": "Context Size"
+        "context": "Context Size",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "Test",
         "clone": "I-clone",
         "edit": "I-edit",
-        "remove": "Alisin"
+        "remove": "Alisin",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Nauna",
@@ -2051,6 +2152,43 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "Mga Model",
       "registered": "naka-rehistro",
       "routers": "Mga Router",
-      "active": "aktibo"
+      "active": "aktibo",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "Ikonekta ang isang client",
@@ -2383,7 +2522,8 @@
         "outputTokens": "Output tokens",
         "costPer1k": "Gastos / 1K",
         "cost": "Gastos (USD)",
-        "bestCostPerformance": "Pinakamahusay na cost-performance"
+        "bestCostPerformance": "Pinakamahusay na cost-performance",
+        "deleted": "deleted"
       },
       "showMoreModels": "Ipakita ang {{count}} pang model",
       "showMoreModels_other": "Ipakita ang {{count}} pang mga model",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "Binurang PII",
         "sessionId": "Session ID",
         "endUser": "End user",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Na-route ng"
       },
       "errorMessage": "Mensahe ng Error",
       "eventCount": "{{count}} kaganapan",
       "eventCount_other": "{{count}} kaganapan",
-      "noTrace": "Walang available na trace. Ang trace data ay naitatala lamang para sa mga bagong tawag."
+      "noTrace": "Walang available na trace. Ang trace data ay naitatala lamang para sa mga bagong tawag.",
+      "routedByException": "Passthrough exception"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

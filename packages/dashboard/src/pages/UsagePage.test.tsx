@@ -121,6 +121,24 @@ describe('UsagePage — per-model table enriched columns', () => {
     });
   });
 
+  it('tags a deleted model in the per-model table (ROUT-292)', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'gone-model': {
+          calls: 2, inputTokens: 10, outputTokens: 5, cachedInputTokens: 0,
+          cost: 0.01, errors: 0, success: 2, avgLatencyMs: 100, p95LatencyMs: 100,
+        },
+      },
+      deletedModelIds: ['gone-model'],
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getAllByText('gone-model').length).toBeGreaterThan(0);
+      expect(screen.getByText('deleted')).toBeTruthy();
+    });
+  });
+
   it('renders provider from models list (slash id)', async () => {
     vi.mocked(getModels).mockResolvedValue([{ id: 'openai/gpt-4o', provider: 'openai', name: 'GPT-4o', endpoint: '', cost: { inputPerMillion: 0, outputPerMillion: 0 } }] as never);
     vi.mocked(getUsage).mockResolvedValue({

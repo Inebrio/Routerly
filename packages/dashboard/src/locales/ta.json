@@ -25,6 +25,7 @@
       "routers": "திசையாக்குபவர்கள்",
       "experiments": "சோதனைகள்",
       "usage": "பயன்பாடு",
+      "timeline": "Timeline",
       "playground": "விளையாட்டு மைதானம்",
       "settings": "அமைப்புகள்",
       "connectApp": "பயன்பாட்டை இணைக்கவும்",
@@ -217,7 +218,8 @@
         "semantic-intent": "சொற்பொருள் உதிரம்",
         "model-preference": "மாதிரி முன்னுரிமை"
       },
-      "selectModel": "மாதிரி தேர்ந்தெடு"
+      "selectModel": "மாதிரி தேர்ந்தெடு",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "பயன்படுத்து",
@@ -446,6 +448,7 @@
       "profile": "சுயவிவரம்",
       "notifications": "அறிவிப்புகள்",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "விருப்பங்கள்"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "டோகன் உருவாக்க தவறிவிட்டது",
           "copyFailed": "நகலெடு தவறிவிட்டது, தேர்ந்தெடு மற்றும் நகலெடு டோகன் மாதிரியாக."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "பாதுகாப்பு",
         "token": "டோகன்",
         "users": "பயனர்கள்",
-        "logs": "சொல்ல"
+        "logs": "பயன்பாடு",
+        "test": "Test"
       },
       "backToRouters": "திசையாக்குபவர்கள் திரும்ப",
       "backToRoutersTitle": "திசையாக்குபவர்கள் திரும்ப",
@@ -1405,7 +1457,25 @@
         "empty": "எந்த இலக்கம் மாதிரிகள் அமைப்பு வேண்டும் இல்லை.",
         "addTarget": "இலக்கம் மாதிரி சேர்க்கவும்",
         "passthroughLabel": "பாஸ்-த்ரூ (மூல அனுப்புதல்)",
-        "passthroughNotRemovable": "பாஸ்-த்ரூ உள்ளீட்டை அகற்ற முடியாது"
+        "passthroughNotRemovable": "பாஸ்-த்ரூ உள்ளீட்டை அகற்ற முடியாது",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "விதிவிலக்குகள்",
+        "description": "மாதிரி ஒரு விதியுடன் பொருந்தும் கோரிக்கை, மாற்றமின்றி அனுப்பப்படுவதற்குப் பதிலாக தேர்ந்தெடுத்த மாதிரிக்கு அனுப்பப்படும். முதல் பொருத்தம் செல்லுபடியாகும். வைல்டுகார்டாக * பயன்படுத்தவும். டோக்கன் மூலம் அங்கீகரிக்கப்பட்ட கோரிக்கைகளுக்கு மட்டும் பொருந்தும்.",
+        "empty": "விதிவிலக்குகள் இல்லை: ஒவ்வொரு கோரிக்கையும் மாற்றமின்றி அனுப்பப்படும்.",
+        "noRealModels": "முதலில் இந்த ரூட்டரில் ஒரு மாதிரியைச் சேர்க்கவும்: விதிவிலக்குகள் ரூட்டரின் சொந்த மாதிரிகளை மட்டுமே இலக்காகக் கொள்ளலாம்.",
+        "add": "விதிவிலக்கைச் சேர்",
+        "match": "மாதிரி பெயர் வடிவம்",
+        "matchPlaceholder": "gpt-4*",
+        "target": "இலக்கு மாதிரி",
+        "remove": "விதிவிலக்கை நீக்கு",
+        "errors": {
+          "matchRequired": "ஒவ்வொரு விதிவிலக்குக்கும் ஒரு வடிவம் தேவை.",
+          "duplicateMatch": "மீண்டும் வரும் பொருத்தம் \"{{match}}\".",
+          "targetMissing": "விதிவிலக்கு \"{{match}}\" இன் இலக்கு இந்த ரூட்டரின் மாதிரி அல்ல."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "मा०० वैश्विक मर्दा র௭ट्टार-स्तर वरम्बु् के लिए अनुरोध इस डिटोकेन् का उपयोग कर।",
         "noTargetModels": "पहले रूटिंग टैब में लक्ष्य मॉडल जोड़ें।",
         "noOverride": "कोई ओवरराइड नहीं",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "कोई सीमा नहीं",
         "noLimitsSet": "कोई सीमा सेट नहीं — प्रभावी माता-पिता से। नीचे एक सीमा जोड़ें ओवरराइड करने के लिए।",
         "metric": "अनुमति दीजिये",
@@ -1736,7 +1810,8 @@
         "label": "குறிப்பு",
         "provider": "வழங்குநர்",
         "endpoint": "Endpoint",
-        "status": "நிலை"
+        "status": "நிலை",
+        "models": "Models"
       },
       "status": {
         "enabled": "இயக்கப்பட்ட",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "மாதிரிகள்",
         "edit": "தொகு",
-        "remove": "அகற்று"
+        "remove": "அகற்று",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "இணைப்பு சுமை தவறிவிட்டது",
         "updateFailed": "இணைப்பு புதிப்பிக்க தவறிவிட்டது",
         "createFailed": "இணைப்பு உருவாக்க தவறிவிட்டது"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "அமைப்பு",
         "embedding": "உள்பொதிப்பு",
-        "runsLocally": "স্थानીয় இயக்கு"
+        "runsLocally": "স্थानીয় இயக்கு",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "முந்தைய",
@@ -1918,7 +2011,9 @@
         "title": "திறன்",
         "description": "வகை மற்றும் திறன் இந்த மாதிரி விவரம்।",
         "embeddingModel": "உள்பொதிப்பு மாதிரி",
-        "embeddingModelHint": "இந்த மாதிரி வெக்டर உள்பொதிப்பு உபயோசல் (உச்சரணை பூர்த் இல்லை)"
+        "embeddingModelHint": "இந்த மாதிரி வெக்டर உள்பொதிப்பு உபயோசல் (உச்சரணை பூர்த் இல்லை)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "விலை & சூழல்",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "கேச் எழுதுக $/1M",
         "optional": "(opt.)",
         "contextWindow": "சூழல் சாளரம்",
-        "contextWindowHint": "(டோகன்கள், விரும்பத்தகாய)"
+        "contextWindowHint": "(டோகன்கள், விரும்பத்தகாய)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "மேம்பட்ட — விலை தளை",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "அனைத்து வழங்குநர்கள்",
         "allConnections": "அனைத்து இணைப்புகள்",
-        "searchPlaceholder": "மாதிரிகளை வடிகட்ட…"
+        "searchPlaceholder": "மாதிரிகளை வடிகட்ட…",
+        "allStatuses": "All statuses"
       },
       "discover": "கண்ட",
       "addModel": "மாதிரி சேர்க்கவும்",
@@ -1989,13 +2087,16 @@
         "input": "உள்ளீடு $/1M",
         "output": "வெளியீடு $/1M",
         "cache": "கேச் $/1M",
-        "context": "சூழல் அளவு"
+        "context": "சூழல் அளவு",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "சோதனை",
         "clone": "நகல",
         "edit": "தொகு",
-        "remove": "அகற்று"
+        "remove": "அகற்று",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← முந்தைய",
@@ -2051,6 +2152,43 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "மாதிரிகள்",
       "registered": "பதிவு",
       "routers": "திசையாக்குபவர்கள்",
-      "active": "செயல்பாட்டிலுள்ள"
+      "active": "செயல்பாட்டிலுள்ள",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "கிளையன்ட் இணைக்கவும்",
@@ -2383,7 +2522,8 @@
         "outputTokens": "आउटपुट टोकन",
         "costPer1k": "लागत / 1K",
         "cost": "लागत (यूएसडी)",
-        "bestCostPerformance": "सर्वश्रेष्ठ लागत-प्रदर्शन"
+        "bestCostPerformance": "सर्वश्रेष्ठ लागत-प्रदर्शन",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} अधिक मॉडल दिखाएं",
       "showMoreModels_other": "{{count}} अधिक मॉडल दिखाएं",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII संपादित किया गया",
         "sessionId": "அமர்வு ஐடி",
         "endUser": "இறுதிப் பயனர்",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "வழிநடத்தியது"
       },
       "errorMessage": "त्रुटि संदेश",
       "eventCount": "{{count}} घटना",
       "eventCount_other": "{{count}} घटनाएं",
-      "noTrace": "कोई ट्रेस उपलब्ध नहीं। ट्रेस डेटा केवल नई कॉल के लिए कैप्चर किया जाता है।"
+      "noTrace": "कोई ट्रेस उपलब्ध नहीं। ट्रेस डेटा केवल नई कॉल के लिए कैप्चर किया जाता है।",
+      "routedByException": "Passthrough விதிவிலக்கு"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

@@ -481,7 +481,7 @@ describe('Sidebar', () => {
     const labels = Array.from(document.querySelectorAll('.sidebar-nav .nav-label')).map(el => el.textContent);
     expect(labels).toEqual([
       'Overview', 'Providers', 'Models', 'Profiles', 'Routers',
-      'Experiments', 'Usage', 'Playground',
+      'Experiments', 'Usage', 'Timeline', 'Playground',
     ]);
     // Connect app is a setup step, not a daily destination: it sits with Settings.
     const footer = Array.from(document.querySelectorAll('.sidebar-footer .nav-label')).map(el => el.textContent);

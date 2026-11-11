@@ -25,7 +25,7 @@ export type ProviderCatalog = Record<string, {
     contextWindow?: number;
     notes?: string;
     deprecated?: boolean;
-    capabilities?: { embedding?: boolean };
+    capabilities?: { embedding?: boolean; decision?: boolean };
     pricingTiers?: Array<{
       metric: string;
       above: number;
@@ -36,12 +36,28 @@ export type ProviderCatalog = Record<string, {
   }>;
 }>;
 
+// ponytail: built-in because released services reject a provider they do not know, so the shared remote
+// catalog must not list it yet; move to Routerly-Providers once every supported release knows `typesafe`.
+// Remote entries override it. Price 0: TypeSafe does not publish one, the operator sets the contract price.
+const BUILTIN_CATALOG: ProviderCatalog = {
+  typesafe: {
+    endpoint: 'https://api.typesafe.ai/v1',
+    models: [{
+      id: 'jev-latest', input: 0, output: 0,
+      notes: 'Jev decision model. Price not published: set your contract price.',
+      capabilities: { decision: true },
+    }],
+  },
+};
+
 const DEFAULT_REPO: ProviderRepo = {
   url: 'https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/',
   enabled: true,
 };
 
-export const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+const RETRY_TTL_MS = 60 * 1000; // a failed repo is retried after 1 minute, not after 6 hours
+const FETCH_TIMEOUT_MS = 10 * 1000;
 
 export interface RepoStatus {
   url: string;
@@ -102,6 +118,7 @@ class CatalogFetcher {
     if (this.cache && now < this.cache.expiresAt) return this.cache.data;
 
     const checkedAt = new Date().toISOString();
+    let failed = false;
 
     for (const repo of this.repos) {
       if (!repo.enabled) {
@@ -122,18 +139,19 @@ class CatalogFetcher {
           lastChecked: checkedAt, error: null,
         });
       } catch (err) {
+        failed = true;
         const prev = this.repoStatus.get(repo.url);
         this.repoStatus.set(repo.url, { url: repo.url, enabled: true, resolvedFile: prev?.resolvedFile ?? null, updatedAt: prev?.updatedAt ?? null, lastChecked: checkedAt, error: (err as Error).message });
       }
     }
 
     // First repo in the list wins on conflict: apply from last to first so earlier rows override
-    const merged: ProviderCatalog = {};
+    const merged: ProviderCatalog = { ...BUILTIN_CATALOG };
     for (const repo of [...this.repos].reverse()) {
       const cat = this.repoCatalog.get(repo.url);
       if (cat && repo.enabled) Object.assign(merged, cat);
     }
-    this.cache = { data: merged, expiresAt: now + CACHE_TTL_MS, checkedAt };
+    this.cache = { data: merged, expiresAt: now + (failed ? RETRY_TTL_MS : CACHE_TTL_MS), checkedAt };
     return merged;
   }
 
@@ -145,7 +163,7 @@ class CatalogFetcher {
     let upstreamUpdatedAt: string | null = null;
 
     try {
-      const indexRes = await fetch(base + 'index.json');
+      const indexRes = await fetch(base + 'index.json', { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
       if (indexRes.ok) {
         const index = await indexRes.json() as IndexJson;
         filePath = this.resolveFile(index, routerlyVersion, repo.channel);
@@ -171,7 +189,7 @@ class CatalogFetcher {
       return { catalog: null, resolvedFile: filePath, changed: false, upstreamMeta: null };
     }
 
-    const fileRes = await fetch(base + filePath);
+    const fileRes = await fetch(base + filePath, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!fileRes.ok) throw new Error(`Failed to fetch ${base + filePath}: ${fileRes.status}`);
 
     const text = await fileRes.text();

@@ -25,6 +25,7 @@
       "routers": "Routers",
       "experiments": "Experiments",
       "usage": "Usage",
+      "timeline": "Timeline",
       "playground": "Playground",
       "settings": "Settings",
       "connectApp": "ऐप कनेक्ट करें",
@@ -217,7 +218,8 @@
         "semantic-intent": "एम्बेडिंग का उपयोग करके शब्दार्थ इरादे द्वारा अनुरोध को वर्गीकृत करता है, फिर उम्मीदवार पूल को उस इरादे पर मैप किए गए मॉडल तक सीमित करता है। आत्मविश्वास से मेल खाता है कठोर-फिल्टर पूल; अस्पष्ट मिलान शीर्ष-2 पूल विलय करते हैं; अज्ञात अनुरोध सभी उम्मीदवारों को पारित करते हैं।",
         "model-preference": "जब क्लाइंट एक विशिष्ट मॉडल का अनुरोध करता है (routerly/ada नहीं), उस मॉडल को एक कॉन्फ़िगर करने योग्य बोनस स्कोर देता है। जब कोई प्राथमिकता व्यक्त नहीं की जाती है, तो नीति अलग रहती है। सूची में स्थिति नियंत्रित करती है कि प्राथमिकता अन्य नीतियों के विरुद्ध कितना वजन रखती है।"
       },
-      "selectModel": "मॉडल चुनें"
+      "selectModel": "मॉडल चुनें",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "लागू करें",
@@ -446,6 +448,7 @@
       "profile": "Profile",
       "notifications": "Notifications",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Preferences"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "टोकन तयार करणे अपयशी",
           "copyFailed": "कॉपी अपयशी, टोकन हाताने निवडा आणि कॉपी करा."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "Security",
         "token": "Token",
         "users": "Users",
-        "logs": "Logs"
+        "logs": "Usage",
+        "test": "Test"
       },
       "backToRouters": "राउटर वर परत",
       "backToRoutersTitle": "राउटरमध्ये परत",
@@ -1405,7 +1457,25 @@
         "empty": "कोणतेही लक्ष्य मॉडेल कॉन्फिगर नाही.",
         "addTarget": "लक्ष्य मॉडेल जोडा",
         "passthroughLabel": "पास-थ्रू (कच्चे फॉरवर्ड)",
-        "passthroughNotRemovable": "पास-थ्रू नोंद काढली जाऊ शकत नाही"
+        "passthroughNotRemovable": "पास-थ्रू नोंद काढली जाऊ शकत नाही",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "अपवाद",
+        "description": "ज्या विनंतीचे मॉडेल एखाद्या नियमाशी जुळते ती बदल न करता पुढे पाठवण्याऐवजी निवडलेल्या मॉडेलकडे पाठवली जाते. पहिली जुळणी लागू होते. वाइल्डकार्डसाठी * वापरा. फक्त टोकनने प्रमाणीकृत विनंत्यांना लागू.",
+        "empty": "कोणतेही अपवाद नाहीत: प्रत्येक विनंती बदल न करता पुढे पाठवली जाते.",
+        "noRealModels": "आधी या राउटरमध्ये एक मॉडेल जोडा: अपवाद फक्त राउटरच्या स्वतःच्या मॉडेलना लक्ष्य करू शकतात.",
+        "add": "अपवाद जोडा",
+        "match": "मॉडेल नावाचा नमुना",
+        "matchPlaceholder": "gpt-4*",
+        "target": "लक्ष्य मॉडेल",
+        "remove": "अपवाद काढा",
+        "errors": {
+          "matchRequired": "प्रत्येक अपवादासाठी नमुना आवश्यक आहे.",
+          "duplicateMatch": "पुनरावृत्त जुळणी \"{{match}}\".",
+          "targetMissing": "अपवाद \"{{match}}\" चे लक्ष्य या राउटरचे मॉडेल नाही."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "या टोकन वापरणारे विनंती वैश्विक आणि राउटर-स्तरीय मर्यादा अधिभूत करा.",
         "noTargetModels": "प्रथम मार्गनिर्देशन टॅबमध्ये लक्ष्य मॉडेल जोडा.",
         "noOverride": "कोणतेही अधिभूत नाही",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "कोणतीही मर्यादा नाही",
         "noLimitsSet": "कोणतीही मर्यादा सेट नाही — मुख्य पासून वारसा. अधिभूत करण्यासाठी खाली एक मर्यादा जोडा.",
         "metric": "Metric",
@@ -1736,7 +1810,8 @@
         "label": "Label",
         "provider": "Provider",
         "endpoint": "Endpoint",
-        "status": "Status"
+        "status": "Status",
+        "models": "Models"
       },
       "status": {
         "enabled": "Enabled",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "Models",
         "edit": "Edit",
-        "remove": "Remove"
+        "remove": "Remove",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "कनेक्शन लोड करणे अयशस्वी",
         "updateFailed": "कनेक्शन अपडेट करणे अयशस्वी",
         "createFailed": "कनेक्शन तयार करणे अयशस्वी"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "Configured",
         "embedding": "embedding",
-        "runsLocally": "स्थानिकपणे चलते"
+        "runsLocally": "स्थानिकपणे चलते",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Prev",
@@ -1918,7 +2011,9 @@
         "title": "Capabilities",
         "description": "या मॉडेलचा प्रकार आणि क्षमता निर्दिष्ट करा।",
         "embeddingModel": "एम्बेडिंग मॉडेल",
-        "embeddingModelHint": "हा मॉडेल वेक्टर एम्बेडिंग तयार करते (चॅट समाप्तिनाही)"
+        "embeddingModelHint": "हा मॉडेल वेक्टर एम्बेडिंग तयार करते (चॅट समाप्तिनाही)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "किंमत आणि संदर्भ",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "कॅश लेखन $/1M",
         "optional": "(opt.)",
         "contextWindow": "संदर्भ विंडो",
-        "contextWindowHint": "(टोकन्स, वैकल्पिक)"
+        "contextWindowHint": "(टोकन्स, वैकल्पिक)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "प्रगत — किंमत स्तर",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "सर्व प्रदाते",
         "allConnections": "सर्व कनेक्शन्स",
-        "searchPlaceholder": "मॉडेल्स फिल्टर करा…"
+        "searchPlaceholder": "मॉडेल्स फिल्टर करा…",
+        "allStatuses": "All statuses"
       },
       "discover": "Discover",
       "addModel": "मॉडेल जोडा",
@@ -1989,13 +2087,16 @@
         "input": "इनपुट $/1M",
         "output": "आउटपुट $/1M",
         "cache": "कॅश $/1M",
-        "context": "संदर्भ आकार"
+        "context": "संदर्भ आकार",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "Test",
         "clone": "Clone",
         "edit": "Edit",
-        "remove": "Remove"
+        "remove": "Remove",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← मागील",
@@ -2051,6 +2152,43 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "Models",
       "registered": "registered",
       "routers": "Routers",
-      "active": "active"
+      "active": "active",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "क्लायंट कनेक्ट करा",
@@ -2383,7 +2522,8 @@
         "outputTokens": "आउटपुट टोकन्स",
         "costPer1k": "खर्च / 1K",
         "cost": "खर्च (USD)",
-        "bestCostPerformance": "सर्वोत्तम खर्च-कार्यक्षमता"
+        "bestCostPerformance": "सर्वोत्तम खर्च-कार्यक्षमता",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} अधिक मॉडेल दाखवा",
       "showMoreModels_other": "{{count}} अधिक मॉडेल्स दाखवा",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII रिडॅक्ट केले गेले",
         "sessionId": "सत्र आयडी",
         "endUser": "अंतिम वापरकर्ता",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "रूट केले"
       },
       "errorMessage": "त्रुटी संदेश",
       "eventCount": "{{count}} event",
       "eventCount_other": "{{count}} events",
-      "noTrace": "कोणतेही ट्रेस उपलब्ध नाही. ट्रेस डेटा फक्त नवीन कॉल्ससाठी कॅप्चर केला जातो।"
+      "noTrace": "कोणतेही ट्रेस उपलब्ध नाही. ट्रेस डेटा फक्त नवीन कॉल्ससाठी कॅप्चर केला जातो।",
+      "routedByException": "Passthrough अपवाद"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

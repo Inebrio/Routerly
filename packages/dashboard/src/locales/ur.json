@@ -25,6 +25,7 @@
       "routers": "روٹرز",
       "experiments": "تجربات",
       "usage": "استعمال",
+      "timeline": "Timeline",
       "playground": "کھیل کا میدان",
       "settings": "سیٹنگز",
       "connectApp": "ایپ کو منسلک کریں",
@@ -217,7 +218,8 @@
         "semantic-intent": "ایمبیڈنگ کا استعمال کرتے ہوئے درخواست کو سیمانٹک مقصد سے درجہ بندی کرتا ہے، پھر امیدواروں کے پول کو اس مقصد سے منسلک ماڈلز تک محدود کرتا ہے۔ متانی مماثلت مشکل فلٹر۔",
         "model-preference": "جب کلائنٹ ایک مخصوص ماڈل درخواست کرتا ہے (روٹرلی/ایڈا نہیں)، تو اس ماڈل کو ایک قابل تبدیلی بونس اسکور دیتا ہے۔"
       },
-      "selectModel": "ماڈل منتخب کریں"
+      "selectModel": "ماڈل منتخب کریں",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "پر لاگو کریں",
@@ -446,6 +448,7 @@
       "profile": "پروفائل",
       "notifications": "اطلاعات",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "ترجیحات"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "ٹوکن بنانے میں ناکام",
           "copyFailed": "کاپی ناکام، ٹوکن کو دستی طریقے سے منتخب اور کاپی کریں۔"
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "سیکیورٹی",
         "token": "ٹوکن",
         "users": "صارفین",
-        "logs": "لاگز"
+        "logs": "استعمال",
+        "test": "Test"
       },
       "backToRouters": "روٹرز پر واپس",
       "backToRoutersTitle": "روٹرز پر واپس",
@@ -1405,7 +1457,25 @@
         "empty": "کوئی ہدف ماڈلز کنفیگر شدہ نہیں۔",
         "addTarget": "ہدف ماڈل شامل کریں",
         "passthroughLabel": "پاس تھرو (خام فارورڈ)",
-        "passthroughNotRemovable": "پاس تھرو اندراج ہٹایا نہیں جا سکتا"
+        "passthroughNotRemovable": "پاس تھرو اندراج ہٹایا نہیں جا سکتا",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "استثنا",
+        "description": "وہ درخواست جس کا ماڈل کسی اصول سے مطابقت رکھتا ہو، بغیر تبدیلی کے آگے بھیجنے کے بجائے منتخب ماڈل کو بھیجی جاتی ہے۔ پہلی مطابقت غالب رہتی ہے۔ وائلڈ کارڈ کے لیے * استعمال کریں۔ صرف ٹوکن سے تصدیق شدہ درخواستوں پر لاگو ہوتا ہے۔",
+        "empty": "کوئی استثنا نہیں: ہر درخواست بغیر تبدیلی کے آگے بھیجی جاتی ہے۔",
+        "noRealModels": "پہلے اس راؤٹر میں ایک ماڈل شامل کریں: استثنا صرف راؤٹر کے اپنے ماڈلز کو ہدف بنا سکتے ہیں۔",
+        "add": "استثنا شامل کریں",
+        "match": "ماڈل نام کا پیٹرن",
+        "matchPlaceholder": "gpt-4*",
+        "target": "ہدف ماڈل",
+        "remove": "استثنا ہٹائیں",
+        "errors": {
+          "matchRequired": "ہر استثنا کے لیے ایک پیٹرن ضروری ہے۔",
+          "duplicateMatch": "مطابقت دہرائی گئی \"{{match}}\"۔",
+          "targetMissing": "استثنا \"{{match}}\" کا ہدف اس راؤٹر کا ماڈل نہیں ہے۔"
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "اس ٹوکن استعمال کرتے ہوئے درخواستوں کے لیے عالمی اور روٹر سطحی حدود کو override کریں۔",
         "noTargetModels": "پہلے Routing ٹیب میں ہدف ماڈلز شامل کریں۔",
         "noOverride": "کوئی override نہیں",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "کوئی حدود نہیں",
         "noLimitsSet": "کوئی حدود متعین نہیں — والد سے ورثہ۔ Override کرنے کے لیے نیچے ایک حد شامل کریں۔",
         "metric": "میٹرک",
@@ -1736,7 +1810,8 @@
         "label": "لیبل",
         "provider": "فراہم کنندہ",
         "endpoint": "اختتام",
-        "status": "حالت"
+        "status": "حالت",
+        "models": "Models"
       },
       "status": {
         "enabled": "فعال شدہ",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "ماڈلز",
         "edit": "ترمیم کریں",
-        "remove": "ہٹائیں"
+        "remove": "ہٹائیں",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "کنکشن لوڈ کرنے میں ناکام",
         "updateFailed": "کنکشن اپ ڈیٹ کرنے میں ناکام",
         "createFailed": "کنکشن بنانے میں ناکام"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "کنفیگر شدہ",
         "embedding": "ایمبیڈنگ",
-        "runsLocally": "مقام پر چلتا ہے"
+        "runsLocally": "مقام پر چلتا ہے",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "پچھلا",
@@ -1918,7 +2011,9 @@
         "title": "صلاحیتیں",
         "description": "اس ماڈل کی قسم اور صلاحیتوں کی تعیین کریں۔",
         "embeddingModel": "ایمبیڈنگ ماڈل",
-        "embeddingModelHint": "یہ ماڈل ویکٹر embeddings بناتا ہے (چیٹ مکمل نہیں)"
+        "embeddingModelHint": "یہ ماڈل ویکٹر embeddings بناتا ہے (چیٹ مکمل نہیں)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "قیمت اور سیاق و سباق",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "کیش لکھیں $/1M",
         "optional": "(opt.)",
         "contextWindow": "سیاق و سباق کی ونڈو",
-        "contextWindowHint": "(ٹوکنز، اختیاری)"
+        "contextWindowHint": "(ٹوکنز، اختیاری)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "اعلیٰ — قیمتوں کے درجات",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "تمام فراہم کنندگان",
         "allConnections": "تمام کنکشنز",
-        "searchPlaceholder": "ماڈلز فلٹر کریں..."
+        "searchPlaceholder": "ماڈلز فلٹر کریں...",
+        "allStatuses": "All statuses"
       },
       "discover": "دریافت",
       "addModel": "ماڈل شامل کریں",
@@ -1989,13 +2087,16 @@
         "input": "ان پٹ $/1M",
         "output": "آؤٹ پٹ $/1M",
         "cache": "کیش $/1M",
-        "context": "سیاق و سباق کا سائز"
+        "context": "سیاق و سباق کا سائز",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "ٹیسٹ کریں",
         "clone": "کلون",
         "edit": "ترمیم کریں",
-        "remove": "ہٹائیں"
+        "remove": "ہٹائیں",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← پچھلا",
@@ -2051,6 +2152,43 @@
           "cooldown": "سردی {{time}}",
           "lockout": "قرنطین {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "ماڈلز",
       "registered": "رجسٹرڈ",
       "routers": "روٹرز",
-      "active": "فعال"
+      "active": "فعال",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "کلائنٹ منسلک کریں",
@@ -2383,7 +2522,8 @@
         "outputTokens": "آؤٹ پٹ ٹوکنز",
         "costPer1k": "لاگت / 1K",
         "cost": "لاگت (USD)",
-        "bestCostPerformance": "بہترین لاگت کارکردگی"
+        "bestCostPerformance": "بہترین لاگت کارکردگی",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} زیادہ ماڈل دکھائیں",
       "showMoreModels_other": "{{count}} زیادہ ماڈلز دکھائیں",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII ردعمل",
         "sessionId": "سیشن آئی ڈی",
         "endUser": "اختتامی صارف",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "روٹ کرنے والا"
       },
       "errorMessage": "خرابی کا پیغام",
       "eventCount": "{{count}} واقعہ",
       "eventCount_other": "{{count}} واقعات",
-      "noTrace": "کوئی نشان دستیاب نہیں۔ نشان کا ڈیٹا نئی کالوں کے لیے ہی حاصل کیا جاتا ہے۔"
+      "noTrace": "کوئی نشان دستیاب نہیں۔ نشان کا ڈیٹا نئی کالوں کے لیے ہی حاصل کیا جاتا ہے۔",
+      "routedByException": "Passthrough استثنا"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

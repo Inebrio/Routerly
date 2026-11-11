@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
 import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type RoutingProfile } from '../../api';
-import { PASSTHROUGH_MODEL_ID, isModelRoutable, DEFAULT_RANKING_ALGORITHM, type CallConfig, type RankingAlgorithmId } from '@routerly/shared';
+import { isChatModel } from '../../utils/models';
+import { PASSTHROUGH_MODEL_ID, isModelRoutable, DEFAULT_RANKING_ALGORITHM, type CallConfig, type PassthroughException, type RankingAlgorithmId } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
 import { useAuth } from '../../AuthContext';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -19,6 +20,8 @@ type TargetModel = {
   prompt: string;
 };
 
+type ExceptionRow = PassthroughException & { internalId: string };
+
 export function RouterRoutingTab() {
   const { t } = useTranslation();
   const { router, setRouter } = useRouter();
@@ -32,6 +35,7 @@ export function RouterRoutingTab() {
   const [policies, setPolicies] = useState<PolicyItem[]>([]);
   const [targetModels, setTargetModels] = useState<TargetModel[]>([]);
   const [rankingAlgorithm, setRankingAlgorithm] = useState<RankingAlgorithmId>(DEFAULT_RANKING_ALGORITHM);
+  const [exceptions, setExceptions] = useState<ExceptionRow[]>([]);
   const [profiles, setProfiles] = useState<RoutingProfile[]>([]);
   // undefined until the operator touches the editor: then the save keeps the stored value.
   const [callConfig, setCallConfig] = useState<CallConfig | undefined>(undefined);
@@ -51,7 +55,7 @@ export function RouterRoutingTab() {
 
   useEffect(() => {
     getModels()
-      .then(m => setAvailableModels(m))
+      .then(m => setAvailableModels(m.filter(isChatModel)))
       .finally(() => setLoading(false));
     getProfiles('routing')
       .then(list => setProfiles(list.filter((p): p is RoutingProfile => p.kind === 'routing')))
@@ -71,6 +75,7 @@ export function RouterRoutingTab() {
 
       setRankingAlgorithm(router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM);
       setCallConfig(router.callConfig);
+      setExceptions((router.exceptions ?? []).map(e => ({ ...e, internalId: Math.random().toString(36).substring(7) })));
       setTargetModels(router.models.map(m => ({
         internalId: Math.random().toString(36).substring(7),
         modelId: m.modelId,
@@ -95,6 +100,8 @@ export function RouterRoutingTab() {
     }
 
     if (JSON.stringify(callConfig ?? null) !== JSON.stringify(router.callConfig ?? null)) return true;
+
+    if (JSON.stringify(exceptions.map(({ match, targetModelId }) => ({ match, targetModelId }))) !== JSON.stringify(router.exceptions ?? [])) return true;
 
     /* v8 ignore next */
     const savedTargets = router.models || [];
@@ -154,6 +161,14 @@ export function RouterRoutingTab() {
       const base = p.config || {};
       return { ...p, config: { ...base, ...configUpdates } };
     }));
+  }
+
+  // --- Exceptions (passthrough only) ---
+  const isPassthroughRouter = router?.kind === 'passthrough';
+  const realTargetIds = targetModels.map(m => m.modelId).filter(id => id !== '' && id !== PASSTHROUGH_MODEL_ID);
+
+  function updateException(idx: number, field: 'match' | 'targetModelId', value: string) {
+    setExceptions(prev => prev.map((e, i) => i === idx ? { ...e, [field]: value } : e));
   }
 
   // --- Target Models Handlers ---
@@ -225,6 +240,17 @@ export function RouterRoutingTab() {
       return;
     }
 
+    if (isPassthroughRouter) {
+      const seen = new Set<string>();
+      for (const e of exceptions) {
+        const m = e.match.trim();
+        if (!m) { setErr(t('routers.routing.exceptions.errors.matchRequired')); return; }
+        if (seen.has(m)) { setErr(t('routers.routing.exceptions.errors.duplicateMatch', { match: m })); return; }
+        seen.add(m);
+        if (!realTargetIds.includes(e.targetModelId)) { setErr(t('routers.routing.exceptions.errors.targetMissing', { match: m })); return; }
+      }
+    }
+
     if (!profileAssigned && callConfigError(callConfig)) {
       setErr(t(callConfigError(callConfig)!, { min: 16, max: 1000000 }));
       return;
@@ -246,6 +272,7 @@ export function RouterRoutingTab() {
         ...(router.timeoutMs !== undefined && { timeoutMs: router.timeoutMs }),
         ...(rankingAlgorithm !== (router.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM) && { rankingAlgorithm }),
         ...(callConfig !== undefined && { callConfig }),
+        ...(isPassthroughRouter && { exceptions: exceptions.map(e => ({ match: e.match.trim(), targetModelId: e.targetModelId })) }),
       };
       let updated = await updateRouter(router.id, payload);
       assigning = draft.isPending;
@@ -360,6 +387,16 @@ export function RouterRoutingTab() {
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 6 }}>
                 {t('common.rankingAlgorithm.title')}: {t(`common.rankingAlgorithm.options.${profiles.find(p => p.id === assignedProfileId)?.rankingAlgorithm ?? DEFAULT_RANKING_ALGORITHM}.label`)} ({t('common.rankingAlgorithm.fromProfile')})
               </p>
+              <ul data-testid="profile-policies" style={{ margin: '10px 0 0', paddingLeft: 18, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                {effectivePolicies.map((p, i) => (
+                  <li key={`${p.type}-${i}`}>
+                    <code>{p.type}</code>{p.enabled ? '' : t('routers.security.profileSelect.disabledSuffix')}
+                    {p.config && Object.keys(p.config).length > 0 && (
+                      <span style={{ color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: '0.75rem' }}> {JSON.stringify(p.config)}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </>
           )}
         </div>
@@ -560,6 +597,81 @@ export function RouterRoutingTab() {
             <Plus size={16} /> {t('routers.routing.targetModels.addTarget')}
           </button>
         </div>
+
+        {isPassthroughRouter && (
+        <>
+        <div style={{ margin: '32px 0 24px', borderTop: '1px solid var(--border)' }} />
+        <div className="form-group">
+          <label className="form-label">{t('routers.routing.exceptions.title')}</label>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
+            {t('routers.routing.exceptions.description')}
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {exceptions.map((item, idx) => (
+              <div
+                key={item.internalId}
+                style={{
+                  display: 'flex', alignItems: 'flex-end', gap: 12,
+                  background: 'var(--surface-active)', padding: 12, borderRadius: 8, border: '1px solid var(--border)',
+                }}
+              >
+                <div className="form-group" style={{ margin: 0, flex: 1 }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.routing.exceptions.match')}</label>
+                  <input
+                    className="form-input mono"
+                    value={item.match}
+                    onChange={e => updateException(idx, 'match', e.target.value)}
+                    placeholder={t('routers.routing.exceptions.matchPlaceholder')}
+                    maxLength={200}
+                  />
+                </div>
+                <div className="form-group" style={{ margin: 0, flex: 1 }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.routing.exceptions.target')}</label>
+                  <SearchableSelect
+                    value={item.targetModelId}
+                    onChange={v => updateException(idx, 'targetModelId', v)}
+                    placeholder={t('routers.routing.targetModels.selectModel')}
+                    options={realTargetIds.map(id => ({ value: id, label: id }))}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setExceptions(prev => prev.filter((_, i) => i !== idx))}
+                  className="btn-icon danger"
+                  title={t('routers.routing.exceptions.remove')}
+                  aria-label={t('routers.routing.exceptions.remove')}
+                  style={{ marginBottom: 4 }}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            {exceptions.length === 0 && (
+              <div className="empty-state" style={{ padding: 24, fontSize: '0.9rem' }}>
+                {realTargetIds.length === 0 ? t('routers.routing.exceptions.noRealModels') : t('routers.routing.exceptions.empty')}
+              </div>
+            )}
+          </div>
+          {realTargetIds.length === 0 && exceptions.length > 0 && (
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 12 }}>{t('routers.routing.exceptions.noRealModels')}</p>
+          )}
+          <button
+            type="button"
+            onClick={() => setExceptions(prev => [...prev, { internalId: Math.random().toString(36).substring(7), match: '', targetModelId: realTargetIds[0] ?? '' }])}
+            disabled={realTargetIds.length === 0}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center',
+              width: '100%', padding: '10px', marginTop: 12,
+              background: 'none', border: '1.5px dashed var(--border)', borderRadius: 8,
+              color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: realTargetIds.length === 0 ? 'not-allowed' : 'pointer',
+              opacity: realTargetIds.length === 0 ? 0.4 : 1,
+            }}
+          >
+            <Plus size={16} /> {t('routers.routing.exceptions.add')}
+          </button>
+        </div>
+        </>
+        )}
 
         <div style={{ margin: '32px 0 24px', borderTop: '1px solid var(--border)' }} />
         {profileAssigned

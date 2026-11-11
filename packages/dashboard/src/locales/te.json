@@ -25,6 +25,7 @@
       "routers": "రౌటర్‌లు",
       "experiments": "ప్రయోగాలు",
       "usage": "ఉపయోగం",
+      "timeline": "Timeline",
       "playground": "ప్లేగ్రౌండ్",
       "settings": "సెట్టింగ్‌లు",
       "connectApp": "యాప్‌ను కనెక్ట్ చేయండి",
@@ -217,7 +218,8 @@
         "semantic-intent": "ఎంబెడింగ్‌ల ఉపయోగించి సెమాంటిక్ ఉద్దేశ్యం ద్వారా అభ్యర్థనను వర్గీకరిస్తుంది, ఆ ఉద్దేశ్యానికి మ్యాప్ చేసిన మోడల్‌లకు అభ్యర్థీ పూల్‌ను పరిమితం చేస్తుంది. నిశ్చితమైన ఉపసరాలు పూల్‌ను కఠినంగా ఫిల్టర్ చేస్తాయి; అస్పష్టమైన ఉపసరాలు టాప్-2 పూల్‌లను విలీనం చేస్తాయి; తెలియని అభ్యర్థనలు అన్ని అభ్యర్థులను పాస్ చేస్తాయి.",
         "model-preference": "క్లయింట్ నిర్దిష్ట మోడల్‌ను అభ్యర్థించినప్పుడు (routerly/ada కాకుండా), ఆ మోడల్‌కు కాన్ఫిగర్‌బుల్ బోనస్ స్కోర్‌ను అందిస్తుంది. ఎటువంటి ఆదరణ వ్యక్త చేయకపోతే, విధానం దూరంగా ఉంటుంది. జాబితాలో స్థానం ఇతర విధానాలకు వ్యతిరేకంగా ఆదరణ ఎంత బరువుకు నియంత్రిస్తుంది."
       },
-      "selectModel": "మోడల్‌ను ఎంచుకోండి"
+      "selectModel": "మోడల్‌ను ఎంచుకోండి",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "దీనికి వర్తించండి",
@@ -446,6 +448,7 @@
       "profile": "ప్రొఫైల్",
       "notifications": "నోటిఫికేషన్‌లు",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "ఆదరణలు"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "టోకెన్‌ను సృష్టించడం విఫలమైంది",
           "copyFailed": "కాపీ విఫలమైంది, టోకెన్‌ను నిర్వహణ మరియు కాపీ చేయండి."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "భద్రత",
         "token": "టోకెన్",
         "users": "ఆర్డర",
-        "logs": "లాగ్‌లు"
+        "logs": "ఉపయోగం",
+        "test": "Test"
       },
       "backToRouters": "రౌటర్‌లకు వెనుకకు",
       "backToRoutersTitle": "రౌటర్‌లకు వెనుకకు",
@@ -1405,7 +1457,25 @@
         "empty": "ఎటువంటి లక్ష్య మోడల్‌లు ఆర్డర చేయబడలేదు.",
         "addTarget": "లక్ష్య మోడల్‌ను జోడించండి",
         "passthroughLabel": "పాస్-త్రూ (రా ఫార్వార్డ్)",
-        "passthroughNotRemovable": "పాస్-త్రూ ఎంట్రీని తీసివేయలేరు"
+        "passthroughNotRemovable": "పాస్-త్రూ ఎంట్రీని తీసివేయలేరు",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "మినహాయింపులు",
+        "description": "మోడల్ ఒక నియమానికి సరిపోలే అభ్యర్థన మార్పు లేకుండా ఫార్వర్డ్ కాకుండా ఎంచుకున్న మోడల్‌కు పంపబడుతుంది. మొదటి సరిపోలిక వర్తిస్తుంది. వైల్డ్‌కార్డ్‌గా * ఉపయోగించండి. టోకెన్‌తో ప్రమాణీకరించిన అభ్యర్థనలకు మాత్రమే వర్తిస్తుంది.",
+        "empty": "మినహాయింపులు లేవు: ప్రతి అభ్యర్థన మార్పు లేకుండా ఫార్వర్డ్ అవుతుంది.",
+        "noRealModels": "ముందుగా ఈ రౌటర్‌కు ఒక మోడల్‌ను జోడించండి: మినహాయింపులు రౌటర్ సొంత మోడల్స్‌ను మాత్రమే లక్ష్యంగా చేసుకోగలవు.",
+        "add": "మినహాయింపును జోడించు",
+        "match": "మోడల్ పేరు నమూనా",
+        "matchPlaceholder": "gpt-4*",
+        "target": "లక్ష్య మోడల్",
+        "remove": "మినహాయింపును తొలగించు",
+        "errors": {
+          "matchRequired": "ప్రతి మినహాయింపుకు ఒక నమూనా అవసరం.",
+          "duplicateMatch": "పునరావృత సరిపోలిక \"{{match}}\".",
+          "targetMissing": "మినహాయింపు \"{{match}}\" లక్ష్యం ఈ రౌటర్ మోడల్ కాదు."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "ఈ టోకెన్ ఉపయోగించిన అభ్యర్థనల కోసం సమూహ మరియు రౌటర్-స్థర సీమలను భర్తీ చేయండి.",
         "noTargetModels": "రూటింగ్ ట్యాబ్‌లో ముందుగా లక్ష్య మోడల్‌లను జోడించండి.",
         "noOverride": "ఎటువంటి భర్తీ లేదు",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "ఎటువంటి సీమలు లేవు",
         "noLimitsSet": "ఎటువంటి సీమలు సెట్ చేయబడలేదు — మాతృ నుండి ఆర్డర చేయడం. ఆర్డర చేయుటకు దిగువ సీమ జోడించండి.",
         "metric": "మెట్రిక్",
@@ -1736,7 +1810,8 @@
         "label": "లేబుల్",
         "provider": "ప్రదాత",
         "endpoint": "ఎండ్‌పాయింట్",
-        "status": "స్థితి"
+        "status": "స్థితి",
+        "models": "Models"
       },
       "status": {
         "enabled": "ప్రారంభం చేయబడింది",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "మోడల్‌లు",
         "edit": "సవరించండి",
-        "remove": "తీసివేయండి"
+        "remove": "తీసివేయండి",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "కనెక్షన్‌ను లోడ్ చేయడం విఫలమైంది",
         "updateFailed": "కనెక్షన్‌ను నవీకరించడం విఫలమైంది",
         "createFailed": "కనెక్షన్‌ను సృష్టించడం విఫలమైంది"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "ఆకృతిపరచారు",
         "embedding": "ఎంబెడింగ్",
-        "runsLocally": "స్థానికంగా"
+        "runsLocally": "స్థానికంగా",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "మునుపటి",
@@ -1918,7 +2011,9 @@
         "title": "సామర్థ్యాలు",
         "description": "ఈ మోడల్ రకం మరియు సామర్థ్యాలు నిర్దిష్ట చేయండి.",
         "embeddingModel": "ఎంబెడింగ్ మోడల్",
-        "embeddingModelHint": "ఈ మోడల్ వెక్టర్ ఎంబెడింగ్ ఉత్పత్తి చేస్తుంది (చాట్ సంపూర్ణం కాదు)"
+        "embeddingModelHint": "ఈ మోడల్ వెక్టర్ ఎంబెడింగ్ ఉత్పత్తి చేస్తుంది (చాట్ సంపూర్ణం కాదు)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "ధర & సందర్భం",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "కేష్ రాయండి $/1M",
         "optional": "(opt.)",
         "contextWindow": "సందర్భం విండో",
-        "contextWindowHint": "(టోకెన్‌లు, ఐచ్ఛికం)"
+        "contextWindowHint": "(టోకెన్‌లు, ఐచ్ఛికం)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "ఆధునిక — ధర స్థరాలు",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "అన్ని ప్రదాతలు",
         "allConnections": "అన్ని కనెక్షన్‌లు",
-        "searchPlaceholder": "ఫిల్టర్ మోడల్‌లు…"
+        "searchPlaceholder": "ఫిల్టర్ మోడల్‌లు…",
+        "allStatuses": "All statuses"
       },
       "discover": "కనుగొనుట",
       "addModel": "మోడల్ జోడించండి",
@@ -1989,13 +2087,16 @@
         "input": "ఇన్‌పుట్ $/1M",
         "output": "అవుట్‌పుట్ $/1M",
         "cache": "కేష్ $/1M",
-        "context": "సందర్భం సైజ్"
+        "context": "సందర్భం సైజ్",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "పరీక్ష",
         "clone": "నకలు చేయండు",
         "edit": "సవరించండు",
-        "remove": "తీసివేయండు"
+        "remove": "తీసివేయండు",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← మునుపటి",
@@ -2051,6 +2152,43 @@
           "cooldown": "కూల్‌డౌన్ {{time}}",
           "lockout": "లాకআউట్ {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "మోడల్‌లు",
       "registered": "నమోదు చేసారు",
       "routers": "రౌటర్‌లు",
-      "active": "క్రియాశీల"
+      "active": "క్రియాశీల",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "క్లయింట్‌ను కనెక్ట్ చేయండు",
@@ -2383,7 +2522,8 @@
         "outputTokens": "అవుట్‌పుట్ టోకెన్‌లు",
         "costPer1k": "ధర / 1K",
         "cost": "ధర (USD)",
-        "bestCostPerformance": "ఉత్తమ ధర-పనితీరు"
+        "bestCostPerformance": "ఉత్తమ ధర-పనితీరు",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}} ఇతర మోడల్ చూపండు",
       "showMoreModels_other": "{{count}} ఇతర మోడల్‌లు చూపండు",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII నిరాకరణ చేసారు",
         "sessionId": "సెషన్ ID",
         "endUser": "తుది వినియోగదారు",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "రూట్ చేసింది"
       },
       "errorMessage": "ఉద్దాటన సందేశం",
       "eventCount": "{{count}} ఈవెంట్",
       "eventCount_other": "{{count}} ఈవెంట్‌లు",
-      "noTrace": "ఎటువంటి ట్రేస్ అందుబాటులో లేదు. ట్రేస్ డేటా కేవలం నవీన కాల్‌ల కోసం సంగ్రహించిన."
+      "noTrace": "ఎటువంటి ట్రేస్ అందుబాటులో లేదు. ట్రేస్ డేటా కేవలం నవీన కాల్‌ల కోసం సంగ్రహించిన.",
+      "routedByException": "Passthrough మినహాయింపు"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

@@ -8,7 +8,7 @@ import { CONFIG_PATHS } from '../../lib/paths.js';
 // the lock with that discipline: append and full-rewrite callers serialize
 // through the same proper-lockfile lock on usage.ndjson, so a sweep never
 // loses a concurrently-queued append (and vice versa).
-const LOCK_RETRIES = { retries: 10, minTimeout: 50, maxTimeout: 500 };
+export const LOCK_RETRIES = { retries: 10, minTimeout: 50, maxTimeout: 500 };
 
 let tmpCounter = 0;
 
@@ -22,7 +22,7 @@ function isNodeError(err: unknown): err is NodeJS.ErrnoException {
  * fs.realpath, which requires the path to already exist — this is the
  * append path's only filesystem touch besides the lock + appendFile itself.
  */
-async function ensureFileExists(filePath: string): Promise<void> {
+export async function ensureFileExists(filePath: string): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true });
   await writeFile(filePath, '', { flag: 'a', mode: 0o600 });
   // Tighten a file created earlier with the default umask (644).

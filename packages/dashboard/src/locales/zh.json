@@ -25,6 +25,7 @@
       "routers": "路由器",
       "experiments": "实验",
       "usage": "使用",
+      "timeline": "Timeline",
       "playground": "测试台",
       "settings": "设置",
       "connectApp": "连接应用",
@@ -217,7 +218,8 @@
         "semantic-intent": "使用嵌入对请求进行语义意图分类，然后将候选池限制为映射到该意图的模型。置信度高的匹配对池进行硬过滤；模糊匹配合并前2个池；未知请求通过所有候选。",
         "model-preference": "当客户端请求特定模型(而非routerly/ada)时，为该模型授予可配置的奖励分数。当未表达偏好时，该策略弃权。列表中的位置控制偏好对其他策略的权重。"
       },
-      "selectModel": "选择模型"
+      "selectModel": "选择模型",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "应用于",
@@ -446,6 +448,7 @@
       "profile": "配置文件",
       "notifications": "通知",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "偏好"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "未能创建令牌",
           "copyFailed": "复制失败，请手动选择并复制令牌。"
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "安全",
         "token": "令牌",
         "users": "用户",
-        "logs": "日志"
+        "logs": "使用",
+        "test": "Test"
       },
       "backToRouters": "返回路由器",
       "backToRoutersTitle": "返回路由器",
@@ -1405,7 +1457,25 @@
         "empty": "未配置目标模型。",
         "addTarget": "添加目标模型",
         "passthroughLabel": "直通(原始转发)",
-        "passthroughNotRemovable": "直通条目无法删除"
+        "passthroughNotRemovable": "直通条目无法删除",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "例外",
+        "description": "模型匹配某条规则的请求将发送到所选模型，而不是原样转发。以第一个匹配为准。使用 * 作为通配符。仅适用于通过令牌认证的请求。",
+        "empty": "没有例外：所有请求都原样转发。",
+        "noRealModels": "请先为此路由器添加模型：例外只能指向路由器自身的模型。",
+        "add": "添加例外",
+        "match": "模型名称模式",
+        "matchPlaceholder": "gpt-4*",
+        "target": "目标模型",
+        "remove": "移除例外",
+        "errors": {
+          "matchRequired": "每个例外都需要一个模式。",
+          "duplicateMatch": "匹配项重复“{{match}}”。",
+          "targetMissing": "例外“{{match}}”的目标不是此路由器的模型。"
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "覆盖使用此令牌的请求的全局和路由器级别限制。",
         "noTargetModels": "先在路由标签页添加目标模型。",
         "noOverride": "无覆盖",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "无限制",
         "noLimitsSet": "未设置限制 - 从父级继承。在下面添加限制以覆盖。",
         "metric": "指标",
@@ -1736,7 +1810,8 @@
         "label": "标签",
         "provider": "提供商",
         "endpoint": "端点",
-        "status": "状态"
+        "status": "状态",
+        "models": "Models"
       },
       "status": {
         "enabled": "已启用",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "模型",
         "edit": "编辑",
-        "remove": "删除"
+        "remove": "删除",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "未能加载连接",
         "updateFailed": "未能更新连接",
         "createFailed": "未能创建连接"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "已配置",
         "embedding": "嵌入",
-        "runsLocally": "本地运行"
+        "runsLocally": "本地运行",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "前一个",
@@ -1918,7 +2011,9 @@
         "title": "能力",
         "description": "指定此模型的类型和能力。",
         "embeddingModel": "嵌入模型",
-        "embeddingModelHint": "此模型生成向量嵌入(不是聊天完成)"
+        "embeddingModelHint": "此模型生成向量嵌入(不是聊天完成)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "定价和上下文",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "缓存写入 $/1M",
         "optional": "(选项)",
         "contextWindow": "上下文窗口",
-        "contextWindowHint": "(令牌，可选)"
+        "contextWindowHint": "(令牌，可选)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "高级 - 定价等级",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "所有提供商",
         "allConnections": "所有连接",
-        "searchPlaceholder": "过滤模型..."
+        "searchPlaceholder": "过滤模型...",
+        "allStatuses": "All statuses"
       },
       "discover": "发现",
       "addModel": "添加模型",
@@ -1989,13 +2087,16 @@
         "input": "输入 $/1M",
         "output": "输出 $/1M",
         "cache": "缓存 $/1M",
-        "context": "上下文大小"
+        "context": "上下文大小",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "测试",
         "clone": "克隆",
         "edit": "编辑",
-        "remove": "删除"
+        "remove": "删除",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← 前一个",
@@ -2051,6 +2152,43 @@
           "cooldown": "冷却 {{time}}",
           "lockout": "锁定 {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "模型",
       "registered": "已注册",
       "routers": "路由器",
-      "active": "活跃"
+      "active": "活跃",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "连接客户端",
@@ -2383,7 +2522,8 @@
         "outputTokens": "输出令牌",
         "costPer1k": "成本 / 1K",
         "cost": "成本(美元)",
-        "bestCostPerformance": "最佳成本效益"
+        "bestCostPerformance": "最佳成本效益",
+        "deleted": "deleted"
       },
       "showMoreModels": "显示 {{count}} 个更多模型",
       "showMoreModels_other": "显示 {{count}} 个更多模型",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "个人身份信息已编辑",
         "sessionId": "会话 ID",
         "endUser": "终端用户",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "路由方式"
       },
       "errorMessage": "错误消息",
       "eventCount": "{{count}} 个事件",
       "eventCount_other": "{{count}} 个事件",
-      "noTrace": "无可用跟踪。跟踪数据仅为新调用捕获。"
+      "noTrace": "无可用跟踪。跟踪数据仅为新调用捕获。",
+      "routedByException": "Passthrough 例外"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

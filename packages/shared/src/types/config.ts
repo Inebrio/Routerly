@@ -3,7 +3,7 @@
 import type { OptimizerCallStat, OptimizerConfig } from './optimizers.js';
 import type { RequestType } from './usage.js';
 
-export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oauth' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity' | 'azure-openai' | 'bedrock' | 'vertex';
+export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oauth' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity' | 'azure-openai' | 'bedrock' | 'vertex' | 'typesafe';
 
 export type ProviderId = string;
 
@@ -99,6 +99,25 @@ export function suggestRouterSlug(name: string, taken: readonly string[]): strin
   }
 }
 
+export interface ConformanceCaseResult {
+  id: string;
+  status: 'pass' | 'fail' | 'skip';
+  /** Why a case failed or was skipped. */
+  detail?: string;
+  durationMs: number;
+}
+
+/** Outcome of the provider conformance suite for one model (ROUT-713). */
+export interface ConformanceResult {
+  /** ISO timestamp of the run. */
+  verifiedAt: string;
+  /** `conformant`: every case that ran passed; `limited`: at least one failed. A model never run is `unverified` (no result). */
+  status: 'conformant' | 'limited';
+  /** Capabilities proven by passing cases; a capability is `false` only when its case ran and failed. */
+  verified: ModelCapabilities & { streaming?: boolean };
+  cases: ConformanceCaseResult[];
+}
+
 export interface ModelInstance {
   id: string;
   connectionId: string;
@@ -109,6 +128,8 @@ export interface ModelInstance {
   timeout?: number;
   limits?: Limit[];
   capabilities?: ModelCapabilities;
+  /** Last conformance suite run; written by the service only. */
+  conformance?: ConformanceResult;
   /** Fields manually overridden by user; these won't auto-sync from catalog */
   fieldOverrides?: Partial<Record<CatalogField, boolean>>;
   /** Last known catalog values for catalog-trackable fields; used to show defaults in UI */
@@ -233,6 +254,8 @@ export interface ModelCapabilities {
   json?: boolean;
   /** Whether the model is an embedding model */
   embedding?: boolean;
+  /** Decision model: answers predefined questions, cannot serve chat. Derived from the provider, never stored. */
+  decision?: boolean;
 }
 
 export interface ModelConfig {
@@ -275,6 +298,8 @@ export interface ModelConfig {
   globalThresholds?: BudgetThresholds | undefined;
   /** Optional capability flags for special features */
   capabilities?: ModelCapabilities;
+  /** Last conformance suite run (see ModelInstance.conformance). */
+  conformance?: ConformanceResult;
   /** Request timeout in milliseconds (default: 60000) */
   timeout?: number;
   /** Fields manually overridden by user; these won't auto-sync from catalog */
@@ -678,6 +703,14 @@ export interface PlaygroundPreset {
  *  answering within two seconds is better replaced by the next candidate. */
 export const DEFAULT_ROUTER_TIMEOUT_MS = 2000;
 
+/** A passthrough router rule: requests whose body `model` matches go to one of the router's own models. */
+export interface PassthroughException {
+  /** Matched against the request body's `model`. Exact, case-sensitive; `*` = any sequence (incl. empty). */
+  match: string;
+  /** One of this router's real `models[].modelId` (never the sentinel). */
+  targetModelId: string;
+}
+
 export interface RouterConfig {
   id: string;
   name: string;
@@ -734,6 +767,8 @@ export interface RouterConfig {
   traceContent?: boolean;
   /** Call configuration used when no routing profile is bound (a bound profile wins entirely). */
   callConfig?: CallConfig;
+  /** Passthrough only. Ordered; first match wins. Evaluated only on the token-authenticated lanes. */
+  exceptions?: PassthroughException[];
 }
 
 /** True when the router references the model directly or through one of its tokens. */
@@ -763,6 +798,27 @@ export interface McpToken {
   expiresAt?: string;
 }
 
+/**
+ * Personal management-API token (`sk-rt-api-…`) for automations. Only the
+ * SHA-256 hash is stored; the raw value is shown once. Unlike MCP tokens the
+ * expiry is mandatory and the token carries a permission scope, intersected at
+ * use time with the owner's current role permissions.
+ */
+export interface ApiToken {
+  id: string;
+  /** User-chosen label, unique per user. */
+  name: string;
+  tokenHash: string;
+  /** First 14 characters of the raw token, for display. */
+  tokenSnippet: string;
+  createdAt: string; // ISO 8601
+  lastUsedAt?: string;
+  /** ISO 8601 expiry; mandatory. */
+  expiresAt: string;
+  /** Permissions the token may exercise (subset of its creator's at creation). */
+  permissions: Permission[];
+}
+
 export interface UserConfig {
   id: string;
   email: string;
@@ -772,6 +828,8 @@ export interface UserConfig {
   routerIds: string[];
   /** MCP tokens minted by this user. Each grants exactly this user's permissions. */
   mcpTokens?: McpToken[];
+  /** Management-API tokens minted by this user, scoped to a subset of this user's permissions. */
+  apiTokens?: ApiToken[];
   /** SHA-256 hash of the CLI refresh token. Absent means no refresh token issued. */
   refreshTokenHash?: string;
   /** base32-encoded TOTP secret, present when 2FA is enrolled */
@@ -1393,6 +1451,8 @@ export interface UsageRecord {
    * (and model) that actually executed the call — never the Orchestrator.
    */
   orchestratorId?: string;
+  /** Set when the call was diverted by a passthrough exception rule. Absent otherwise. */
+  routedBy?: 'exception';
   /** Call configuration decision applied to this call. Absent when no decision existed. */
   callConfig?: AppliedCallConfig;
 }

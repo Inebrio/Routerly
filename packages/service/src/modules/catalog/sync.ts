@@ -68,30 +68,28 @@ export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean
         modelChanged = true;
       }
     }
-    if (!isOverridden('cachePerMillion') && catalogDefaults.cachePerMillion !== undefined) {
-      if (model.cost.cachePerMillion !== catalogDefaults.cachePerMillion) {
-        model.cost.cachePerMillion = catalogDefaults.cachePerMillion;
+    // A field the catalog no longer carries is removed from the model (unless overridden).
+    for (const field of ['cachePerMillion', 'cacheWritePerMillion'] as const) {
+      if (isOverridden(field)) continue;
+      if (model.cost[field] !== catalogDefaults[field]) {
+        if (catalogDefaults[field] === undefined) delete model.cost[field];
+        else model.cost[field] = catalogDefaults[field];
         modelChanged = true;
       }
     }
-    if (!isOverridden('cacheWritePerMillion') && catalogDefaults.cacheWritePerMillion !== undefined) {
-      if (model.cost.cacheWritePerMillion !== catalogDefaults.cacheWritePerMillion) {
-        model.cost.cacheWritePerMillion = catalogDefaults.cacheWritePerMillion;
-        modelChanged = true;
-      }
-    }
-    if (!isOverridden('pricingTiers') && catalogDefaults.pricingTiers !== undefined) {
-      model.cost.pricingTiers = catalogDefaults.pricingTiers;
+    if (!isOverridden('pricingTiers') && JSON.stringify(model.cost.pricingTiers) !== JSON.stringify(catalogDefaults.pricingTiers)) {
+      if (catalogDefaults.pricingTiers === undefined) delete model.cost.pricingTiers;
+      else model.cost.pricingTiers = catalogDefaults.pricingTiers;
       modelChanged = true;
     }
-    if (!isOverridden('contextWindow') && catalogDefaults.contextWindow !== undefined) {
-      if (model.contextWindow !== catalogDefaults.contextWindow) {
-        model.contextWindow = catalogDefaults.contextWindow;
-        modelChanged = true;
-      }
+    // contextWindow is required on the model: 0 means unknown.
+    if (!isOverridden('contextWindow') && model.contextWindow !== (catalogDefaults.contextWindow ?? 0)) {
+      model.contextWindow = catalogDefaults.contextWindow ?? 0;
+      modelChanged = true;
     }
-    if (!isOverridden('capabilities') && catalogDefaults.capabilities !== undefined) {
-      model.capabilities = catalogDefaults.capabilities;
+    if (!isOverridden('capabilities') && JSON.stringify(model.capabilities) !== JSON.stringify(catalogDefaults.capabilities)) {
+      if (catalogDefaults.capabilities === undefined) delete model.capabilities;
+      else model.capabilities = catalogDefaults.capabilities;
       modelChanged = true;
     }
 
@@ -112,8 +110,9 @@ export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean
     const updatedInstances = instances.map(inst => {
       if (!changedIds.has(inst.id)) return inst;
       const m = byId.get(inst.id)!;
+      const { capabilities: _c, ...rest } = inst;
       return {
-        ...inst,
+        ...rest,
         cost: m.cost,
         contextWindow: m.contextWindow ?? inst.contextWindow,
         ...(m.capabilities !== undefined ? { capabilities: m.capabilities } : {}),
@@ -252,4 +251,23 @@ export async function syncConnectionsFromCatalog(
     });
   }
   return summary;
+}
+
+// Just above the fetcher's 6h cache TTL, so every tick finds the cache expired and refetches.
+const SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000 + 60_000;
+
+/** One automatic run: fetch the catalog and apply it. A failed fetch changes nothing (status keeps the error). */
+export async function runCatalogSync(pkgVersion: string): Promise<void> {
+  try {
+    await catalogFetcher.get(pkgVersion);
+    if (catalogFetcher.getStatus().some(s => s.enabled && s.error)) return;
+    await syncModelsFromCatalog(pkgVersion);
+    await syncConnectionsFromCatalog(pkgVersion);
+  } catch { /* best-effort: the next tick retries */ }
+}
+
+/** Sync at startup, then every ~6h. The timer is unref'd: the listening socket keeps the process alive. */
+export function startCatalogSync(pkgVersion: string): NodeJS.Timeout {
+  void runCatalogSync(pkgVersion);
+  return setInterval(() => void runCatalogSync(pkgVersion), SYNC_INTERVAL_MS).unref();
 }

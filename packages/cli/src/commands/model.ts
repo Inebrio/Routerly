@@ -2,11 +2,17 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ModelConfig, TokenCost, Limit, PricingTier, CatalogField, ModelInstance } from '@routerly/shared';
+import type { ModelConfig, ConformanceResult, TokenCost, Limit, PricingTier, CatalogField, ModelInstance } from '@routerly/shared';
 import { fmtUsd } from '../lib/fmt.js';
 import { modelStatus, resolveConnection } from '../lib/model-status.js';
 
 const RESETTABLE_FIELDS: readonly CatalogField[] = ['inputPerMillion', 'outputPerMillion', 'cachePerMillion', 'cacheWritePerMillion', 'pricingTiers', 'contextWindow', 'capabilities'];
+
+function conformanceLabel(c: ConformanceResult | undefined): string {
+  if (!c) return chalk.gray('unverified');
+  const date = c.verifiedAt.slice(0, 10);
+  return c.status === 'conformant' ? chalk.green(`conformant ${date}`) : chalk.yellow(`limited ${date}`);
+}
 
 // ─── Interactive wizard helpers ───────────────────────────────────────────────
 
@@ -172,7 +178,7 @@ Examples:
         } catch { /* no connections:read permission or endpoint unavailable — column stays blank */ }
 
         const table = new Table({
-          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M', 'Catalog', 'Status', 'Connection ID'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M', 'Catalog', 'Status', 'Conformance', 'Connection ID'].map(h => chalk.cyan(h)),
         });
         for (const m of models) {
           const overridden = m.fieldOverrides ? Object.values(m.fieldOverrides).some(Boolean) : false;
@@ -182,7 +188,7 @@ Examples:
               ? chalk.green('catalog')
               : '';
           const connectionId = connectionByModelId.get(m.id) ?? chalk.gray('-');
-          table.push([m.id, m.provider, m.endpoint, fmtUsd(m.cost?.inputPerMillion), fmtUsd(m.cost?.outputPerMillion), catalogLabel, modelStatus(instanceById.get(m.id) ?? m), connectionId]);
+          table.push([m.id, m.provider, m.endpoint, fmtUsd(m.cost?.inputPerMillion), fmtUsd(m.cost?.outputPerMillion), catalogLabel, modelStatus(instanceById.get(m.id) ?? m), conformanceLabel(m.conformance), connectionId]);
         }
         console.log(table.toString());
       } catch (err) {
@@ -237,6 +243,12 @@ Examples:
         if (caps) console.log(line('Capabilities', caps));
       }
 
+      console.log(line('Conformance', conformanceLabel(m.conformance)));
+      if (m.conformance) {
+        const failed = m.conformance.cases.filter(c => c.status === 'fail');
+        for (const f of failed) console.log(`    ${chalk.red('fail')} ${f.id}${f.detail ? chalk.gray(` — ${f.detail}`) : ''}`);
+      }
+
       console.log(chalk.bold('\nPricing:'));
       console.log(line('Input $/1M', fmtUsd(m.cost?.inputPerMillion)));
       console.log(line('Output $/1M', fmtUsd(m.cost?.outputPerMillion)));
@@ -265,6 +277,38 @@ Examples:
       }
     });
 
+  cmd.command('conformance <id>')
+    .description('Run the provider conformance suite against a model and store the result')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Sends a fixed corpus of real requests (chat, tools, streaming, ...) to the model. Calls are billed by the provider.
+Exit code 1 when the model is limited (a case failed).
+
+Examples:
+  routerly model conformance gpt-4o
+  routerly model conformance gpt-4o --json
+`)
+    .action(async (id: string, opts: { json?: boolean }) => {
+      try {
+        const r = await api<ConformanceResult>('POST', `/api/models/${encodeURIComponent(id)}/conformance`);
+        if (opts.json) {
+          console.log(JSON.stringify(r, null, 2));
+        } else {
+          const table = new Table({ head: ['Case', 'Result', 'ms', 'Detail'].map(h => chalk.cyan(h)) });
+          for (const c of r.cases) {
+            const res = c.status === 'pass' ? chalk.green('pass') : c.status === 'fail' ? chalk.red('fail') : chalk.gray('skip');
+            table.push([c.id, res, String(c.durationMs), c.detail ?? '']);
+          }
+          console.log(table.toString());
+          console.log(`${id}: ${conformanceLabel(r)}`);
+        }
+        if (r.status === 'limited') process.exitCode = 1;
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
   // ── model add ──
   cmd.command('add')
     .description('Register a new LLM model')
@@ -278,6 +322,9 @@ Examples:
 
   # Ollama local model (no API key, no cost)
   routerly model add --id llama3 --provider ollama --input-price 0 --output-price 0
+
+  # Decision model (TypeSafe AI): not a chat model, cannot serve chat requests
+  routerly model add --id jev-latest --provider typesafe --api-key <key> --input-price 0 --output-price 0
 
   # Custom endpoint with monthly budget cap
   routerly model add --id my-model --provider custom \\
@@ -295,7 +342,7 @@ Examples:
   routerly model add --id gpt-4o --provider openai --connection conn-abc123
 `)
     .requiredOption('--id <id>', 'Unique model ID (e.g. gpt-4o)')
-    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | openai-oauth | gemini | mistral | cohere | xai | deepseek | groq | together | perplexity | fireworks | cerebras | ollama | custom | azure-openai | bedrock | vertex')
+    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | openai-oauth | gemini | mistral | cohere | xai | deepseek | groq | together | perplexity | fireworks | cerebras | ollama | typesafe | custom | azure-openai | bedrock | vertex')
     .option('--connection <id|label>', 'Bind to an existing provider connection by id or label (see `routerly connections list`); omits inline credentials')
     .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)')
     .option('--api-key <key>', 'API key (stored plaintext; file permissions protect it)')
@@ -346,6 +393,7 @@ Examples:
         'anthropic-oauth': 'https://api.anthropic.com',
         gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/',
         ollama: 'http://localhost:11434/v1',
+        typesafe: 'https://api.typesafe.ai/v1',
         'azure-openai': '',
         bedrock: '',
         vertex: '',

@@ -165,6 +165,8 @@ export async function forwardAnthropicOAuth(
   deferFailure = false,
   /** Call configuration resolved for this candidate (the router's effort / output cap). */
   callSettings?: AppliedCallConfig,
+  /** Set when a passthrough exception rule picked this model (usage attribution only). */
+  routedBy?: 'exception',
 ): Promise<unknown> {
   const startMs = Date.now();
   const routerId = request.router?.id ?? '';
@@ -188,15 +190,12 @@ export async function forwardAnthropicOAuth(
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'oauth pass-through upstream error');
     if (routerId) {
-      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}) }).catch(() => {});
+      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}), ...(routedBy ? { routedBy } : {}) }).catch(() => {});
     }
-    return reply.code(502).send({
-      type: 'error',
-      error: {
-        type: 'api_error',
-        message: err instanceof Error ? err.message : 'upstream request failed',
-      },
-    });
+    const message = err instanceof Error ? err.message : 'upstream request failed';
+    const errorBody = { type: 'error', error: { type: 'api_error', message } };
+    if (deferFailure) return { status: 502, body: errorBody, message } satisfies UpstreamFailure;
+    return reply.code(502).send(errorBody);
   }
 
   request.log.info(
@@ -222,6 +221,7 @@ export async function forwardAnthropicOAuth(
       ...(errorMessage !== undefined ? { errorMessage } : {}),
       ...(tokenId ? { tokenId } : {}),
       ...(callSettings ? { callConfig: callSettings } : {}),
+      ...(routedBy ? { routedBy } : {}),
     }).catch(() => {});
   };
 
@@ -270,6 +270,8 @@ export async function forwardAnthropicApiKey(
   deferFailure = false,
   /** Call configuration resolved for this candidate (the router's effort / output cap). */
   callSettings?: AppliedCallConfig,
+  /** Set when a passthrough exception rule picked this model (usage attribution only). */
+  routedBy?: 'exception',
 ): Promise<unknown> {
   const startMs = Date.now();
   const routerId = request.router?.id ?? '';
@@ -300,9 +302,12 @@ export async function forwardAnthropicApiKey(
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'api-key pass-through upstream error');
     if (routerId) {
-      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}) }).catch(() => {});
+      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}), ...(callSettings ? { callConfig: callSettings } : {}), ...(routedBy ? { routedBy } : {}) }).catch(() => {});
     }
-    return reply.code(502).send({ type: 'error', error: { type: 'api_error', message: err instanceof Error ? err.message : 'upstream request failed' } });
+    const message = err instanceof Error ? err.message : 'upstream request failed';
+    const errorBody = { type: 'error', error: { type: 'api_error', message } };
+    if (deferFailure) return { status: 502, body: errorBody, message } satisfies UpstreamFailure;
+    return reply.code(502).send(errorBody);
   }
 
   request.log.info(
@@ -320,6 +325,7 @@ export async function forwardAnthropicApiKey(
       ...(errorMessage !== undefined ? { errorMessage } : {}),
       ...(tokenId ? { tokenId } : {}),
       ...(callSettings ? { callConfig: callSettings } : {}),
+      ...(routedBy ? { routedBy } : {}),
     }).catch(() => {});
   };
 

@@ -25,6 +25,7 @@
       "routers": "נתבים",
       "experiments": "ניסויים",
       "usage": "שימוש",
+      "timeline": "Timeline",
       "playground": "מגרש משחקים",
       "settings": "הגדרות",
       "connectApp": "חבר אפליקציה",
@@ -217,7 +218,8 @@
         "semantic-intent": "מסווגת את הבקשה לפי כוונה סמנטית באמצעות הטמעות, ואז מגבילה את מאגר המועמדים למודלים שממופים לכוונה זו. התאמות בטוחות מסננות קשות את המאגר; התאמות לא ברורות ממזגות את שני המאגרים העליונים; בקשות לא ידועות מעבירות את כל המועמדים.",
         "model-preference": "כשהלקוח מבקש מודל ספציפי (לא routerly/ada), מעניקה ניקוד בונוס מוגדר לאותו מודל. כשלא מובעת העדפה, המדיניות נמנעת. המקום ברשימה קובע כמה ההעדפה שוקלת מול מדיניות אחרות."
       },
-      "selectModel": "בחר מודל"
+      "selectModel": "בחר מודל",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "החל על",
@@ -446,6 +448,7 @@
       "profile": "פרופיל",
       "notifications": "התראות",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "העדפות"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "יצירת הטוקן נכשלה",
           "copyFailed": "ההעתקה נכשלה, בחר והעתק את הטוקן באופן ידני."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "אבטחה",
         "token": "טוקן",
         "users": "משתמשים",
-        "logs": "יומנים"
+        "logs": "שימוש",
+        "test": "Test"
       },
       "backToRouters": "חזרה לנתבים",
       "backToRoutersTitle": "חזרה לנתבים",
@@ -1405,7 +1457,25 @@
         "empty": "לא הוגדרו מודלי יעד.",
         "addTarget": "הוסף מודל יעד",
         "passthroughLabel": "מעבר ישיר (העברה גולמית)",
-        "passthroughNotRemovable": "לא ניתן להסיר את רשומת המעבר הישיר"
+        "passthroughNotRemovable": "לא ניתן להסיר את רשומת המעבר הישיר",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "חריגים",
+        "description": "בקשה שהמודל שלה תואם לכלל נשלחת למודל שנבחר במקום להיות מועברת ללא שינוי. ההתאמה הראשונה קובעת. השתמשו ב-* כתו כללי. חל רק על בקשות מאומתות באסימון.",
+        "empty": "אין חריגים: כל בקשה מועברת ללא שינוי.",
+        "noRealModels": "הוסיפו תחילה מודל לנתב זה: חריגים יכולים להצביע רק על מודלים של הנתב.",
+        "add": "הוספת חריג",
+        "match": "תבנית שם המודל",
+        "matchPlaceholder": "gpt-4*",
+        "target": "מודל יעד",
+        "remove": "הסרת חריג",
+        "errors": {
+          "matchRequired": "כל חריג דורש תבנית.",
+          "duplicateMatch": "התאמה כפולה \"{{match}}\".",
+          "targetMissing": "היעד של החריג \"{{match}}\" אינו מודל של נתב זה."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "עקוף מגבלות גלובליות ומגבלות ברמת הנתב עבור בקשות המשתמשות בטוקן זה.",
         "noTargetModels": "הוסף מודלי יעד בכרטיסייה הניתוב ראשית.",
         "noOverride": "אין עקיפה",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "אין מגבלות",
         "noLimitsSet": "לא הוגדרו מגבלות — יורש מהאב. הוסף מגבלה להלן לעקיפה.",
         "metric": "מדד",
@@ -1736,7 +1810,8 @@
         "label": "תווית",
         "provider": "ספק",
         "endpoint": "נקודת קצה",
-        "status": "סטטוס"
+        "status": "סטטוס",
+        "models": "Models"
       },
       "status": {
         "enabled": "מופעל",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "מודלים",
         "edit": "ערוך",
-        "remove": "הסר"
+        "remove": "הסר",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "טעינת החיבור נכשלה",
         "updateFailed": "עדכון החיבור נכשל",
         "createFailed": "יצירת החיבור נכשלה"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "מוגדר",
         "embedding": "הטמעה",
-        "runsLocally": "רץ באופן מקומי"
+        "runsLocally": "רץ באופן מקומי",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "הקודם",
@@ -1918,7 +2011,9 @@
         "title": "יכולות",
         "description": "ציין את הסוג והיכולות של מודל זה.",
         "embeddingModel": "מודל הטמעה",
-        "embeddingModelHint": "מודל זה מייצר הטמעות וקטוריות (לא השלמות צ׳אט)"
+        "embeddingModelHint": "מודל זה מייצר הטמעות וקטוריות (לא השלמות צ׳אט)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "תמחור והקשר",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "כתיבת מטמון $/1M",
         "optional": "(אופצ.)",
         "contextWindow": "חלון הקשר",
-        "contextWindowHint": "(טוקנים, אופציונלי)"
+        "contextWindowHint": "(טוקנים, אופציונלי)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "מתקדם — שכבות תמחור",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "כל הספקים",
         "allConnections": "כל החיבורים",
-        "searchPlaceholder": "סנן מודלים…"
+        "searchPlaceholder": "סנן מודלים…",
+        "allStatuses": "All statuses"
       },
       "discover": "גילוי",
       "addModel": "הוסף מודל",
@@ -1989,13 +2087,16 @@
         "input": "קלט $/1M",
         "output": "פלט $/1M",
         "cache": "מטמון $/1M",
-        "context": "גודל הקשר"
+        "context": "גודל הקשר",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "בדיקה",
         "clone": "שכפל",
         "edit": "ערוך",
-        "remove": "הסר"
+        "remove": "הסר",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← הקודם",
@@ -2051,6 +2152,43 @@
           "cooldown": "צינון {{time}}",
           "lockout": "נעילה {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "מודלים",
       "registered": "רשומים",
       "routers": "נתבים",
-      "active": "פעילים"
+      "active": "פעילים",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "חבר לקוח",
@@ -2383,7 +2522,8 @@
         "outputTokens": "טוקני פלט",
         "costPer1k": "עלות / 1K",
         "cost": "עלות (USD)",
-        "bestCostPerformance": "יחס עלות-ביצועים הטוב ביותר"
+        "bestCostPerformance": "יחס עלות-ביצועים הטוב ביותר",
+        "deleted": "deleted"
       },
       "showMoreModels": "הצג {{count}} מודל נוסף",
       "showMoreModels_other": "הצג {{count}} מודלים נוספים",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "מידע מזהה צונזר",
         "sessionId": "מזהה סשן",
         "endUser": "משתמש קצה",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "נותב על ידי"
       },
       "errorMessage": "הודעת שגיאה",
       "eventCount": "{{count}} אירוע",
       "eventCount_other": "{{count}} אירועים",
-      "noTrace": "אין עקבה זמינה. נתוני עקבה נלכדים עבור קריאות חדשות בלבד."
+      "noTrace": "אין עקבה זמינה. נתוני עקבה נלכדים עבור קריאות חדשות בלבד.",
+      "routedByException": "חריג Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

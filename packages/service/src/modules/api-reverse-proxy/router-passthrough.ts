@@ -6,6 +6,7 @@ import { requestTypeFromPath } from '@routerly/shared';
 import type { RequestType } from '@routerly/shared';
 import { readConfig } from '../config/loader.js';
 import { trackUsage } from '../usage/tracker.js';
+import { appendActivity } from '../usage/activity.js';
 import { checkGuardrails } from '../guardrails/guardrails.js';
 import type { GuardrailRouterCtx } from '../guardrails/guardrails.js';
 import { mergePolicies, scrubMessages, scrubText } from '../pii/piiScrubber.js';
@@ -95,6 +96,12 @@ export async function forwardPassthroughRaw(
     const pathOnly = path.includes('?') ? path.slice(0, path.indexOf('?')) : path;
     const match = resolveFamily(pathOnly);
     if (!match) {
+      // Not a model call: no usage record, but the attempt shows up in the timeline
+      // (method + path only — no query string, headers or body; ROUT-563).
+      void appendActivity({
+        kind: 'proxy', outcome: 'error', durationMs: 0, name: `${method} ${pathOnly}`, status: 400,
+        routerId: router.id, errorMessage: 'unrecognized_wire_format',
+      }).catch(() => {});
       reply.code(400).send({
         error: 'unrecognized_wire_format',
         message: 'Could not match this request to a known upstream wire format',
@@ -312,6 +319,8 @@ export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addContentTypeParser('application/json', { parseAs: 'buffer' }, rawParser);
   fastify.addContentTypeParser('*', { parseAs: 'buffer' }, rawParser);
 
+  // Unauthenticated and raw-forward only: it never enters the proxy pipeline, so the router's
+  // `exceptions` (routed to a model paid with Routerly's credentials) are never evaluated here.
   fastify.all('/passthrough/:slug/*', async (request, reply) => {
     const { slug } = request.params as { slug: string };
     const rest = (request.params as Record<string, string>)['*'] ?? '';

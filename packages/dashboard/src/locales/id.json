@@ -25,6 +25,7 @@
       "routers": "Router",
       "experiments": "Eksperimen",
       "usage": "Penggunaan",
+      "timeline": "Timeline",
       "playground": "Playground",
       "settings": "Pengaturan",
       "connectApp": "Hubungkan aplikasi",
@@ -217,7 +218,8 @@
         "semantic-intent": "Mengklasifikasikan permintaan berdasarkan intent semantik menggunakan embedding, kemudian membatasi pool kandidat ke model yang dipetakan ke intent tersebut. Kecocokan percaya diri menyaring pool dengan keras; kecocokan ambigu menggabungkan top-2 pool; permintaan tidak dikenal melewatkan semua kandidat.",
         "model-preference": "Ketika klien meminta model spesifik (bukan routerly/ada), memberikan skor bonus yang dapat dikonfigurasi ke model tersebut. Ketika tidak ada preferensi yang dinyatakan, kebijakan menjauh. Posisi dalam daftar mengontrol seberapa banyak preferensi berinvestasi melawan kebijakan lain."
       },
-      "selectModel": "Pilih model"
+      "selectModel": "Pilih model",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "Terapkan ke",
@@ -446,6 +448,7 @@
       "profile": "Profil",
       "notifications": "Notifikasi",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Preferensi"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "Gagal membuat token",
           "copyFailed": "Salin gagal, pilih dan salin token secara manual."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "Keamanan",
         "token": "Token",
         "users": "Pengguna",
-        "logs": "Log"
+        "logs": "Penggunaan",
+        "test": "Test"
       },
       "backToRouters": "Kembali ke Router",
       "backToRoutersTitle": "Kembali ke router",
@@ -1405,7 +1457,25 @@
         "empty": "Tidak ada model target yang dikonfigurasi.",
         "addTarget": "Tambah Model Target",
         "passthroughLabel": "Pass-through (penerusan mentah)",
-        "passthroughNotRemovable": "Entri pass-through tidak dapat dihapus"
+        "passthroughNotRemovable": "Entri pass-through tidak dapat dihapus",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "Pengecualian",
+        "description": "Permintaan yang modelnya cocok dengan sebuah aturan dikirim ke model yang dipilih, bukan diteruskan apa adanya. Kecocokan pertama berlaku. Gunakan * sebagai wildcard. Hanya berlaku untuk permintaan yang diautentikasi token.",
+        "empty": "Tidak ada pengecualian: setiap permintaan diteruskan apa adanya.",
+        "noRealModels": "Tambahkan model ke router ini terlebih dahulu: pengecualian hanya dapat menargetkan model milik router.",
+        "add": "Tambah pengecualian",
+        "match": "Pola nama model",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Model tujuan",
+        "remove": "Hapus pengecualian",
+        "errors": {
+          "matchRequired": "Setiap pengecualian memerlukan pola.",
+          "duplicateMatch": "Kecocokan duplikat \"{{match}}\".",
+          "targetMissing": "Tujuan pengecualian \"{{match}}\" bukan model router ini."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "Penggantian batas global dan tingkat router untuk permintaan menggunakan token ini.",
         "noTargetModels": "Tambahkan model target di tab Routing terlebih dahulu.",
         "noOverride": "tidak ada penggantian",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Tidak ada batas",
         "noLimitsSet": "Tidak ada batas yang ditetapkan — mewarisi dari induk. Tambahkan batas di bawah untuk mengganti.",
         "metric": "Metrik",
@@ -1736,7 +1810,8 @@
         "label": "Label",
         "provider": "Penyedia",
         "endpoint": "Endpoint",
-        "status": "Status"
+        "status": "Status",
+        "models": "Models"
       },
       "status": {
         "enabled": "Diaktifkan",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "Model",
         "edit": "Edit",
-        "remove": "Hapus"
+        "remove": "Hapus",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "Gagal memuat koneksi",
         "updateFailed": "Gagal memperbarui koneksi",
         "createFailed": "Gagal membuat koneksi"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "Dikonfigurasi",
         "embedding": "embedding",
-        "runsLocally": "Berjalan secara lokal"
+        "runsLocally": "Berjalan secara lokal",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Sebelumnya",
@@ -1918,7 +2011,9 @@
         "title": "Kemampuan",
         "description": "Tentukan jenis dan kemampuan model ini.",
         "embeddingModel": "Model embedding",
-        "embeddingModelHint": "Model ini menghasilkan embedding vektor (bukan penyelesaian chat)"
+        "embeddingModelHint": "Model ini menghasilkan embedding vektor (bukan penyelesaian chat)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Harga & konteks",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "Cache write $/1M",
         "optional": "(opt.)",
         "contextWindow": "Jendela Konteks",
-        "contextWindowHint": "(token, opsional)"
+        "contextWindowHint": "(token, opsional)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Lanjutan — Tingkatan harga",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "Semua penyedia",
         "allConnections": "Semua koneksi",
-        "searchPlaceholder": "Saringan model…"
+        "searchPlaceholder": "Saringan model…",
+        "allStatuses": "All statuses"
       },
       "discover": "Temukan",
       "addModel": "Tambah Model",
@@ -1989,13 +2087,16 @@
         "input": "Input $/1M",
         "output": "Output $/1M",
         "cache": "Cache $/1M",
-        "context": "Ukuran Konteks"
+        "context": "Ukuran Konteks",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "Test",
         "clone": "Klon",
         "edit": "Edit",
-        "remove": "Hapus"
+        "remove": "Hapus",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Sebelumnya",
@@ -2051,6 +2152,43 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "Model",
       "registered": "terdaftar",
       "routers": "Router",
-      "active": "aktif"
+      "active": "aktif",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "Hubungkan klien",
@@ -2383,7 +2522,8 @@
         "outputTokens": "Token output",
         "costPer1k": "Biaya / 1K",
         "cost": "Biaya (USD)",
-        "bestCostPerformance": "Performa biaya terbaik"
+        "bestCostPerformance": "Performa biaya terbaik",
+        "deleted": "deleted"
       },
       "showMoreModels": "Tampilkan {{count}} model lagi",
       "showMoreModels_other": "Tampilkan {{count}} model lagi",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII Diredaksi",
         "sessionId": "ID sesi",
         "endUser": "Pengguna akhir",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Dirutekan oleh"
       },
       "errorMessage": "Pesan Kesalahan",
       "eventCount": "{{count}} acara",
       "eventCount_other": "{{count}} acara",
-      "noTrace": "Tidak ada jejak yang tersedia. Data jejak ditangkap untuk panggilan baru saja."
+      "noTrace": "Tidak ada jejak yang tersedia. Data jejak ditangkap untuk panggilan baru saja.",
+      "routedByException": "Pengecualian Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

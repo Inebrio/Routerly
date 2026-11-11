@@ -1,5 +1,5 @@
 import { routerUsesModel } from '@routerly/shared';
-import type { CatalogSyncSummary, PermissionCheckStatus, RankingAlgorithmId } from '@routerly/shared';
+import type { CatalogSyncSummary, ConformanceResult, PassthroughException, PermissionCheckStatus, RankingAlgorithmId, TimelineGroup, TimelineEventKind } from '@routerly/shared';
 export type { PermissionCheckStatus } from '@routerly/shared';
 
 const BASE = '/api';
@@ -218,6 +218,8 @@ export interface ModelCapabilities {
   functionCalling?: boolean;
   json?: boolean;
   embedding?: boolean;
+  /** Decision model (derived from the provider): answers questions, cannot serve chat. */
+  decision?: boolean;
 }
 
 export interface Model {
@@ -231,6 +233,7 @@ export interface Model {
   limits?: Limit[];
   /** @deprecated use limits */ globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
   capabilities?: ModelCapabilities;
+  conformance?: ConformanceResult;
   fieldOverrides?: Partial<Record<string, boolean>>;
   catalogDefaults?: {
     inputPerMillion?: number;
@@ -264,6 +267,7 @@ export interface CatalogEntry {
   pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
   local?: boolean;
   embedding?: boolean;
+  decision?: boolean;
   isConfigured: boolean;
 }
 
@@ -280,7 +284,7 @@ export type ProviderCatalog = Record<string, {
     contextWindow?: number;
     notes?: string;
     deprecated?: boolean;
-    capabilities?: { embedding?: boolean };
+    capabilities?: { embedding?: boolean; decision?: boolean };
   }>;
 }>;
 
@@ -327,6 +331,8 @@ export const updateModel = (id: string, data: {
   fieldOverrides?: Partial<Record<string, boolean>>;
 }) => request<Model>(`/models/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
+export const runModelConformance = (id: string): Promise<ConformanceResult> =>
+  request<ConformanceResult>(`/models/${encodeURIComponent(id)}/conformance`, { method: 'POST' });
 export const testModel = (id: string): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
   request<{ ok: boolean; latencyMs: number; error?: string }>(`/models/${encodeURIComponent(id)}/test`, { method: 'POST' })
     // never reject: callers show a spinner until this resolves
@@ -462,6 +468,7 @@ export const updateRouter = (id: string, data: {
   notifications?: { channels: string[] } | null;
   traceContent?: boolean;
   callConfig?: CallConfig;
+  exceptions?: PassthroughException[];
 }) => request<Router>(`/routers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteRouter = (id: string) => request<void>(`/routers/${id}`, { method: 'DELETE' });
 export const createRouterToken = (id: string, labels?: string[], tags?: Record<string, string>, scopes?: string[]) => request<{ token: string; tokenInfo: RouterToken }>(`/routers/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels, ...(tags ? { tags } : {}), ...(scopes ? { scopes } : {}) }) });
@@ -560,6 +567,8 @@ export interface UsageRecord {
   sessionId?: string;
   endUserId?: string;
   tags?: Record<string, string>;
+  /** Set when the call was diverted by a passthrough exception rule. */
+  routedBy?: 'exception';
   /** Call configuration decision applied to this call (absent when none). */
   callConfig?: AppliedCallConfig;
 }
@@ -576,6 +585,8 @@ export interface UsageStats {
     ttftMedianMs?: number; ttftP95Ms?: number; ttftSamples?: number;
   };
   byModel: Record<string, UsageByModelEntry>;
+  /** Model ids with records in the window that no longer exist in the config. */
+  deletedModelIds?: string[];
   /** Calls per caller in the window, before the caller filter narrowed it (T210). */
   byCallType?: Record<string, number>;
   /** Calls per request type in the window, before the type filter narrowed it (T210). */
@@ -632,6 +643,35 @@ export const getUsage = (period = 'monthly', routerId?: string, from?: string, t
   if (opts?.savings) params.set('savings', '1');
   if (opts?.series) params.set('series', '1');
   return request<UsageStats>(`/usage?${params.toString()}`);
+};
+
+export interface TimelineFilters {
+  from?: string;
+  to?: string;
+  routerId?: string;
+  tokenId?: string;
+  sessionId?: string;
+  endUserId?: string;
+  kind?: string;
+  outcome?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface TimelineResponse {
+  groups: TimelineGroup[];
+  totals: { groups: number; events: number; cost: number | null; eventsByKind: Partial<Record<TimelineEventKind, number>> };
+  pagination: { page: number; pageSize: number; totalRecords: number; totalPages: number };
+}
+
+/** Unified call timeline (ROUT-563). Empty and `all` filters are left out of the query. */
+export const getTimeline = (f: TimelineFilters = {}) => {
+  const params = new URLSearchParams({ period: f.from || f.to ? 'custom' : 'all' });
+  for (const [k, v] of Object.entries(f)) {
+    if (v == null || v === '' || v === 'all') continue;
+    params.set(k, String(v));
+  }
+  return request<TimelineResponse>(`/timeline?${params.toString()}`);
 };
 
 export const getUsageRecord = (id: string) =>
@@ -1046,7 +1086,7 @@ export const getAuditLog = (params?: { userId?: string; action?: string; result?
 export interface ProviderDescriptor {
   id: string;
   label: string;
-  protocol: 'openai' | 'anthropic' | 'gemini' | 'custom';
+  protocol: 'openai' | 'anthropic' | 'gemini' | 'custom' | 'decision';
   supportLevel: 'native' | 'compatible' | 'oauth' | 'web';
   nativeCapabilities: ModelCapabilities;
 }
@@ -1109,6 +1149,20 @@ export const createMyMcpToken = (body: { name: string; expiresAt?: string }) =>
   request<McpTokenRow & { token: string }>('/me/mcp-tokens', { method: 'POST', body: JSON.stringify(body) });
 export const deleteMyMcpToken = (id: string) =>
   request<void>(`/me/mcp-tokens/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+// ── Management API tokens (long-lived, scoped, for automations) ──────────────
+
+import type { ApiToken } from '@routerly/shared';
+
+/** A stored API token as the API returns it: everything but the hash. */
+export type ApiTokenRow = Omit<ApiToken, 'tokenHash'>;
+
+export const getMyApiTokens = () => request<ApiTokenRow[]>('/me/api-tokens');
+/** The raw `token` is returned once, here, and never again. */
+export const createMyApiToken = (body: { name: string; expiresAt: string; permissions: string[] }) =>
+  request<ApiTokenRow & { token: string }>('/me/api-tokens', { method: 'POST', body: JSON.stringify(body) });
+export const deleteMyApiToken = (id: string) =>
+  request<void>(`/me/api-tokens/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 export interface Instance {
   id: string;

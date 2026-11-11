@@ -12,6 +12,7 @@ vi.mock('../api', () => ({
   testModel: vi.fn(),
   getProviders: vi.fn(),
   getConnections: vi.fn(),
+  getProviderDescriptors: vi.fn(),
 }));
 
 vi.mock('../components/SearchableSelect', () => ({
@@ -43,7 +44,7 @@ vi.mock('react-router-dom', async (importActual) => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-import { getModels, getProviders, createModel, updateModel, testOpenAIOAuth, testModel, getConnections } from '../api';
+import { getModels, getProviders, createModel, updateModel, testOpenAIOAuth, testModel, getConnections, getProviderDescriptors } from '../api';
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockGetProviders = vi.mocked(getProviders);
 const mockCreateModel = vi.mocked(createModel as (...a: unknown[]) => Promise<unknown>);
@@ -51,6 +52,7 @@ const mockUpdateModel = vi.mocked(updateModel as (...a: unknown[]) => Promise<un
 const mockTestOpenAIOAuth = vi.mocked(testOpenAIOAuth as (...a: unknown[]) => Promise<unknown>);
 const mockTestModel = vi.mocked(testModel as (...a: unknown[]) => Promise<unknown>);
 const mockGetConnections = vi.mocked(getConnections as () => Promise<unknown>);
+const mockGetDescriptors = vi.mocked(getProviderDescriptors as () => Promise<unknown>);
 
 function makeModel(overrides: Record<string, unknown> = {}) {
   return {
@@ -168,11 +170,21 @@ beforeEach(() => {
   mockCreateModel.mockResolvedValue({});
   mockUpdateModel.mockResolvedValue({});
   mockGetConnections.mockResolvedValue([]);
+  mockGetDescriptors.mockResolvedValue([]);
 });
 
 afterEach(() => vi.clearAllMocks());
 
 // ── Prefill from discovery ─────────────────────────────────────────────────────
+
+describe('ModelFormPage — decision provider (ROUT-244)', () => {
+  it('shows the decision-model notice for a provider whose descriptor is decision-capable', async () => {
+    mockGetProviders.mockResolvedValue({ typesafe: { endpoint: 'https://api.typesafe.ai/v1', models: [{ id: 'jev-latest', input: 0, output: 0 }] } });
+    mockGetDescriptors.mockResolvedValue([{ id: 'typesafe', nativeCapabilities: { decision: true } }]);
+    renderPage('/dashboard/models/new?provider=typesafe');
+    await waitFor(() => expect(screen.getByText(/does not generate text/i)).toBeTruthy());
+  });
+});
 
 describe('ModelFormPage — ?provider + ?modelId prefill', () => {
   it('prefills anthropic provider and a known preset model id + pricing', async () => {

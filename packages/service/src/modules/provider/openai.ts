@@ -33,10 +33,10 @@ export class OpenAIAdapter implements ProviderAdapter {
     return model.id;
   }
 
-  // Only models that reject max_tokens (o-series, gpt-5) get max_completion_tokens;
+  // Only models that reject max_tokens (o-series, gpt-5 and later) get max_completion_tokens;
   // every other model receives the client's body untouched (wire transparency).
   private requiresCompletionTokens(modelId: string): boolean {
-    return /^(o\d|gpt-5)/.test(modelId);
+    return /^(o\d|gpt-([5-9]|\d{2,}))/.test(modelId);
   }
 
   private normalizeTokenLimit(req: ChatCompletionRequest, upstreamModel: string): Omit<ChatCompletionRequest, 'max_tokens'> | ChatCompletionRequest {
@@ -76,13 +76,18 @@ export class OpenAIAdapter implements ProviderAdapter {
   }
 
   // Router-chosen effort / verbosity, written after normalizeForModel so it cannot strip them.
-  private withCallSettings<T extends Record<string, unknown>>(body: T, opts?: CallOptions): T {
+  // gpt-5.6-* and gpt-6-* reject function tools on chat completions unless reasoning_effort is
+  // 'none', even when the parameter is omitted: default it to 'none' only when nobody asked for an effort.
+  private withCallSettings<T extends Record<string, unknown>>(body: T, upstreamModel: string, opts?: CallOptions): T {
     const cs = opts?.callSettings;
-    if (!cs) return body;
+    const effort = cs?.effort ?? (body.reasoning_effort as string | undefined);
+    const toolsNeedNone = !effort && Array.isArray(body.tools) && body.tools.length > 0 && /^(gpt-5\.[6-9]|gpt-[6-9])/.test(upstreamModel);
+    if (!cs && !toolsNeedNone) return body;
     return {
       ...body,
-      ...(cs.effort ? { reasoning_effort: cs.effort } : {}),
-      ...(cs.verbosity ? { verbosity: cs.verbosity } : {}),
+      ...(toolsNeedNone ? { reasoning_effort: 'none' } : {}),
+      ...(cs?.effort ? { reasoning_effort: cs.effort } : {}),
+      ...(cs?.verbosity ? { verbosity: cs.verbosity } : {}),
     };
   }
 
@@ -95,7 +100,7 @@ export class OpenAIAdapter implements ProviderAdapter {
 
     // Override the requested model with the actual selected candidate model ID
     const upstreamModel = this.getUpstreamModelId(model);
-    const rest = this.withCallSettings(this.normalizeForModel(request, upstreamModel), opts);
+    const rest = this.withCallSettings(this.normalizeForModel(request, upstreamModel), upstreamModel, opts);
 
     // `stream` is forwarded exactly as the client sent it (absent stays absent).
     const { stream: _s, ...body } = rest;
@@ -114,7 +119,7 @@ export class OpenAIAdapter implements ProviderAdapter {
   ): AsyncIterable<StreamChunk> {
     const client = this.getClient(model);
     const upstreamModel = this.getUpstreamModelId(model);
-    const rest = this.withCallSettings(this.normalizeForModel(request, upstreamModel), opts);
+    const rest = this.withCallSettings(this.normalizeForModel(request, upstreamModel), upstreamModel, opts);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: stream, response } = await (client.chat.completions.create({ ...rest, model: upstreamModel, stream: true } as any, this.requestOptions(opts)) as any).withResponse();

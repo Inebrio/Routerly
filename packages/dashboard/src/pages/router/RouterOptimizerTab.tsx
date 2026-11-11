@@ -15,6 +15,7 @@ import {
   type OptimizerProfile,
   type OptimizerPreviewResult,
 } from '../../api';
+import { isChatModel } from '../../utils/models';
 import { useRouter } from './RouterLayout';
 import { useAuth } from '../../AuthContext';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -79,7 +80,7 @@ export function RouterOptimizerTab() {
 
   useEffect(() => {
     if (!canRead) return;
-    getModels().then(setModels).catch(() => setModels([]));
+    getModels().then(ms => setModels(ms.filter(isChatModel))).catch(() => setModels([]));
   }, [canRead]);
 
   // Merge the router's configured steps (in order) with any installed

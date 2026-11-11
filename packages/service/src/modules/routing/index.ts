@@ -9,6 +9,8 @@ import type { CallDecision } from './call-config.js'
 import { migrateProfiles } from './profiles/migrate.js'
 import { addRoutingDecision } from './routingMemoryStore.js'
 import { forwardPassthroughRaw } from '../api-reverse-proxy/router-passthrough.js'
+import { matchException } from './passthrough-exceptions.js'
+import { extractRouterToken } from '../auth/auth.js'
 
 // Message prefixes router.ts's scoreCandidates throws when a passthrough-kind
 // router's real models are all ineligible (no resolvable model, limits exceeded,
@@ -21,13 +23,26 @@ const NO_ELIGIBLE_CANDIDATE_PREFIXES = [
   'all_models_excluded_by_policies',
 ]
 
+// The Routerly token authenticates the client to Routerly only: it must never reach the
+// upstream. Drop the one header extractRouterToken read it from; the other header (a
+// client's own upstream key) is forwarded unchanged.
+function withoutRouterlyToken(headers: Record<string, unknown>): Record<string, unknown> {
+  const token = extractRouterToken(headers as Record<string, string | string[] | undefined>)
+  if (!token) return headers
+  const auth = headers['authorization']
+  const out = { ...headers }
+  if (typeof auth === 'string' && auth.startsWith('Bearer ') && auth.slice(7).trim() === token) delete out['authorization']
+  else delete out['x-api-key']
+  return out
+}
+
 async function forwardPassthroughFallback(ctx: ProxyContext): Promise<void> {
   const path = ctx.req.url.split('?')[0] ?? ctx.req.url
   await forwardPassthroughRaw(
     ctx.router,
     path,
     ctx.req.method,
-    ctx.req.headers,
+    withoutRouterlyToken(ctx.req.headers),
     Buffer.from(JSON.stringify(ctx.original)),
     ctx.reply,
     ctx.log,
@@ -55,6 +70,24 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
       // separately by `forwardToRouter` (RTR-02), never through this model-oriented path.
       if (ctx.router.kind === 'orchestrator') return
       if (ctx.router.kind === 'passthrough') {
+        // Exceptions live only here, on the token-authenticated lanes: /passthrough/:slug/*
+        // never enters this pipeline (see router-passthrough.ts), so it can never divert.
+        const hit = matchException(ctx.router, ctx.request.model, (rule, index) =>
+          ctx.log.warn({ routerId: ctx.router.id, index, targetModelId: rule.targetModelId }, 'routing: passthrough exception skipped — target is not a model of this router'))
+        if (hit) {
+          const ref = ctx.router.models.find((m) => m.modelId === hit.rule.targetModelId)
+          // A single candidate through the standard pipeline: no scoring, no raw-forward
+          // fallback, no callConfig (passthrough ignores it).
+          ctx.candidates = [{ model: hit.rule.targetModelId, weight: 1, ...(ref?.prompt ? { prompt: ref.prompt } : {}) }]
+          ctx.routedBy = 'exception'
+          setCallDecision(ctx, undefined)
+          ctx.emit?.({
+            panel: 'router-response',
+            message: 'router:exception',
+            details: { rule: hit.index, match: hit.rule.match, requestedModel: ctx.request.model, targetModelId: hit.rule.targetModelId },
+          })
+          return
+        }
         const sentinelIdx = ctx.router.models.findIndex((m) => m.modelId === PASSTHROUGH_MODEL_ID)
         if (sentinelIdx === 0) {
           // The pass-through entry is ahead of every real model (AC10): raw-forward is

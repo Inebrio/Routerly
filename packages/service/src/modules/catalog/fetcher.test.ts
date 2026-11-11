@@ -135,6 +135,55 @@ describe('CatalogFetcher', () => {
     });
   });
 
+  describe('failed fetch', () => {
+    afterEach(() => vi.useRealTimers());
+    const ok = async () => ({ ok: true, status: 200, json: async () => JSON.parse(CATALOG), text: async () => CATALOG });
+
+    it('is retried after 1 minute instead of cached for 6 hours', async () => {
+      vi.useFakeTimers();
+      let up = false;
+      vi.stubGlobal('fetch', async (url: string) => {
+        if (!up) throw new Error('network down');
+        return url.endsWith('index.json') ? { ok: false, status: 404 } : ok();
+      });
+      const fetcher = await freshFetcher();
+      fetcher.setRepos([{ url: 'https://example.com/', enabled: true }]);
+      expect(await fetcher.get('0.2.0')).not.toHaveProperty('openai');
+      up = true;
+      vi.advanceTimersByTime(61_000);
+      expect(await fetcher.get('0.2.0')).toHaveProperty('openai');
+    });
+
+    it('keeps serving the previous catalog when a later refresh fails', async () => {
+      vi.useFakeTimers();
+      let up = true;
+      vi.stubGlobal('fetch', async (url: string) => {
+        if (!up) throw new Error('network down');
+        return url.endsWith('index.json') ? { ok: false, status: 404 } : ok();
+      });
+      const fetcher = await freshFetcher();
+      fetcher.setRepos([{ url: 'https://example.com/', enabled: true }]);
+      await fetcher.get('0.2.0');
+      up = false;
+      vi.advanceTimersByTime(6 * 60 * 60 * 1000 + 1000);
+      expect(await fetcher.get('0.2.0')).toHaveProperty('openai');
+    });
+
+    it('aborts a fetch that never answers', async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal('fetch', (_url: string, init?: RequestInit) => new Promise((_res, rej) => {
+        init?.signal?.addEventListener('abort', () => rej(new Error('aborted')));
+      }));
+      const fetcher = await freshFetcher();
+      fetcher.setRepos([{ url: 'https://example.com/', enabled: true }]);
+      const p = fetcher.get('0.2.0');
+      await vi.advanceTimersByTimeAsync(10_000); // index.json
+      await vi.advanceTimersByTimeAsync(10_000); // providers.json
+      await p;
+      expect(fetcher.getStatus()[0]?.error).toBe('aborted');
+    });
+  });
+
   describe('checksum verification', () => {
     it('throws on checksum mismatch', async () => {
       const index = JSON.stringify({
@@ -155,8 +204,8 @@ describe('CatalogFetcher', () => {
       // fetchRepo throws, but get() swallows per-repo errors and returns empty merged
       // We need to call fetchRepo directly — access via get() returning empty
       const result = await fetcher.get('0.2.0');
-      // The repo errored due to checksum mismatch, so merged is empty
-      expect(Object.keys(result)).toHaveLength(0);
+      // The repo errored due to checksum mismatch, so only the built-in entry remains
+      expect(Object.keys(result)).toEqual(['typesafe']);
     });
 
     it('accepts a correct checksum', async () => {
@@ -242,7 +291,7 @@ describe('CatalogFetcher', () => {
       fetcher.setRepos([]);
       // get() silently returns empty on all-failed repos
       const result = await fetcher.get('0.2.0');
-      expect(result).toEqual({});
+      expect(Object.keys(result)).toEqual(['typesafe']);
     });
   });
 
@@ -416,6 +465,23 @@ describe('CatalogFetcher', () => {
       fetcher.setRepos([{ url: 'https://example.com/', enabled: true }]);
       const result = await fetcher.get('0.2.0');
       expect(result).toHaveProperty('openai');
+    });
+  });
+
+  describe('built-in entries', () => {
+    it('lists the built-in typesafe entry, and a remote entry overrides it', async () => {
+      mockFetch({ 'providers.json': { ok: true, body: CATALOG } });
+      let fetcher = await freshFetcher();
+      fetcher.setRepos([{ url: 'https://example.com/', enabled: true }]);
+      const merged = await fetcher.get('0.2.0');
+      expect(merged['openai']).toBeDefined();
+      expect(merged['typesafe']?.models[0]).toMatchObject({ id: 'jev-latest', capabilities: { decision: true } });
+
+      const remote = JSON.stringify({ typesafe: { endpoint: 'https://r/v1', models: [] } });
+      mockFetch({ 'providers.json': { ok: true, body: remote } });
+      fetcher = await freshFetcher();
+      fetcher.setRepos([{ url: 'https://example.com/', enabled: true }]);
+      expect((await fetcher.get('0.2.0'))['typesafe']?.endpoint).toBe('https://r/v1');
     });
   });
 });

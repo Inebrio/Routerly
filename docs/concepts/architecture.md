@@ -88,19 +88,34 @@ two paths above a request takes by default:
   model turns out ineligible (none resolvable, all over a configured limit,
   or all excluded by a hard policy).
 
-On that fallback, Routerly forwards the client's own request headers to the
-upstream provider unchanged — it does not substitute or inject any provider
-credential. If the client sent only its Routerly bearer token, which is the
-normal case on this token-authenticated lane, the upstream provider will
-very likely reject it with its own `401`: the Routerly token buys routing
-and policy evaluation on this lane, never authentication to the upstream
-provider. A client that wants the fallback to succeed upstream must also
-send its own valid upstream credential — the same `Authorization`/`x-api-key`
-header the unauthenticated `/passthrough/<slug>/*` path already forwards —
-alongside the Routerly bearer token. Routerly does not fail the request
-itself on this fallback; it forwards it unaltered and returns whatever the
-upstream said, which is the wire-format transparency rule's guarantee, not a
-gap.
+On that fallback, Routerly forwards the client's request headers to the
+upstream provider, except the one that carries the Routerly token
+(`Authorization: Bearer <token>` or `x-api-key`): that credential
+authenticates the client to Routerly only and is never sent upstream. Routerly
+does not substitute or inject any provider credential, so a client that wants
+the fallback to succeed upstream must also send its own valid upstream
+credential in the *other* header (for example `x-api-key` alongside the
+Routerly `Authorization: Bearer`), as the unauthenticated
+`/passthrough/<slug>/*` path already forwards it. Without one, the upstream
+provider answers with its own `401`, which Routerly returns unaltered.
+
+### Passthrough exceptions
+
+A Passthrough Router can carry an ordered list of **exceptions**. Each rule
+is a `match` pattern and a `targetModelId`, one of the router's own real
+models. When a request arrives with its Routerly-issued token and the `model`
+in its body matches a rule (exact and case-sensitive, `*` stands for any
+sequence of characters, first match wins), the request goes to that target
+model instead of following the model list: no scoring and no raw-forward
+fallback. It is then authenticated, budgeted, metered and recorded like any
+other call to that model, and its usage record carries `routedBy: "exception"`.
+
+Exceptions apply only on the token-authenticated lanes. The unauthenticated
+`/passthrough/<slug>/*` route never evaluates them: it forwards the client's
+own credential and body untouched. The client's credential never reaches the
+exception's target: the target model is called with the provider connection's
+own credentials. A request that matches no rule behaves as described above.
+Nothing is added to the request or response: no header, no field.
 
 ## Request Lifecycle
 

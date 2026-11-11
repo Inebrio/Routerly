@@ -25,6 +25,7 @@
       "routers": "روترها",
       "experiments": "آزمایش‌ها",
       "usage": "مصرف",
+      "timeline": "Timeline",
       "playground": "محیط آزمایش",
       "settings": "تنظیمات",
       "connectApp": "اتصال برنامه",
@@ -217,7 +218,8 @@
         "semantic-intent": "درخواست را بر اساس قصد معنایی با استفاده از امبدینگ‌ها طبقه‌بندی می‌کند، سپس مجموعه گزینه‌ها را به مدل‌های نگاشت‌شده به آن قصد محدود می‌کند. تطبیق‌های مطمئن مجموعه را به‌طور سخت فیلتر می‌کنند؛ تطبیق‌های مبهم دو مجموعه برتر را ادغام می‌کنند؛ درخواست‌های ناشناخته همه گزینه‌ها را عبور می‌دهند.",
         "model-preference": "وقتی کلاینت مدل خاصی را درخواست می‌کند (نه routerly/ada)، امتیاز پاداش قابل تنظیمی به آن مدل می‌دهد. وقتی هیچ ترجیحی بیان نشود، سیاست خودداری می‌کند. موقعیت در فهرست کنترل می‌کند که این ترجیح چقدر در برابر سایر سیاست‌ها وزن دارد."
       },
-      "selectModel": "انتخاب مدل"
+      "selectModel": "انتخاب مدل",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "اعمال بر",
@@ -446,6 +448,7 @@
       "profile": "نمایه",
       "notifications": "اعلان‌ها",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "ترجیحات"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "ایجاد توکن ناموفق بود",
           "copyFailed": "کپی ناموفق بود، لطفاً توکن را به‌صورت دستی انتخاب و کپی کنید."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "امنیت",
         "token": "توکن",
         "users": "کاربران",
-        "logs": "گزارش‌ها"
+        "logs": "مصرف",
+        "test": "Test"
       },
       "backToRouters": "بازگشت به روترها",
       "backToRoutersTitle": "بازگشت به روترها",
@@ -1405,7 +1457,25 @@
         "empty": "هیچ مدل هدفی پیکربندی نشده است.",
         "addTarget": "افزودن مدل هدف",
         "passthroughLabel": "عبور مستقیم (ارسال خام)",
-        "passthroughNotRemovable": "ورودی عبور مستقیم قابل حذف نیست"
+        "passthroughNotRemovable": "ورودی عبور مستقیم قابل حذف نیست",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "استثناها",
+        "description": "درخواستی که مدل آن با یک قاعده مطابقت دارد، به‌جای ارسال بدون تغییر، به مدل انتخاب‌شده فرستاده می‌شود. اولین تطابق برنده است. از * به‌عنوان نویسه جایگزین استفاده کنید. فقط برای درخواست‌های احرازهویت‌شده با توکن اعمال می‌شود.",
+        "empty": "استثنایی وجود ندارد: هر درخواست بدون تغییر ارسال می‌شود.",
+        "noRealModels": "ابتدا یک مدل به این مسیریاب اضافه کنید: استثناها فقط می‌توانند مدل‌های خود مسیریاب را هدف بگیرند.",
+        "add": "افزودن استثنا",
+        "match": "الگوی نام مدل",
+        "matchPlaceholder": "gpt-4*",
+        "target": "مدل مقصد",
+        "remove": "حذف استثنا",
+        "errors": {
+          "matchRequired": "هر استثنا به یک الگو نیاز دارد.",
+          "duplicateMatch": "تطابق تکراری \"{{match}}\".",
+          "targetMissing": "مقصد استثنای \"{{match}}\" مدلی از این مسیریاب نیست."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "محدودیت‌های سراسری و سطح روتر را برای درخواست‌های استفاده‌کننده از این توکن بازنویسی کنید.",
         "noTargetModels": "ابتدا مدل‌های هدف را در زبانه مسیریابی اضافه کنید.",
         "noOverride": "بدون بازنویسی",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "بدون محدودیت",
         "noLimitsSet": "هیچ محدودیتی تنظیم نشده — از والد به ارث می‌برد. برای بازنویسی، محدودیتی در پایین اضافه کنید.",
         "metric": "معیار",
@@ -1736,7 +1810,8 @@
         "label": "برچسب",
         "provider": "ارائه‌دهنده",
         "endpoint": "نقطه پایانی",
-        "status": "وضعیت"
+        "status": "وضعیت",
+        "models": "Models"
       },
       "status": {
         "enabled": "فعال",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "مدل‌ها",
         "edit": "ویرایش",
-        "remove": "حذف"
+        "remove": "حذف",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "بارگذاری اتصال ناموفق بود",
         "updateFailed": "به‌روزرسانی اتصال ناموفق بود",
         "createFailed": "ایجاد اتصال ناموفق بود"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "پیکربندی‌شده",
         "embedding": "امبدینگ",
-        "runsLocally": "اجرای محلی"
+        "runsLocally": "اجرای محلی",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "قبلی",
@@ -1918,7 +2011,9 @@
         "title": "قابلیت‌ها",
         "description": "نوع و قابلیت‌های این مدل را تعیین کنید.",
         "embeddingModel": "مدل امبدینگ",
-        "embeddingModelHint": "این مدل بردارهای امبدینگ تولید می‌کند (نه تکمیل‌های گفتگو)"
+        "embeddingModelHint": "این مدل بردارهای امبدینگ تولید می‌کند (نه تکمیل‌های گفتگو)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "قیمت‌گذاری و زمینه",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "نوشتن کش $/۱ میلیون",
         "optional": "(اختیاری)",
         "contextWindow": "پنجره زمینه",
-        "contextWindowHint": "(توکن، اختیاری)"
+        "contextWindowHint": "(توکن، اختیاری)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "پیشرفته — سطوح قیمت‌گذاری",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "همه ارائه‌دهندگان",
         "allConnections": "همه اتصالات",
-        "searchPlaceholder": "فیلتر مدل‌ها…"
+        "searchPlaceholder": "فیلتر مدل‌ها…",
+        "allStatuses": "All statuses"
       },
       "discover": "کشف",
       "addModel": "افزودن مدل",
@@ -1989,13 +2087,16 @@
         "input": "ورودی $/۱ میلیون",
         "output": "خروجی $/۱ میلیون",
         "cache": "کش $/۱ میلیون",
-        "context": "اندازه زمینه"
+        "context": "اندازه زمینه",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "آزمایش",
         "clone": "کلون",
         "edit": "ویرایش",
-        "remove": "حذف"
+        "remove": "حذف",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← قبلی",
@@ -2051,6 +2152,43 @@
           "cooldown": "دوره خاموشی {{time}}",
           "lockout": "قفل {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "مدل‌ها",
       "registered": "ثبت‌شده",
       "routers": "روترها",
-      "active": "فعال"
+      "active": "فعال",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "اتصال یک کلاینت",
@@ -2383,7 +2522,8 @@
         "outputTokens": "توکن‌های خروجی",
         "costPer1k": "هزینه / ۱ هزار",
         "cost": "هزینه (دلار)",
-        "bestCostPerformance": "بهترین نسبت هزینه به عملکرد"
+        "bestCostPerformance": "بهترین نسبت هزینه به عملکرد",
+        "deleted": "deleted"
       },
       "showMoreModels": "نمایش {{count}} مدل بیشتر",
       "showMoreModels_other": "نمایش {{count}} مدل بیشتر",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "اطلاعات شخصی پنهان شد",
         "sessionId": "شناسه نشست",
         "endUser": "کاربر نهایی",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "مسیریابی‌شده توسط"
       },
       "errorMessage": "پیام خطا",
       "eventCount": "{{count}} رویداد",
       "eventCount_other": "{{count}} رویداد",
-      "noTrace": "ردیابی‌ای در دسترس نیست. داده ردیابی فقط برای فراخوانی‌های جدید ثبت می‌شود."
+      "noTrace": "ردیابی‌ای در دسترس نیست. داده ردیابی فقط برای فراخوانی‌های جدید ثبت می‌شود.",
+      "routedByException": "استثنای Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

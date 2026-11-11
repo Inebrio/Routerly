@@ -286,3 +286,49 @@ describe('OpenAIAdapter callSettings (ROUT-306)', () => {
     expect(JSON.stringify(request)).toBe(snapshot);
   });
 });
+
+describe('OpenAIAdapter tools on gpt-5.6 / gpt-6 (ROUT-669)', () => {
+  const tool = { type: 'function', function: { name: 'read_file', parameters: { type: 'object' } } };
+  const withTools = { model: 'auto', messages: [{ role: 'user', content: 'Hi' }], tools: [tool] } as unknown as ChatCompletionRequest;
+  const sent = () => create.mock.calls[0]?.[0] as Record<string, unknown>;
+
+  it.each(['gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-6-sol'])('%s with tools and no effort gets reasoning_effort none (chat + stream)', async (id) => {
+    create.mockResolvedValue(makeResponse());
+    await new OpenAIAdapter().chatCompletion(withTools, makeModel({ id: `openai/${id}` }));
+    expect(sent()).toHaveProperty('reasoning_effort', 'none');
+    vi.clearAllMocks();
+    create.mockReturnValue(Object.assign(Promise.resolve(), { withResponse: async () => ({ data: (async function* () {})(), response: { headers: new Headers() } }) }));
+    for await (const _ of new OpenAIAdapter().streamCompletion(withTools, makeModel({ id: `openai/${id}` }))) { void _; }
+    expect(sent()).toHaveProperty('reasoning_effort', 'none');
+  });
+
+  it('keeps an effort asked by the client', async () => {
+    create.mockResolvedValue(makeResponse());
+    await new OpenAIAdapter().chatCompletion({ ...withTools, reasoning_effort: 'low' } as ChatCompletionRequest, makeModel({ id: 'openai/gpt-5.6-terra' }));
+    expect(sent()).toHaveProperty('reasoning_effort', 'low');
+  });
+
+  it('does not touch requests without tools or other models (gpt-5.2, gpt-5, gpt-4o)', async () => {
+    for (const id of ['gpt-5.2', 'gpt-5', 'gpt-4o']) {
+      create.mockResolvedValue(makeResponse());
+      await new OpenAIAdapter().chatCompletion(withTools, makeModel({ id: `openai/${id}` }));
+      expect(sent()).not.toHaveProperty('reasoning_effort');
+      vi.clearAllMocks();
+    }
+    create.mockResolvedValue(makeResponse());
+    await new OpenAIAdapter().chatCompletion(base0(), makeModel({ id: 'openai/gpt-5.6-terra' }));
+    expect(sent()).not.toHaveProperty('reasoning_effort');
+  });
+
+  it('sends max_completion_tokens for gpt-6 models and keeps max_tokens for gpt-4 models', async () => {
+    const adapter = new OpenAIAdapter();
+    for (const [id, converted] of [['gpt-6-luna', true], ['gpt-6.1-sol', true], ['gpt-4.1', false], ['gpt-4o', false]] as const) {
+      create.mockResolvedValue(makeResponse());
+      await adapter.chatCompletion({ model: id, messages: [{ role: 'user', content: 'Hi' }], max_tokens: 50 }, makeModel({ id: `openai/${id}` }));
+      const calledWith = create.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+      expect(calledWith).toHaveProperty(converted ? 'max_completion_tokens' : 'max_tokens', 50);
+      expect(calledWith).not.toHaveProperty(converted ? 'max_tokens' : 'max_completion_tokens');
+    }
+  });
+});
+function base0(): ChatCompletionRequest { return { model: 'auto', messages: [{ role: 'user', content: 'Hi' }] }; }

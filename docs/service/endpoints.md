@@ -192,16 +192,25 @@ Full endpoint catalogue: [API — Management](../api/management).
 | `GET` | `/api/settings` | Read service settings |
 | `PUT` | `/api/settings` | Update service settings |
 | `GET` | `/api/users` | List users (admin only) |
-| `GET` | `/api/spend-groups` | List org/team spend groups with usage |
-| `POST` | `/api/spend-groups` | Create a spend group |
-| `PUT` | `/api/spend-groups/:id` | Update a spend group |
-| `DELETE` | `/api/spend-groups/:id` | Delete a spend group |
 | `GET` | `/api/notifications/inbox` | List the current user's in-app notifications |
 | `POST` | `/api/notifications/inbox/read` | Mark notifications as read (`ids[]` or `all`) |
 | `GET` | `/api/me/mcp-tools` | List the MCP tools the caller's own tokens expose |
 | `GET` | `/api/me/mcp-tokens` | List the caller's personal MCP tokens |
 | `POST` | `/api/me/mcp-tokens` | Create a personal MCP token (raw value returned once) |
 | `DELETE` | `/api/me/mcp-tokens/:id` | Revoke a personal MCP token |
+| `GET` | `/api/me/api-tokens` | List the caller's management API tokens (no hash) |
+| `POST` | `/api/me/api-tokens` | Create a management API token (raw value returned once) |
+| `DELETE` | `/api/me/api-tokens/:id` | Revoke a management API token |
+
+#### Management API tokens
+
+Long-lived tokens for automations. Send one as `Authorization: Bearer sk-rt-api-…` to any management route; it replaces the JWT.
+
+- `POST /api/me/api-tokens` takes `{ "name", "expiresAt", "permissions": [...] }`. `expiresAt` is mandatory (ISO instant, in the future, at most 365 days away) and `permissions` must be a non-empty subset of the creator's own permissions. Returns `201` with the token once; `400` on a bad expiry or body, `403` when a permission is not held, `409` on a duplicate name.
+- Effective permissions are the token's scope intersected with the owner's current role: demoting the user narrows the token at once.
+- A token cannot reach `/api/auth/*` or any `/api/me*` route except `GET /api/me`, so it cannot mint tokens, change credentials or touch 2FA. `GET /api/me` also returns `tokenExpiresAt`.
+- Only the SHA-256 hash is stored. An expired, revoked or unknown token gets `401`.
+- Every request made with a token writes an audit entry with action `api_token:use` and the token name. The service logs a warning at startup and daily for tokens expiring within 7 days.
 
 ---
 

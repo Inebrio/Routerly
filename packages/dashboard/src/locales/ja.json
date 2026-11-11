@@ -25,6 +25,7 @@
       "routers": "ルーター",
       "experiments": "実験",
       "usage": "使用状況",
+      "timeline": "Timeline",
       "playground": "プレイグラウンド",
       "settings": "設定",
       "connectApp": "アプリを接続",
@@ -217,7 +218,8 @@
         "semantic-intent": "埋め込みを使用してセマンティックインテントによってリクエストを分類し、候補プールをそのインテントにマップされたモデルに限定します。確実なマッチはプールをハードフィルターします。曖昧なマッチはトップ2プールをマージします。未知のリクエストはすべての候補をパススルーします。",
         "model-preference": "クライアントが特定のモデルをリクエストする場合(routerly/adaではない)、カスタマイズ可能なボーナススコアをそのモデルに授与します。設定が表現されていない場合、ポリシーは棄権します。リスト内の位置は、設定が他のポリシーに対してどの程度の重み付けをするかを制御します。"
       },
-      "selectModel": "モデルを選択"
+      "selectModel": "モデルを選択",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "に適用",
@@ -446,6 +448,7 @@
       "profile": "プロファイル",
       "notifications": "通知",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "設定"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "トークンの作成に失敗しました",
           "copyFailed": "コピーに失敗しました。トークンを手動で選択してコピーしてください。"
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "セキュリティ",
         "token": "トークン",
         "users": "ユーザー",
-        "logs": "ログ"
+        "logs": "使用状況",
+        "test": "Test"
       },
       "backToRouters": "ルーターに戻る",
       "backToRoutersTitle": "ルーターに戻る",
@@ -1405,7 +1457,25 @@
         "empty": "ターゲットモデルが構成されていません。",
         "addTarget": "ターゲットモデルを追加",
         "passthroughLabel": "パススルー(生転送)",
-        "passthroughNotRemovable": "パススルーエントリは削除できません"
+        "passthroughNotRemovable": "パススルーエントリは削除できません",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "例外",
+        "description": "モデルがルールに一致したリクエストは、そのまま転送されず、選択したモデルに送られます。最初に一致したルールが優先されます。ワイルドカードは * を使用します。トークン認証されたリクエストにのみ適用されます。",
+        "empty": "例外なし: すべてのリクエストがそのまま転送されます。",
+        "noRealModels": "先にこのルーターへモデルを追加してください。例外はルーター自身のモデルのみを対象にできます。",
+        "add": "例外を追加",
+        "match": "モデル名のパターン",
+        "matchPlaceholder": "gpt-4*",
+        "target": "対象モデル",
+        "remove": "例外を削除",
+        "errors": {
+          "matchRequired": "すべての例外にパターンが必要です。",
+          "duplicateMatch": "一致パターン「{{match}}」が重複しています。",
+          "targetMissing": "例外「{{match}}」の対象はこのルーターのモデルではありません。"
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "このトークンを使用するリクエストのグローバルおよびルーターレベルの制限をオーバーライド。",
         "noTargetModels": "ルーティングタブでまずターゲットモデルを追加してください。",
         "noOverride": "オーバーライドなし",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "制限なし",
         "noLimitsSet": "制限が設定されていません — 親から継承します。以下にオーバーライドする制限を追加してください。",
         "metric": "メトリック",
@@ -1736,7 +1810,8 @@
         "label": "ラベル",
         "provider": "プロバイダー",
         "endpoint": "エンドポイント",
-        "status": "ステータス"
+        "status": "ステータス",
+        "models": "Models"
       },
       "status": {
         "enabled": "有効",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "モデル",
         "edit": "編集",
-        "remove": "削除"
+        "remove": "削除",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "接続の読み込みに失敗しました",
         "updateFailed": "接続の更新に失敗しました",
         "createFailed": "接続の作成に失敗しました"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "構成済み",
         "embedding": "埋め込み",
-        "runsLocally": "ローカルで実行"
+        "runsLocally": "ローカルで実行",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "前へ",
@@ -1918,7 +2011,9 @@
         "title": "機能",
         "description": "このモデルのタイプと機能を指定します。",
         "embeddingModel": "埋め込みモデル",
-        "embeddingModelHint": "このモデルはベクトル埋め込みを生成します(チャット補完ではなく)"
+        "embeddingModelHint": "このモデルはベクトル埋め込みを生成します(チャット補完ではなく)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "価格とコンテキスト",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "キャッシュ書き込み $/1M",
         "optional": "(オプション)",
         "contextWindow": "コンテキストウィンドウ",
-        "contextWindowHint": "(トークン、オプション)"
+        "contextWindowHint": "(トークン、オプション)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "詳細 — 価格階層",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "すべてのプロバイダー",
         "allConnections": "すべての接続",
-        "searchPlaceholder": "モデルをフィルター..."
+        "searchPlaceholder": "モデルをフィルター...",
+        "allStatuses": "All statuses"
       },
       "discover": "発見",
       "addModel": "モデルを追加",
@@ -1989,13 +2087,16 @@
         "input": "入力 $/1M",
         "output": "出力 $/1M",
         "cache": "キャッシュ $/1M",
-        "context": "コンテキストサイズ"
+        "context": "コンテキストサイズ",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "テスト",
         "clone": "クローン",
         "edit": "編集",
-        "remove": "削除"
+        "remove": "削除",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← 前へ",
@@ -2051,6 +2152,43 @@
           "cooldown": "クールダウン{{time}}",
           "lockout": "ロックアウト{{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "モデル",
       "registered": "登録済み",
       "routers": "ルーター",
-      "active": "アクティブ"
+      "active": "アクティブ",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "クライアントを接続",
@@ -2383,7 +2522,8 @@
         "outputTokens": "出力トークン",
         "costPer1k": "コスト / 1K",
         "cost": "コスト(USD)",
-        "bestCostPerformance": "最高のコスト性能"
+        "bestCostPerformance": "最高のコスト性能",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}}個の追加モデルを表示",
       "showMoreModels_other": "{{count}}個の追加モデルを表示",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII編集",
         "sessionId": "セッションID",
         "endUser": "エンドユーザー",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "ルーティング元"
       },
       "errorMessage": "エラーメッセージ",
       "eventCount": "{{count}}イベント",
       "eventCount_other": "{{count}}イベント",
-      "noTrace": "トレースが利用できません。トレースデータは新しい呼び出しのみキャプチャされます。"
+      "noTrace": "トレースが利用できません。トレースデータは新しい呼び出しのみキャプチャされます。",
+      "routedByException": "Passthrough 例外"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

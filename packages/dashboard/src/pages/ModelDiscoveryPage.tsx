@@ -283,6 +283,9 @@ export function ModelDiscoveryPage() {
                                 <Check size={9} strokeWidth={3} /> {t('models.discovery.badges.configured')}
                               </span>
                             )}
+                            {e.decision && (
+                              <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: 8, background: 'rgba(16,185,129,0.12)', color: '#34d399', whiteSpace: 'nowrap' }}>{t('models.discovery.badges.decision')}</span>
+                            )}
                             {e.embedding && (
                               <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: 8, background: 'rgba(99,102,241,0.12)', color: '#818cf8', whiteSpace: 'nowrap' }}>{t('models.discovery.badges.embedding')}</span>
                             )}

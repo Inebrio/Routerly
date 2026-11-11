@@ -25,6 +25,7 @@
       "routers": "Маршрутизатори",
       "experiments": "Експерименти",
       "usage": "Використання",
+      "timeline": "Timeline",
       "playground": "Майданчик",
       "settings": "Налаштування",
       "connectApp": "Підключити програму",
@@ -217,7 +218,8 @@
         "semantic-intent": "Класифікує запит за семантичним наміром, використовуючи вбудовування, потім обмежує кандидатський пул моделями, відображеними до того наміру. Впевнені матчі жорстко фільтрують пул; неоднозначні матчі об'єднують топ-2 пули; невідомі запити пропускають всіх кандидатів.",
         "model-preference": "Коли клієнт запитує конкретну модель (не routerly/ada), надає настроювальну бонусну оцінку цій моделі. Коли переважу не виражено, політика утримується. Позиція в списку контролює, наскільки переважу важить проти інших політик."
       },
-      "selectModel": "Вибрати модель"
+      "selectModel": "Вибрати модель",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "Застосувати до",
@@ -446,6 +448,7 @@
       "profile": "Профіль",
       "notifications": "Сповіщення",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Переваги"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "Не вдалося створити токен",
           "copyFailed": "Копіювання не вдалося, виберіть та скопіюйте токен вручну."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "Безпека",
         "token": "Токен",
         "users": "Користувачи",
-        "logs": "Журнали"
+        "logs": "Використання",
+        "test": "Test"
       },
       "backToRouters": "Назад до маршрутизаторів",
       "backToRoutersTitle": "Назад до маршрутизаторів",
@@ -1405,7 +1457,25 @@
         "empty": "Немає налаштованих цільових моделей.",
         "addTarget": "Додати цільову модель",
         "passthroughLabel": "Наскрізна передача (необроблена переадресація)",
-        "passthroughNotRemovable": "Запис наскрізної передачі не можна видалити"
+        "passthroughNotRemovable": "Запис наскрізної передачі не можна видалити",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "Винятки",
+        "description": "Запит, модель якого збігається з правилом, надсилається до обраної моделі замість передачі без змін. Перемагає перший збіг. Використовуйте * як символ підстановки. Діє лише для запитів, автентифікованих токеном.",
+        "empty": "Винятків немає: кожен запит передається без змін.",
+        "noRealModels": "Спочатку додайте модель до цього роутера: винятки можуть вказувати лише на моделі роутера.",
+        "add": "Додати виняток",
+        "match": "Шаблон назви моделі",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Цільова модель",
+        "remove": "Видалити виняток",
+        "errors": {
+          "matchRequired": "Кожен виняток потребує шаблону.",
+          "duplicateMatch": "Дубльований збіг \"{{match}}\".",
+          "targetMissing": "Ціль винятку \"{{match}}\" не є моделлю цього роутера."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "Переозиру глобальні та обмеження рівня маршрутизатора для запитів за допомогою цього токена.",
         "noTargetModels": "Спочатку додайте цільові моделі на вкладці Routing.",
         "noOverride": "немає переозиру",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Без обмежень",
         "noLimitsSet": "Обмеження не встановлені спадає від батька. Додайте обмеження нижче, щоб переозиру.",
         "metric": "Метрика",
@@ -1736,7 +1810,8 @@
         "label": "Ярлик",
         "provider": "Постачальник",
         "endpoint": "Кінцева точка",
-        "status": "Статус"
+        "status": "Статус",
+        "models": "Models"
       },
       "status": {
         "enabled": "Ввімкнено",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "Моделі",
         "edit": "Редагувати",
-        "remove": "Видалити"
+        "remove": "Видалити",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "Не вдалося завантажити підключення",
         "updateFailed": "Не вдалося оновити підключення",
         "createFailed": "Не вдалося створити підключення"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "Налаштовано",
         "embedding": "вбудовування",
-        "runsLocally": "Запускається локально"
+        "runsLocally": "Запускається локально",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Перед",
@@ -1918,7 +2011,9 @@
         "title": "Можливості",
         "description": "Вказати тип та можливості цієї моделі.",
         "embeddingModel": "Модель вбудовування",
-        "embeddingModelHint": "Ця модель генерує вектор вбудовування (не завершення чату)"
+        "embeddingModelHint": "Ця модель генерує вектор вбудовування (не завершення чату)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Ціна й контекст",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "Запис кешу $/1M",
         "optional": "(опц.)",
         "contextWindow": "Вікно контексту",
-        "contextWindowHint": "(токени, опціонально)"
+        "contextWindowHint": "(токени, опціонально)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Просунуто цінові рівні",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "Усі постачальники",
         "allConnections": "Усі підключення",
-        "searchPlaceholder": "Фільтрувати моделі…"
+        "searchPlaceholder": "Фільтрувати моделі…",
+        "allStatuses": "All statuses"
       },
       "discover": "Відкрити",
       "addModel": "Додати модель",
@@ -1989,13 +2087,16 @@
         "input": "Вхід $/1M",
         "output": "Вихід $/1M",
         "cache": "Кеш $/1M",
-        "context": "Розмір контексту"
+        "context": "Розмір контексту",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "Тестування",
         "clone": "Клонувати",
         "edit": "Редагувати",
-        "remove": "Видалити"
+        "remove": "Видалити",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Попередня",
@@ -2051,6 +2152,43 @@
           "cooldown": "період охолодження {{time}}",
           "lockout": "блокування {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "Моделі",
       "registered": "зареєстровано",
       "routers": "Маршрутизатори",
-      "active": "активна"
+      "active": "активна",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "Підключити клієнт",
@@ -2383,7 +2522,8 @@
         "outputTokens": "Вихідні токени",
         "costPer1k": "Вартість / 1K",
         "cost": "Вартість (USD)",
-        "bestCostPerformance": "Найкраще коефіцієнт вартості"
+        "bestCostPerformance": "Найкраще коефіцієнт вартості",
+        "deleted": "deleted"
       },
       "showMoreModels": "Показати {{count}} більше моделей",
       "showMoreModels_other": "Показати {{count}} більше моделей",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "ПІД редаговано",
         "sessionId": "ID сесії",
         "endUser": "Кінцевий користувач",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Маршрутизовано"
       },
       "errorMessage": "Повідомлення про помилку",
       "eventCount": "{{count}} подія",
       "eventCount_other": "{{count}} подій",
-      "noTrace": "Жоден трасування недоступна. Дані трасування записуються тільки для нових викликів."
+      "noTrace": "Жоден трасування недоступна. Дані трасування записуються тільки для нових викликів.",
+      "routedByException": "Виняток Passthrough"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

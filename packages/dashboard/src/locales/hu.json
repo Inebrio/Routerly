@@ -25,6 +25,7 @@
       "routers": "Útválasztók",
       "experiments": "Kísérletek",
       "usage": "Használat",
+      "timeline": "Timeline",
       "playground": "Tesztkörnyezet",
       "settings": "Beállítások",
       "connectApp": "Alkalmazás csatlakoztatása",
@@ -217,7 +218,8 @@
         "semantic-intent": "A kérést szemantikai szándék szerint osztályozza beágyazásokkal, majd az adott szándékra leképezett modellekre korlátozza a jelöltkészletet. A magabiztos egyezések kemény szűrőzésűek; a kétértelmű egyezések az első 2 készletet egyesítik; az ismeretlen kérések az összes jelöltet átmennek.",
         "model-preference": "Amikor az ügyfél egy adott modellt kér (nem routerly/ada), egy konfigurálható bónusz-pontszámot ad az adott modellnek. Ha semmilyen preferencia nincs kifejezve, a szabályzat tartózkodik. A lista pozíciója azt szabályozza, hogy a preferencia mennyire súlyozódik más szabályzatokkal szemben."
       },
-      "selectModel": "Modell kiválasztása"
+      "selectModel": "Modell kiválasztása",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "Alkalmazása erre",
@@ -446,6 +448,7 @@
       "profile": "Profil",
       "notifications": "Értesítések",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Preferenciák"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "A token létrehozása sikertelen",
           "copyFailed": "A másolás sikertelen, válassza ki és másolja a tokent manuálisan."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "Biztonság",
         "token": "Token",
         "users": "Felhasználók",
-        "logs": "Naplók"
+        "logs": "Használat",
+        "test": "Test"
       },
       "backToRouters": "Vissza az Útválasztókhoz",
       "backToRoutersTitle": "Vissza az útválasztókhoz",
@@ -1405,7 +1457,25 @@
         "empty": "Nincsenek konfigurált célmodellek.",
         "addTarget": "Célmodell Hozzáadása",
         "passthroughLabel": "Áteresztés (nyers továbbítás)",
-        "passthroughNotRemovable": "Az áteresztő bejegyzés nem távolítható el"
+        "passthroughNotRemovable": "Az áteresztő bejegyzés nem távolítható el",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "Kivételek",
+        "description": "Az a kérés, amelynek modellje illeszkedik egy szabályra, a kiválasztott modellhez kerül ahelyett, hogy változatlanul továbbítanánk. Az első találat nyer. A * helyettesítő karakter. Csak tokennel hitelesített kérésekre vonatkozik.",
+        "empty": "Nincs kivétel: minden kérés változatlanul továbbítódik.",
+        "noRealModels": "Először adjon hozzá egy modellt ehhez a routerhez: a kivételek csak a router modelljeire mutathatnak.",
+        "add": "Kivétel hozzáadása",
+        "match": "Modellnév mintája",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Célmodell",
+        "remove": "Kivétel eltávolítása",
+        "errors": {
+          "matchRequired": "Minden kivételhez minta szükséges.",
+          "duplicateMatch": "Ismétlődő egyezés: \"{{match}}\".",
+          "targetMissing": "A(z) \"{{match}}\" kivétel célja nem ennek a routernek a modellje."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "Felülírja az globális és útválasztó-szintű korlátokat az token használó kérések számára.",
         "noTargetModels": "Adjon hozzá célmodelleket az Útválasztás lapon először.",
         "noOverride": "nincs felülírás",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Nincsenek korlátok",
         "noLimitsSet": "Nincsenek beállított korlátok – szülőjétől öröklődik. Adjon hozzá egy korlátot az alábbiakban a felülírásásához.",
         "metric": "Metrika",
@@ -1736,7 +1810,8 @@
         "label": "Címke",
         "provider": "Szolgáltató",
         "endpoint": "Végpont",
-        "status": "Állapot"
+        "status": "Állapot",
+        "models": "Models"
       },
       "status": {
         "enabled": "Engedélyezve",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "Modellek",
         "edit": "Szerkesztés",
-        "remove": "Eltávolítás"
+        "remove": "Eltávolítás",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "A kapcsolat betöltése sikertelen",
         "updateFailed": "A kapcsolat frissítése sikertelen",
         "createFailed": "A kapcsolat létrehozása sikertelen"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "Konfigurálva",
         "embedding": "beágyazás",
-        "runsLocally": "Helyileg fut"
+        "runsLocally": "Helyileg fut",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Előz",
@@ -1918,7 +2011,9 @@
         "title": "Képességek",
         "description": "Adja meg az típus és képességeket az modell.",
         "embeddingModel": "Beágyazási modell",
-        "embeddingModelHint": "Az modell vektorbeágyazásokat hoz létre (nem csevegésemé befejezéseket)"
+        "embeddingModelHint": "Az modell vektorbeágyazásokat hoz létre (nem csevegésemé befejezéseket)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Ár és kontextus",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "Gyorsítótár írás $/1M",
         "optional": "(opt.)",
         "contextWindow": "Kontextus Ablak",
-        "contextWindowHint": "(tokenek, nem kötelező)"
+        "contextWindowHint": "(tokenek, nem kötelező)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Fejlett – Ár szintek",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "Az összes szolgáltató",
         "allConnections": "Az összes kapcsolat",
-        "searchPlaceholder": "Modellek szűrése…"
+        "searchPlaceholder": "Modellek szűrése…",
+        "allStatuses": "All statuses"
       },
       "discover": "Felfedezés",
       "addModel": "Modell Hozzáadása",
@@ -1989,13 +2087,16 @@
         "input": "Bemenet $/1M",
         "output": "Kimenet $/1M",
         "cache": "Gyorsítótár $/1M",
-        "context": "Kontextus Méret"
+        "context": "Kontextus Méret",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "Teszt",
         "clone": "Klón",
         "edit": "Szerkesztés",
-        "remove": "Eltávolítás"
+        "remove": "Eltávolítás",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Előző",
@@ -2051,6 +2152,43 @@
           "cooldown": "lehűlési idő {{time}}",
           "lockout": "zárolás {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "Modellek",
       "registered": "regisztrált",
       "routers": "Útválasztók",
-      "active": "aktív"
+      "active": "aktív",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "Kliens Csatlakoztatása",
@@ -2383,7 +2522,8 @@
         "outputTokens": "Kimeneti tokenek",
         "costPer1k": "Költség / 1K",
         "cost": "Költség (USD)",
-        "bestCostPerformance": "Legjobb költség-teljesítmény"
+        "bestCostPerformance": "Legjobb költség-teljesítmény",
+        "deleted": "deleted"
       },
       "showMoreModels": "Az {{count}} további modell megjelenítése",
       "showMoreModels_other": "Az {{count}} további modell megjelenítése",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII Kitakarítva",
         "sessionId": "Munkamenet-azonosító",
         "endUser": "Végfelhasználó",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Irányította"
       },
       "errorMessage": "Hibaüzenet",
       "eventCount": "{{count}} esemény",
       "eventCount_other": "{{count}} esemény",
-      "noTrace": "Nincs elérhető nyom. A nyom adatok az új hívások rögzítésre kerülnek."
+      "noTrace": "Nincs elérhető nyom. A nyom adatok az új hívások rögzítésre kerülnek.",
+      "routedByException": "Passthrough kivétel"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

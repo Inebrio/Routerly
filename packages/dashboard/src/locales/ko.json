@@ -25,6 +25,7 @@
       "routers": "라우터",
       "experiments": "실험",
       "usage": "사용량",
+      "timeline": "Timeline",
       "playground": "플레이그라운드",
       "settings": "설정",
       "connectApp": "앱 연결",
@@ -217,7 +218,8 @@
         "semantic-intent": "임베딩을 사용하여 의미론적 의도로 요청을 분류하고 후보자 풀을 해당 의도로 매핑된 모델로 제한합니다. 신뢰도가 높은 일치는 풀을 하드 필터합니다. 모호한 일치는 상위 2개 풀을 병합합니다. 알 수 없는 요청은 모든 후보를 통과시킵니다.",
         "model-preference": "클라이언트가 특정 모델을 요청할 때(routerly/ada 아님) 해당 모델에 구성 가능한 보너스 점수를 부여합니다. 기본 설정이 표현되지 않으면 정책은 기권합니다. 리스트의 위치는 기본 설정이 다른 정책에 대해 얼마나 많은 무게를 가지는지를 제어합니다."
       },
-      "selectModel": "모델 선택"
+      "selectModel": "모델 선택",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "적용 대상",
@@ -446,6 +448,7 @@
       "profile": "프로필",
       "notifications": "알림",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "기본 설정"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "토큰 생성 실패",
           "copyFailed": "복사 실패, 토큰을 수동으로 선택 및 복사하세요."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "보안",
         "token": "토큰",
         "users": "사용자",
-        "logs": "로그"
+        "logs": "사용량",
+        "test": "Test"
       },
       "backToRouters": "라우터로 돌아가기",
       "backToRoutersTitle": "라우터로 돌아가기",
@@ -1405,7 +1457,25 @@
         "empty": "구성된 대상 모델이 없습니다.",
         "addTarget": "대상 모델 추가",
         "passthroughLabel": "패스스루 (원시 전달)",
-        "passthroughNotRemovable": "패스스루 항목은 제거할 수 없습니다"
+        "passthroughNotRemovable": "패스스루 항목은 제거할 수 없습니다",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "예외",
+        "description": "모델이 규칙과 일치하는 요청은 그대로 전달되는 대신 선택한 모델로 전송됩니다. 처음 일치하는 규칙이 적용됩니다. 와일드카드는 *를 사용합니다. 토큰으로 인증된 요청에만 적용됩니다.",
+        "empty": "예외 없음: 모든 요청이 그대로 전달됩니다.",
+        "noRealModels": "먼저 이 라우터에 모델을 추가하세요. 예외는 라우터 자체의 모델만 대상으로 지정할 수 있습니다.",
+        "add": "예외 추가",
+        "match": "모델 이름 패턴",
+        "matchPlaceholder": "gpt-4*",
+        "target": "대상 모델",
+        "remove": "예외 제거",
+        "errors": {
+          "matchRequired": "모든 예외에는 패턴이 필요합니다.",
+          "duplicateMatch": "중복된 일치 패턴 \"{{match}}\".",
+          "targetMissing": "예외 \"{{match}}\"의 대상이 이 라우터의 모델이 아닙니다."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "이 토큰을 사용하는 요청에 대해 전역 및 라우터 수준 제한을 재정의합니다.",
         "noTargetModels": "먼저 라우팅 탭에서 대상 모델을 추가하세요.",
         "noOverride": "재정의 없음",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "제한 없음",
         "noLimitsSet": "제한이 설정되지 않음 - 상위에서 상속합니다. 아래에 제한을 추가하여 재정의합니다.",
         "metric": "메트릭",
@@ -1736,7 +1810,8 @@
         "label": "레이블",
         "provider": "제공업체",
         "endpoint": "엔드포인트",
-        "status": "상태"
+        "status": "상태",
+        "models": "Models"
       },
       "status": {
         "enabled": "활성화됨",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "모델",
         "edit": "편집",
-        "remove": "제거"
+        "remove": "제거",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "연결 로드 실패",
         "updateFailed": "연결 업데이트 실패",
         "createFailed": "연결 생성 실패"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "구성됨",
         "embedding": "embedding",
-        "runsLocally": "로컬에서 실행"
+        "runsLocally": "로컬에서 실행",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "이전",
@@ -1918,7 +2011,9 @@
         "title": "기능",
         "description": "이 모델의 유형 및 기능을 지정합니다.",
         "embeddingModel": "임베딩 모델",
-        "embeddingModelHint": "이 모델은 벡터 임베딩을 생성합니다(채팅 완료 아님)"
+        "embeddingModelHint": "이 모델은 벡터 임베딩을 생성합니다(채팅 완료 아님)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "가격 & 문맥",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "캐시 쓰기 $/1M",
         "optional": "(opt.)",
         "contextWindow": "문맥 윈도우",
-        "contextWindowHint": "(토큰, 선택 사항)"
+        "contextWindowHint": "(토큰, 선택 사항)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "고급 — 가격 책정 계층",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "모든 제공업체",
         "allConnections": "모든 연결",
-        "searchPlaceholder": "모델 필터링…"
+        "searchPlaceholder": "모델 필터링…",
+        "allStatuses": "All statuses"
       },
       "discover": "검색",
       "addModel": "모델 추가",
@@ -1989,13 +2087,16 @@
         "input": "입력 $/1M",
         "output": "출력 $/1M",
         "cache": "캐시 $/1M",
-        "context": "문맥 크기"
+        "context": "문맥 크기",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "테스트",
         "clone": "복제",
         "edit": "편집",
-        "remove": "제거"
+        "remove": "제거",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← 이전",
@@ -2051,6 +2152,43 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "모델",
       "registered": "등록됨",
       "routers": "라우터",
-      "active": "활성"
+      "active": "활성",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "클라이언트 연결",
@@ -2383,7 +2522,8 @@
         "outputTokens": "출력 토큰",
         "costPer1k": "비용/1K",
         "cost": "비용(USD)",
-        "bestCostPerformance": "최고 비용-성능"
+        "bestCostPerformance": "최고 비용-성능",
+        "deleted": "deleted"
       },
       "showMoreModels": "{{count}}개 더 많은 모델 표시",
       "showMoreModels_other": "{{count}}개 더 많은 모델 표시",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "개인정보 제거됨",
         "sessionId": "세션 ID",
         "endUser": "최종 사용자",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "라우팅 주체"
       },
       "errorMessage": "오류 메시지",
       "eventCount": "{{count}}개 이벤트",
       "eventCount_other": "{{count}}개 이벤트",
-      "noTrace": "추적 사용 가능하지 않습니다. 추적 데이터는 새 호출에 대해서만 캡처됩니다."
+      "noTrace": "추적 사용 가능하지 않습니다. 추적 데이터는 새 호출에 대해서만 캡처됩니다.",
+      "routedByException": "Passthrough 예외"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

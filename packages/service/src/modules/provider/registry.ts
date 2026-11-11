@@ -1,6 +1,7 @@
 import type { ModelConfig } from '@routerly/shared';
 import { AlterableRegistry } from '../../core/hooks/registry.js';
 import type { ProviderAdapter } from './types.js';
+import { normalizeForModel } from './compat/normalize.js';
 import { OpenAIAdapter } from './openai.js';
 import { AnthropicAdapter } from './anthropic.js';
 import { AnthropicOAuthAdapter } from './anthropic-oauth.js';
@@ -42,6 +43,25 @@ providerRegistry.contribute({ id: 'azure-openai', value: new AzureOpenAIAdapter(
 providerRegistry.contribute({ id: 'bedrock', value: new BedrockAdapter() });
 providerRegistry.contribute({ id: 'vertex', value: new VertexAdapter() });
 
+const normalized = new WeakMap<ProviderAdapter, ProviderAdapter>();
+
+/**
+ * Wraps an adapter so every request goes through the provider's compat profile
+ * (ROUT-713) before the adapter sees it: one seam for all lanes, the connection test
+ * and the conformance runner.
+ */
+function withCompat(adapter: ProviderAdapter): ProviderAdapter {
+  let wrapped = normalized.get(adapter);
+  if (!wrapped) {
+    wrapped = Object.create(adapter, {
+      chatCompletion: { value: (r: Parameters<ProviderAdapter['chatCompletion']>[0], m: ModelConfig, o?: Parameters<ProviderAdapter['chatCompletion']>[2]) => adapter.chatCompletion(normalizeForModel(r, m), m, o) },
+      streamCompletion: { value: (r: Parameters<ProviderAdapter['streamCompletion']>[0], m: ModelConfig, o?: Parameters<ProviderAdapter['streamCompletion']>[2]) => adapter.streamCompletion(normalizeForModel(r, m), m, o) },
+    }) as ProviderAdapter;
+    normalized.set(adapter, wrapped);
+  }
+  return wrapped;
+}
+
 /**
  * Returns the appropriate adapter for a given model config.
  * Throws if the provider is not recognized.
@@ -51,5 +71,5 @@ export function getProviderAdapter(model: ModelConfig): ProviderAdapter {
   if (!adapter) {
     throw new Error(`Unknown provider "${model.provider}" for model "${model.id}"`);
   }
-  return adapter;
+  return withCompat(adapter);
 }

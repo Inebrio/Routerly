@@ -1,3 +1,4 @@
+import { getProviderDescriptor } from './descriptor.js';
 import type { ModelInstance, ProviderConnection, EffectiveModel, Provider } from '@routerly/shared';
 
 /** Registry id "openai/gpt-4o" → upstream name "gpt-4o". Ids without a slash are returned as-is. */
@@ -20,6 +21,7 @@ const DEFAULT_ENDPOINTS: Partial<Record<string, string>> = {
   cohere: 'https://api.cohere.ai/compatibility/v1',
   fireworks: 'https://api.fireworks.ai/inference/v1',
   cerebras: 'https://api.cerebras.ai/v1',
+  typesafe: 'https://api.typesafe.ai/v1',
 };
 
 /**
@@ -57,6 +59,15 @@ export function resolveEffectiveModel(
 
   if (instance.capabilities !== undefined) {
     result.capabilities = instance.capabilities;
+  }
+
+  if (instance.conformance !== undefined) {
+    result.conformance = instance.conformance;
+  }
+
+  // Decision models are flagged by their provider, so a client cannot forget (or fake) the flag.
+  if (getProviderDescriptor(connection.providerId)?.nativeCapabilities.decision === true) {
+    result.capabilities = { ...result.capabilities, decision: true };
   }
 
   if (instance.fieldOverrides !== undefined) {

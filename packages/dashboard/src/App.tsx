@@ -35,6 +35,7 @@ import { RouterTokenEditPage } from './pages/router/RouterTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
 import { UsagePage } from './pages/UsagePage';
 import { UsageRecordPage } from './pages/UsageRecordPage';
+import { TimelinePage } from './pages/TimelinePage';
 import { TestPage } from './pages/TestPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SettingsGeneralTab, SettingsSecurityTab, SettingsAboutTab, SettingsIntegrationsTab, SettingsCatalogTab } from './pages/SettingsPage';
@@ -44,6 +45,7 @@ import { NotificationChannelCreatePage } from './pages/NotificationChannelCreate
 import { RolesPage } from './pages/RolesPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { McpTokenNewPage } from './pages/McpTokenNewPage';
+import { ApiTokenNewPage } from './pages/ApiTokenNewPage';
 import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
@@ -60,7 +62,7 @@ import { ExperimentConfigTab } from './pages/experiment/ExperimentConfigTab';
 import { ExperimentMetricsTab } from './pages/experiment/ExperimentMetricsTab';
 import { ExperimentTokenTab } from './pages/experiment/ExperimentTokenTab';
 
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Cloud, Route, AppWindow, Split } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Cloud, Route, AppWindow, Split, History } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
@@ -159,6 +161,7 @@ function Sidebar({ collapsed, onToggle, version }: { collapsed: boolean; onToggl
     { to: '/dashboard/routers', icon: <FolderOpen size={17} />, label: t('app.nav.routers') },
     ...(experimentsEnabled ? [{ to: '/dashboard/experiments', icon: <Split size={17} />, label: t('app.nav.experiments') }] : []),
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: t('app.nav.usage') },
+    ...(can('report:read') ? [{ to: '/dashboard/timeline', icon: <History size={17} />, label: t('app.nav.timeline') }] : []),
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: t('app.nav.playground') },
   ];
 
@@ -657,6 +660,7 @@ const router = createBrowserRouter([
             ],
           },
           { path: 'usage', element: <UsagePage /> },
+          { path: 'timeline', element: <TimelinePage /> },
           { path: 'health', element: <Navigate to="/dashboard/models?tab=health" replace /> },
           // Instances were folded into the Models list; keep the old path landing there
           // instead of the generic overview fallback (mirrors the 'health' redirect above).
@@ -686,6 +690,8 @@ const router = createBrowserRouter([
           { path: 'profile/notifications', element: <ProfilePage initialTab="notifications" /> },
           { path: 'profile/mcp', element: <ProfilePage initialTab="mcp" /> },
           { path: 'profile/mcp/new', element: <McpTokenNewPage /> },
+          { path: 'profile/api-tokens', element: <ProfilePage initialTab="api-tokens" /> },
+          { path: 'profile/api-tokens/new', element: <ApiTokenNewPage /> },
           { path: 'profile/preferences', element: <ProfilePage initialTab="preferences" /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },

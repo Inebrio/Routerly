@@ -25,6 +25,7 @@
       "routers": "Reitittimet",
       "experiments": "Kokeilut",
       "usage": "Käyttö",
+      "timeline": "Timeline",
       "playground": "Testiympäristö",
       "settings": "Asetukset",
       "connectApp": "Yhdistä sovellus",
@@ -217,7 +218,8 @@
         "semantic-intent": "Luokittelee pyynnön semanttisen aikomuksen perusteella upotuksia käyttäen ja rajoittaa ehdokasjoukon tähän aikomukseen kartoitettuihin malleihin. Varmat osumat suodattavat joukon kovin; epäselvät osumat yhdistävät kaksi parasta joukkoa; tuntemattomat pyynnöt läpäisevät kaikki ehdokkaat.",
         "model-preference": "Kun asiakas pyytää tiettyä mallia (ei routerly/ada), myöntää sille säädettävän lisäpisteen. Kun mieltymystä ei ilmaista, käytäntö pidättyy. Sijainti listassa määrittää, kuinka paljon mieltymys painaa muihin käytäntöihin verrattuna."
       },
-      "selectModel": "Valitse malli"
+      "selectModel": "Valitse malli",
+      "disabledBadge": "Disabled"
     },
     "securityRules": {
       "applyTo": "Kohdistetaan",
@@ -446,6 +448,7 @@
       "profile": "Profiili",
       "notifications": "Ilmoitukset",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "Asetukset"
     },
     "notifications": {
@@ -629,6 +632,54 @@
         "errors": {
           "createFailed": "Tokenin luominen epäonnistui",
           "copyFailed": "Kopiointi epäonnistui, valitse ja kopioi token manuaalisesti."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1217,7 +1268,8 @@
         "security": "Turvallisuus",
         "token": "Token",
         "users": "Käyttäjät",
-        "logs": "Lokit"
+        "logs": "Käyttö",
+        "test": "Test"
       },
       "backToRouters": "Takaisin reitittimiin",
       "backToRoutersTitle": "Takaisin reitittimiin",
@@ -1405,7 +1457,25 @@
         "empty": "Kohdemalleja ei ole määritetty.",
         "addTarget": "Lisää kohdemalli",
         "passthroughLabel": "Läpivienti (raakavälitys)",
-        "passthroughNotRemovable": "Läpivientimerkintää ei voi poistaa"
+        "passthroughNotRemovable": "Läpivientimerkintää ei voi poistaa",
+        "disabled": "Disabled",
+        "unavailable": "Unavailable"
+      },
+      "exceptions": {
+        "title": "Poikkeukset",
+        "description": "Pyyntö, jonka malli vastaa sääntöä, ohjataan valittuun malliin sen sijaan että se välitettäisiin muuttamattomana. Ensimmäinen osuma voittaa. Käytä * jokerimerkkinä. Koskee vain tokenilla todennettuja pyyntöjä.",
+        "empty": "Ei poikkeuksia: jokainen pyyntö välitetään muuttamattomana.",
+        "noRealModels": "Lisää ensin malli tähän reitittimeen: poikkeukset voivat viitata vain reitittimen omiin malleihin.",
+        "add": "Lisää poikkeus",
+        "match": "Mallin nimen kaava",
+        "matchPlaceholder": "gpt-4*",
+        "target": "Kohdemalli",
+        "remove": "Poista poikkeus",
+        "errors": {
+          "matchRequired": "Jokainen poikkeus tarvitsee kaavan.",
+          "duplicateMatch": "Kaksoiskappale \"{{match}}\".",
+          "targetMissing": "Poikkeuksen \"{{match}}\" kohde ei ole tämän reitittimen malli."
+        }
       }
     },
     "optimizer": {
@@ -1520,6 +1590,10 @@
         "perModelLimitsHint": "Ylikirjoita globaalit ja reitittimen tason rajat tätä tokenia käyttäville pyynnöille.",
         "noTargetModels": "Lisää kohdemalleja Reititys-välilehdellä ensin.",
         "noOverride": "ei ylikirjoitusta",
+        "limitsMode": "Limits mode",
+        "limitsModeReplace": "Replace router limits",
+        "limitsModeExtend": "Stack on router limits (extend)",
+        "limitsModeDisable": "No limits (disable)",
         "noLimits": "Ei rajoja",
         "noLimitsSet": "Rajoja ei ole asetettu — perii vanhemmalta. Lisää raja alle ylikirjoittaaksesi.",
         "metric": "Mittari",
@@ -1736,7 +1810,8 @@
         "label": "Nimike",
         "provider": "Palveluntarjoaja",
         "endpoint": "Päätepiste",
-        "status": "Tila"
+        "status": "Tila",
+        "models": "Models"
       },
       "status": {
         "enabled": "Käytössä",
@@ -1745,7 +1820,20 @@
       "actions": {
         "models": "Mallit",
         "edit": "Muokkaa",
-        "remove": "Poista"
+        "remove": "Poista",
+        "sync": "Sync models from the catalog",
+        "syncOff": "Catalog sync is off for this connection. Enable it in the connection settings."
+      },
+      "counts": {
+        "new": "{{count}} new",
+        "new_other": "{{count}} new",
+        "unavailable": "{{count}} unavailable",
+        "unavailable_other": "{{count}} unavailable"
+      },
+      "sync": {
+        "done": "{{label}} synced: {{added}} added, {{unavailable}} unavailable, {{restored}} restored, {{skipped}} skipped.",
+        "catalogUnavailable": "{{label}}: the catalog is not available right now, nothing changed.",
+        "failed": "Catalog sync failed"
       }
     },
     "form": {
@@ -1789,6 +1877,10 @@
         "loadFailed": "Yhteyden lataaminen epäonnistui",
         "updateFailed": "Yhteyden päivittäminen epäonnistui",
         "createFailed": "Yhteyden luominen epäonnistui"
+      },
+      "catalogSync": {
+        "label": "Load models from the catalog",
+        "hint": "Adds the provider's catalog models to this connection, disabled. Enable the ones you want to route to."
       }
     }
   },
@@ -1842,7 +1934,8 @@
       "badges": {
         "configured": "Määritetty",
         "embedding": "upotus",
-        "runsLocally": "Toimii paikallisesti"
+        "runsLocally": "Toimii paikallisesti",
+        "decision": "Decision"
       },
       "pagination": {
         "prev": "Edell.",
@@ -1918,7 +2011,9 @@
         "title": "Ominaisuudet",
         "description": "Määritä tämän mallin tyyppi ja ominaisuudet.",
         "embeddingModel": "Upotusmalli",
-        "embeddingModelHint": "Tämä malli tuottaa vektoriupotuksia (ei keskustelutäydennyksiä)"
+        "embeddingModelHint": "Tämä malli tuottaa vektoriupotuksia (ei keskustelutäydennyksiä)",
+        "decisionModel": "Decision model",
+        "decisionModelHint": "This model answers questions with predefined options (it does not generate text). It cannot serve chat requests and is excluded from chat model lists."
       },
       "pricing": {
         "title": "Hinnoittelu ja konteksti",
@@ -1929,7 +2024,9 @@
         "cacheWritePerMillion": "Välimuistikirjoitus $/1M",
         "optional": "(valinn.)",
         "contextWindow": "Kontekstiikkuna",
-        "contextWindowHint": "(tokenia, valinnainen)"
+        "contextWindowHint": "(tokenia, valinnainen)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Lisäasetukset — Hinnoitteluportaat",
@@ -1973,7 +2070,8 @@
       "filters": {
         "allProviders": "Kaikki palveluntarjoajat",
         "allConnections": "Kaikki yhteydet",
-        "searchPlaceholder": "Suodata malleja…"
+        "searchPlaceholder": "Suodata malleja…",
+        "allStatuses": "All statuses"
       },
       "discover": "Selaa",
       "addModel": "Lisää malli",
@@ -1989,13 +2087,16 @@
         "input": "Syöte $/1M",
         "output": "Tuloste $/1M",
         "cache": "Välimuisti $/1M",
-        "context": "Kontekstin koko"
+        "context": "Kontekstin koko",
+        "conformance": "Conformance",
+        "status": "Status"
       },
       "actions": {
         "test": "Testaa",
         "clone": "Kloonaa",
         "edit": "Muokkaa",
-        "remove": "Poista"
+        "remove": "Poista",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← Edellinen",
@@ -2051,6 +2152,43 @@
           "cooldown": "jäähdytys {{time}}",
           "lockout": "lukko {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "new": "New",
+        "unavailable": "Unavailable",
+        "reason": {
+          "removed": "removed",
+          "deprecated": "deprecated"
+        },
+        "usedBy": "Used by: {{routers}}"
+      },
+      "state": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "clear": "Clear selection",
+        "selected": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "bulkBar": "Bulk actions",
+        "enableAllNew": "Enable all new ({{count}})",
+        "enableRow": "Enable",
+        "disableRow": "Disable",
+        "selectPage": "Select all models on this page",
+        "selectRow": "Select {{id}}",
+        "loaded": "{{count}} model loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "loaded_other": "{{count}} models loaded from the catalog, disabled. Enable the ones you want to route to.",
+        "dismiss": "Dismiss",
+        "failed": "Failed to update models"
       }
     }
   },
@@ -2219,7 +2357,8 @@
       "models": "Mallit",
       "registered": "rekisteröity",
       "routers": "Reitittimet",
-      "active": "aktiivinen"
+      "active": "aktiivinen",
+      "routable": "routable"
     },
     "connectCard": {
       "title": "Yhdistä asiakas",
@@ -2383,7 +2522,8 @@
         "outputTokens": "Tulostetokenit",
         "costPer1k": "Kustannus / 1K",
         "cost": "Kustannus (USD)",
-        "bestCostPerformance": "Paras hinta-suorituskyky"
+        "bestCostPerformance": "Paras hinta-suorituskyky",
+        "deleted": "deleted"
       },
       "showMoreModels": "Näytä {{count}} lisää malli",
       "showMoreModels_other": "Näytä {{count}} lisää mallia",
@@ -2449,12 +2589,86 @@
         "piiRedacted": "PII peitetty",
         "sessionId": "Istunnon tunnus",
         "endUser": "Loppukäyttäjä",
-        "tags": "Tags"
+        "tags": "Tags",
+        "routedBy": "Reitittänyt"
       },
       "errorMessage": "Virheviesti",
       "eventCount": "{{count}} tapahtuma",
       "eventCount_other": "{{count}} tapahtumaa",
-      "noTrace": "Jäljitystä ei ole saatavilla. Jäljitystiedot tallennetaan vain uusille kutsuille."
+      "noTrace": "Jäljitystä ei ole saatavilla. Jäljitystiedot tallennetaan vain uusille kutsuille.",
+      "routedByException": "Passthrough-poikkeus"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Every client request as one sequence: routing, guardrails, attempts, MCP tool calls and proxied routes",
+    "noPermission": "You don't have permission to view the timeline.",
+    "refresh": "Refresh",
+    "filters": {
+      "period": "Period",
+      "router": "Router",
+      "allRouters": "All routers",
+      "token": "Token",
+      "allTokens": "All tokens",
+      "sessionId": "Session ID",
+      "sessionIdPlaceholder": "Exact session id",
+      "endUser": "End user",
+      "endUserPlaceholder": "Exact end user id",
+      "kind": "Event kind",
+      "allKinds": "All kinds",
+      "outcome": "Outcome",
+      "allOutcomes": "All outcomes",
+      "reset": "Reset filters"
+    },
+    "kinds": {
+      "attempt": "Attempt",
+      "routing": "Routing",
+      "guardrail": "Guardrail",
+      "judge": "Judge",
+      "mcp": "MCP",
+      "proxy": "Proxy"
+    },
+    "outcomes": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked",
+      "timeout": "Timeout",
+      "budget_exceeded": "Budget exceeded"
+    },
+    "summary": {
+      "requests": "Requests",
+      "events": "Events",
+      "cost": "Cost"
+    },
+    "list": {
+      "title": "Requests",
+      "empty": "No requests match these filters.",
+      "loadFailedPrefix": "Failed to load the timeline:",
+      "retry": "Retry",
+      "expand": "Show events",
+      "collapse": "Hide events",
+      "attempts_one": "{{count}} attempt",
+      "attempts_other": "{{count}} attempts",
+      "fallback": "Fallback",
+      "uncorrelated": "Not correlated",
+      "uncorrelatedHint": "This event carries no trace id, so it is shown alone and never merged with another request.",
+      "unknownCost": "Cost unknown",
+      "noRouter": "No router",
+      "cost": "Cost"
+    },
+    "event": {
+      "attemptN": "Attempt {{n}}",
+      "final": "Final",
+      "ttft": "TTFT {{ms}}",
+      "tokens": "{{in}} in / {{out}} out",
+      "blockedBy": "Blocked by {{rule}}",
+      "openRecord": "Open usage record"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}",
+      "total": "{{count}} requests"
     }
   },
   "playground": {

@@ -43,6 +43,8 @@ const mockEmbed = vi.fn()
 vi.mock('../embeddings/dispatch.js', () => ({
   getEmbeddingProvider: vi.fn(() => ({ embed: mockEmbed })),
 }))
+const mockDecide = vi.fn()
+vi.mock('../decision/dispatch.js', () => ({ decide: (...a: unknown[]) => mockDecide(...a) }))
 vi.mock('../provider/registry.js', () => ({
   getProviderAdapter: vi.fn(() => ({ chatCompletion: mockChatCompletion })),
 }))
@@ -2634,6 +2636,31 @@ describe('GET /api/usage', () => {
     expect(body.records).toHaveLength(1)
   })
 
+  it('keeps cost of deleted models and lists them in deletedModelIds (ROUT-292)', async () => {
+    setupAdminAuth()
+    const now = new Date().toISOString()
+    const records = [
+      { id: 'd1', timestamp: now, routerId: 'p1', modelId: 'gone', inputTokens: 10, outputTokens: 5, cost: 0.5, priceInput: 1, priceOutput: 2, outcome: 'success', callType: 'completion', latencyMs: 10 },
+      { id: 'd2', timestamp: now, routerId: 'p1', modelId: 'live', inputTokens: 10, outputTokens: 5, cost: 0.25, priceInput: 1, priceOutput: 2, outcome: 'success', callType: 'completion', latencyMs: 10 },
+      { id: 'd3', timestamp: now, routerId: 'pt', modelId: 'claude-client-string', inputTokens: 0, outputTokens: 0, cost: null, outcome: 'success', callType: 'completion', latencyMs: 10 },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return records
+      if (t === 'instances') return [{ id: 'live' }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage?modelIds=live', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.deletedModelIds).toEqual(['gone'])
+    const all = await (async () => { const a2 = await buildApp(); const r = await a2.inject({ method: 'GET', url: '/api/usage', headers: adminAuthHeaders() }); await a2.close(); return JSON.parse(r.body) })()
+    expect(all.byModel.gone.cost).toBeCloseTo(0.5)
+    expect(all.summary.totalCost).toBeCloseTo(0.75)
+  })
+
   it('tolerates records without token fields (ROUT-442)', async () => {
     setupAdminAuth()
     const records = [
@@ -5213,6 +5240,32 @@ describe('PUT /api/routers/:id/tokens/:tokenId', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(200)
+  })
+
+  it('stores and returns limitsMode; rejects an invalid value', async () => {
+    setupAdminAuth()
+    const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString(), models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [router]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const put = (limitsMode: string) => app.inject({
+      method: 'PUT', url: '/api/routers/p1/tokens/tok-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ models: [{ modelId: 'm1', limitsMode }] }),
+    })
+    const ok = await put('disable')
+    const bad = await put('bogus')
+    await app.close()
+    expect(ok.statusCode).toBe(200)
+    expect(JSON.parse(ok.body).models[0].limitsMode).toBe('disable')
+    expect(bad.statusCode).toBe(400)
   })
 
   it('returns 404 for unknown token', async () => {
@@ -13794,6 +13847,30 @@ describe('POST /api/models/:id/test', () => {
     expect(bad.json()).toMatchObject({ ok: false, error: 'boom' })
   })
 
+  it('probes the decision API, not chat, for a decision model (ROUT-244)', async () => {
+    setupAdminAuth()
+    const instance = { id: 'typesafe/jev-latest', connectionId: 'conn-ts', upstreamModelId: 'jev-latest', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0 }
+    const connection = { id: 'conn-ts', providerId: 'typesafe', endpoint: 'https://api.typesafe.ai/v1', credentials: { apiKey: 'k' } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
+      return []
+    })
+    mockChatCompletion.mockClear()
+    mockDecide.mockResolvedValue({ answers: {} })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/typesafe%2Fjev-latest/test', headers: adminAuthHeaders() })
+    expect(res.json().ok).toBe(true)
+    expect(mockDecide).toHaveBeenCalledTimes(1)
+    expect(mockChatCompletion).not.toHaveBeenCalled()
+    mockDecide.mockRejectedValue(new Error('TypeSafe API returned 401'))
+    const bad = await app.inject({ method: 'POST', url: '/api/models/typesafe%2Fjev-latest/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(bad.json()).toMatchObject({ ok: false, error: expect.stringContaining('401') })
+  })
+
   it('returns ok:true when adapter succeeds', async () => {
     setupAdminAuth()
     const instance = { id: 'inst-ok-1', connectionId: 'conn-ok-1', upstreamModelId: 'gpt-4o', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 128000 }
@@ -15118,5 +15195,54 @@ describe('model availability state (ROUT-437)', () => {
       expect(added).toEqual(['openai/gpt-4o', 'openai/gpt-4o-mini'])
       expect(writtenInstances()![0]).toMatchObject({ enabled: false, isNew: true, source: 'catalog' })
     })
+
+  })
+})
+
+// ─── POST /api/models/:id/conformance (ROUT-713) ──────────────────────────────
+
+describe('POST /api/models/:id/conformance', () => {
+  const instance = { id: 'inst-conf-1', connectionId: 'conn-conf-1', upstreamModelId: 'gpt-4o', cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000, capabilities: { functionCalling: false, json: false } }
+  const connection = { id: 'conn-conf-1', providerId: 'openai', endpoint: 'https://api.openai.com/v1', credentials: { apiKey: 'sk-x' } }
+
+  it('runs the corpus, stores the result on the instance and exposes it in GET /api/models', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
+      return []
+    })
+    mockChatCompletion.mockResolvedValue({ choices: [{ index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }] })
+    mockWriteConfig.mockClear()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/inst-conf-1/conformance', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body.cases.find((c: { id: string }) => c.id === 'basic-chat').status).toBe('pass')
+    expect(body.cases.find((c: { id: string }) => c.id === 'tool-call').status).toBe('skip')
+    const stored = mockWriteConfig.mock.calls.find(c => c[0] === 'instances')![1] as Array<{ id: string; conformance: { status: string } }>
+    expect(stored[0]!.conformance.status).toBe(body.status)
+  })
+
+  it('404 for an unknown model', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [adminUser] : []))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/nope/conformance', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('403 without model:write', async () => {
+    const viewerUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }
+    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [viewerUser] : []))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/inst-conf-1/conformance', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
   })
 })
