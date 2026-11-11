@@ -1860,6 +1860,16 @@
         "updateFailed": "A kapcsolat frissítése sikertelen",
         "createFailed": "A kapcsolat létrehozása sikertelen"
       }
+    },
+    "tree": {
+      "toggle": "{{label}} modelljeinek megjelenítése vagy elrejtése",
+      "modelCount": "{{count}} modell",
+      "modelCount_other": "{{count}} modell",
+      "noModels": "Ehhez a kapcsolathoz még nincsenek modellek.",
+      "price": "${{input}} be / ${{output}} ki 1M tokennél",
+      "addModel": "Modell hozzáadása",
+      "discover": "Modellek felfedezése",
+      "orphans": "Kapcsolat nélküli modellek ({{count}})"
     }
   },
   "models": {

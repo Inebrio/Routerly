@@ -28,6 +28,16 @@ Open **Providers** in the sidebar, or navigate to `/dashboard/connections`.
 | **Endpoint** | Base URL override, or a dash if using the provider default |
 | **Status** | `Enabled` or `Disabled` |
 
+### Models inside the tree
+
+With `model:read`, each row has a chevron that expands the connection to list
+its models: health dot (with `report:read`), prices per 1M tokens and context
+window, plus a test button. With `model:write` you can also edit or remove a
+model, **Add model** (opens the model form with the connection preselected)
+and **Discover models**. A connection without models shows an empty state.
+Models bound to no listed connection appear below the table under **Models
+without a connection**. On narrow screens the Endpoint column is hidden.
+
 Each row also has a **Models** button (opening the Models page filtered to
 that connection, see [Models on a Connection](#models-on-a-connection)), and,
 with `connections:manage`, **Edit** and **Remove** buttons.

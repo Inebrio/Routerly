@@ -1860,6 +1860,16 @@
         "updateFailed": "Không thể cập nhật kết nối",
         "createFailed": "Không thể tạo kết nối"
       }
+    },
+    "tree": {
+      "toggle": "Hiện hoặc ẩn các model của {{label}}",
+      "modelCount": "{{count}} model",
+      "modelCount_other": "{{count}} model",
+      "noModels": "Chưa có model nào trên kết nối này.",
+      "price": "${{input}} vào / ${{output}} ra mỗi 1M",
+      "addModel": "Thêm model",
+      "discover": "Khám phá model",
+      "orphans": "Các model không có kết nối ({{count}})"
     }
   },
   "models": {

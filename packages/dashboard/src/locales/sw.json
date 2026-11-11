@@ -1860,6 +1860,16 @@
         "updateFailed": "Kushindwa kuboreshwa muunganisho",
         "createFailed": "Kushindwa kutengeneza muunganisho"
       }
+    },
+    "tree": {
+      "toggle": "Onyesha au ficha modeli za {{label}}",
+      "modelCount": "Modeli {{count}}",
+      "modelCount_other": "Modeli {{count}}",
+      "noModels": "Bado hakuna modeli kwenye muunganisho huu.",
+      "price": "${{input}} ndani / ${{output}} nje kwa kila milioni 1",
+      "addModel": "Ongeza modeli",
+      "discover": "Gundua modeli",
+      "orphans": "Modeli zisizo na muunganisho ({{count}})"
     }
   },
   "models": {

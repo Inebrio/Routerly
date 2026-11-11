@@ -1860,6 +1860,16 @@
         "updateFailed": "Yhteyden päivittäminen epäonnistui",
         "createFailed": "Yhteyden luominen epäonnistui"
       }
+    },
+    "tree": {
+      "toggle": "Näytä tai piilota {{label}}-mallit",
+      "modelCount": "{{count}} malli",
+      "modelCount_other": "{{count}} mallia",
+      "noModels": "Tässä yhteydessä ei ole vielä malleja.",
+      "price": "${{input}} sisään / ${{output}} ulos per 1M",
+      "addModel": "Lisää malli",
+      "discover": "Etsi malleja",
+      "orphans": "Mallit ilman yhteyttä ({{count}})"
     }
   },
   "models": {

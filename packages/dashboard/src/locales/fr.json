@@ -1860,6 +1860,16 @@
         "updateFailed": "Impossible de mettre à jour la connexion",
         "createFailed": "Impossible de créer la connexion"
       }
+    },
+    "tree": {
+      "toggle": "Afficher ou masquer les modèles de {{label}}",
+      "modelCount": "{{count}} modèle",
+      "modelCount_other": "{{count}} modèles",
+      "noModels": "Aucun modèle sur cette connexion pour l'instant.",
+      "price": "${{input}} en entrée / ${{output}} en sortie par 1M",
+      "addModel": "Ajouter un modèle",
+      "discover": "Découvrir les modèles",
+      "orphans": "Modèles sans connexion ({{count}})"
     }
   },
   "models": {

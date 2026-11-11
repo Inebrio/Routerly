@@ -1860,6 +1860,16 @@
         "updateFailed": "کنکشن اپ ڈیٹ کرنے میں ناکام",
         "createFailed": "کنکشن بنانے میں ناکام"
       }
+    },
+    "tree": {
+      "toggle": "{{label}} کے ماڈلز دکھائیں یا چھپائیں",
+      "modelCount": "{{count}} ماڈل",
+      "modelCount_other": "{{count}} ماڈلز",
+      "noModels": "اس کنکشن پر ابھی تک کوئی ماڈل نہیں ہے۔",
+      "price": "فی 1M ${{input}} اندر / ${{output}} باہر",
+      "addModel": "ماڈل شامل کریں",
+      "discover": "ماڈلز دریافت کریں",
+      "orphans": "بغیر کنکشن کے ماڈلز ({{count}})"
     }
   },
   "models": {

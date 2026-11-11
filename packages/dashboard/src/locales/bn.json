@@ -1860,6 +1860,16 @@
         "updateFailed": "সংযোগ আপডেট করতে ব্যর্থ",
         "createFailed": "সংযোগ তৈরি করতে ব্যর্থ"
       }
+    },
+    "tree": {
+      "toggle": "{{label}}-এর মডেলগুলো দেখান বা লুকান",
+      "modelCount": "{{count}}টি মডেল",
+      "modelCount_other": "{{count}}টি মডেল",
+      "noModels": "এই সংযোগে এখনো কোনো মডেল নেই।",
+      "price": "প্রতি 1M-এ ${{input}} ইন / ${{output}} আউট",
+      "addModel": "মডেল যোগ করুন",
+      "discover": "মডেল খুঁজুন",
+      "orphans": "সংযোগহীন মডেল ({{count}})"
     }
   },
   "models": {

@@ -1860,6 +1860,16 @@
         "updateFailed": "Nepodarilo sa aktualizovať pripojenie",
         "createFailed": "Nepodarilo sa vytvoriť pripojenie"
       }
+    },
+    "tree": {
+      "toggle": "Zobraziť alebo skryť modely {{label}}",
+      "modelCount": "{{count}} model",
+      "modelCount_other": "{{count}} modelov",
+      "noModels": "Na tomto pripojení zatiaľ nie sú žiadne modely.",
+      "price": "${{input}} vstup / ${{output}} výstup za 1M",
+      "addModel": "Pridať model",
+      "discover": "Objaviť modely",
+      "orphans": "Modely bez pripojenia ({{count}})"
     }
   },
   "models": {

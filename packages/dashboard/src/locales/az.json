@@ -1860,6 +1860,16 @@
         "updateFailed": "Bağlantını yeniləmək alınmadı",
         "createFailed": "Bağlantını yaratmaq alınmadı"
       }
+    },
+    "tree": {
+      "toggle": "{{label}} modellərini göstər və ya gizlət",
+      "modelCount": "{{count}} model",
+      "modelCount_other": "{{count}} model",
+      "noModels": "Bu bağlantıda hələ model yoxdur.",
+      "price": "1M üçün ${{input}} giriş / ${{output}} çıxış",
+      "addModel": "Model əlavə et",
+      "discover": "Modelləri kəşf et",
+      "orphans": "Bağlantısı olmayan modellər ({{count}})"
     }
   },
   "models": {

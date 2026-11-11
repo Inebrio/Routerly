@@ -1860,6 +1860,16 @@
         "updateFailed": "કનેક્શન અપડેટ નિષ્ફળ",
         "createFailed": "કનેક્શન બનાવવું નિષ્ફળ"
       }
+    },
+    "tree": {
+      "toggle": "{{label}} ના મોડેલ બતાવો અથવા છુપાવો",
+      "modelCount": "{{count}} મોડેલ",
+      "modelCount_other": "{{count}} મોડેલ",
+      "noModels": "આ કનેક્શન પર હજી કોઈ મોડેલ નથી.",
+      "price": "${{input}} ઇન / ${{output}} આઉટ પ્રતિ 1M",
+      "addModel": "મોડેલ ઉમેરો",
+      "discover": "મોડેલ શોધો",
+      "orphans": "કનેક્શન વગરના મોડેલ ({{count}})"
     }
   },
   "models": {

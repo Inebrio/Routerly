@@ -1860,6 +1860,16 @@
         "updateFailed": "Verbindung konnte nicht aktualisiert werden",
         "createFailed": "Verbindung konnte nicht erstellt werden"
       }
+    },
+    "tree": {
+      "toggle": "Modelle von {{label}} ein- oder ausblenden",
+      "modelCount": "{{count}} Modell",
+      "modelCount_other": "{{count}} Modelle",
+      "noModels": "Noch keine Modelle auf dieser Verbindung.",
+      "price": "${{input}} in / ${{output}} out pro 1M",
+      "addModel": "Modell hinzufügen",
+      "discover": "Modelle ermitteln",
+      "orphans": "Modelle ohne Verbindung ({{count}})"
     }
   },
   "models": {

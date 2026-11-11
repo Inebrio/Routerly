@@ -1860,6 +1860,16 @@
         "updateFailed": "कनेक्शन अपडेट करने में विफल",
         "createFailed": "कनेक्शन बनाने में विफल"
       }
+    },
+    "tree": {
+      "toggle": "{{label}} के मॉडल दिखाएँ या छिपाएँ",
+      "modelCount": "{{count}} मॉडल",
+      "modelCount_other": "{{count}} मॉडल",
+      "noModels": "इस कनेक्शन पर अभी कोई मॉडल नहीं है।",
+      "price": "${{input}} इन / ${{output}} आउट प्रति 1M",
+      "addModel": "मॉडल जोड़ें",
+      "discover": "मॉडल खोजें",
+      "orphans": "बिना कनेक्शन वाले मॉडल ({{count}})"
     }
   },
   "models": {

@@ -1860,6 +1860,16 @@
         "updateFailed": "Gagal memperbarui koneksi",
         "createFailed": "Gagal membuat koneksi"
       }
+    },
+    "tree": {
+      "toggle": "Tunjuk atau sembunyikan model bagi {{label}}",
+      "modelCount": "{{count}} model",
+      "modelCount_other": "{{count}} model",
+      "noModels": "Belum ada model pada sambungan ini.",
+      "price": "${{input}} masuk / ${{output}} keluar setiap 1J",
+      "addModel": "Tambah model",
+      "discover": "Cari model",
+      "orphans": "Model tanpa sambungan ({{count}})"
     }
   },
   "models": {

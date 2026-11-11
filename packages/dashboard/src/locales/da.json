@@ -1860,6 +1860,16 @@
         "updateFailed": "Kunne ikke opdatere forbindelse",
         "createFailed": "Kunne ikke oprette forbindelse"
       }
+    },
+    "tree": {
+      "toggle": "Vis eller skjul modeller for {{label}}",
+      "modelCount": "{{count}} model",
+      "modelCount_other": "{{count}} modeller",
+      "noModels": "Ingen modeller på denne forbindelse endnu.",
+      "price": "${{input}} ind / ${{output}} ud pr. 1M",
+      "addModel": "Tilføj model",
+      "discover": "Find modeller",
+      "orphans": "Modeller uden forbindelse ({{count}})"
     }
   },
   "models": {

@@ -1322,3 +1322,7 @@ tr.row-new { animation: row-highlight 2.5s ease-out; }
 
 /* Arabic-script and Hebrew: tracking disconnects joined glyphs */
 [dir="rtl"] * { letter-spacing: 0 !important; }
+
+@media (max-width: 600px) {
+  .hide-narrow { display: none; }
+}

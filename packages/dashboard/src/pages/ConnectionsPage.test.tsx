@@ -6,6 +6,10 @@ import { MemoryRouter } from 'react-router-dom';
 vi.mock('../api', () => ({
   getConnections: vi.fn(),
   deleteConnection: vi.fn(),
+  getModels: vi.fn(),
+  deleteModel: vi.fn(),
+  testModel: vi.fn(),
+  getProviderHealth: vi.fn(),
 }));
 
 const mockNavigate = vi.fn();
@@ -29,11 +33,13 @@ vi.mock('../components/ConfirmDialog', () => ({
 }));
 
 import { ConnectionsPage } from './ConnectionsPage';
-import { getConnections, deleteConnection } from '../api';
+import { getConnections, deleteConnection, getModels, getProviderHealth } from '../api';
 import { useAuth } from '../AuthContext';
 
 const mockGetConnections = vi.mocked(getConnections as () => Promise<unknown>);
 const mockDeleteConnection = vi.mocked(deleteConnection as (...a: unknown[]) => Promise<unknown>);
+const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
+const mockGetHealth = vi.mocked(getProviderHealth as () => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 
 function makeConnection(overrides: Record<string, unknown> = {}) {
@@ -53,6 +59,8 @@ function renderPage() {
 
 beforeEach(() => {
   mockGetConnections.mockResolvedValue([]);
+  mockGetModels.mockResolvedValue([]);
+  mockGetHealth.mockResolvedValue({ providers: [] });
   mockDeleteConnection.mockResolvedValue(undefined);
   mockUseAuth.mockReturnValue({
     user: { id: 'u1', email: 'admin@test.com', role: 'admin' },
@@ -269,5 +277,62 @@ describe('ConnectionsPage — remove connection', () => {
     renderPage();
     await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
     expect(screen.getByText('Disabled')).not.toBeNull();
+  });
+});
+
+describe('ConnectionsPage — provider/model tree', () => {
+  const model = (id: string, connectionId?: string) => ({
+    id, name: id, provider: 'openai', endpoint: '', connectionId,
+    cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000,
+  });
+
+  beforeEach(() => {
+    mockGetConnections.mockResolvedValue([makeConnection(), makeConnection({ id: 'c2', label: 'Empty one' })]);
+    mockGetModels.mockResolvedValue([model('gpt-a', 'c1'), model('lonely')]);
+  });
+
+  it('expands a connection to its models, with counts, and lists orphan models', async () => {
+    renderPage();
+    const toggle = await screen.findByRole('button', { name: /My OpenAI/ });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    await waitFor(() => expect(screen.getByText('1 model')).not.toBeNull());
+    expect(screen.queryByText('gpt-a')).toBeNull();
+    await userEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('gpt-a')).not.toBeNull();
+    expect(screen.getByText('lonely')).not.toBeNull(); // orphan node is always visible
+    expect(screen.getByText(/Models without a connection \(1\)/)).not.toBeNull();
+  });
+
+  it('empty connection shows the empty state and an add-model link', async () => {
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: /Empty one/ }));
+    expect(screen.getByText('No models on this connection yet.')).not.toBeNull();
+    expect(screen.getAllByRole('link', { name: /Add model/ })[0]?.getAttribute('href')).toBe('/dashboard/models/new?connection=c2');
+  });
+
+  it('without model:read there is no tree and models are not fetched', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'u1', email: 'v@test.com', role: 'viewer' },
+      isLoading: false, login: vi.fn(), loginDirect: vi.fn(), logout: vi.fn(), updateUser: vi.fn(),
+      can: vi.fn((p: string) => p === 'connections:read'),
+    });
+    renderPage();
+    await screen.findByText('My OpenAI');
+    expect(screen.queryByRole('button', { name: /My OpenAI/ })).toBeNull();
+    expect(mockGetModels).not.toHaveBeenCalled();
+  });
+
+  it('without model:write the model actions are read-only', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'u1', email: 'v@test.com', role: 'viewer' },
+      isLoading: false, login: vi.fn(), loginDirect: vi.fn(), logout: vi.fn(), updateUser: vi.fn(),
+      can: vi.fn((p: string) => p === 'connections:read' || p === 'model:read'),
+    });
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: /My OpenAI/ }));
+    expect(screen.getByText('gpt-a')).not.toBeNull();
+    expect(screen.queryByRole('link', { name: /Add model/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Remove gpt-a/ })).toBeNull();
   });
 });

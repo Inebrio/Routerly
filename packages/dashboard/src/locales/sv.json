@@ -1860,6 +1860,16 @@
         "updateFailed": "Misslyckades att uppdatera anslutning",
         "createFailed": "Misslyckades att skapa anslutning"
       }
+    },
+    "tree": {
+      "toggle": "Visa eller dölj modeller för {{label}}",
+      "modelCount": "{{count}} modell",
+      "modelCount_other": "{{count}} modeller",
+      "noModels": "Inga modeller på den här anslutningen ännu.",
+      "price": "${{input}} in / ${{output}} ut per 1M",
+      "addModel": "Lägg till modell",
+      "discover": "Upptäck modeller",
+      "orphans": "Modeller utan anslutning ({{count}})"
     }
   },
   "models": {

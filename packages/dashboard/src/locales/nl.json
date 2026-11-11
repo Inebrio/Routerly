@@ -1860,6 +1860,16 @@
         "updateFailed": "Kan verbinding niet bijwerken",
         "createFailed": "Kan verbinding niet aanmaken"
       }
+    },
+    "tree": {
+      "toggle": "Modellen van {{label}} tonen of verbergen",
+      "modelCount": "{{count}} model",
+      "modelCount_other": "{{count}} modellen",
+      "noModels": "Nog geen modellen op deze verbinding.",
+      "price": "${{input}} in / ${{output}} uit per 1M",
+      "addModel": "Model toevoegen",
+      "discover": "Modellen ontdekken",
+      "orphans": "Modellen zonder verbinding ({{count}})"
     }
   },
   "models": {

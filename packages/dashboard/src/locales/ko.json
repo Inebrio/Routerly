@@ -1860,6 +1860,16 @@
         "updateFailed": "연결 업데이트 실패",
         "createFailed": "연결 생성 실패"
       }
+    },
+    "tree": {
+      "toggle": "{{label}}의 모델 표시 또는 숨기기",
+      "modelCount": "모델 {{count}}개",
+      "modelCount_other": "모델 {{count}}개",
+      "noModels": "이 연결에는 아직 모델이 없습니다.",
+      "price": "100만 토큰당 입력 ${{input}} / 출력 ${{output}}",
+      "addModel": "모델 추가",
+      "discover": "모델 검색",
+      "orphans": "연결이 없는 모델 ({{count}})"
     }
   },
   "models": {

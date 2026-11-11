@@ -1860,6 +1860,16 @@
         "updateFailed": "Nu s-a putut actualiza conexiune",
         "createFailed": "Nu s-a putut crea conexiune"
       }
+    },
+    "tree": {
+      "toggle": "Arată sau ascunde modelele pentru {{label}}",
+      "modelCount": "{{count}} model",
+      "modelCount_other": "{{count}} modele",
+      "noModels": "Niciun model pe această conexiune încă.",
+      "price": "${{input}} intrare / ${{output}} ieșire per 1M",
+      "addModel": "Adaugă model",
+      "discover": "Descoperă modele",
+      "orphans": "Modele fără conexiune ({{count}})"
     }
   },
   "models": {

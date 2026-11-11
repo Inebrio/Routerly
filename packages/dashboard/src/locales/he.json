@@ -1860,6 +1860,16 @@
         "updateFailed": "עדכון החיבור נכשל",
         "createFailed": "יצירת החיבור נכשלה"
       }
+    },
+    "tree": {
+      "toggle": "הצג או הסתר מודלים של {{label}}",
+      "modelCount": "מודל {{count}}",
+      "modelCount_other": "{{count}} מודלים",
+      "noModels": "אין עדיין מודלים בחיבור זה.",
+      "price": "${{input}} קלט / ${{output}} פלט לכל 1M",
+      "addModel": "הוסף מודל",
+      "discover": "גלה מודלים",
+      "orphans": "מודלים ללא חיבור ({{count}})"
     }
   },
   "models": {

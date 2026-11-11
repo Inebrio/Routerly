@@ -1860,6 +1860,16 @@
         "updateFailed": "Falha ao atualizar conexão",
         "createFailed": "Falha ao criar conexão"
       }
+    },
+    "tree": {
+      "toggle": "Mostrar ou ocultar modelos de {{label}}",
+      "modelCount": "{{count}} modelo",
+      "modelCount_other": "{{count}} modelos",
+      "noModels": "Ainda não há modelos nesta conexão.",
+      "price": "${{input}} entrada / ${{output}} saída por 1M",
+      "addModel": "Adicionar modelo",
+      "discover": "Descobrir modelos",
+      "orphans": "Modelos sem conexão ({{count}})"
     }
   },
   "models": {

@@ -1860,6 +1860,16 @@
         "updateFailed": "Nabigong i-update ang koneksyon",
         "createFailed": "Nabigong gumawa ng koneksyon"
       }
+    },
+    "tree": {
+      "toggle": "Ipakita o itago ang mga modelo ng {{label}}",
+      "modelCount": "{{count}} model",
+      "modelCount_other": "{{count}} (na) modelo",
+      "noModels": "Wala pang mga modelo sa koneksyong ito.",
+      "price": "${{input}} in / ${{output}} out kada 1M",
+      "addModel": "Magdagdag ng modelo",
+      "discover": "Tuklasin ang mga modelo",
+      "orphans": "Mga modelong walang koneksyon ({{count}})"
     }
   },
   "models": {

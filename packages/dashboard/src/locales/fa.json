@@ -1860,6 +1860,16 @@
         "updateFailed": "به‌روزرسانی اتصال ناموفق بود",
         "createFailed": "ایجاد اتصال ناموفق بود"
       }
+    },
+    "tree": {
+      "toggle": "نمایش یا پنهان کردن مدل‌های {{label}}",
+      "modelCount": "{{count}} مدل",
+      "modelCount_other": "{{count}} مدل",
+      "noModels": "هنوز مدلی روی این اتصال وجود ندارد.",
+      "price": "${{input}} ورودی / ${{output}} خروجی به‌ازای هر ۱ میلیون",
+      "addModel": "افزودن مدل",
+      "discover": "کشف مدل‌ها",
+      "orphans": "مدل‌های بدون اتصال ({{count}})"
     }
   },
   "models": {

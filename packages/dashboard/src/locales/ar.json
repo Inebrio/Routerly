@@ -1860,6 +1860,16 @@
         "updateFailed": "تعذّر تحديث الاتصال",
         "createFailed": "تعذّر إنشاء الاتصال"
       }
+    },
+    "tree": {
+      "toggle": "إظهار أو إخفاء نماذج {{label}}",
+      "modelCount": "{{count}} نموذج",
+      "modelCount_other": "{{count}} نماذج",
+      "noModels": "لا توجد نماذج على هذا الاتصال بعد.",
+      "price": "${{input}} إدخال / ${{output}} إخراج لكل 1M",
+      "addModel": "إضافة نموذج",
+      "discover": "اكتشاف النماذج",
+      "orphans": "نماذج بدون اتصال ({{count}})"
     }
   },
   "models": {

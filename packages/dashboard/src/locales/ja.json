@@ -1860,6 +1860,16 @@
         "updateFailed": "接続の更新に失敗しました",
         "createFailed": "接続の作成に失敗しました"
       }
+    },
+    "tree": {
+      "toggle": "{{label}} のモデルを表示または非表示にする",
+      "modelCount": "{{count}} モデル",
+      "modelCount_other": "{{count}} モデル",
+      "noModels": "この接続にはまだモデルがありません。",
+      "price": "100万トークンあたり入力 ${{input}} / 出力 ${{output}}",
+      "addModel": "モデルを追加",
+      "discover": "モデルを検出",
+      "orphans": "接続のないモデル ({{count}})"
     }
   },
   "models": {

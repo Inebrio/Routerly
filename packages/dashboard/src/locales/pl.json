@@ -1860,6 +1860,16 @@
         "updateFailed": "Nie udało się zaktualizować połączenia",
         "createFailed": "Nie udało się utworzyć połączenia"
       }
+    },
+    "tree": {
+      "toggle": "Pokaż lub ukryj modele {{label}}",
+      "modelCount": "{{count}} model",
+      "modelCount_other": "{{count}} modeli",
+      "noModels": "Brak modeli w tym połączeniu.",
+      "price": "{{input}} $ wejście / {{output}} $ wyjście za 1M",
+      "addModel": "Dodaj model",
+      "discover": "Wykryj modele",
+      "orphans": "Modele bez połączenia ({{count}})"
     }
   },
   "models": {

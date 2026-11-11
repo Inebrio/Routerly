@@ -1862,6 +1862,16 @@
         "updateFailed": "Failed to update connection",
         "createFailed": "Failed to create connection"
       }
+    },
+    "tree": {
+      "toggle": "Show or hide models of {{label}}",
+      "modelCount": "{{count}} model",
+      "modelCount_other": "{{count}} models",
+      "noModels": "No models on this connection yet.",
+      "price": "${{input}} in / ${{output}} out per 1M",
+      "addModel": "Add model",
+      "discover": "Discover models",
+      "orphans": "Models without a connection ({{count}})"
     }
   },
   "models": {

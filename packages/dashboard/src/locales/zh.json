@@ -1860,6 +1860,16 @@
         "updateFailed": "未能更新连接",
         "createFailed": "未能创建连接"
       }
+    },
+    "tree": {
+      "toggle": "显示或隐藏 {{label}} 的模型",
+      "modelCount": "{{count}} 个模型",
+      "modelCount_other": "{{count}} 个模型",
+      "noModels": "此连接上暂无模型。",
+      "price": "每 1M 输入 ${{input}} / 输出 ${{output}}",
+      "addModel": "添加模型",
+      "discover": "发现模型",
+      "orphans": "无连接的模型（{{count}}）"
     }
   },
   "models": {

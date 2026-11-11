@@ -1860,6 +1860,16 @@
         "updateFailed": "ไม่สามารถอัปเดตการเชื่อมต่อ",
         "createFailed": "ไม่สามารถสร้างการเชื่อมต่อ"
       }
+    },
+    "tree": {
+      "toggle": "แสดงหรือซ่อนโมเดลของ {{label}}",
+      "modelCount": "{{count}} โมเดล",
+      "modelCount_other": "{{count}} โมเดล",
+      "noModels": "ยังไม่มีโมเดลในการเชื่อมต่อนี้",
+      "price": "${{input}} ขาเข้า / ${{output}} ขาออก ต่อ 1M",
+      "addModel": "เพิ่มโมเดล",
+      "discover": "ค้นหาโมเดล",
+      "orphans": "โมเดลที่ไม่มีการเชื่อมต่อ ({{count}})"
     }
   },
   "models": {
