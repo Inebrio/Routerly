@@ -13,7 +13,7 @@ async function run(strategy: 'next-best' | 'retry-after-cooldown' | 'abort', res
   const p = runCandidateLoop(cands, async (c) => {
     calls.push(c.id)
     return results(c.id, calls.filter((x) => x === c.id).length)
-  }, exhausted, { strategy, onFallback: (e) => events.push(`${e.action}:${e.candidate.id}`), ...extra })
+  }, exhausted, { strategy, onFallback: (e) => events.push(`${e.action}:${(e.candidate as { id: string }).id}`), ...extra })
   await vi.runAllTimersAsync()
   await p
   return { calls, events, exhausted }
