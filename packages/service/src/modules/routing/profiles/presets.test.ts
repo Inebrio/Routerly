@@ -4,7 +4,8 @@ import { BUILTIN_PROFILES, LEGACY_BUILTIN_PROFILES, DEFAULT_PROFILE_ID, getBuilt
 
 const ROUTING_IDS = ['auto', 'cheap', 'fast', 'coding']
 const OPTIMIZER_IDS = ['optimizer-safe', 'optimizer-balanced', 'optimizer-aggressive', 'optimizer-none']
-const EXPECTED_IDS = [...ROUTING_IDS, ...OPTIMIZER_IDS]
+const SECURITY_IDS = ['security-none']
+const EXPECTED_IDS = [...ROUTING_IDS, ...OPTIMIZER_IDS, ...SECURITY_IDS]
 
 const routing = (id: string): RoutingProfile => getBuiltin(id) as RoutingProfile
 
@@ -144,10 +145,11 @@ describe('BUILTIN_PROFILES', () => {
     expect(DEFAULT_PROFILE_ID.optimizer).toBe('optimizer-safe')
   })
 
-  // Guardrails and PII rewrite the request, so no router may inherit them from
-  // a preset it never chose: security profiles are user-written only.
-  it('ships no security preset', () => {
-    expect(listBuiltins('security')).toEqual([])
+  // Guardrails and PII rewrite the request, so the only security preset is the
+  // no-op one: no router inherits rules from a preset it never chose.
+  it('ships only the security-none preset, which applies nothing', () => {
+    expect(listBuiltins('security').map(p => p.id)).toEqual(['security-none'])
+    expect(getBuiltin('security-none')).toMatchObject({ guardrails: { rules: [] }, pii: { policies: [] } })
     expect(getBuiltin('security-standard')).toBeUndefined()
     expect(getBuiltin('security-strict')).toBeUndefined()
   })
@@ -157,7 +159,7 @@ describe('listBuiltins', () => {
   it.each([
     ['routing', ROUTING_IDS],
     ['optimizer', OPTIMIZER_IDS],
-    ['security', []],
+    ['security', SECURITY_IDS],
   ] as const)('returns only the %s presets', (kind, ids) => {
     expect(listBuiltins(kind).map(p => p.id)).toEqual(ids)
   })

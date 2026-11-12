@@ -22,6 +22,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Added
 
+- **Security profile "None".** Routers > Security > Profile can now apply no profile rules: the new built-in `security-none` preset applies no guardrails or PII policies and ignores the router's stored Custom rules (ROUT-697).
 - **Selector restricted to `argmax` and `weighted-random`.** A selector now only receives the scores computed by the policies and picks among the remaining candidates; it never reads cost, latency, history or counters (that is what policies are for). `cheapest`, `lowest-latency` and `round-robin` are removed, together with their dead code. The selector is editable again in the dashboard profile form and shown in the profile list (ROUT-681).
 - **CLI: `routerly profiles create|update --selector <argmax|weighted-random>`.** Routing profiles only; an invalid value is rejected on stderr with exit code 1 and the list of valid values. `profiles show` prints the selector and `profiles list` includes it in the summary (ROUT-681).
 - **Management API: removed selector values are rejected.** `POST /api/profiles` and `PATCH /api/profiles/:id` answer 400 for `cheapest`, `lowest-latency` and `round-robin` with `selector "<value>" was removed: use "argmax" with the "<cheapest|performance|fairness>" policy`; any other unknown value lists the valid ones. Payload shape and permissions unchanged (ROUT-681).

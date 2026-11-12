@@ -218,6 +218,19 @@ describe('applyProfiles', () => {
     profilesFixture = []
   })
 
+  it('security-none ignores the stored Custom guardrails and PII policies', async () => {
+    const { applyProfiles } = await import('./store.js')
+    const applied = await applyProfiles(
+      router({
+        securityProfileId: 'security-none',
+        guardrails: { rules: [{ id: 'r1', type: 'regex', pattern: 'secret', enabled: true }] } as never,
+        pii: { policies: [{ target: 'request', entities: ['EMAIL'] }] } as never,
+      }),
+    )
+    expect(applied.guardrails?.rules).toEqual([])
+    expect(applied.pii?.policies).toEqual([])
+  })
+
   it('leaves routing alone: the router resolves its own profile', async () => {
     profilesFixture = [routingOverlay]
     const { applyProfiles } = await import('./store.js')
