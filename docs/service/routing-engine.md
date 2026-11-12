@@ -31,7 +31,7 @@ For each incoming request the engine performs the following steps:
 
 6. **Select winner** — The model with the highest `totalScore` among non-excluded candidates is chosen. On a tie the first in the router list wins.
 
-7. **Fallback** — If the winning model returns a provider error or timeout, the engine retries with the next-highest scoring candidate. This continues until a model succeeds or the candidate set is exhausted (→ `503`).
+7. **Fallback** — If the winning model returns a provider error or timeout, the engine applies the routing profile's [fallback strategy](#fallback-strategies): by default (`next-best`) it retries with the next-highest scoring candidate. This continues until a model succeeds or the candidate set is exhausted (→ `503`).
 
 ### The `model` field in the request body
 
@@ -348,23 +348,25 @@ Implemented in `packages/service/src/modules/routing/selectors/index.ts`
 
 ### Fallback Strategies
 
+The routing profile's `fallbackStrategy` drives the retry loop of step 7
+(`runCandidateLoop`), in both the OpenAI and the Anthropic lane, streaming and
+non-streaming:
+
 | Strategy | Behaviour |
 |----------|-----------|
-| `next-best` | Try the next-highest-ranked remaining candidate. |
-| `retry-after-cooldown` | Put the failed model on a cooldown and retry it later rather than moving on immediately. |
-| `abort` | Stop with no retry. |
+| `next-best` | Default. Try the next-highest-ranked remaining candidate. |
+| `retry-after-cooldown` | Wait 2 seconds (`COOLDOWN_MS`) and retry the same model, at most 2 times per request across all candidates (`MAX_COOLDOWN_RETRIES`), then move on to the next candidate. A model the health policy has put on cooldown is not retried, and neither is a deterministic client error (400, 401, 403, 404, 422): the loop moves on at once. |
+| `abort` | Return the provider error at the first upstream failure; no other model is tried. A local skip (budget refusal, unknown model) is not a failure and does not abort. |
 
-Implemented in `packages/service/src/modules/routing/fallback/index.ts`
-(`FALLBACK_MAP`).
+- Streaming requests fail over only before the first chunk is sent.
+- Every decision is traced as a `router:fallback` entry
+  (`{ strategy, action, model, reason, retry?, waitMs? }`, `action` one of
+  `retry`, `next`, `abort`, `exhausted`); see
+  [Get Routing Trace](../api/management.md#get-routing-trace).
 
-:::caution Not yet wired into the retry loop
-`fallbackStrategy` is stored on the profile, returned by every profile
-endpoint, and editable from the dashboard, but the reverse-proxy's retry loop
-(step 7 above) does not currently read it: retries still follow the
-positional-scoring fallback order described in step 7, regardless of the
-resolved profile's `fallbackStrategy`. This is confirmed scope for a future
-change, not a bug in the current profile CRUD endpoints.
-:::
+The strategies are declared in `packages/service/src/modules/routing/fallback/index.ts`
+(`FALLBACK_MAP`); the loop lives in
+`packages/service/src/modules/reverse-proxy/candidate-loop.ts`.
 
 ---
 

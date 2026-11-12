@@ -156,7 +156,9 @@ Usage page and the Playground in the dashboard. The entries used above are
 - The pool is static. A newly released model is used only after you add it to
   the registry (`routerly model add`, or `routerly model discover`) **and**
   attach it to the router.
-- The profile `fallbackStrategy` is not wired to live retries; retries always
-  go to the next ranked candidate, as shown above.
+- Retries follow the routing profile's fallback strategy: `next-best` (default)
+  goes to the next ranked candidate, as shown above; `retry-after-cooldown`
+  first retries the same model; `abort` returns the first provider error. See
+  [Fallback Strategies](../concepts/routing.md#fallback-strategies).
 - Without prices, `cheapest` cannot tell models apart; set `--input-price` and
   `--output-price` (or use a model from the catalog).
