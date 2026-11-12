@@ -256,6 +256,20 @@ describe('RouterLogsTab — records table', () => {
     await waitFor(() => expect(screen.getAllByText('openai/gpt-4o').length).toBeGreaterThan(0));
   });
 
+  it('time cell is a link to the usage record, middle click opens a new tab', async () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    renderTab();
+    await waitFor(() => expect(screen.getAllByText('openai/gpt-4o').length).toBeGreaterThan(0));
+    const row = document.querySelector('tbody tr')!;
+    expect(row.querySelector('a')?.getAttribute('href')).toMatch(/^\/dashboard\/usage\/.+/);
+    fireEvent.mouseUp(row, { button: 1 });
+    fireEvent(row, new MouseEvent('auxclick', { bubbles: true, button: 1 }));
+    expect(open).toHaveBeenCalledWith(expect.stringMatching(/^\/dashboard\/usage\//), '_blank');
+    fireEvent.click(row, { ctrlKey: true });
+    expect(open).toHaveBeenCalledTimes(2);
+    open.mockRestore();
+  });
+
   it('shows ttftMs value when present', async () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('120ms')).toBeTruthy());

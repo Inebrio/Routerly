@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DEFAULT_RANKING_ALGORITHM, type RankingAlgorithmId } from '@routerly/shared';
+import { DEFAULT_RANKING_ALGORITHM, SELECTOR_TYPES, type RankingAlgorithmId } from '@routerly/shared';
 import type { TFunction } from 'i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Save, ShieldOff } from 'lucide-react';
@@ -20,6 +20,7 @@ import {
 import {
   SecurityRulesEditor, normalizeGuardActions, validateSecurityRules, type RuleWithId,
 } from '../components/SecurityRulesEditor';
+import { SearchableSelect } from '../components/SearchableSelect';
 import { KIND_LABELS } from './ProfilesPage';
 import { useAuth } from '../AuthContext';
 import { uuid } from '../utils/uuid';
@@ -65,10 +66,6 @@ export function ProfileFormPage() {
   const [kind, setKind] = useState<ProfileKind>(initialKind);
   const [label, setLabel] = useState('');
 
-  // Routing. Selector and fallback strategy are no longer editable here (T112):
-  // the engine defaults cover every real setup, and the two knobs asked operators
-  // a question they had no way to answer. They are still round-tripped so editing
-  // a profile that was created with other values does not silently reset them.
   const [policies, setPolicies] = useState<PolicyItem[]>([]);
   const [rankingAlgorithm, setRankingAlgorithm] = useState<RankingAlgorithmId>(DEFAULT_RANKING_ALGORITHM);
   // Value stored on the server; on create/clone it stays 'default' so a non-default pick is sent.
@@ -213,6 +210,22 @@ export function ProfileFormPage() {
             )}
 
             {kind === 'routing' && (
+              <div className="form-group" style={{ marginTop: 24, maxWidth: 400 }}>
+                <label className="form-label">{t('profiles.form.selector.label')}</label>
+                <SearchableSelect
+                  ariaLabel={t('profiles.form.selector.label')}
+                  value={selector}
+                  disabled={readOnly}
+                  onChange={v => setSelector(v as SelectorType)}
+                  options={SELECTOR_TYPES.map(s => ({ value: s, label: t(`profiles.form.selector.${s === 'argmax' ? 'argmax' : 'weightedRandom'}`) }))}
+                />
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 6, marginBottom: 0 }}>
+                  {t(`profiles.form.selector.${selector === 'argmax' ? 'argmaxHint' : 'weightedRandomHint'}`)}
+                </p>
+              </div>
+            )}
+
+            {kind === 'routing' && (
               <div className="form-group" style={{ marginTop: 24 }}>
                 <label className="form-label">{t('profiles.form.fallbackStrategy.title')}</label>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
@@ -223,6 +236,7 @@ export function ProfileFormPage() {
                   ariaLabel={t('profiles.form.fallbackStrategy.title')}
                   placeholder={t('profiles.form.fallbackStrategy.title')}
                   value={fallbackStrategy}
+                  disabled={readOnly}
                   onChange={v => setFallbackStrategy(v as FallbackStrategyType)}
                   options={FALLBACK_STRATEGIES.map(id => ({ value: id, label: t(`profiles.form.fallbackStrategy.options.${id}.label`) }))}
                 />

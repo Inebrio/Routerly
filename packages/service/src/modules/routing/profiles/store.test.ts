@@ -162,6 +162,16 @@ describe('resolveOptimizerProfile', () => {
   })
 })
 
+describe('optimizer-none preset', () => {
+  it('replaces stored custom steps with zero steps', async () => {
+    const { applyProfiles } = await import('./store.js')
+    const applied = await applyProfiles(
+      router({ optimizerProfileId: 'optimizer-none', optimizers: { steps: [{ id: 'rtk', enabled: true }] } }),
+    )
+    expect(applied.optimizers).toEqual({ steps: [] })
+  })
+})
+
 describe('resolveSecurityProfile', () => {
   it('returns undefined when the router has no guardrails and no pii config', async () => {
     const { resolveSecurityProfile } = await import('./store.js')
@@ -206,6 +216,19 @@ describe('applyProfiles', () => {
     expect(applied.optimizers?.steps.map(s => s.id)).toEqual(['ccr'])
     expect(applied.pii?.policies).toHaveLength(1)
     profilesFixture = []
+  })
+
+  it('security-none ignores the stored Custom guardrails and PII policies', async () => {
+    const { applyProfiles } = await import('./store.js')
+    const applied = await applyProfiles(
+      router({
+        securityProfileId: 'security-none',
+        guardrails: { rules: [{ id: 'r1', type: 'regex', pattern: 'secret', enabled: true }] } as never,
+        pii: { policies: [{ target: 'request', entities: ['EMAIL'] }] } as never,
+      }),
+    )
+    expect(applied.guardrails?.rules).toEqual([])
+    expect(applied.pii?.policies).toEqual([])
   })
 
   it('leaves routing alone: the router resolves its own profile', async () => {

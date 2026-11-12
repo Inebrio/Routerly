@@ -32,7 +32,7 @@ const KINDS = Object.keys(KIND_LABELS) as ProfileKind[];
 export function profileSummary(p: Profile): string {
   if (p.kind === 'routing') {
     const enabled = p.policies.filter(x => x.enabled).length;
-    return `${enabled} polic${enabled === 1 ? 'y' : 'ies'} enabled`;
+    return `${enabled} polic${enabled === 1 ? 'y' : 'ies'} enabled · ${p.selector}`;
   }
   if (p.kind === 'optimizer') {
     const enabled = p.optimizers.steps.filter(s => s.enabled).length;

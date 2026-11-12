@@ -21,16 +21,29 @@ import type { PolicyFn } from './types.js';
 const WARN_THRESHOLD = 0.80; // sopra l'80% di utilizzo inizia la penalità
 const MIN_SCORE      = 0.10; // punteggio minimo per una richiesta quasi al limite
 
-/** Rough input size of a request: 1 token ≈ 4 characters of message text. */
-export function estimateInputTokens(request: { messages?: { content?: unknown }[] }): number {
-  const totalChars = (request.messages ?? []).reduce((sum, m) => {
-    if (typeof m.content === 'string') return sum + m.content.length;
-    if (Array.isArray(m.content)) {
-      return sum + m.content.reduce((s: number, p: { text?: string }) => s + (p.text?.length ?? 0), 0);
-    }
-    return sum;
-  }, 0);
-  return Math.ceil(totalChars / 4);
+/** Characters of a content value: strings, text blocks, tool_result / tool_use blocks (Anthropic). */
+function contentChars(v: unknown): number {
+  if (typeof v === 'string') return v.length;
+  if (Array.isArray(v)) return v.reduce((s: number, p) => s + contentChars(p), 0);
+  if (v && typeof v === 'object') {
+    const b = v as { type?: string; text?: unknown; content?: unknown; input?: unknown };
+    if (typeof b.text === 'string') return b.text.length;
+    if (b.type === 'tool_result') return contentChars(b.content);
+    if (b.type === 'tool_use') return JSON.stringify(b.input ?? {}).length;
+  }
+  return 0;
+}
+
+/**
+ * Rough input size of a request: 1 token ≈ 4 characters. Reads both the chat
+ * format and the raw Anthropic body (system, tools, tool_use / tool_result blocks).
+ */
+export function estimateInputTokens(
+  request: { messages?: { content?: unknown }[]; system?: unknown; tools?: unknown },
+): number {
+  const messages = (request.messages ?? []).reduce((sum, m) => sum + contentChars(m.content), 0);
+  const tools = Array.isArray(request.tools) && request.tools.length > 0 ? JSON.stringify(request.tools).length : 0;
+  return Math.ceil((messages + contentChars(request.system) + tools) / 4);
 }
 
 export const contextPolicy: PolicyFn = async ({ request, candidates }) => {

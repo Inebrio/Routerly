@@ -13,7 +13,7 @@ import { resolveAttemptCallConfig } from '../../routing/call-config.js'
 import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
 import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
 import { traceEgress } from '../helpers.js'
-import { forwardAnthropicOAuth, forwardAnthropicApiKey, type PassthroughScrub, type UpstreamFailure } from './oauthForward.js'
+import { forwardAnthropicOAuth, forwardAnthropicApiKey, type PassthroughScrub, type PassthroughTrace, type UpstreamFailure } from './oauthForward.js'
 import { mergePolicies } from '../../pii/piiScrubber.js'
 import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import {
@@ -71,6 +71,10 @@ function outputScrub(ctx: ProxyContext): PassthroughScrub | undefined {
   return { effective, ...(ctx.emit ? { emit: ctx.emit } : {}) }
 }
 
+function passthroughTrace(ctx: ProxyContext): PassthroughTrace {
+  return { traceId: ctx.traceId, ...(ctx.emit ? { emit: ctx.emit } : {}), ...(ctx.captureContent ? { captureContent: true } : {}) }
+}
+
 /**
  * Verbatim forward result: a non-2xx answer with candidates still to try was not sent to the
  * client. Record it as the attempt's failure so the candidate loop advances.
@@ -114,8 +118,9 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     // loadEffectiveModel() so the OAuth token is decrypted and refreshed if near expiry,
     // same as llmChat/llmStream already do for the SDK path (execute.ts). Without this the
     // passthrough forwards `Bearer ` with no/stale token and every request 401s immediately.
-    if (callSettings && (model.provider === 'anthropic-oauth' || model.provider === 'anthropic')) {
-      // The verbatim forwarders emit no model:request of their own; this carries the call settings.
+    if (model.provider === 'anthropic-oauth' || model.provider === 'anthropic') {
+      // The verbatim forwarders emit no model:request of their own (it is what the trace recap counts as an attempt).
+      const system = typeof body.system === 'string' ? body.system : Array.isArray(body.system) ? body.system.map((b) => b.text).join('\n') : undefined
       ctx.emit?.({
         panel: 'request',
         message: 'model:request',
@@ -124,14 +129,16 @@ export const anthropicUpstream: Processor<ProxyContext> = {
           provider: model.provider,
           stream: body.stream === true,
           messageCount: Array.isArray(body.messages) ? body.messages.length : 0,
-          callSettings: { applied: callSettings.applied, ...(callSettings.skipped ? { skipped: callSettings.skipped } : {}) },
+          ...(callSettings ? { callSettings: { applied: callSettings.applied, ...(callSettings.skipped ? { skipped: callSettings.skipped } : {}) } } : {}),
         },
+        // Prompt: dropped by publishTrace unless the router opted in.
+        content: { ...(system ? { systemPrompt: system } : {}), messages: body.messages },
       })
     }
     if (model.provider === 'anthropic-oauth') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      if (deferredFailure(ctx, await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx), callSettings, ctx.routedBy))) { ctx.passthrough = false; return }
+      if (deferredFailure(ctx, await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx), callSettings, ctx.routedBy, passthroughTrace(ctx)))) { ctx.passthrough = false; return }
       ctx.result = { kind: 'passthrough' }
       return
     }
@@ -142,7 +149,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     if (model.provider === 'anthropic') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      if (deferredFailure(ctx, await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx), callSettings, ctx.routedBy))) { ctx.passthrough = false; return }
+      if (deferredFailure(ctx, await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx), callSettings, ctx.routedBy, passthroughTrace(ctx)))) { ctx.passthrough = false; return }
       ctx.result = { kind: 'passthrough' }
       return
     }

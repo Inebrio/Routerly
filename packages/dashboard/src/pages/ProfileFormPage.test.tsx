@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
@@ -83,7 +83,7 @@ const routingProfile = {
 const customRouting = {
   id: 'mine', kind: 'routing', version: 1, label: 'Mine', builtin: false,
   policies: [{ type: 'health', enabled: true }],
-  selector: 'cheapest', fallbackStrategy: 'abort',
+  selector: 'weighted-random', fallbackStrategy: 'abort',
 };
 const optimizerProfile = {
   id: 'opt', kind: 'optimizer', version: 1, label: 'Opt', builtin: false,
@@ -146,11 +146,12 @@ describe('ProfileFormPage — create', () => {
     expect(screen.queryByLabelText('Kind')).not.toBeInTheDocument();
   });
 
-  it('creates a routing profile with the default fallback strategy and shows the abort warning on demand', async () => {
+  it('creates a routing profile on the engine defaults: selector argmax, fallback next-best', async () => {
     const user = userEvent.setup();
     renderPage('/dashboard/profiles/new');
     await waitFor(() => expect(screen.getByTestId('routing-editor')).toBeInTheDocument());
-    expect(screen.queryByLabelText('Selector')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Selector')).toHaveValue('argmax');
+    expect(screen.getByText(/always picks the model with the highest score/i)).toBeInTheDocument();
     expect(screen.getByLabelText('Fallback strategy')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Label'), 'My Routing');
@@ -229,7 +230,7 @@ describe('ProfileFormPage — edit', () => {
     await user.type(screen.getByLabelText('Label'), 'Renamed');
     await user.click(screen.getByRole('button', { name: /save profile/i }));
     await waitFor(() => expect(mockUpdateProfile).toHaveBeenCalledWith('mine', {
-      label: 'Renamed', policies: [{ type: 'health', enabled: true }], selector: 'cheapest', fallbackStrategy: 'abort',
+      label: 'Renamed', policies: [{ type: 'health', enabled: true }], selector: 'weighted-random', fallbackStrategy: 'abort',
     }));
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/profiles');
   });
@@ -244,9 +245,29 @@ describe('ProfileFormPage — edit', () => {
     }));
   });
 
+  it('offers exactly two selectors and saves the chosen one', async () => {
+    const user = userEvent.setup();
+    renderPage('/dashboard/profiles/new');
+    await waitFor(() => expect(screen.getByTestId('routing-editor')).toBeInTheDocument());
+    await user.type(screen.getByLabelText('Label'), 'R');
+    const sel = screen.getByLabelText('Selector');
+    expect(within(sel).getAllByRole('option').map(o => o.textContent)).toEqual(['Highest score (argmax)', 'Weighted random']);
+    await user.selectOptions(sel, 'weighted-random');
+    expect(screen.getByText(/picks randomly, weighted by score/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /create profile/i }));
+    await waitFor(() => expect(mockCreateProfile).toHaveBeenCalledWith(expect.objectContaining({ selector: 'weighted-random' })));
+  });
+
+  it('edit preloads the stored selector', async () => {
+    renderPage('/dashboard/profiles/mine');
+    await waitFor(() => expect(screen.getByLabelText('Label')).toHaveValue('Mine'));
+    expect(screen.getByLabelText('Selector')).toHaveValue('weighted-random');
+  });
+
   it('built-in profiles are read-only', async () => {
     renderPage('/dashboard/profiles/auto');
     await waitFor(() => expect(screen.getByLabelText('Label')).toBeDisabled());
+    expect(screen.getByLabelText('Selector')).toBeDisabled();
     expect(screen.getByText(/Built-in profiles cannot be edited/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /save profile/i })).not.toBeInTheDocument();
   });

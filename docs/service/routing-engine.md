@@ -332,9 +332,16 @@ profile's **selector** picks the final model from the ranked list:
 |----------|-----------|
 | `argmax` | Highest score wins; near-ties (within a small tolerance) resolve by weighted-random among the tied group. |
 | `weighted-random` | One candidate is picked at random with probability proportional to its score. |
-| `round-robin` | Deterministic rotation through candidates, keyed by router id, ignoring score. |
-| `cheapest` | Lowest `cost` wins; undefined cost sorts last; ties break by score. |
-| `lowest-latency` | Lowest recently-observed latency wins; unknown latency sorts last. |
+
+The selector receives only the scores the policies computed and picks among the
+remaining candidates. It never reads cost, latency, history or counters: what
+must influence the choice is expressed by a policy. `cheapest`, `lowest-latency`
+and `round-robin` were removed; use `argmax` with the `cheapest`, `performance`
+or `fairness` policy instead (`fairness` weighs the share of successful calls in
+the last 60 minutes, so it spreads traffic by usage and is not a fixed rotation).
+Profiles that used a removed selector are migrated at startup: the selector
+becomes `argmax` and the equivalent policy is appended or, if disabled, enabled.
+A profile that still carries a removed value at runtime is ranked with `argmax`.
 
 Implemented in `packages/service/src/modules/routing/selectors/index.ts`
 (`SELECTOR_MAP`).

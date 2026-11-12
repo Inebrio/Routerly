@@ -447,6 +447,7 @@
       "profile": "프로필",
       "notifications": "알림",
       "mcp": "MCP",
+      "apiTokens": "API tokens",
       "preferences": "기본 설정"
     },
     "notifications": {
@@ -630,6 +631,54 @@
         "errors": {
           "createFailed": "토큰 생성 실패",
           "copyFailed": "복사 실패, 토큰을 수동으로 선택 및 복사하세요."
+        }
+      }
+    },
+    "apiTokens": {
+      "errors": {
+        "loadFailed": "Failed to load API tokens",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke API token \"{{name}}\"? Automations using it stop working immediately.",
+      "heading": "API Tokens",
+      "newTokenButton": "New Token",
+      "description": "Long-lived tokens for automations and the CLI. Each token acts as you, limited to the permissions picked at creation, and expires on the date you choose. The full value is shown once.",
+      "empty": "No API tokens yet. Create one to let an automation call the management API.",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "revokeTitle": "Revoke token",
+      "expired": "Expired",
+      "expiringSoon": "Expires soon",
+      "newToken": {
+        "back": "Back to API tokens",
+        "title": "New API Token",
+        "subtitle": "Create a scoped, expiring token for an automation.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. nightly-ci",
+        "nameHint": "Shown in the audit log for every request made with this token.",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Mandatory. At most {{days}} days from today.",
+        "permissionsLabel": "Permissions",
+        "permissionsHint": "Pick at least one. The token can never do more than you can.",
+        "creatingButton": "Creating…",
+        "createButton": "Create token",
+        "cancelButton": "Cancel",
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Could not copy to the clipboard"
+        },
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is shown only once and cannot be recovered.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied"
+        },
+        "usageSection": {
+          "title": "Use it with the CLI",
+          "hint": "Log the CLI in with the token, or send it as a Bearer token to the management API."
         }
       }
     },
@@ -1218,7 +1267,7 @@
         "security": "보안",
         "token": "토큰",
         "users": "사용자",
-        "logs": "로그"
+        "logs": "사용량"
       },
       "backToRouters": "라우터로 돌아가기",
       "backToRoutersTitle": "라우터로 돌아가기",
@@ -2013,13 +2062,15 @@
         "input": "입력 $/1M",
         "output": "출력 $/1M",
         "cache": "캐시 $/1M",
-        "context": "문맥 크기"
+        "context": "문맥 크기",
+        "conformance": "Conformance"
       },
       "actions": {
         "test": "테스트",
         "clone": "복제",
         "edit": "편집",
-        "remove": "제거"
+        "remove": "제거",
+        "verify": "Run conformance check"
       },
       "pagination": {
         "previous": "← 이전",
@@ -2075,6 +2126,15 @@
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
         }
+      },
+      "conformance": {
+        "unverified": "Unverified",
+        "conformant": "Conformant {{date}}",
+        "limited": "Limited {{date}}",
+        "running": "Checking…",
+        "failedCases": "Failed: {{cases}}",
+        "notRun": "Not verified yet: run the conformance check to prove this model's capabilities.",
+        "error": "Conformance check failed: {{error}}"
       }
     }
   },
@@ -2850,6 +2910,13 @@
         "notFound": "프로필을 찾을 수 없습니다.",
         "loadFailed": "프로필 로드 실패",
         "saveFailed": "프로필 저장 실패"
+      },
+      "selector": {
+        "label": "셀렉터",
+        "argmax": "최고 점수 (argmax)",
+        "weightedRandom": "가중 무작위",
+        "argmaxHint": "항상 점수가 가장 높은 모델을 선택합니다.",
+        "weightedRandomHint": "점수로 가중치를 두어 무작위로 선택합니다. 점수가 높은 모델이 더 자주 선택됩니다."
       },
       "fallbackStrategy": {
         "title": "Fallback strategy",

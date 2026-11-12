@@ -232,4 +232,14 @@ describe('llmlingua-2 model', () => {
       }),
     )
   })
+
+  it.each([
+    ['ERR_DLOPEN_FAILED', 'Error loading shared library ld-linux-x86-64.so.2', /failed to load \(ERR_DLOPEN_FAILED: Error loading shared library/],
+    ['ERR_MODULE_NOT_FOUND', 'Cannot find package', /is not installed/],
+  ])('keeps the real cause when the runtime import throws %s', async (code, message, expected) => {
+    const m = await import('./model.js')
+    const err = m.runtimeImportError(Object.assign(new Error(message), { code }))
+    expect(err.message).toMatch(expected)
+    expect(err.cause).toMatchObject({ code })
+  })
 })

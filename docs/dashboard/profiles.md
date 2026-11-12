@@ -10,7 +10,7 @@ can adopt. A profile comes in one of three kinds:
 
 | Kind | What it bundles |
 |------|-----------------|
-| **Routing** | the ordered policy list |
+| **Routing** | the ordered policy list and the selector |
 | **Optimizer** | the ordered list of optimizer steps and which of them are enabled |
 | **Security** | content guardrail rules and PII redaction policies |
 
@@ -117,11 +117,19 @@ not editable and no save button is shown. Clone one to customize it.
 
 - **Call configuration**: the same editor as the router [Routing tab](./routers.md#call-configuration), shown for routing profiles. Routers assigned to the profile use this configuration instead of their own. An invalid value blocks saving. Built-in profiles have none.
 
+- **Selector**: dropdown below the policies, with a one-line hint for the chosen
+  value. `Highest score (argmax)` always picks the model with the highest score
+  and is the default; `Weighted random` picks randomly, weighted by score, so
+  higher-scoring models are chosen more often. The selector only sees the
+  scores the policies computed: to make cost, latency or usage count, enable
+  the matching policy (`cheapest`, `performance`, `fairness`). The dropdown is
+  disabled on built-in profiles. See
+  [Selectors](../concepts/routing.md#selectors).
+
 - **Fallback strategy**: select below the policies, with a description of the chosen value. `Next best model` (default) tries the next candidate, `Retry after cooldown` waits 2 seconds and retries the same model (at most twice per request) before moving on, `Abort` returns the provider error at the first failure. `Abort` shows a warning because no other model is tried. See [Fallback Strategies](../concepts/routing.md#fallback-strategies).
 
-The selector is not editable from the dashboard: a profile created here uses
-`argmax`. A profile that already carries another selector keeps it when it is
-edited or cloned, and the [API](../api/management.md#profiles) still accepts it.
+The profile list shows the selector in each routing profile's summary, for
+example `4 policies enabled · argmax`.
 
 ### Optimizer configuration
 

@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import type { FastifyBaseLogger } from 'fastify';
 import type { ServerResponse } from 'node:http';
 import type {
-  AppliedCallConfig, CallSettings, ChatCompletionResponse, ChoiceDelta, ModelConfig, PiiConfig, StreamChoice, StreamChunk, TraceEntry,
+  AppliedCallConfig, CallSettings, ChatCompletionRequest, ChatCompletionResponse, ChoiceDelta, ModelConfig, PiiConfig, StreamChoice, StreamChunk, TraceEntry,
 } from '@routerly/shared';
 import { mergePolicies, StreamingScrubber } from '../../pii/piiScrubber.js';
 import { trackUsage } from '../../usage/tracker.js';
@@ -11,6 +11,7 @@ import { calculateCost } from '../../../lib/cost.js';
 import { readConfig } from '../../config/loader.js';
 import { decryptCredential } from '../../../lib/crypto-cred.js';
 import { resolveOpenAIOAuthCredential } from '../../provider/openai-oauth.js';
+import { normalizeForModel } from '../../provider/compat/normalize.js';
 
 const CHATGPT_BASE = 'https://chatgpt.com';
 const CODEX_PATH = '/backend-api/codex/responses';
@@ -189,23 +190,6 @@ function toResponsesInput(messages: Array<Record<string, any>>): Array<Record<st
   return items;
 }
 
-/**
- * The Responses API validates `pattern` with its own regex engine and answers 400
- * "is not a regex" on valid ECMA patterns such as `^[^\\0]*$` (Claude Code's tools).
- * `pattern` is only a validation hint for the model, so drop it. A property named
- * "pattern" has an object value and is kept.
- */
-export function stripSchemaPatterns(node: unknown): unknown {
-  if (Array.isArray(node)) return node.map(stripSchemaPatterns);
-  if (node === null || typeof node !== 'object') return node;
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(node)) {
-    if (k === 'pattern' && typeof v === 'string') continue;
-    out[k] = stripSchemaPatterns(v);
-  }
-  return out;
-}
-
 /** Chat tool definitions → Responses tools (flat `name`, not nested under `function`). */
 function toResponsesTools(tools: unknown): Array<Record<string, unknown>> | undefined {
   if (!Array.isArray(tools) || tools.length === 0) return undefined;
@@ -217,7 +201,7 @@ function toResponsesTools(tools: unknown): Array<Record<string, unknown>> | unde
       type: 'function',
       name: fn.name ?? '',
       description: fn.description ?? '',
-      parameters: stripSchemaPatterns(fn.parameters ?? { type: 'object', properties: {} }),
+      parameters: fn.parameters ?? { type: 'object', properties: {} },
       // Client schemas (Claude Code ships 25 of them) are not strict-mode compliant.
       strict: false,
     };
@@ -340,7 +324,7 @@ export async function* streamOpenAIOAuthChunks(
     const upstream = await fetch(endpoint, {
       method: 'POST',
       headers: buildOpenAIOAuthHeaders(accessToken, accountId, {}),
-      body: JSON.stringify(buildCodexPayload(body, modelId, opts.callSettings?.applied)),
+      body: JSON.stringify(buildCodexPayload(normalizeForModel(body as unknown as ChatCompletionRequest, model) as unknown as Record<string, unknown>, modelId, opts.callSettings?.applied)),
     });
 
     log.info(

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { RANKING_ALGORITHMS } from '@routerly/shared';
+import { RANKING_ALGORITHMS, SELECTOR_TYPES } from '@routerly/shared';
 import type { Permission, Profile, ProfileKind, RoutingPolicy } from '@routerly/shared';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { logAudit } from '../audit/logger.js';
@@ -41,7 +41,18 @@ const routingPolicySchema = z.object({
   enabled: z.boolean(),
   config: z.any().optional(),
 });
-const selectorTypeSchema = z.enum(['argmax', 'weighted-random', 'round-robin', 'cheapest', 'lowest-latency']);
+/** Policy that expresses what each removed selector used to apply; named in the 400 so a client knows how to migrate. */
+const REMOVED_SELECTOR_POLICY: Record<string, string> = { cheapest: 'cheapest', 'lowest-latency': 'performance', 'round-robin': 'fairness' };
+const selectorTypeSchema = z.string().superRefine((value, ctx) => {
+  if ((SELECTOR_TYPES as readonly string[]).includes(value)) return;
+  const policy = Object.hasOwn(REMOVED_SELECTOR_POLICY, value) ? REMOVED_SELECTOR_POLICY[value] : undefined;
+  ctx.addIssue({
+    code: 'custom',
+    message: policy !== undefined
+      ? `selector "${value}" was removed: use "argmax" with the "${policy}" policy`
+      : `invalid selector "${value}": expected one of ${SELECTOR_TYPES.join(', ')}`,
+  });
+}).pipe(z.enum(SELECTOR_TYPES));
 const fallbackStrategyTypeSchema = z.enum(['next-best', 'retry-after-cooldown', 'abort']);
 
 const profileKindSchema = z.enum(['routing', 'optimizer', 'security']);

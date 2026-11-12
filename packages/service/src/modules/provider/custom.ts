@@ -27,22 +27,6 @@ async function upstreamError(response: Response, provider: string): Promise<Erro
 }
 
 /**
- * DeepSeek thinking mode (on by default) answers 400 when `tools` are sent and an assistant
- * message in the history has no `reasoning_content`. Clients on the Anthropic lane never carry
- * it, so the request goes out with thinking disabled unless the client chose a mode itself.
- * https://api-docs.deepseek.com/guides/thinking_mode
- */
-function deepseekThinkingOff(request: ChatCompletionRequest, model: ModelConfig): { thinking?: { type: 'disabled' } } {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- non-standard client fields
-  const r = request as any;
-  if (model.provider !== 'deepseek' || !r.tools?.length) return {};
-  if (r.thinking !== undefined || r.reasoning !== undefined || r.reasoning_effort !== undefined) return {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const missing = request.messages.some((m: any) => m.role === 'assistant' && typeof m.reasoning_content !== 'string');
-  return missing ? { thinking: { type: 'disabled' } } : {};
-}
-
-/**
  * Generic adapter for any provider that exposes an OpenAI-compatible API.
  * `developer` messages are sent as `system`: DeepSeek and most compatible servers reject the role.
  * Requires a custom endpoint in ModelConfig.
@@ -82,7 +66,7 @@ export class CustomAdapter implements ProviderAdapter {
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
       // `stream` stays exactly as the client sent it.
-      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), ...deepseekThinkingOff(request, model), ...(request.stream === false ? { stream: false } : {}), model: upstreamModel }),
+      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), ...(request.stream === false ? { stream: false } : {}), model: upstreamModel }),
       signal: AbortSignal.timeout(model.timeout ?? 60000),
     });
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
@@ -112,7 +96,7 @@ export class CustomAdapter implements ProviderAdapter {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
-      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), ...deepseekThinkingOff(request, model), model: upstreamModel, stream: true }),
+      body: JSON.stringify({ ...rest, messages: developerAsSystem(rest.messages), model: upstreamModel, stream: true }),
       signal: ctl.signal,
     }).finally(() => clearTimeout(timer));
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));

@@ -120,7 +120,8 @@ describe('profiles list', () => {
     expect(out).toContain('routing');
     expect(out).toContain('optimizer');
     expect(out).toContain('security');
-    expect(out).toContain('1 active policies, fallback next-best');
+    expect(out).toContain('1 active policies, selector argmax, fallback next-best');
+    expect(out).toContain('0 active policies, selector weighted-random');
     expect(out).toContain('2/3 steps enabled');
     expect(out).toContain('1 guardrail rules, 1 PII policies');
     expect(out).toContain('yes');
@@ -185,7 +186,7 @@ describe('profiles show', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('shows the policies of a routing profile, without the engine knobs', async () => {
+  it('shows the selector and policies of a routing profile, without the fallback strategy', async () => {
     mockApi.mockResolvedValueOnce([builtinProfile, userProfile]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
@@ -195,7 +196,7 @@ describe('profiles show', () => {
     expect(out).toContain('routing');
     expect(out).toContain('health (enabled)');
     expect(out).toContain('cheapest (disabled)');
-    expect(out).not.toContain('argmax');
+    expect(out).toContain('selector:         argmax');
     expect(out).toContain('fallback strategy: next-best');
   });
 
@@ -396,7 +397,7 @@ describe('profiles update', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'profiles', 'update', 'user-1'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('provide --label, --ranking-algorithm, --fallback-strategy, --call-config and/or --clear-call-config'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('provide --label, --ranking-algorithm, --selector, --fallback-strategy, --call-config and/or --clear-call-config'));
     expect(mockApi).not.toHaveBeenCalled();
   });
 
@@ -716,6 +717,57 @@ describe('profiles call configuration', () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'Forbidden'));
     await expect(run('update', 'user-1', '--clear-call-config')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(err.join('\n')).toContain('Forbidden');
+  });
+});
+
+describe('profiles selector', () => {
+  let out: string[];
+  let err: string[];
+  let exitSpy: ReturnType<typeof vi.spyOn>;
+  const run = (...args: string[]) => makeCmd().parseAsync(['node', 'profiles', ...args]);
+
+  beforeEach(() => {
+    out = [];
+    err = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => { out.push(a.join(' ')); });
+    vi.spyOn(console, 'error').mockImplementation((...a) => { err.push(a.join(' ')); });
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    vi.spyOn(process.stderr, 'write').mockImplementation((chunk: unknown) => { err.push(String(chunk)); return true; });
+  });
+  afterEach(() => { exitSpy.mockRestore(); vi.restoreAllMocks(); });
+
+  it('create --selector sends it in the body; --json stays parseable', async () => {
+    mockApi.mockResolvedValueOnce(userProfile);
+    await run('create', '--kind', 'routing', '--label', 'X', '--selector', 'weighted-random', '--json');
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/profiles', { kind: 'routing', label: 'X', selector: 'weighted-random' });
+    expect(JSON.parse(out.join('\n')).selector).toBe('weighted-random');
+  });
+
+  it('create --selector exits 1 for a non-routing kind, without calling the API', async () => {
+    await expect(run('create', '--kind', 'security', '--label', 'X', '--selector', 'argmax')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(err.join('\n')).toContain('--selector only applies to routing profiles');
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('update --selector PATCHes the profile', async () => {
+    mockApi.mockResolvedValueOnce(userProfile);
+    await run('update', 'user-1', '--selector', 'argmax');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/profiles/user-1', { selector: 'argmax' });
+  });
+
+  it.each(['cheapest', 'lowest-latency', 'round-robin', 'bogus'])('rejects --selector %s listing the valid values, no HTTP call', async (value) => {
+    await expect(run('update', 'user-1', '--selector', value)).rejects.toThrow();
+    expect(err.join('')).toContain(`argument '${value}' is invalid. Allowed choices are argmax, weighted-random.`);
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('update --selector exits 1 on 403 from the service', async () => {
+    const { ApiError } = await import('../api.js');
+    mockApi.mockRejectedValueOnce(new ApiError(403, 'Forbidden'));
+    await expect(run('update', 'user-1', '--selector', 'argmax')).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(err.join('\n')).toContain('Forbidden');
   });

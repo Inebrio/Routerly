@@ -4,6 +4,7 @@ import type {
   ProfileKind,
   RoutingPolicy,
   RoutingProfile,
+  SecurityProfile,
 } from '@routerly/shared';
 
 /**
@@ -38,7 +39,7 @@ const ROUTING_PRESETS = Object.freeze([
     version: 1,
     label: 'Cheap',
     policies: policies('cheapest', 'budget-remaining', 'health'),
-    selector: 'cheapest',
+    selector: 'argmax',
     fallbackStrategy: 'next-best',
     builtin: true,
   }),
@@ -48,7 +49,7 @@ const ROUTING_PRESETS = Object.freeze([
     version: 1,
     label: 'Fast',
     policies: policies('performance', 'health'),
-    selector: 'lowest-latency',
+    selector: 'argmax',
     fallbackStrategy: 'retry-after-cooldown',
     builtin: true,
   }),
@@ -116,17 +117,41 @@ const OPTIMIZER_PRESETS = Object.freeze([
     },
     builtin: true,
   }),
+  // Explicit "run no optimizer". Last, so the dashboard default stays optimizer-safe.
+  Object.freeze({
+    id: 'optimizer-none',
+    kind: 'optimizer',
+    version: 1,
+    label: 'None',
+    optimizers: { steps: [] },
+    builtin: true,
+  }),
 ]) as readonly OptimizerProfile[];
 
 /**
- * No security presets ship any more. Guardrails and PII policies rewrite the
+ * The only security preset is "None": it applies no guardrail and no PII policy,
+ * so it never rewrites a request. Guardrails and PII policies do rewrite the
  * request, and what a request may be rewritten into is never a default someone
- * inherits without asking for it: a security profile is now always written by
- * the user, from scratch or by cloning one of their own.
+ * inherits without asking for it: every other security profile is written by
+ * the user. "None" exists so Profile mode can mean "nothing" without falling
+ * back to the router's stored Custom rules.
  */
+const SECURITY_PRESETS = Object.freeze([
+  Object.freeze({
+    id: 'security-none',
+    kind: 'security',
+    version: 1,
+    label: 'None',
+    guardrails: { rules: [] },
+    pii: { policies: [] },
+    builtin: true,
+  }),
+]) as readonly SecurityProfile[];
+
 export const BUILTIN_PROFILES: readonly Profile[] = Object.freeze([
   ...ROUTING_PRESETS,
   ...OPTIMIZER_PRESETS,
+  ...SECURITY_PRESETS,
 ]);
 
 /**
@@ -154,8 +179,8 @@ export const LEGACY_BUILTIN_PROFILES: readonly Profile[] = Object.freeze([
     kind: 'routing',
     version: 1,
     label: 'Offline',
-    policies: policies('health', 'cheapest'),
-    selector: 'round-robin',
+    policies: policies('health', 'cheapest', 'fairness'),
+    selector: 'argmax',
     fallbackStrategy: 'abort',
     builtin: true,
   }),

@@ -9,6 +9,7 @@ vi.mock('../api', () => ({
   deleteModel: vi.fn(),
   getProviderHealth: vi.fn(),
   testModel: vi.fn(),
+  runModelConformance: vi.fn(),
   resetResilience: vi.fn(),
   getConnections: vi.fn(),
   getProviderDescriptors: vi.fn(),
@@ -69,11 +70,12 @@ vi.mock('../components/ConfirmDialog', () => ({
   ),
 }));
 
-import { getModels, deleteModel, getProviderHealth, testModel, resetResilience, getConnections, getProviderDescriptors } from '../api';
+import { getModels, deleteModel, getProviderHealth, testModel, runModelConformance, resetResilience, getConnections, getProviderDescriptors } from '../api';
 
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockDeleteModel = vi.mocked(deleteModel as (id: string) => Promise<unknown>);
 const mockGetProviderHealth = vi.mocked(getProviderHealth as () => Promise<unknown>);
+const mockRunConformance = vi.mocked(runModelConformance as (id: string) => Promise<unknown>);
 const mockTestModel = vi.mocked(testModel as (id: string) => Promise<unknown>);
 const mockResetResilience = vi.mocked(resetResilience as (body?: unknown) => Promise<unknown>);
 const mockGetConnections = vi.mocked(getConnections as () => Promise<unknown>);
@@ -321,6 +323,57 @@ describe('ModelsPage — without report:read / connections:read', () => {
     } finally {
       mockCanReadConnections = true;
     }
+  });
+});
+
+describe('ModelsPage — conformance (ROUT-713)', () => {
+  const result = (status: 'conformant' | 'limited') => ({
+    verifiedAt: '2026-11-11T10:00:00.000Z', status, verified: {},
+    cases: [{ id: 'tool-call', status: status === 'limited' ? 'fail' : 'pass', durationMs: 5 }],
+  });
+
+  it('shows Unverified for a model with no result', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    expect(screen.getByText('Unverified')).toBeTruthy();
+  });
+
+  it('shows the status for a stored result, with failed cases in the tooltip', async () => {
+    mockGetModels.mockResolvedValue([makeModel({ conformance: result('limited') })]);
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    const badge = screen.getByText(/^Limited /);
+    expect(badge.getAttribute('title')).toContain('tool-call');
+  });
+
+  it('runs the check from the row action and updates the badge', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    mockRunConformance.mockResolvedValue(result('conformant'));
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await userEvent.click(screen.getByTitle('Run conformance check'));
+    await waitFor(() => expect(mockRunConformance).toHaveBeenCalledWith('gpt-4o'));
+    await waitFor(() => expect(screen.getByText(/^Conformant /)).toBeTruthy());
+  });
+
+  it('shows the error when the run is rejected', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    mockRunConformance.mockRejectedValue(new Error('boom'));
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await userEvent.click(screen.getByTitle('Run conformance check'));
+    await waitFor(() => expect(screen.getByText(/Conformance check failed: boom/)).toBeTruthy());
+  });
+
+  it('hides the action without model:write but still shows the status', async () => {
+    mockCanWriteModels = false;
+    mockGetModels.mockResolvedValue([makeModel({ conformance: result('conformant') })]);
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    expect(screen.queryByTitle('Run conformance check')).toBeNull();
+    expect(screen.getByText(/^Conformant /)).toBeTruthy();
+    mockCanWriteModels = true;
   });
 });
 
