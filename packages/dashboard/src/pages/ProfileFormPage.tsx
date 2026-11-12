@@ -20,7 +20,6 @@ import {
 import {
   SecurityRulesEditor, normalizeGuardActions, validateSecurityRules, type RuleWithId,
 } from '../components/SecurityRulesEditor';
-import { SearchableSelect } from '../components/SearchableSelect';
 import { KIND_LABELS } from './ProfilesPage';
 import { useAuth } from '../AuthContext';
 import { uuid } from '../utils/uuid';
