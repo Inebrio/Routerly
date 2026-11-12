@@ -102,6 +102,12 @@ describe('OptimizerStepsEditor — llmlingua-2 checkpoints', () => {
     expect(screen.queryByRole('button', { name: /download/i })).not.toBeInTheDocument();
   });
 
+  it('shows the real runtime error when the native library cannot load', async () => {
+    mockGetModel.mockResolvedValue({ runtimeInstalled: false, runtimeError: 'onnxruntime-node cannot be loaded on this host (ERR_DLOPEN_FAILED)', checkpoints: [{ ...checkpoint, state: 'absent' }] });
+    render(<OptimizerStepsEditor rows={llmRows} setRows={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText(/ERR_DLOPEN_FAILED/)).toBeInTheDocument());
+  });
+
   it('keeps the step disabled until a checkpoint is downloaded', async () => {
     render(<OptimizerStepsEditor rows={llmRows} setRows={vi.fn()} />);
     await waitFor(() => expect(screen.getByRole('button', { name: /download/i })).toBeInTheDocument());

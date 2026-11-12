@@ -4,7 +4,6 @@ import type { RouteResult } from '../router.js';
 export interface ScoredCandidate {
   model: string;
   score: number;
-  cost?: number;
   prompt?: string;
 }
 
@@ -14,10 +13,6 @@ export interface SelectorContext {
   conversationId?: string;
   /** True when every active policy abstained (no discriminating signal). */
   allAbstained: boolean;
-  /** Resilience seam: filter out unavailable models, when the caller supplies it. */
-  isAvailable?: (modelId: string) => boolean;
-  /** Lowest-latency seam: returns known latency for a model, if any. */
-  latencyOf?: (modelId: string) => number | undefined;
   // ponytail: rng injectable only for test determinism
   rng?: () => number;
 }

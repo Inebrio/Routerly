@@ -2910,6 +2910,13 @@
         "notFound": "Profiel niet gevonden.",
         "loadFailed": "Kan profiel niet laden",
         "saveFailed": "Kan profiel niet opslaan"
+      },
+      "selector": {
+        "label": "Selector",
+        "argmax": "Hoogste score (argmax)",
+        "weightedRandom": "Gewogen willekeurig",
+        "argmaxHint": "Kiest altijd het model met de hoogste score.",
+        "weightedRandomHint": "Kiest willekeurig, gewogen op score: modellen met een hogere score worden vaker gekozen."
       }
     }
   },

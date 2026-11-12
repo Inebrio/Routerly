@@ -80,9 +80,8 @@ export const llmlingua2Optimizer: Optimizer = {
   },
 
   explain(ctx) {
-    if (!model.isRuntimeInstalled()) {
-      return 'Optional dependency @huggingface/transformers is not installed on the service host.'
-    }
+    const problem = model.runtimeProblem()
+    if (problem) return `${problem}.`
     const checkpoint = model.checkpointFor(modelKeyOf(ctx))
     if (!model.isModelAvailable(modelKeyOf(ctx))) {
       return `Checkpoint ${checkpoint.label} is not downloaded yet. Install it from the optimizer tab or with \`routerly optimizers model --install ${checkpoint.key}\`.`

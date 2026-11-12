@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import type { RoutingProfile } from '@routerly/shared'
+import { SELECTOR_TYPES, type RoutingProfile } from '@routerly/shared'
 import { BUILTIN_PROFILES, LEGACY_BUILTIN_PROFILES, DEFAULT_PROFILE_ID, getBuiltin, listBuiltins } from './presets.js'
 
 const ROUTING_IDS = ['auto', 'cheap', 'fast', 'coding']
-const OPTIMIZER_IDS = ['optimizer-safe', 'optimizer-balanced', 'optimizer-aggressive']
+const OPTIMIZER_IDS = ['optimizer-safe', 'optimizer-balanced', 'optimizer-aggressive', 'optimizer-none']
 const SECURITY_IDS = ['security-none']
 const EXPECTED_IDS = [...ROUTING_IDS, ...OPTIMIZER_IDS, ...SECURITY_IDS]
 
@@ -80,7 +80,7 @@ describe('BUILTIN_PROFILES', () => {
         { type: 'budget-remaining', enabled: true },
         { type: 'health', enabled: true },
       ],
-      selector: 'cheapest',
+      selector: 'argmax',
       fallbackStrategy: 'next-best',
     })
 
@@ -89,7 +89,7 @@ describe('BUILTIN_PROFILES', () => {
         { type: 'performance', enabled: true },
         { type: 'health', enabled: true },
       ],
-      selector: 'lowest-latency',
+      selector: 'argmax',
       fallbackStrategy: 'retry-after-cooldown',
     })
 
@@ -108,10 +108,17 @@ describe('BUILTIN_PROFILES', () => {
       policies: [
         { type: 'health', enabled: true },
         { type: 'cheapest', enabled: true },
+        { type: 'fairness', enabled: true },
       ],
-      selector: 'round-robin',
+      selector: 'argmax',
       fallbackStrategy: 'abort',
     })
+  })
+
+  it('every preset, current and legacy, uses a registered selector', () => {
+    for (const p of [...BUILTIN_PROFILES, ...LEGACY_BUILTIN_PROFILES]) {
+      if (p.kind === 'routing') expect(SELECTOR_TYPES).toContain(p.selector)
+    }
   })
 
   // The migration rewrites balanced -> auto without touching routing behaviour,
@@ -130,6 +137,12 @@ describe('BUILTIN_PROFILES', () => {
     const aggressive = steps('optimizer-aggressive')
     expect(balanced.slice(0, safe.length)).toEqual(safe)
     expect(aggressive.slice(0, balanced.length)).toEqual(balanced)
+  })
+
+  it('ships an explicit no-optimizer preset with zero steps', () => {
+    const none = getBuiltin('optimizer-none') as { optimizers: { steps: unknown[] } }
+    expect(none.optimizers.steps).toEqual([])
+    expect(DEFAULT_PROFILE_ID.optimizer).toBe('optimizer-safe')
   })
 
   // Guardrails and PII rewrite the request, so the only security preset is the

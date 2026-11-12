@@ -13,8 +13,6 @@ const MAX_AGE_MS = 60 * 60 * 1_000; // 1 hour
 const MAX_ENTRIES_PER_CONV = 50;
 
 const store = new Map<string, RoutingMemoryEntry[]>();
-// ponytail: in-memory counter, resets on restart; persist only if round-robin fairness across restarts is ever required
-const cursors = new Map<string, number>();
 
 function cleanup(): void {
   const cutoff = Date.now() - MAX_AGE_MS;
@@ -37,12 +35,4 @@ export function addRoutingDecision(routerId: string, conversationId: string, mod
 export function getRoutingHistory(routerId: string, conversationId: string, count: number): RoutingMemoryEntry[] {
   const key = `${routerId}:${conversationId}`;
   return (store.get(key) ?? []).slice(-count);
-}
-
-export function nextCursor(key: string, modulo: number): number {
-  if (modulo <= 0) return 0;
-  const current = cursors.get(key) ?? 0;
-  const next = (current + 1) % modulo;
-  cursors.set(key, next);
-  return current;
 }

@@ -209,9 +209,14 @@ as soon as it has started, and `routerly optimizers model` reports progress.
 The dashboard does the same polling inside the llmlingua-2 row, with a
 progress bar, so a page refresh mid-download picks the progress back up.
 
-Without `@huggingface/transformers` the install request is refused with
-`409`, and both the CLI and the dashboard say the runtime is missing instead
-of offering a download.
+Without a usable runtime the install request is refused with `409`, and both
+the CLI and the dashboard report the reason (`runtimeError` in
+`GET /api/optimizers/llmlingua2/model`) instead of offering a download.
+"Usable" means the package is installed **and** its native backend
+(`onnxruntime-node`) loads: that backend ships glibc-only binaries, so on musl
+hosts, including the official Alpine-based Docker image, llmlingua-2 is
+reported unavailable and the step never runs. Run the service on a glibc host
+to use it.
 
 ---
 

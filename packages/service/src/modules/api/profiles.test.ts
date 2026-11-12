@@ -97,14 +97,14 @@ describe('POST /api/profiles', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'),
-      payload: { kind: 'routing', label: 'From scratch', policies: [{ type: 'cheapest', enabled: true }], selector: 'cheapest', fallbackStrategy: 'abort' },
+      payload: { kind: 'routing', label: 'From scratch', policies: [{ type: 'cheapest', enabled: true }], selector: 'weighted-random', fallbackStrategy: 'abort' },
     })
     await app.close()
     expect(res.statusCode).toBe(201)
     const body = JSON.parse(res.body)
     expect(body.kind).toBe('routing')
     expect(body.label).toBe('From scratch')
-    expect(body.selector).toBe('cheapest')
+    expect(body.selector).toBe('weighted-random')
     expect(body.builtin).toBe(false)
     expect(body.version).toBe(1)
     expect(body.id).toMatch(/^[0-9a-f-]{36}$/)
@@ -337,9 +337,40 @@ describe('PATCH /api/profiles/:id', () => {
 
   it('rejects a field that belongs to another kind', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/o1', headers: authWith('profiles:manage', { profiles: [optimizerProfile] }), payload: { selector: 'cheapest' } })
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/o1', headers: authWith('profiles:manage', { profiles: [optimizerProfile] }), payload: { selector: 'argmax' } })
     await app.close()
     expect(res.statusCode).toBe(400)
+  })
+
+  it('updates the selector with profiles:manage', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile] }), payload: { selector: 'weighted-random' } })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).selector).toBe('weighted-random')
+  })
+
+  it('forbids a selector change with profiles:read', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:read', { profiles: [userProfile] }), payload: { selector: 'weighted-random' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it.each([
+    ['cheapest', 'selector "cheapest" was removed: use "argmax" with the "cheapest" policy'],
+    ['lowest-latency', 'selector "lowest-latency" was removed: use "argmax" with the "performance" policy'],
+    ['round-robin', 'selector "round-robin" was removed: use "argmax" with the "fairness" policy'],
+    ['bogus', 'invalid selector "bogus": expected one of argmax, weighted-random'],
+  ])('rejects selector %s with 400 and the migration message', async (selector, message) => {
+    const app = await buildApp()
+    const patch = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile] }), payload: { selector } })
+    const create = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'routing', label: 'X', selector } })
+    await app.close()
+    for (const res of [patch, create]) {
+      expect(res.statusCode).toBe(400)
+      expect(JSON.parse(res.body).error.fieldErrors.selector).toEqual([message])
+    }
   })
 
   it('forbids without profiles:manage', async () => {

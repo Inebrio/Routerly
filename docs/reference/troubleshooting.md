@@ -108,7 +108,7 @@ Dashboard sessions expire after 24 hours. The CLI persists credentials and promp
 
 ### All requests use the same model (ignoring policies)
 
-**Symptom:** The routing policy is set to `random` or `round-robin`, but the same model is always selected.
+**Symptom:** The routing profile uses the `weighted-random` selector or the `fairness` policy, but the same model is always selected.
 
 **Fix:** Check that more than one model is assigned to the router. A router with only one model always routes to that model regardless of policy.
 

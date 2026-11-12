@@ -1,15 +1,20 @@
-import type { Profile, RouterConfig } from '@routerly/shared';
+import type { Profile, RouterConfig, RoutingPolicyType } from '@routerly/shared';
 import { readConfig, writeConfig } from '../../config/loader.js';
 
 /**
  * Brings profile data up to the multi-kind shape.
  *
- * Two rewrites, both shape-detecting so they converge from any older version
+ * Three rewrites, all shape-detecting so they converge from any older version
  * and are a no-op once done:
  *  - routers: `profileId` -> `routingProfileId`, since a router now binds one
  *    profile per kind and an unqualified name would be ambiguous.
  *  - profiles: overlays written before profiles had kinds were all routing
  *    overlays, so they get `kind: 'routing'`.
+ *  - routing overlays: the removed selectors `cheapest`, `lowest-latency` and
+ *    `round-robin` became `argmax` plus the policy that expresses the same
+ *    criterion (`cheapest`, `performance`, `fairness`). The policy is appended
+ *    when missing and enabled when present but disabled, otherwise the profile
+ *    would lose the criterion its selector used to apply.
  *
  * `balanced` is rewritten to `auto`, the preset that replaced it: identical
  * policies, selector and fallback strategy, so routing is unchanged. Any other
@@ -22,6 +27,13 @@ import { readConfig, writeConfig } from '../../config/loader.js';
  */
 
 const RENAMED_PRESETS: Record<string, string> = { balanced: 'auto' };
+
+/** Removed selector -> policy that expresses the same criterion once the selector is argmax. */
+const REMOVED_SELECTORS: Record<string, RoutingPolicyType> = {
+  cheapest: 'cheapest',
+  'lowest-latency': 'performance',
+  'round-robin': 'fairness',
+};
 
 /** Security presets that no longer exist. A router pointing at one is cleared. */
 const DELETED_SECURITY_PRESETS = new Set(['security-standard', 'security-strict']);
@@ -51,21 +63,36 @@ export async function migrateProfiles(): Promise<number> {
   });
   if (changed > 0) await writeConfig('routers', migratedRouters);
 
-  const profilesBefore = changed;
   // Read as the pre-kind shape: on disk an overlay written by an older version
   // has no `kind` at all, which the current Profile type cannot express.
   const profiles = (await readConfig('profiles')) as (Omit<Profile, 'kind'> & { kind?: string })[];
+  let profilesChanged = 0;
   const migratedProfiles = profiles.map(profile => {
-    if (profile.kind !== undefined) return profile as Profile;
-    changed++;
-    const baseId = profile.baseId;
-    return {
-      ...profile,
-      kind: 'routing',
-      ...(baseId !== undefined && RENAMED_PRESETS[baseId] ? { baseId: RENAMED_PRESETS[baseId] } : {}),
-    } as Profile;
+    let next = profile as Profile;
+    let touched = false;
+    if (profile.kind === undefined) {
+      touched = true;
+      const baseId = profile.baseId;
+      next = {
+        ...profile,
+        kind: 'routing',
+        ...(baseId !== undefined && RENAMED_PRESETS[baseId] ? { baseId: RENAMED_PRESETS[baseId] } : {}),
+      } as Profile;
+    }
+    if (next.kind === 'routing' && Object.hasOwn(REMOVED_SELECTORS, next.selector)) {
+      touched = true;
+      const type = REMOVED_SELECTORS[next.selector]!;
+      const policies = (next.policies ?? []).map(p => (p.type === type ? { ...p, enabled: true } : p));
+      if (!policies.some(p => p.type === type)) policies.push({ type, enabled: true });
+      next = { ...next, selector: 'argmax', policies };
+    }
+    if (touched) profilesChanged++;
+    return next;
   });
-  if (changed > profilesBefore) await writeConfig('profiles', migratedProfiles);
+  if (profilesChanged > 0) {
+    changed += profilesChanged;
+    await writeConfig('profiles', migratedProfiles);
+  }
 
   return changed;
 }

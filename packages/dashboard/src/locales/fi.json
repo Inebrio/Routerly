@@ -2910,6 +2910,13 @@
         "notFound": "Profiilia ei löytynyt.",
         "loadFailed": "Profiilin lataaminen epäonnistui",
         "saveFailed": "Profiilin tallentaminen epäonnistui"
+      },
+      "selector": {
+        "label": "Valitsin",
+        "argmax": "Korkein pistemäärä (argmax)",
+        "weightedRandom": "Painotettu satunnainen",
+        "argmaxHint": "Valitsee aina korkeimman pistemäärän mallin.",
+        "weightedRandomHint": "Valitsee satunnaisesti pistemäärällä painotettuna: korkeamman pistemäärän mallit valitaan useammin."
       }
     }
   },

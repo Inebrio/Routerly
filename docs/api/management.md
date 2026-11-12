@@ -547,19 +547,20 @@ Every profile also has `id`, `kind`, `label`, `version`, `builtin` and, when it
 was produced by [Clone Profile](#clone-profile), `baseId`.
 
 Routerly ships read-only built-ins for all three kinds (`auto`, `cheap`, `fast`,
-`coding`; `optimizer-safe`, `optimizer-balanced`, `optimizer-aggressive`;
-`security-none`). The only security preset is `security-none`: it applies no
-guardrail and no PII policy, and it ignores any Custom rules stored on the
-router. Guardrails and PII policies rewrite the request, so every other
-security profile is user-created. A router either keeps its own inline
+`coding`; `optimizer-safe`, `optimizer-balanced`, `optimizer-aggressive`, and
+`optimizer-none`, which runs no optimizer step; `security-none`). The only security
+preset is `security-none`: it applies no guardrail and no PII policy, and it ignores
+any Custom rules stored on the router. Guardrails and PII policies rewrite the request,
+so every other security profile is user-created. A router either keeps its own inline
 configuration for a kind or is assigned a profile of that kind via
 [Assign Router Profiles](#assign-router-profiles); the three kinds are
 assigned independently.
 
 See [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
 for the selector and fallback strategy reference. Both fields are optional on
-write and default to `argmax` and `next-best`; the API is the only surface that
-sets them, since the dashboard and the CLI do not expose either.
+write and default to `argmax` and `next-best`. The `selector` is `argmax` or
+`weighted-random`; the dashboard and the CLI set it, the API is the only surface
+that sets `fallbackStrategy`.
 
 ### List Profiles
 
@@ -626,7 +627,7 @@ POST /api/profiles
   "kind": "routing",
   "label": "My Routing Profile",
   "policies": [{ "type": "cheapest", "enabled": true }],
-  "selector": "cheapest",
+  "selector": "argmax",
   "fallbackStrategy": "abort",
   "rankingAlgorithm": "default"
 }
@@ -641,6 +642,27 @@ POST /api/profiles
 - everything else is optional and defaults to an empty configuration, so
   `{ "kind": "security", "label": "Empty" }` is a valid body that can be filled
   in later with [Update Profile](#update-profile)
+
+- `selector`: `routing` only, `argmax` (default) or `weighted-random`. The
+  values `cheapest`, `lowest-latency` and `round-robin` were removed and answer
+  `400`, naming the replacement; any other value answers `400` listing the valid
+  ones:
+
+```bash
+curl -s -X POST http://localhost:3000/api/profiles \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"kind":"routing","label":"t","selector":"cheapest"}'
+```
+
+```json
+{ "error": { "formErrors": [], "fieldErrors": { "selector": [
+  "selector \"cheapest\" was removed: use \"argmax\" with the \"cheapest\" policy"
+] } } }
+```
+
+`lowest-latency` names the `performance` policy and `round-robin` the
+`fairness` policy. Profiles stored with a removed value are migrated at startup
+(see [Selectors](../concepts/routing.md#selectors)).
 
 **Response `201`:** the created profile (`builtin: false`, `version: 1`).
 
@@ -683,7 +705,7 @@ kind, at least one required. `kind` itself cannot be changed.
 {
   "label": "Renamed Profile",
   "policies": [{ "type": "cheapest", "enabled": true }],
-  "selector": "cheapest",
+  "selector": "argmax",
   "fallbackStrategy": "abort",
   "rankingAlgorithm": "default"
 }

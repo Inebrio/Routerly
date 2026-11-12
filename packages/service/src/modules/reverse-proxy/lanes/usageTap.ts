@@ -6,6 +6,8 @@ export interface TappedUsage {
   outputTokens: number;
   cachedInputTokens: number;
   cacheCreationInputTokens: number;
+  /** Assistant text seen in the response; only collected when the tap is asked to (trace content capture). */
+  text?: string;
 }
 
 type RawUsage = Record<string, unknown> | undefined;
@@ -48,22 +50,29 @@ function toUsage(acc: Record<string, number>): TappedUsage {
  * is torn down, with whatever usage was seen. Parse errors are swallowed: the
  * client's bytes are never affected.
  */
-export function createUsageTap(contentType: string | null, onDone: (u: TappedUsage) => void): Transform {
+export function createUsageTap(contentType: string | null, onDone: (u: TappedUsage) => void, captureText = false): Transform {
   const sse = (contentType ?? '').toLowerCase().includes('text/event-stream');
   const acc: Record<string, number> = {};
+  let text = '';
+  const gather = (json: unknown): void => {
+    const o = json as { delta?: { type?: string; text?: unknown }; content?: Array<{ type?: string; text?: unknown }> } | null;
+    if (typeof o?.delta?.text === 'string' && o.delta.type === 'text_delta') text += o.delta.text;
+    for (const b of Array.isArray(o?.content) ? o.content : []) if (b?.type === 'text' && typeof b.text === 'string') text += b.text;
+  };
   let pending = ''; // SSE: incomplete trailing line; JSON: whole body. ponytail: JSON body buffered whole, fine for non-stream responses.
   let done = false;
   const finish = (): void => {
     if (done) return;
     done = true;
     if (!sse && pending) {
-      try { collect(acc, JSON.parse(pending)); } catch { /* not JSON */ }
+      try { const j = JSON.parse(pending); collect(acc, j); if (captureText) gather(j); } catch { /* not JSON */ }
     }
-    onDone(toUsage(acc));
+    onDone({ ...toUsage(acc), ...(captureText && text ? { text } : {}) });
   };
   const eat = (line: string): void => {
-    if (!line.startsWith('data:') || !line.includes('"usage"')) return;
-    try { collect(acc, JSON.parse(line.slice(5))); } catch { /* ignore */ }
+    const wanted = line.includes('"usage"') || (captureText && line.includes('"text_delta"'));
+    if (!line.startsWith('data:') || !wanted) return;
+    try { const j = JSON.parse(line.slice(5)); collect(acc, j); if (captureText) gather(j); } catch { /* ignore */ }
   };
   const t = new Transform({
     transform(chunk: Buffer, _enc, cb) {

@@ -2910,6 +2910,13 @@
         "notFound": "Profil nem található.",
         "loadFailed": "Az profil betöltése sikertelen",
         "saveFailed": "Az profil mentése sikertelen"
+      },
+      "selector": {
+        "label": "Kiválasztó",
+        "argmax": "Legmagasabb pontszám (argmax)",
+        "weightedRandom": "Súlyozott véletlen",
+        "argmaxHint": "Mindig a legmagasabb pontszámú modellt választja.",
+        "weightedRandomHint": "Pontszámmal súlyozva véletlenszerűen választ: a magasabb pontszámú modellek gyakrabban kerülnek kiválasztásra."
       }
     }
   },

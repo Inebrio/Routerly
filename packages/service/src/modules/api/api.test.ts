@@ -59,6 +59,7 @@ vi.mock('../optimizers/llmlingua2/model.js', () => ({
     { key: 'bert-multilingual-q8', label: 'BERT multilingual, quantized', repo: 'test/model', dtype: 'q8', sizeMb: 182, license: 'x', note: 'y', state: 'absent' },
   ]),
   isRuntimeInstalled: vi.fn(() => true),
+  runtimeProblem: vi.fn(() => null),
   startDownload: vi.fn(() => ({ ok: true })),
 }))
 vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }))
@@ -14784,14 +14785,19 @@ describe('Optimizers API', () => {
 
   it('refuses a download when the optional runtime is missing (409)', async () => {
     vi.mocked(llmlingua2Model.isRuntimeInstalled).mockReturnValue(false)
+    vi.mocked(llmlingua2Model.runtimeProblem).mockReturnValue('onnxruntime-node cannot be loaded on this host (ERR_DLOPEN_FAILED)')
     authAs(adminUser)
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/optimizers/llmlingua2/model', headers: adminAuthHeaders(),
     })
+    const info = await app.inject({ method: 'GET', url: '/api/optimizers/llmlingua2/model', headers: adminAuthHeaders() })
     await app.close()
     vi.mocked(llmlingua2Model.isRuntimeInstalled).mockReturnValue(true)
+    vi.mocked(llmlingua2Model.runtimeProblem).mockReturnValue(null)
     expect(res.statusCode).toBe(409)
+    expect(res.json().error).toContain('ERR_DLOPEN_FAILED')
+    expect(info.json()).toMatchObject({ runtimeInstalled: false, runtimeError: expect.stringContaining('ERR_DLOPEN_FAILED') })
   })
 
   it('refuses a download request without optimizers:manage (403)', async () => {

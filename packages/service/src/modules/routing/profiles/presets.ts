@@ -39,7 +39,7 @@ const ROUTING_PRESETS = Object.freeze([
     version: 1,
     label: 'Cheap',
     policies: policies('cheapest', 'budget-remaining', 'health'),
-    selector: 'cheapest',
+    selector: 'argmax',
     fallbackStrategy: 'next-best',
     builtin: true,
   }),
@@ -49,7 +49,7 @@ const ROUTING_PRESETS = Object.freeze([
     version: 1,
     label: 'Fast',
     policies: policies('performance', 'health'),
-    selector: 'lowest-latency',
+    selector: 'argmax',
     fallbackStrategy: 'retry-after-cooldown',
     builtin: true,
   }),
@@ -117,6 +117,15 @@ const OPTIMIZER_PRESETS = Object.freeze([
     },
     builtin: true,
   }),
+  // Explicit "run no optimizer". Last, so the dashboard default stays optimizer-safe.
+  Object.freeze({
+    id: 'optimizer-none',
+    kind: 'optimizer',
+    version: 1,
+    label: 'None',
+    optimizers: { steps: [] },
+    builtin: true,
+  }),
 ]) as readonly OptimizerProfile[];
 
 /**
@@ -170,8 +179,8 @@ export const LEGACY_BUILTIN_PROFILES: readonly Profile[] = Object.freeze([
     kind: 'routing',
     version: 1,
     label: 'Offline',
-    policies: policies('health', 'cheapest'),
-    selector: 'round-robin',
+    policies: policies('health', 'cheapest', 'fairness'),
+    selector: 'argmax',
     fallbackStrategy: 'abort',
     builtin: true,
   }),

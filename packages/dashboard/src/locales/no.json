@@ -2910,6 +2910,13 @@
         "notFound": "Profil ikke funnet.",
         "loadFailed": "Kunne ikke laste profil",
         "saveFailed": "Kunne ikke lagre profil"
+      },
+      "selector": {
+        "label": "Velger",
+        "argmax": "Høyeste score (argmax)",
+        "weightedRandom": "Vektet tilfeldig",
+        "argmaxHint": "Velger alltid modellen med høyest score.",
+        "weightedRandomHint": "Velger tilfeldig vektet etter score: modeller med høyere score velges oftere."
       }
     }
   },

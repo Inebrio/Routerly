@@ -171,8 +171,8 @@ function LlmLinguaPanel({ state, value, onPick, onState, editable }: {
   if (!state.runtimeInstalled) {
     return (
       <div style={{ fontSize: '0.7rem', color: 'var(--warning)', marginTop: 8, lineHeight: 1.45 }}>
-        The optional @huggingface/transformers dependency is not installed on the service host. Install it and restart
-        the service to enable this step.
+        {state.runtimeError ?? 'The optional @huggingface/transformers dependency is not installed on the service host.'}{' '}
+        This step is unavailable on this host until the runtime problem is fixed and the service restarted.
       </div>
     );
   }

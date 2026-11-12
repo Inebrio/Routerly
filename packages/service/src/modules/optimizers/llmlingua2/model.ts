@@ -92,18 +92,40 @@ const RUNTIME_MODULE: string = '@huggingface/transformers'
 
 const req = createRequire(import.meta.url)
 
+/** Native inference backend @huggingface/transformers loads on Node. */
+const NATIVE_MODULE = 'onnxruntime-node'
+
+let runtimeProbe: string | null | undefined
+
 /**
- * Synchronous best-effort probe: is the optional `@huggingface/transformers`
- * dependency installed? Resolves the module path WITHOUT importing or executing
- * it, so it is safe to call from the optimizer's synchronous `supports()`.
+ * Why the runtime cannot be used on this host, or null when it can. Synchronous
+ * and cached (a restart is needed to change either answer): resolving the
+ * package is not enough, because onnxruntime-node ships a glibc-only native
+ * library that fails to dlopen on musl (Alpine) with the package fully present.
  */
-export function isRuntimeInstalled(): boolean {
+export function runtimeProblem(): string | null {
+  if (runtimeProbe !== undefined) return runtimeProbe
   try {
-    req.resolve(RUNTIME_MODULE)
-    return true
+    const path = req.resolve(RUNTIME_MODULE)
+    runtimeProbe = null
+    try {
+      createRequire(path)(NATIVE_MODULE)
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code
+      // Absent native backend is the library's own concern; only a load failure is ours.
+      if (code !== 'MODULE_NOT_FOUND') {
+        runtimeProbe = `${NATIVE_MODULE} cannot be loaded on this host (${code ?? 'error'}: ${err instanceof Error ? err.message : String(err)})`
+      }
+    }
   } catch {
-    return false
+    runtimeProbe = '@huggingface/transformers is not installed on the service host'
   }
+  return runtimeProbe
+}
+
+/** Is the optional runtime installed AND loadable on this host? */
+export function isRuntimeInstalled(): boolean {
+  return runtimeProblem() === null
 }
 
 /**
@@ -145,15 +167,21 @@ interface Lib {
 // fits in memory.
 const loaded = new Map<string, { tok: Tokenizer; model: Classifier }>()
 
+/** Turn a failed runtime import into an error that keeps the real cause. */
+export function runtimeImportError(err: unknown): Error {
+  const code = (err as NodeJS.ErrnoException).code
+  const missing = code === 'MODULE_NOT_FOUND' || code === 'ERR_MODULE_NOT_FOUND'
+  const reason = missing
+    ? '@huggingface/transformers is not installed; install the optional dependency to enable it.'
+    : `@huggingface/transformers failed to load (${code ?? 'error'}: ${err instanceof Error ? err.message : String(err)})`
+  return new Error(`${reason} The llmlingua-2 optimizer is unavailable.`, { cause: err })
+}
+
 async function importRuntime(): Promise<Lib> {
   try {
     return (await import(RUNTIME_MODULE)) as never as Lib
   } catch (err) {
-    throw new Error(
-      '@huggingface/transformers is not installed; the llmlingua-2 optimizer is unavailable. ' +
-        'Install the optional dependency to enable it.',
-      { cause: err },
-    )
+    throw runtimeImportError(err)
   }
 }
 
@@ -286,6 +314,7 @@ export function startDownload(key?: string): { ok: boolean; error?: string } {
 
 /** Test seam: forget every in-flight download and every loaded checkpoint. */
 export function resetModelState(): void {
+  runtimeProbe = undefined
   downloads.clear()
   loaded.clear()
 }
