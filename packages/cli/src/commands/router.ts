@@ -1465,6 +1465,7 @@ Examples:
         }
         console.log(chalk.gray(`  Timeout: `) + formatTimeout(router.timeoutMs));
         console.log(chalk.gray(`  Traces:  `) + (router.traceContent ? 'metadata + content' : 'metadata only'));
+        console.log(chalk.gray(`  Moderation fallback: `) + (router.moderationFallback ? 'on' : 'off'));
         console.log(chalk.gray(`  Notify:  `) + (router.notifications?.channels.length ? router.notifications.channels.join(', ') : chalk.gray('(global channels only)')));
 
         // Routing
@@ -1644,6 +1645,8 @@ Examples:
   routerly router edit my-api --timeout 0
   routerly router edit my-api --trace-content
   routerly router edit my-api --no-trace-content
+  routerly router edit my-api --moderation-fallback
+  routerly router edit my-api --no-moderation-fallback
 
   # Replace an orchestrator's candidates, in priority order (first = highest priority)
   routerly router edit my-api --candidate <router-id-1> --candidate <router-id-2>
@@ -1665,17 +1668,20 @@ Units:    second | minute | hour | day | week | month
     .option('--timeout <ms>', 'New TTFT timeout per model attempt in milliseconds (0 disables it)')
     .option('--trace-content', 'Record prompts and answers in traces (off by default: metadata only)')
     .option('--no-trace-content', 'Record metadata only, no prompts or answers')
+    .option('--moderation-fallback', 'On a moderation refusal returned as an error, try another model of the router on a different provider (at most two)')
+    .option('--no-moderation-fallback', 'Return the original moderation refusal to the client (default)')
     .option('--notification-channel <idOrName>', 'Also send this router\'s events to a notification channel (repeatable); replaces the existing override', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--no-notification-channels', 'Remove the router\'s notification channel override')
     .option('--candidate <routerId>', "Candidate router for an orchestrator (repeatable); order of repetition sets priority; replaces the existing candidate list", (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--candidate-limit <spec>', 'Usage limit for a candidate router (repeatable); requires --candidate; see below for spec format', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     // --trace-content declared before --no-trace-content, so an untouched flag stays
     // undefined and leaves the stored value alone.
-    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean; notificationChannel: string[]; notificationChannels?: boolean; candidate: string[]; candidateLimit: string[] }) => {
+    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean; moderationFallback?: boolean; notificationChannel: string[]; notificationChannels?: boolean; candidate: string[]; candidateLimit: string[] }) => {
       const traceContent = opts.traceContent;
+      const moderationFallback = opts.moderationFallback;
       const clearChannels = opts.notificationChannels === false;
-      if (!opts.name && opts.timeout === undefined && traceContent === undefined && !opts.candidate.length && !opts.candidateLimit.length && !opts.notificationChannel.length && !clearChannels) {
-        console.error(chalk.red('Provide at least --name, --timeout, --trace-content or --candidate (or --candidate-limit, --notification-channel, --no-notification-channels).'));
+      if (!opts.name && opts.timeout === undefined && traceContent === undefined && moderationFallback === undefined && !opts.candidate.length && !opts.candidateLimit.length && !opts.notificationChannel.length && !clearChannels) {
+        console.error(chalk.red('Provide at least --name, --timeout, --trace-content, --moderation-fallback or --candidate (or --candidate-limit, --notification-channel, --no-notification-channels).'));
         process.exit(1);
       }
       try {
@@ -1712,6 +1718,7 @@ Units:    second | minute | hour | day | week | month
           policies: router.policies,
           models: router.models,
           ...(traceContent !== undefined ? { traceContent } : {}),
+          ...(moderationFallback !== undefined ? { moderationFallback } : {}),
           ...(notifications !== undefined ? { notifications } : {}),
           ...(candidates !== undefined ? { candidates } : {}),
         });

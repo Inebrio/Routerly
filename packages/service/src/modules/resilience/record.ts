@@ -8,8 +8,8 @@ import { resilienceKeys } from './keys.js';
  *
  *   auth | server | timeout                 → provider  (hard fault: trip the provider breaker)
  *   rate-limit | quota                       → connection (cooldown: one connection is throttled)
- *   model-not-found | content-safety         → model      (lockout: a single model instance)
- *   invalid-request                          → model      (store no-ops it to lastFault only)
+ *   model-not-found                          → model      (lockout: a single model instance)
+ *   invalid-request | content-safety         → model      (store no-ops it to lastFault only)
  */
 const LEVEL: Record<ResilienceFault['category'], 'provider' | 'connection' | 'model'> = {
   auth: 'provider',
@@ -24,7 +24,7 @@ const LEVEL: Record<ResilienceFault['category'], 'provider' | 'connection' | 'mo
 
 /**
  * Records a classified upstream fault at the correct resilience level. The ONE source of truth for
- * category→level: a per-model 404/content refusal locks out only that model instance, a rate-limit
+ * category→level: a per-model 404 locks out only that model instance, a rate-limit
  * cools down the connection, and a hard fault trips the whole provider breaker.
  *
  * // ponytail: LEVEL above is the single authority for category→level — change it there, nowhere else.

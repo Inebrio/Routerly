@@ -1028,7 +1028,7 @@ describe('router edit', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least --name, --timeout, --trace-content or --candidate'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least --name, --timeout, --trace-content, --moderation-fallback or --candidate'));
   });
 
   it('turns trace content capture on and back off', async () => {
@@ -1039,6 +1039,20 @@ describe('router edit', () => {
     mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
     await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--no-trace-content']);
     expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/routers/${baseRouter.id}`, expect.objectContaining({ traceContent: false }));
+  });
+
+  it('turns moderation fallback on and back off, and leaves it untouched otherwise', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--moderation-fallback']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/routers/${baseRouter.id}`, expect.objectContaining({ moderationFallback: true }));
+
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--no-moderation-fallback']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/routers/${baseRouter.id}`, expect.objectContaining({ moderationFallback: false }));
+
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--name', 'Renamed']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/routers/${baseRouter.id}`, expect.not.objectContaining({ moderationFallback: expect.anything() }));
   });
 
   it('leaves trace content untouched when neither flag is given', async () => {

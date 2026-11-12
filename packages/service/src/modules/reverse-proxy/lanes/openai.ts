@@ -14,6 +14,7 @@ import { emitEvent } from '../../notifications/emitter.js'
 import { forwardableRequestHeaders } from '../../provider/passthrough.js'
 import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
 import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
+import { createModerationFallback } from '../moderation-fallback.js'
 import { traceEgress } from '../helpers.js'
 import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import { responsesToChatRequest, chatToResponsesObject, openAIChunksToResponsesSSE } from '../../provider/responses-compat.js'
@@ -242,10 +243,12 @@ export const openaiAttempt: Processor<ProxyContext> = {
     // Last deterministic upstream 4xx (bad request, invalid key, forbidden): when no candidate succeeds it is
     // returned as-is (status + body) instead of a generic 503, like a direct provider call.
     let clientError: { status: number; body: unknown } | undefined
+    const moderation = createModerationFallback(ctx, 'openai')
 
     await runCandidateLoop(ctx.candidates ?? [], async (candidate) => {
       const model = allModels.find((m) => m.id === candidate.model)
       if (!model) return false
+      if (moderation.skip(model)) return false
       if (!primaryModelId) primaryModelId = model.id
       ctx.attempt = { model, candidate }
 
@@ -255,6 +258,7 @@ export const openaiAttempt: Processor<ProxyContext> = {
 
       if (ctx.result) {
         forgetUpstreamError(router.id)
+        moderation.onSuccess(model)
         if (primaryFailed && model.id !== primaryModelId) {
           void emitEvent('routing.fallback_used', 'info', { routerId: router.id, primaryModelId, fallbackModelId: model.id, traceId: ctx.traceId }, { routerId: router.id, log })
         }
@@ -268,6 +272,7 @@ export const openaiAttempt: Processor<ProxyContext> = {
         clientError = { status: ar.status, body: upstreamErrorBody('openai', ar.status, ar.body) }
         rememberUpstreamError(router.id, ar.status, ar.body)
       }
+      if (moderation.onFailure(model)) return true
       if (ctx.attemptError !== undefined) {
         ctx.attemptError = undefined
         delete ctx.attemptResponse
@@ -280,8 +285,9 @@ export const openaiAttempt: Processor<ProxyContext> = {
       // Nothing was written to the client yet (candidates fail before the first chunk), so the
       // streaming and non-streaming requests get the same HTTP error.
       if (ctx.stream) ctx.emit?.({ panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } })
-      if (clientError) {
-        ctx.result = { kind: 'block', status: clientError.status, body: clientError.body }
+      const refusal = moderation.exhausted() ?? clientError
+      if (refusal) {
+        ctx.result = { kind: 'block', status: refusal.status, body: refusal.body }
       } else {
         ctx.result = { kind: 'block', status: 503, body: { error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } } }
       }

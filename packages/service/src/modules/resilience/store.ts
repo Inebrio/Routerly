@@ -68,7 +68,10 @@ export class InMemoryResilienceStore implements ResilienceStore {
     switch (fault.category) {
       // A client-request problem, not upstream unavailability: lastFault only, never trip/
       // extend/close any breaker, cooldown, or lockout.
+      // A moderation refusal judges this prompt, not the model: same treatment, so one refused
+      // prompt never locks the model out for every router.
       case 'invalid-request':
+      case 'content-safety':
         return;
 
       case 'auth':
@@ -83,7 +86,6 @@ export class InMemoryResilienceStore implements ResilienceStore {
         return;
 
       case 'model-not-found':
-      case 'content-safety':
         this.recordLockout(entry);
         return;
     }

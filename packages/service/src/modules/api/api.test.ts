@@ -15058,3 +15058,40 @@ describe('POST /api/models/:id/conformance', () => {
     expect(res.statusCode).toBe(403)
   })
 })
+
+describe('PUT /api/routers/:id — moderationFallback (ROUT-630)', () => {
+  const put = async (payload: unknown, user: Record<string, unknown> = adminUser) => {
+    setupAdminAuth()
+    if (user !== adminUser) vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [user]
+      if (t === 'roles') return []
+      if (t === 'routers') return [{ id: 'r1', name: 'R', tokens: [], members: [], models: [], policies: [] }]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PUT', url: '/api/routers/r1', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify(payload) })
+    await app.close()
+    return res
+  }
+
+  it('persists a boolean and leaves it untouched when omitted', async () => {
+    const on = await put({ moderationFallback: true })
+    expect(on.statusCode).toBe(200)
+    expect(on.json().moderationFallback).toBe(true)
+    const untouched = await put({ name: 'R2' })
+    expect(untouched.json().moderationFallback).toBeUndefined()
+  })
+
+  it('rejects a non-boolean with 400', async () => {
+    const res = await put({ moderationFallback: 'yes' })
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toContain('moderationFallback')
+  })
+
+  it('returns 403 without router:write', async () => {
+    const res = await put({ moderationFallback: true }, { ...adminUser, id: 'viewer-id', roleId: 'viewer' })
+    expect(res.statusCode).toBe(403)
+  })
+})

@@ -12,6 +12,7 @@ import type { LLMCallContext } from '../execute.js'
 import { resolveAttemptCallConfig } from '../../routing/call-config.js'
 import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
 import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
+import { createModerationFallback } from '../moderation-fallback.js'
 import { traceEgress } from '../helpers.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey, type PassthroughScrub, type PassthroughTrace, type UpstreamFailure } from './oauthForward.js'
 import { mergePolicies } from '../../pii/piiScrubber.js'
@@ -264,20 +265,23 @@ export const anthropicAttempt: Processor<ProxyContext> = {
     // Last deterministic upstream 4xx (bad request, invalid key, forbidden): returned as-is when no
     // candidate succeeds, instead of a generic 503, like a direct provider call.
     let clientError: { status: number; body: unknown } | undefined
+    const moderation = createModerationFallback(ctx, 'anthropic')
 
     await runCandidateLoop(ctx.candidates ?? [], async (candidate) => {
       const model = allModels.find((m) => m.id === candidate.model)
       if (!model) return false
+      if (moderation.skip(model)) return false
       ctx.attempt = { model, candidate }
       await pipeline.runPhase('upstream.prepare', ctx) // Plan 5 budget
       if (ctx.result) return true
       await pipeline.runPhase('upstream.execute', ctx)
-      if (ctx.result) { forgetUpstreamError(ctx.router.id); return true }
+      if (ctx.result) { forgetUpstreamError(ctx.router.id); moderation.onSuccess(model); return true }
       const ar = ctx.attemptResponse
       if (ar && ar.status !== undefined && UPSTREAM_PASSTHROUGH_STATUS.includes(ar.status)) {
         clientError = { status: ar.status, body: upstreamErrorBody('anthropic', ar.status, ar.body) }
         rememberUpstreamError(ctx.router.id, ar.status, ar.body)
       }
+      if (moderation.onFailure(model)) return true
       // The fault (if any) was already recorded once by handleProviderResult inside
       // llmChat/llmStream — the single authoritative recorder. The loop only advances to the next
       // candidate here; clearing the stash keeps it from leaking into the next iteration.
@@ -288,8 +292,9 @@ export const anthropicAttempt: Processor<ProxyContext> = {
       return false
     }, () => {
       // Exhausted, no events on the Anthropic lane (decision #8).
-      ctx.result = clientError
-        ? { kind: 'block', status: clientError.status, body: clientError.body }
+      const refusal = moderation.exhausted() ?? clientError
+      ctx.result = refusal
+        ? { kind: 'block', status: refusal.status, body: refusal.body }
         : { kind: 'block', status: 503, body: { type: 'error', error: { type: 'overloaded_error', message: 'All candidate models are budget-exhausted or unavailable.' } } }
     })
   },

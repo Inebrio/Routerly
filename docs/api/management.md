@@ -1295,6 +1295,7 @@ unchanged, send `null` to clear it, or send an object to replace it.
 | `name` | string | Router name |
 | `timeoutMs` | number | Upstream timeout for this router's requests |
 | `traceContent` | boolean | Trace content opt-in. Default `false`: traces record metadata only. Set to `true` to also store prompts and answers on the trace (`entry.content`) — they then reach the trace stream, the usage record and any integration exporting traces. |
+| `moderationFallback` | boolean | Default `false`. When `true`, a moderation refusal returned by a provider as an error is retried on a model of a different provider (at most two substitutes); when `false`, the client gets the original refusal. A non-boolean value is a `400` (`Invalid moderationFallback`). Requires `router:write`. |
 | `rankingAlgorithm` | string | `default` (the only id today). Optional, also accepted on `POST /api/routers`; any other value is a `400` (`Invalid rankingAlgorithm`). Absent means `default`. Ignored when a routing profile is bound to the router, except on `kind: "orchestrator"`, which never uses a profile. |
 | `candidates` | array | Only on `kind: "orchestrator"`. Request body: `{ routerId, limits? }[]`. Response also resolves each candidate's `name`: `{ routerId, name, limits? }[]`. Array order **is** the priority order (index 0 = highest) — there is no `weight` field. |
 | `exceptions` | array | Only on `kind: "passthrough"`. `{ match, targetModelId }[]`, ordered, first match wins. See [Passthrough exceptions](#passthrough-exceptions-router-field). |

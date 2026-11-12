@@ -453,6 +453,7 @@ export const updateRouter = (id: string, data: {
   optimizers?: OptimizerConfig | null;
   notifications?: { channels: string[] } | null;
   traceContent?: boolean;
+  moderationFallback?: boolean;
   callConfig?: CallConfig;
   exceptions?: PassthroughException[];
 }) => request<Router>(`/routers/${id}`, { method: 'PUT', body: JSON.stringify(data) });

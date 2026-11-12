@@ -1539,6 +1539,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       callConfig?: CallConfig | null;
       notifications?: { channels: string[] } | null;
       traceContent?: boolean;
+      moderationFallback?: boolean;
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
       rankingAlgorithm?: RankingAlgorithmId;
@@ -1568,6 +1569,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // Changing the optimizers pipeline (set or clear) is a privileged sub-operation.
     if (req.body.optimizers !== undefined && !requirePerm(req, 'optimizers:manage', reply)) return;
     if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
+    if (req.body.moderationFallback !== undefined && typeof req.body.moderationFallback !== 'boolean') {
+      return reply.status(400).send({ error: 'Invalid moderationFallback: expected a boolean' });
+    }
     const parsedKind = routerKindSchema.safeParse(req.body.kind);
     if (!parsedKind.success) return reply.status(400).send({ error: 'Invalid kind', details: parsedKind.error.issues });
     const parsedRanking = rankingAlgorithmSchema.safeParse(req.body.rankingAlgorithm);
@@ -1731,6 +1735,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS,
         // Absent = leave as is; the flag gates prompt/answer capture in traces.
         ...(req.body.traceContent !== undefined ? { traceContent: req.body.traceContent } : {}),
+        ...(req.body.moderationFallback !== undefined ? { moderationFallback: req.body.moderationFallback } : {}),
         ...guardrailsUpdate,
         ...piiUpdate,
         ...optimizersUpdate,

@@ -109,7 +109,7 @@ describe('InMemoryResilienceStore', () => {
     expect(s.snapshot().entries[0]?.cooldownUntil).toBe(now + 30_000);
   });
 
-  it('locks out a model instance on model-not-found/content-safety for longer than the cooldown default', () => {
+  it('locks out a model instance on model-not-found for longer than the cooldown default', () => {
     const s = new InMemoryResilienceStore();
     const k = { level: 'model', id: 'gpt-4o' } as const;
     s.record(k, { category: 'model-not-found' });
@@ -121,11 +121,12 @@ describe('InMemoryResilienceStore', () => {
     expect(s.isAvailable(k)).toBe(true);
   });
 
-  it('locks out on content-safety faults too', () => {
+  it('records content-safety as lastFault only, never locks the model out', () => {
     const s = new InMemoryResilienceStore();
     const k = { level: 'model', id: 'claude-3' } as const;
     s.record(k, { category: 'content-safety' });
-    expect(s.isAvailable(k)).toBe(false);
+    expect(s.isAvailable(k)).toBe(true);
+    expect(s.snapshot().entries[0]?.lastFault).toBe('content-safety');
   });
 
   it('records invalid-request as lastFault only, never trips/changes state or failureCount', () => {

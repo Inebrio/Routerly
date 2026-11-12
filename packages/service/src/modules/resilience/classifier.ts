@@ -8,7 +8,12 @@ export interface UpstreamResponse {
 
 const TIMEOUT_RE = /ETIMEDOUT|ECONNRESET|abort|timeout/i;
 const RATE_LIMIT_RE = /429|rate.?limit|too many/i;
-const CONTENT_SAFETY_RE = /content_polic|content_filter/i;
+// Policy codes: OpenAI/Azure `content_policy_violation`/`content_filter`, Gemini Interactions API
+// `safety`/`prohibited_content`/`blocklist`/`jailbreak`.
+const CONTENT_SAFETY_RE = /content_polic|content_filter|^safety$|prohibited_content|blocklist|jailbreak/i;
+// Message-only signals: OpenAI `invalid_prompt` ("flagged as potentially violating our usage
+// policy"), Mistral 403 "Content blocked by guardrail", OpenRouter 403 input moderation.
+const POLICY_MESSAGE_RE = /usage polic|content blocked|guardrail|moderation|flagged/i;
 const QUOTA_RE = /quota|billing/i;
 
 function getHeader(headers: Record<string, string> | undefined, name: string): string | undefined {
@@ -67,6 +72,8 @@ export function classifyUpstreamError(err: unknown, response?: UpstreamResponse)
     const errorField = asRecord(body?.error);
     const errType = typeof errorField?.type === 'string' ? errorField.type : undefined;
     const errCode = typeof errorField?.code === 'string' ? errorField.code : undefined;
+    const errMessage = typeof errorField?.message === 'string' ? errorField.message : undefined;
+    const policyMessage = errMessage !== undefined && POLICY_MESSAGE_RE.test(errMessage);
     const retryAfterMs = parseRetryAfterMs(response?.headers);
 
     switch (status) {
@@ -74,6 +81,7 @@ export function classifyUpstreamError(err: unknown, response?: UpstreamResponse)
         if ((errCode && CONTENT_SAFETY_RE.test(errCode)) || (errType && CONTENT_SAFETY_RE.test(errType))) {
           return fault('content-safety');
         }
+        if (errCode === 'invalid_prompt' && policyMessage) return fault('content-safety');
         return fault('invalid-request');
       }
       case 401:
@@ -82,7 +90,7 @@ export function classifyUpstreamError(err: unknown, response?: UpstreamResponse)
         // Anthropic billing_error — payment issue, same bucket as quota exhaustion.
         return fault('quota', retryAfterMs, retryAfterMs !== undefined ? Date.now() + retryAfterMs : undefined);
       case 403:
-        return fault('auth');
+        return policyMessage ? fault('content-safety') : fault('auth');
       case 404:
         return fault('model-not-found');
       case 409:

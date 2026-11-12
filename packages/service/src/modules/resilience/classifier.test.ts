@@ -241,6 +241,21 @@ describe('classifyUpstreamError', () => {
     ).toEqual({ category: 'content-safety' });
   });
 
+  it.each([
+    ['Azure content_filter (400)', 400, { error: { code: 'content_filter', message: 'filtered' } }],
+    ['Gemini safety (400)', 400, { error: { code: 400, status: 'INVALID_ARGUMENT', message: 'x', type: 'safety' } }],
+    ['Gemini prohibited_content (400)', 400, { error: { type: 'prohibited_content', message: 'x' } }],
+    ['OpenAI invalid_prompt with a usage-policy message (400)', 400, { error: { code: 'invalid_prompt', message: 'Invalid prompt: flagged as potentially violating our usage policy' } }],
+    ['Mistral guardrail (403)', 403, { message: 'Content blocked by guardrail', error: { message: 'Content blocked by guardrail' } }],
+  ])('classifies %s as content-safety', (_n, status, body) => {
+    expect(classifyUpstreamError(null, { status, body })).toEqual({ category: 'content-safety' });
+  });
+
+  it('keeps invalid_prompt without a policy message as invalid-request and a plain 403 as auth', () => {
+    expect(classifyUpstreamError(null, { status: 400, body: { error: { code: 'invalid_prompt', message: 'Prompt is too long' } } }).category).toBe('invalid-request');
+    expect(classifyUpstreamError(null, { status: 403, body: { error: { message: 'Forbidden' } } }).category).toBe('auth');
+  });
+
   it('classifies a synthetic Anthropic refusal (stop_reason on the failure path) as content-safety', () => {
     expect(classifyUpstreamError(null, { body: { stop_reason: 'refusal' } })).toEqual({ category: 'content-safety' });
   });

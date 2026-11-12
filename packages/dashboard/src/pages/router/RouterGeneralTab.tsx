@@ -71,6 +71,7 @@ export function RouterGeneralTab() {
     name: '',
     timeoutMs: String(DEFAULT_ROUTER_TIMEOUT_MS),
     traceContent: false,
+    moderationFallback: false,
     notifyChannels: [] as string[],
   });
 
@@ -89,6 +90,7 @@ export function RouterGeneralTab() {
         name: router.name,
         timeoutMs: String(router.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS),
         traceContent: router.traceContent === true,
+        moderationFallback: router.moderationFallback === true,
         notifyChannels: router.notifications?.channels ?? [],
       });
     }
@@ -98,6 +100,7 @@ export function RouterGeneralTab() {
     form.name !== (/* v8 ignore next */ router?.name ?? '') ||
     form.timeoutMs !== String(/* v8 ignore next */ router?.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS) ||
     form.traceContent !== (/* v8 ignore next */ router?.traceContent === true) ||
+    form.moderationFallback !== (/* v8 ignore next */ router?.moderationFallback === true) ||
     form.notifyChannels.join() !== (router?.notifications?.channels ?? []).join();
 
   const { isBlocked, proceed, reset } = useUnsavedChanges(isDirty);
@@ -114,14 +117,15 @@ export function RouterGeneralTab() {
         models: router.models.map(m => ({ modelId: m.modelId, ...(m.prompt ? { prompt: m.prompt } : {}) })),
         timeoutMs: parseInt(form.timeoutMs),
         traceContent: form.traceContent,
+        moderationFallback: form.moderationFallback,
         ...(channels.length > 0 ? { notifications: form.notifyChannels.length ? { channels: form.notifyChannels } : null } : {}),
       };
       await updateRouter(router.id, payload);
       // Update context and reset form so isDirty becomes false — no navigation needed
       const { notifications: _n, ...rest } = router;
-      const updated = { ...rest, name: form.name, timeoutMs: parseInt(form.timeoutMs), traceContent: form.traceContent, ...(form.notifyChannels.length ? { notifications: { channels: form.notifyChannels } } : {}) };
+      const updated = { ...rest, name: form.name, timeoutMs: parseInt(form.timeoutMs), traceContent: form.traceContent, moderationFallback: form.moderationFallback, ...(form.notifyChannels.length ? { notifications: { channels: form.notifyChannels } } : {}) };
       setRouter(updated);
-      setForm(f => ({ ...f, name: updated.name, timeoutMs: String(updated.timeoutMs), traceContent: updated.traceContent }));
+      setForm(f => ({ ...f, name: updated.name, timeoutMs: String(updated.timeoutMs), traceContent: updated.traceContent, moderationFallback: updated.moderationFallback }));
     } catch (err) {
       setErr(err instanceof Error ? err.message : t('routers.general.errors.saveFailed'));
     } finally {
@@ -378,6 +382,25 @@ message = client.messages.create(
                   {t('routers.general.form.capturePromptsAndAnswers')}
                 </label>
               </div>
+
+              {/* Orchestrators delegate to their candidate routers; passthrough has one upstream. */}
+              {(router.kind ?? 'router') === 'router' && (
+                <div className="form-group">
+                  <label className="form-label">{t('routers.general.form.moderationFallback')}</label>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+                    {t('routers.general.form.moderationFallbackHint')}
+                  </p>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={form.moderationFallback}
+                      onChange={e => setForm(f => ({ ...f, moderationFallback: e.target.checked }))}
+                      style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                    />
+                    {t('routers.general.form.moderationFallbackToggle')}
+                  </label>
+                </div>
+              )}
 
               {channels.length > 0 && (
                 <div className="form-group">

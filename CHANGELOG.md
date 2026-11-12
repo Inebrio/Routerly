@@ -13,10 +13,12 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **A refused prompt no longer locks the model out.** A `content-safety` fault used to remove the model from every router for 5 minutes; it is now recorded as last fault only (ROUT-630).
 - **Provider catalog.** A failed catalog fetch (network down, 5xx, checksum mismatch) is no longer cached for 6 hours: it is retried after 1 minute, previous data keeps being served, and each fetch times out after 10 seconds (ROUT-644).
 
 ### Added
 
+- **Moderation fallback (per router).** New router setting `moderationFallback` (dashboard General tab, `routerly router edit --moderation-fallback`, `PUT /api/routers/:id`), off by default. When a provider refuses a request for content-policy reasons and returns it as an error, the router tries a model on a different provider (at most two, never one that refused recently) and returns the first refusal if none answers. The switch is traced (`router:moderation_fallback`) and audited (`proxy:moderation_fallback`) (ROUT-630).
 - **Selector restricted to `argmax` and `weighted-random`.** A selector now only receives the scores computed by the policies and picks among the remaining candidates; it never reads cost, latency, history or counters (that is what policies are for). `cheapest`, `lowest-latency` and `round-robin` are removed, together with their dead code. The selector is editable again in the dashboard profile form and shown in the profile list (ROUT-681).
 - **CLI: `routerly profiles create|update --selector <argmax|weighted-random>`.** Routing profiles only; an invalid value is rejected on stderr with exit code 1 and the list of valid values. `profiles show` prints the selector and `profiles list` includes it in the summary (ROUT-681).
 - **Management API: removed selector values are rejected.** `POST /api/profiles` and `PATCH /api/profiles/:id` answer 400 for `cheapest`, `lowest-latency` and `round-robin` with `selector "<value>" was removed: use "argmax" with the "<cheapest|performance|fairness>" policy`; any other unknown value lists the valid ones. Payload shape and permissions unchanged (ROUT-681).
@@ -40,6 +42,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Changed
 
+- **A moderation refusal no longer falls through silently.** With `moderationFallback` off (default) a refusal returned as an error (400 `content_filter`/`safety`, 403 policy block) now ends the request with the original error instead of trying the next candidate. The classifier also recognises the documented Azure, Gemini, Mistral and OpenRouter policy errors (ROUT-630).
 - **Budget docs match the code.** `docs/concepts/budgets-and-limits.md` no longer describes organisation/team spend groups (`spendGroupId`, `parentGroupId`, `/api/spend-groups`): that code was removed in an earlier release. The guide now has a level matrix (model, router, token), the real exhaustion response (HTTP 429, per lane), where `limitsMode` can be set, a two-team example and the status of SSO group mapping (not available). README states the same (ROUT-567).
 - **Release gate: no overwrite without a real-test proof.** `stable-pointer` and `docker-rebuild` (on an already-tagged version) now refuse unless `scripts/release-proof.mjs` finds a proof tag recorded for that exact version and commit, at most 7 days old (ROUT-602).
 - **Release versions are chosen by hand.** `release.yml` takes a required `version` input (`gh workflow run release.yml --ref <branch> -f version=X.Y.Z`) instead of computing it from commits; semantic-release and `release.config.mjs` are removed. Tag, GitHub Release (tarball, install scripts, git-cliff notes), Docker, docs and channel pointers behave as before; a version not above the latest reachable tag is refused, an existing tag is promoted to the dispatched channel (ROUT-548).

@@ -730,6 +730,11 @@ export interface RouterConfig {
    * a trace carries metadata only (models, scores, tokens, cost, latency).
    */
   traceContent?: boolean;
+  /**
+   * On a moderation refusal returned as an error, try another model of this router on a
+   * different provider (at most two). Off by default: the client gets the original error.
+   */
+  moderationFallback?: boolean;
   /** Call configuration used when no routing profile is bound (a bound profile wins entirely). */
   callConfig?: CallConfig;
   /** Passthrough only. Ordered; first match wins. Evaluated only on the token-authenticated lanes. */

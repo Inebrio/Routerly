@@ -51,7 +51,7 @@ describe('filterAvailable', () => {
 
   it('excludes a candidate whose model is locked out', () => {
     const store = new InMemoryResilienceStore();
-    store.record({ level: 'model', id: 'locked-model' }, { category: 'content-safety' });
+    store.record({ level: 'model', id: 'locked-model' }, { category: 'model-not-found' });
 
     const a = candidate('locked-model');
     const b = candidate('fine-model');
@@ -143,7 +143,7 @@ describe('filterAvailable', () => {
     const store = new InMemoryResilienceStore();
     // Connection cooldown recovers sooner than the model lockout.
     store.record({ level: 'connection', id: 'openai' }, { category: 'rate-limit', retryAfterMs: 10_000 });
-    store.record({ level: 'model', id: 'model-b' }, { category: 'content-safety' }); // 5 min lockout
+    store.record({ level: 'model', id: 'model-b' }, { category: 'model-not-found' }); // 5 min lockout
 
     const a: CandidateModel = { model: makeModel('model-a', 'openai') };
     const b: CandidateModel = { model: makeModel('model-b', 'anthropic') };

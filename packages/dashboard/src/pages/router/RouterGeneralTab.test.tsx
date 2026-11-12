@@ -260,6 +260,17 @@ describe('RouterGeneralTab — Advanced settings toggle', () => {
     await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalledWith('proj-1', expect.objectContaining({ traceContent: true })));
   });
 
+  it('saves the moderation fallback toggle and pre-fills it from the router', async () => {
+    renderTab();
+    await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
+    const checkbox = await screen.findByLabelText(/Switch model on moderation refusal/i);
+    expect((checkbox as HTMLInputElement).checked).toBe(false);
+    await userEvent.click(checkbox);
+    await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalledWith('proj-1', expect.objectContaining({ moderationFallback: true })));
+  });
+
   it('pre-fills the trace content opt-in from the router', async () => {
     renderTab({ ...mockRouter, traceContent: true });
     await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
