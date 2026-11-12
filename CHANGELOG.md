@@ -14,6 +14,7 @@ the change itself — never reconstructed after the fact. See
 ### Fixed
 
 - **Provider catalog.** A failed catalog fetch (network down, 5xx, checksum mismatch) is no longer cached for 6 hours: it is retried after 1 minute, previous data keeps being served, and each fetch times out after 10 seconds (ROUT-644).
+- **Management API docs.** `docs/api/management.md` no longer documents a `GET /api/models/:id` route, which does not exist; a single model, including its `conformance` result, is read from `GET /api/models` (ROUT-713).
 
 ### Added
 

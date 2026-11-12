@@ -158,6 +158,11 @@ GET /api/models
 Each entry includes `connectionId`; secret fields (`apiKey`, `cfClearance`,
 and the other provider-specific credential fields) are always redacted, use
 [Get Model API Key](#get-model-api-key) to read the plaintext key.
+There is no single-model `GET /api/models/:id`; read one model from this list.
+Each entry may also carry:
+- `catalogDefaults` (if model is in catalog): object with keys: `inputPerMillion`, `outputPerMillion`, `cachePerMillion`, `cacheWritePerMillion`, `pricingTiers`, `contextWindow`, `capabilities` (whichever were synced from the catalog)
+- `fieldOverrides` (if any): object with field names as keys, all values set to `true`
+- `conformance` (if the model was checked): see [Run Model Conformance](#run-model-conformance)
 
 ### Create Model
 
@@ -191,17 +196,6 @@ POST /api/models
 - `fieldOverrides` (if any): which fields are locked against auto-sync
 
 **Errors**: `409` a model with this `id` already exists · `400` `connectionId` given but its provider does not match `provider` · `404` `connectionId` given but not found · `403` insufficient permissions
-
-### Get Model
-
-```
-GET /api/models/:id
-```
-
-**Response includes:**
-- `connectionId`: the connection this model currently resolves against
-- `catalogDefaults` (if model is in catalog): object with keys: `inputPerMillion`, `outputPerMillion`, `cachePerMillion`, `cacheWritePerMillion`, `pricingTiers`, `contextWindow`, `capabilities` (whichever were synced from the catalog)
-- `fieldOverrides` (if any): object with field names as keys, all values set to `true`
 
 ### Update Model
 
@@ -242,7 +236,7 @@ POST /api/models/:id/conformance
 
 **Auth**: `Authorization: Bearer <jwt>` (requires `model:write`)
 
-Runs the provider conformance corpus against the model through the production adapter path (requests are not counted in usage) and stores the result on the model. `GET /api/models` and `GET /api/models/:id` return it as `conformance`; a model that was never checked has no such field.
+Runs the provider conformance corpus against the model through the production adapter path (requests are not counted in usage) and stores the result on the model. `GET /api/models` returns it as `conformance`; a model that was never checked has no such field.
 
 **Response `200`:**
 ```json
