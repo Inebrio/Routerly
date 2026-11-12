@@ -348,6 +348,19 @@ describe('RouterOptimizerTab — optimizer profile assignment', () => {
     expect(await screen.findByText(/Pipeline run: (?!Custom$)/)).toBeInTheDocument();
   });
 
+  it('the built-in None profile (zero steps) can be assigned and saved (ROUT-696)', async () => {
+    const user = userEvent.setup();
+    mockGetProfiles.mockResolvedValue([
+      ...sampleProfiles,
+      { id: 'optimizer-none', kind: 'optimizer', version: 1, label: 'None', builtin: true, optimizers: { steps: [] } },
+    ]);
+    renderTab({ ...mockRouter, optimizerProfileId: 'optimizer-safe' });
+    await waitFor(() => expect(screen.getByLabelText('Optimizer Profile')).toBeInTheDocument());
+    await user.selectOptions(screen.getByLabelText('Optimizer Profile'), 'optimizer-none');
+    await user.click(screen.getByRole('button', { name: /save optimizers/i }));
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { optimizer: 'optimizer-none' }));
+  });
+
   it('Discard drops the pending change without any request', async () => {
     const user = userEvent.setup();
     renderTab();

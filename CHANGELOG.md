@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- **Optimizer: no profile.** Routers > Optimizer > Profile now offers a built-in «None» profile (`optimizer-none`) that runs no optimizer step and ignores any stored Custom steps; previously Profile mode always needed one of the optimizer presets (ROUT-696).
+
 ### Fixed
 
 - **llmlingua-2 availability.** The optimizer no longer reports `@huggingface/transformers is not installed` when the package is present but `onnxruntime-node` cannot load (musl/Alpine, the official Docker image): the real cause (e.g. `ERR_DLOPEN_FAILED`) is kept in the trace, and the management API (`runtimeError`), CLI and dashboard show llmlingua-2 as unavailable on that host instead of offering a download (ROUT-715).

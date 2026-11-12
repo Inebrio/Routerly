@@ -116,6 +116,15 @@ const OPTIMIZER_PRESETS = Object.freeze([
     },
     builtin: true,
   }),
+  // Explicit "run no optimizer". Last, so the dashboard default stays optimizer-safe.
+  Object.freeze({
+    id: 'optimizer-none',
+    kind: 'optimizer',
+    version: 1,
+    label: 'None',
+    optimizers: { steps: [] },
+    builtin: true,
+  }),
 ]) as readonly OptimizerProfile[];
 
 /**
